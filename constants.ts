@@ -75,7 +75,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "Cosmocrat is the core system originated and owned by Orion Apex Capital. All other entities in the ecosystem either deploy, validate, or operate under Cosmocrat’s governance model.",
     operatingConstraints: "Enterprise-grade, governance-first. Not a chatbot. Not an orchestration tool. Designed to fail closed and remain auditable under real production conditions.",
     status: "GOVERNED AI OS · CORE",
-    logo: "cosmocrat-.png",
+    logo: "public/cosmocrat-.png",
     slug: "cosmocrat",
     link: "https://www.cosmocrat.ai"
   },
@@ -87,7 +87,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "OIA deploys and validates Cosmocrat inside real enterprise workflows, translating the operating system into measurable outcomes without compromising governance.",
     operatingConstraints: "Enterprise-only. Execution-first. No experimentation in production. Designed for risk, security, and compliance teams.",
     status: "ENTERPRISE EXECUTION",
-    logo: "oia-shield-only-dark.png",
+    logo: "public/oia-shield-only-dark.png",
     slug: "orion-intelligence",
     link: "https://www.orionintelligenceagency.com"
   },
@@ -99,7 +99,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "OAC is the origin authority of Cosmocrat and oversees how the operating system is deployed, validated, and capitalized across domains.",
     operatingConstraints: "Ownership and architecture only. Not a services firm. Not a product marketplace.",
     status: "OWNERSHIP · ARCHITECTURE",
-    logo: "01-OAC-stacked_primary_white-transparent_sm.png",
+    logo: "public/01-OAC-stacked_primary_white-transparent_sm.png",
     slug: "orion-apex-capital",
     link: "https://www.orionapexcapital.com"
   },
@@ -111,7 +111,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "ReplyBy operates as a production-grade application running under governed execution principles derived from Cosmocrat, validated through Orion Intelligence Agency.",
     operatingConstraints: "SMB-focused. Narrow scope. Production only. No autonomous decisioning.",
     status: "PRODUCTION · SMB",
-    logo: "header-icon - replyby.png",
+    logo: "public/header-icon - replyby.png",
     slug: "replyby",
     link: "https://www.replychatai.com"
   },
@@ -123,7 +123,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "ATS serves as internal validation of Cosmocrat’s governance model under continuous, adversarial conditions.",
     operatingConstraints: "Internal use only. Not offered publicly. No external capital or client access.",
     status: "INTERNAL · GOVERNED EXECUTION",
-    logo: "ats-logo.png",
+    logo: "public/ats-logo.png",
     slug: "apex-trading",
     link: "https://www.apexaitrading.com"
   },
@@ -135,7 +135,7 @@ export const VENTURES: Venture[] = [
     systemRelationship: "It functions as an exploratory edge of the ecosystem, testing how governance principles translate to individual-level decision contexts.",
     operatingConstraints: "Consumer-facing. Experimental by design. Not enterprise infrastructure.",
     status: "SIGNAL · CONSUMER",
-    logo: "Path-of-Light-Transparant.png",
+    logo: "public/Path-of-Light-Transparant.png",
     slug: "path-of-life",
     link: "https://pathoflifehub.com"
   }
