@@ -1,20 +1,61 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# danmercede.com
 
-# Run and deploy your AI Studio app
+Canonical personal site for Dan Mercede.
 
-This contains everything you need to run your app locally.
+This repository hosts the source for **danmercede.com**, the primary authority surface representing professional identity, systems architecture work, and ecosystem context.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1UbUbKTrIIIMcdA8kV_a7F3v5sDya2Vjo
+---
 
-## Run Locally
+## Purpose
 
-**Prerequisites:**  Node.js
+This site serves as the **canonical reference point** for:
 
+- Professional positioning
+- Systems architecture perspective
+- Ecosystem overview
+- Long-term thinking on governed AI and execution systems
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+It is intentionally structured to be:
+- Stable
+- Authoritative
+- Non-transactional
+
+This is not a blog, portfolio, or marketing site.
+
+---
+
+## Relationship to Other Sites
+
+Each domain in the ecosystem serves a distinct role:
+
+- **danmercede.com** — Canonical authority & professional framing  
+- **danielmercede.com** — Long-form biographical narrative  
+- **danmercede.info** — Identity verification & disambiguation  
+- **danmercede.online** — Living signal surface / working log  
+
+Product and platform sites (e.g., Cosmocrat, Orion Apex Capital) are maintained separately.
+
+---
+
+## Scope
+
+Content on this site focuses on:
+
+- Systems architecture and governance
+- Human-owned and operator-grade intelligence
+- Ecosystem structure and relationships
+- Strategic context for ongoing work
+
+It avoids duplication of content published elsewhere in the ecosystem.
+
+---
+
+## Notes
+
+This repository is maintained as a public reference surface.
+
+Issues, pull requests, or feature requests are not accepted unless explicitly coordinated.
+
+---
+
+© 2026 Dan Mercede
