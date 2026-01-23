@@ -140,11 +140,16 @@ const HomePage = () => {
             
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
-              <div className="absolute inset-0 flex items-center justify-center text-slate-600 font-mono text-sm">
-                [Anchor Headshot Placeholder]
-                <br />
-                <span className="text-xs opacity-50">4:5 Aspect Ratio</span>
-              </div>
+              <img
+                src="https://storage.googleapis.com/cosmocrat/cosmocrat_logos_graphics/portraits/dan-mercede-founder-headshot-sm.webp"
+                alt="Dan Mercede, Founder of Cosmocrat"
+                title="Dan Mercede — Founder of Cosmocrat"
+                width="1200"
+                height="1500"
+                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
+              />
+              {/* Subtle Dark Overlay (5%) */}
+              <div className="absolute inset-0 bg-slate-950/5 pointer-events-none"></div>
               {/* Overlay for aesthetic */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
             </div>
@@ -288,13 +293,16 @@ const AboutPage = () => (
         </div>
 
         <div className="lg:col-span-4">
-           {/* Secondary Portrait Placeholder */}
-           <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 flex items-center justify-center text-center p-4">
-             <span className="text-slate-600 font-mono text-xs">
-               [Secondary Portrait]<br/>
-               Black & White<br/>
-               High Contrast
-             </span>
+           {/* Secondary Portrait */}
+           <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden">
+             <img
+              src="https://storage.googleapis.com/cosmocrat/cosmocrat_logos_graphics/contextual/dan-mercede-founder-working-portait.webp"
+              alt="Dan Mercede, Founder of Cosmocrat"
+              title="Dan Mercede — Founder of Cosmocrat"
+              width="1200"
+              height="1500"
+              className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 contrast-125"
+             />
            </div>
         </div>
       </div>
@@ -390,18 +398,18 @@ const EcosystemPage = () => {
                   {/* Header Row: Logo & Status */}
                   <div className="flex justify-between items-start mb-8">
                     {/* Logo Mark */}
-                    <div className={`p-2 rounded-sm border ${
+                    <div className={`p-3 rounded-md border flex items-center justify-center ${
                         isCosmocrat 
                           ? 'border-copper-500/20 bg-copper-500/10' 
-                          : 'border-transparent'
+                          : 'border-white/10 bg-white/5'
                       }`}>
                       <img 
                         src={venture.logo} 
                         alt={venture.name}
-                        className={`h-6 w-auto object-contain transition-all duration-300 ${
+                        className={`h-9 w-auto object-contain transition-all duration-300 ${
                           isCosmocrat || isExpanded
                             ? 'opacity-100' 
-                            : 'opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100'
+                            : 'opacity-90 group-hover:opacity-100'
                         }`}
                       />
                     </div>
@@ -581,7 +589,7 @@ const ConnectPage = () => (
                </div>
              </a>
              
-             <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
+             <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
                <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
                <div>
                  <span className="block text-xs text-slate-500 uppercase tracking-wider">Social</span>
