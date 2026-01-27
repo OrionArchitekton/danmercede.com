@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
+Disallow: /_next/
+Disallow: /static/
+
+Sitemap: https://danmercede.com/sitemap.xml
