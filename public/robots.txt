@@ -7,4 +7,4 @@ Disallow: /draft
 Disallow: /_next/
 Disallow: /static/
 
-Sitemap: https://danmercede.com/sitemap.xml
+Sitemap: https://www.danmercede.com/sitemap.xml
