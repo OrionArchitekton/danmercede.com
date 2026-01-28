@@ -140,7 +140,7 @@ const HomePage = () => {
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
               <img
-                src="https://storage.googleapis.com/cosmocrat/cosmocrat_logos_graphics/portraits/dan-mercede-founder-headshot-sm.webp"
+                src="/dan-mercede-founder-headshot-sm.webp"
                 alt="Dan Mercede, Founder of Cosmocrat"
                 title="Dan Mercede — Founder of Cosmocrat"
                 width="1200"
@@ -295,7 +295,7 @@ const AboutPage = () => (
           {/* Secondary Portrait */}
           <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden">
             <img
-              src="https://storage.googleapis.com/cosmocrat/cosmocrat_logos_graphics/contextual/dan-mercede-founder-working-portait.webp"
+              src="/dan-mercede-founder-working-portait.webp"
               alt="Dan Mercede, Founder of Cosmocrat"
               title="Dan Mercede — Founder of Cosmocrat"
               width="1200"
@@ -391,35 +391,35 @@ const EcosystemPage = () => {
                 <div
                   onClick={() => toggleExpand(venture.slug)}
                   className={`group relative bg-slate-900/40 border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full ${isCosmocrat
-                      ? 'border-copper-500/30 bg-copper-500/5'
-                      : isExpanded
-                        ? 'border-copper-500/50 bg-slate-900/80'
-                        : 'border-white/5 hover:border-copper-500/30 hover:bg-slate-800/40'
+                    ? 'border-copper-500/30 bg-copper-500/5'
+                    : isExpanded
+                      ? 'border-copper-500/50 bg-slate-900/80'
+                      : 'border-white/5 hover:border-copper-500/30 hover:bg-slate-800/40'
                     }`}
                 >
                   {/* Header Row: Logo & Status */}
                   <div className="flex justify-between items-start mb-8">
                     {/* Logo Mark */}
                     <div className={`p-3 rounded-md border flex items-center justify-center ${isCosmocrat
-                        ? 'border-copper-500/20 bg-copper-500/10'
-                        : 'border-white/10 bg-white/5'
+                      ? 'border-copper-500/20 bg-copper-500/10'
+                      : 'border-white/10 bg-white/5'
                       }`}>
                       <img
                         src={venture.logo}
                         alt={venture.name}
                         className={`h-9 w-auto object-contain transition-all duration-300 ${isCosmocrat || isExpanded
-                            ? 'opacity-100'
-                            : 'opacity-90 group-hover:opacity-100'
+                          ? 'opacity-100'
+                          : 'opacity-90 group-hover:opacity-100'
                           }`}
                       />
                     </div>
 
                     {/* Status Badge */}
                     <span className={`text-[10px] font-mono px-2 py-1 rounded-sm uppercase tracking-widest ${isCosmocrat
-                        ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
-                        : isLive
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-amber-500/10 text-amber-500'
+                      ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
+                      : isLive
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-amber-500/10 text-amber-500'
                       }`}>
                       {venture.status}
                     </span>
