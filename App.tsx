@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, TARGET_AUDIENCE, FOOTER_DATA } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta } from './constants';
+
 import { Venture } from './types';
 
 // --- Shared Components ---
@@ -140,8 +141,8 @@ const HomePage = () => {
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
               <img
-                src="/dan-mercede-founder-headshot-sm.webp"
-                alt="Dan Mercede, Founder of Cosmocrat"
+                src="/dan-mercede-founder-headshot-sm.png"
+                alt={getImageMeta("/dan-mercede-founder-headshot-sm.png").alt}
                 title="Dan Mercede — Founder of Cosmocrat"
                 width="1200"
                 height="1500"
@@ -152,6 +153,7 @@ const HomePage = () => {
               {/* Overlay for aesthetic */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
             </div>
+
           </div>
         </div>
 
@@ -295,8 +297,8 @@ const AboutPage = () => (
           {/* Secondary Portrait */}
           <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden">
             <img
-              src="/dan-mercede-founder-working-portait.webp"
-              alt="Dan Mercede, Founder of Cosmocrat"
+              src="/dan-mercede-founder-working-portrait.png"
+              alt={getImageMeta("/dan-mercede-founder-working-portrait.png").alt}
               title="Dan Mercede — Founder of Cosmocrat"
               width="1200"
               height="1500"
