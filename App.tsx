@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta } from './constants';
 
 import { Venture } from './types';
 
@@ -120,7 +120,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Systems Architect</span>
+                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Runtime Governance Architect</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
@@ -131,10 +131,19 @@ const HomePage = () => {
               <p className="text-slate-500 mb-10 max-w-md">
                 {HERO_CONTENT.philosophy}
               </p>
-              {/* Hero CTAs - Primary Decision Points */}
-              <div className="flex flex-wrap gap-4">
-                <Button to="/ecosystem">Explore Ecosystem</Button>
-                <Button variant="outline" to="/connect">Connect</Button>
+              {/* Hero CTA - Single Conversion Path */}
+              <div className="flex flex-col gap-4">
+                <a
+                  href={READINESS_SCAN.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
+                >
+                  {READINESS_SCAN.cta}
+                </a>
+                <p className="text-slate-600 text-xs font-mono max-w-md">
+                  Deliverables: {READINESS_SCAN.deliverables.join(' · ')}
+                </p>
               </div>
             </div>
 
@@ -162,7 +171,7 @@ const HomePage = () => {
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
             <span className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
-              Principles before structure.
+              If governance isn't enforced at runtime, it isn't governance.
             </span>
             <div className="h-px flex-grow bg-white/5"></div>
           </div>
@@ -220,29 +229,29 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Final CTA Strip - Contextual Exit Ramps */}
+      {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <Link to="/ecosystem" className="group p-8 border border-white/5 bg-slate-900/20 hover:border-copper-500/30 transition-all relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <ExternalLink className="w-16 h-16 text-copper-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2 flex items-center relative z-10">
-              Explore the ecosystem
-              <ChevronRight className="w-5 h-5 ml-2 text-copper-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </h3>
-            <p className="text-slate-500 text-sm relative z-10">Understand how the systems connect.</p>
-          </Link>
-          <Link to="/connect" className="group p-8 border border-white/5 bg-slate-900/20 hover:border-copper-500/30 transition-all relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Mail className="w-16 h-16 text-copper-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2 flex items-center relative z-10">
-              Connect
-              <ChevronRight className="w-5 h-5 ml-2 text-copper-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </h3>
-            <p className="text-slate-500 text-sm relative z-10">Initiate a focused conversation.</p>
-          </Link>
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
+          <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Runtime Governance Readiness Scan
+          </h3>
+          <p className="text-slate-400 mb-8 max-w-xl mx-auto">
+            A focused assessment that maps your control-plane gaps, identifies failure modes, and delivers a 30/60/90 hardening roadmap.
+          </p>
+          <a
+            href={READINESS_SCAN.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-10 py-4 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
+          >
+            {READINESS_SCAN.cta}
+          </a>
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
+            {READINESS_SCAN.deliverables.map((d, i) => (
+              <span key={i} className="text-slate-600 text-xs font-mono border border-white/5 px-3 py-1 rounded-sm">{d}</span>
+            ))}
+          </div>
         </div>
       </Section>
     </>
@@ -313,32 +322,21 @@ const AboutPage = () => (
 
 const EcosystemPage = () => {
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
-  const [columns, setColumns] = useState(1);
+  const [showSecondary, setShowSecondary] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Detect column count based on window width for grid logic
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) setColumns(3);
-      else if (window.innerWidth >= 768) setColumns(2);
-      else setColumns(1);
-    };
+  const primaryVentures = VENTURES.filter(v => PRIMARY_VENTURES.includes(v.name));
+  const secondaryVentures = VENTURES.filter(v => !PRIMARY_VENTURES.includes(v.name));
 
-    handleResize(); // Init
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Sync state with Hash to support legacy links or re-map
-  // For Real Routing, we might want to check location.search or just hash if we keep hashes
-  // But since we are moving to Real Routing, we might not need hash logic anymore unless for scroll anchors
-  // The original component used Hash for 'expanding' items. We should probably keep using Hash for expand state or switch to Query Params
-  // Let's keep it using Hash for 'expand state' within the page (/ecosystem#cosmocrat), which works fine with BrowserRouter 
   useEffect(() => {
     if (location.hash) {
       const slug = location.hash.replace('#', '');
       setExpandedSlug(slug);
+      // Auto-expand secondary section if hash targets a secondary venture
+      if (secondaryVentures.some(v => v.slug === slug)) {
+        setShowSecondary(true);
+      }
     } else {
       setExpandedSlug(null);
     }
@@ -352,56 +350,86 @@ const EcosystemPage = () => {
     }
   };
 
+  const renderVentureDetail = (venture: Venture) => (
+    <div className="col-span-1 md:col-span-2 bg-slate-950 border-y border-copper-500/30 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+      <div className="absolute top-0 left-0 w-1 h-full bg-copper-500"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 md:p-12 items-start">
+        <div className="lg:col-span-8">
+          <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            {venture.name}
+            <span className="text-slate-500 font-light">—</span>
+            <span className="text-copper-400 font-light">{venture.role}</span>
+          </h3>
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Role in the Ecosystem</h4>
+              <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.ecosystemRole}</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Relationship to the System</h4>
+              <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.systemRelationship}</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Operating Constraints</h4>
+              <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.operatingConstraints}</p>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-white/5">
+            <a
+              href={venture.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-copper-500 font-bold uppercase tracking-wider text-sm hover:text-copper-400 transition-colors"
+            >
+              Visit {venture.name}
+              <ExternalLink className="ml-2 w-4 h-4" />
+            </a>
+          </div>
+        </div>
+        <div className="lg:col-span-4 border-l border-white/5 pl-8 hidden lg:block">
+          <div className="space-y-6">
+            <div>
+              <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Entity Status</span>
+              <span className="text-white font-mono text-sm">{venture.status}</span>
+            </div>
+            <div>
+              <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Canonical Ref</span>
+              <span className="text-slate-400 font-mono text-xs break-all">
+                danmercede.com/ecosystem#{venture.slug}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="pt-20">
+      {/* Primary: Runtime Governance Stack */}
       <Section>
-        <SectionHeader title="The Ecosystem" subtitle="Ventures & Vehicles" />
+        <SectionHeader title="Runtime Governance Stack" subtitle="Core Systems" />
+        <p className="text-slate-400 mb-12 max-w-3xl -mt-10">
+          The platform and the implementation arm. Cosmocrat is the Governed AI Operating System. Orion Intelligence Agency deploys and hardens it in production.
+        </p>
 
-        {/* Responsive Grid that handles Inline Injection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
-          {VENTURES.map((venture, idx) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
+          {primaryVentures.map((venture) => {
             const isCosmocrat = venture.name === 'Cosmocrat';
-            const isLive = venture.status.includes('PRODUCTION') || venture.status.includes('EXECUTION');
             const isExpanded = expandedSlug === venture.slug;
-
-            // Determine if we need to render the detail row after this item
-            // Logic: Render after item if it is the last in its row OR last in the array
-            // AND the expanded item is in this current row.
-            const rowNumber = Math.floor(idx / columns);
-            const isLastInRow = (idx + 1) % columns === 0;
-            const isLastItem = idx === VENTURES.length - 1;
-
-            // Find which item in this specific row (if any) is expanded
-            // The row starts at: rowNumber * columns
-            // The row ends at: min((rowNumber + 1) * columns - 1, VENTURES.length - 1)
-            const rowStartIndex = rowNumber * columns;
-            const rowEndIndex = Math.min((rowNumber + 1) * columns - 1, VENTURES.length - 1);
-
-            let expandedItemInRow: Venture | null = null;
-            for (let i = rowStartIndex; i <= rowEndIndex; i++) {
-              if (VENTURES[i].slug === expandedSlug) {
-                expandedItemInRow = VENTURES[i];
-                break;
-              }
-            }
-
-            const shouldRenderDetailRow = (isLastInRow || isLastItem) && expandedItemInRow;
 
             return (
               <React.Fragment key={venture.slug}>
-                {/* Tile */}
                 <div
                   onClick={() => toggleExpand(venture.slug)}
-                  className={`group relative bg-slate-900/40 border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full ${isCosmocrat
+                  className={`group relative border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full ${isCosmocrat
                     ? 'border-copper-500/30 bg-copper-500/5'
                     : isExpanded
                       ? 'border-copper-500/50 bg-slate-900/80'
-                      : 'border-white/5 hover:border-copper-500/30 hover:bg-slate-800/40'
+                      : 'border-white/10 bg-slate-900/60 hover:border-copper-500/30 hover:bg-slate-800/40'
                     }`}
                 >
-                  {/* Header Row: Logo & Status */}
                   <div className="flex justify-between items-start mb-8">
-                    {/* Logo Mark */}
                     <div className={`p-3 rounded-md border flex items-center justify-center ${isCosmocrat
                       ? 'border-copper-500/20 bg-copper-500/10'
                       : 'border-white/10 bg-white/5'
@@ -409,125 +437,139 @@ const EcosystemPage = () => {
                       <img
                         src={venture.logo}
                         alt={venture.name}
-                        className={`h-9 w-auto object-contain transition-all duration-300 ${isCosmocrat || isExpanded
-                          ? 'opacity-100'
-                          : 'opacity-90 group-hover:opacity-100'
-                          }`}
+                        className="h-9 w-auto object-contain opacity-100"
                       />
                     </div>
-
-                    {/* Status Badge */}
                     <span className={`text-[10px] font-mono px-2 py-1 rounded-sm uppercase tracking-widest ${isCosmocrat
                       ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
-                      : isLive
-                        ? 'bg-emerald-500/10 text-emerald-500'
-                        : 'bg-amber-500/10 text-amber-500'
+                      : 'bg-emerald-500/10 text-emerald-500'
                       }`}>
                       {venture.status}
                     </span>
                   </div>
-
-                  {/* Content */}
                   <div className="flex-grow">
-                    <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isCosmocrat ? 'text-copper-500' : 'text-slate-500'
-                      }`}>
+                    <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isCosmocrat ? 'text-copper-500' : 'text-copper-400'}`}>
                       {venture.role}
                     </p>
-                    <h3 className={`text-2xl font-bold mb-4 ${isCosmocrat || isExpanded ? 'text-white' : 'text-white group-hover:text-copper-400 transition-colors'
-                      }`}>
+                    <h3 className="text-2xl font-bold mb-4 text-white">
                       {venture.name}
                     </h3>
-                    <p className="text-slate-400 text-sm leading-relaxed line-clamp-3">
+                    <p className="text-slate-400 text-sm leading-relaxed">
                       {venture.description}
                     </p>
                   </div>
-
-                  {/* Expand Affordance */}
                   <div className="mt-8 flex justify-between items-center border-t border-white/5 pt-4">
-                    <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-600 group-hover:text-copper-500'
-                      }`}>
+                    <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-600 group-hover:text-copper-500'}`}>
                       {isExpanded ? 'Close Details' : 'View Details'}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-copper-500" />
                     ) : (
-                      <ChevronDown className={`w-4 h-4 transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-600 group-hover:text-copper-500'
-                        }`} />
+                      <ChevronDown className="w-4 h-4 text-slate-600 group-hover:text-copper-500 transition-colors" />
                     )}
                   </div>
                 </div>
 
-                {/* Inline Expansion Row */}
-                {shouldRenderDetailRow && (
-                  <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-slate-950 border-y border-copper-500/30 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-copper-500"></div>
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 md:p-12 items-start">
-                      {/* Text Content */}
-                      <div className="lg:col-span-8">
-                        {/* H3 with specific separation style */}
-                        <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                          {expandedItemInRow.name}
-                          <span className="text-slate-500 font-light">—</span>
-                          <span className="text-copper-400 font-light">{expandedItemInRow.role}</span>
-                        </h3>
-
-                        <div className="space-y-6">
-                          <div>
-                            <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Role in the Ecosystem</h4>
-                            <p className="text-slate-300 leading-relaxed max-w-2xl">{expandedItemInRow.ecosystemRole}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Relationship to the System</h4>
-                            <p className="text-slate-300 leading-relaxed max-w-2xl">{expandedItemInRow.systemRelationship}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Operating Constraints</h4>
-                            <p className="text-slate-300 leading-relaxed max-w-2xl">{expandedItemInRow.operatingConstraints}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-8 pt-8 border-t border-white/5">
-                          <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Primary Domain</h4>
-                          <a
-                            href={expandedItemInRow.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-copper-500 font-bold uppercase tracking-wider text-sm hover:text-copper-400 transition-colors"
-                          >
-                            Visit {expandedItemInRow.name}
-                            <ExternalLink className="ml-2 w-4 h-4" />
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Visual/Meta Context */}
-                      <div className="lg:col-span-4 border-l border-white/5 pl-8 hidden lg:block">
-                        <div className="space-y-6">
-                          <div>
-                            <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Entity Status</span>
-                            <span className="text-white font-mono text-sm">{expandedItemInRow.status}</span>
-                          </div>
-                          <div>
-                            <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Canonical Ref</span>
-                            <span className="text-slate-400 font-mono text-xs break-all">
-                              danmercede.com/ecosystem#{expandedItemInRow.slug}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {isExpanded && renderVentureDetail(venture)}
               </React.Fragment>
             );
           })}
         </div>
       </Section>
 
-      <div className="border-t border-white/5 bg-slate-900/30 py-20 text-center">
-        <h3 className="text-white font-mono uppercase tracking-widest mb-6">System Interoperability</h3>
-        <p className="max-w-2xl mx-auto text-slate-500 px-6">
-          Each entity operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.
+      {/* Readiness Scan CTA Band */}
+      <div className="border-y border-copper-500/10 bg-slate-900/40 py-16">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">Enterprise Entry Point</p>
+          <a
+            href={READINESS_SCAN.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
+          >
+            {READINESS_SCAN.cta}
+          </a>
+          <p className="text-slate-600 text-xs font-mono mt-4">
+            {READINESS_SCAN.deliverables.join(' · ')}
+          </p>
+        </div>
+      </div>
+
+      {/* Secondary: Extended Ecosystem */}
+      <Section>
+        <div
+          onClick={() => setShowSecondary(!showSecondary)}
+          className="cursor-pointer flex items-center justify-between mb-8 group"
+        >
+          <div className="border-l-2 border-slate-700 pl-6">
+            <h2 className="text-2xl font-bold text-slate-400 group-hover:text-slate-300 transition-colors tracking-tight">Extended Ecosystem</h2>
+            <p className="text-slate-600 font-mono text-sm tracking-widest uppercase">Supporting Ventures & Vehicles</p>
+          </div>
+          {showSecondary ? (
+            <ChevronUp className="w-5 h-5 text-slate-500" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-500 group-hover:text-slate-400 transition-colors" />
+          )}
+        </div>
+
+        {showSecondary && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min animate-in fade-in slide-in-from-top-4 duration-300">
+            {secondaryVentures.map((venture) => {
+              const isExpanded = expandedSlug === venture.slug;
+              const isLive = venture.status.includes('PRODUCTION') || venture.status.includes('EXECUTION');
+
+              return (
+                <React.Fragment key={venture.slug}>
+                  <div
+                    onClick={() => toggleExpand(venture.slug)}
+                    className={`group relative bg-slate-900/30 border p-6 transition-all duration-300 cursor-pointer flex flex-col h-full ${isExpanded
+                      ? 'border-copper-500/50 bg-slate-900/80'
+                      : 'border-white/5 hover:border-white/10 hover:bg-slate-800/30'
+                      }`}
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="p-2 rounded-md border border-white/10 bg-white/5 flex items-center justify-center">
+                        <img
+                          src={venture.logo}
+                          alt={venture.name}
+                          className="h-7 w-auto object-contain opacity-70 group-hover:opacity-90 transition-all"
+                        />
+                      </div>
+                      <span className={`text-[10px] font-mono px-2 py-1 rounded-sm uppercase tracking-widest ${isLive
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-amber-500/10 text-amber-500'
+                        }`}>
+                        {venture.status}
+                      </span>
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-600">{venture.role}</p>
+                      <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
+                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
+                    </div>
+                    <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
+                      <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-700 group-hover:text-slate-500'}`}>
+                        {isExpanded ? 'Close' : 'Details'}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-copper-500" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-700 group-hover:text-slate-500 transition-colors" />
+                      )}
+                    </div>
+                  </div>
+
+                  {isExpanded && renderVentureDetail(venture)}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+      </Section>
+
+      <div className="border-t border-white/5 bg-slate-900/30 py-16 text-center">
+        <p className="text-slate-600 font-mono text-xs uppercase tracking-widest max-w-2xl mx-auto px-6">
+          Each entity operates independently under a shared governance framework. The runtime stack (Cosmocrat + OIA) is the enterprise entry point.
         </p>
       </div>
     </div>

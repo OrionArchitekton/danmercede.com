@@ -20,8 +20,9 @@ export const NAV_ITEMS = [
 
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
-  positioning: "Systems that scale. Intelligence that serves.",
-  philosophy: "Building the infrastructure for human-owned intelligence and governed automation.",
+  positioning: "Enterprise AI doesn't fail on capability — it fails at runtime.",
+  philosophy: "I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.",
+  wedge: "If governance isn't enforced at runtime, it isn't governance.",
 };
 
 export const PILLARS: Pillar[] = [
@@ -141,11 +142,25 @@ export const VENTURES: Venture[] = [
   }
 ];
 
+export const READINESS_SCAN = {
+  cta: "Book a Runtime Governance Readiness Scan",
+  deliverables: [
+    "Control-plane gap map",
+    "Failure-mode heatmap",
+    "Enforcement checklist",
+    "30/60/90 hardening roadmap",
+  ],
+  href: "https://www.orionintelligenceagency.com/book",
+};
+
+export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
+
 export const TARGET_AUDIENCE = [
   "Builders", "Operators", "Investors", "Enterprise Teams"
 ];
 
 export const FOOTER_DATA = {
+  entity: "Orion Apex Capital",
   jurisdiction: "United States",
 };
 
