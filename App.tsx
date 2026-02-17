@@ -112,6 +112,7 @@ const Footer = () => (
 // --- Pages ---
 
 const HomePage = () => {
+  usePageMeta('Dan Mercede — Systems Architect of the Governed AI Operating System');
   return (
     <>
       {/* Hero */}
@@ -258,7 +259,9 @@ const HomePage = () => {
   );
 };
 
-const AboutPage = () => (
+const AboutPage = () => {
+  usePageMeta('About — Dan Mercede', 'Systems architect and founder building governed AI operating systems with deterministic enforcement at runtime.');
+  return (
   <div className="pt-20">
     <Section>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -318,9 +321,11 @@ const AboutPage = () => (
       </div>
     </Section>
   </div>
-);
+  );
+};
 
 const EcosystemPage = () => {
+  usePageMeta('Ecosystem — Orion Ventures | Dan Mercede');
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const location = useLocation();
@@ -600,6 +605,13 @@ const ARTIFACT_LABELS: Record<string, string> = {
   'deck': 'Executive Deck',
 };
 
+const LAYER_OUTPUTS: Record<number, string> = {
+  1: 'Gate decision log',
+  2: 'Receipt chain',
+  3: 'Drift intervention record',
+  4: 'Egress reject record',
+};
+
 const ReadinessScanCTA = () => (
   <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mt-10">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -650,9 +662,15 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
         </div>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4">
         <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-1">Enforcement Point</span>
         <p className="text-xs text-slate-300 leading-relaxed">{resource.enforcementPoint}</p>
+      </div>
+
+      <div className="flex items-center gap-2 mb-5 text-xs font-mono text-slate-500">
+        <FileText className="w-3.5 h-3.5 text-copper-500/50" />
+        <span className="uppercase tracking-widest">Artifact Output:</span>
+        <span className="text-slate-400">{LAYER_OUTPUTS[resource.enforcementLayer]}</span>
       </div>
 
       {isGated ? (
@@ -674,11 +692,94 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
   );
 };
 
+const LAYER_JUMP_LINKS = [
+  { id: 'control-plane', label: 'Control Plane' },
+  { id: 'authority', label: 'Authority' },
+  { id: 'gate-cascade', label: 'Gate Cascade' },
+  { id: 'receipts', label: 'Receipts' },
+  { id: 'drift', label: 'Drift' },
+  { id: 'substrate', label: 'Substrate' },
+  { id: 'economics', label: 'Economics' },
+  { id: 'production', label: 'Production' },
+] as const;
+
+const LayerJumpBar = () => {
+  const [active, setActive] = React.useState('');
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0.1 }
+    );
+    LAYER_JUMP_LINKS.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="sticky top-16 z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        <nav className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide" aria-label="Layer navigation">
+          {LAYER_JUMP_LINKS.map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              onClick={e => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+              className={`whitespace-nowrap px-3 py-1.5 rounded text-xs font-mono uppercase tracking-widest transition-colors ${
+                active === id
+                  ? 'bg-copper-500/15 text-copper-400 border border-copper-500/30'
+                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
+              }`}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+};
+
+const DiagramDownloads = ({ basePath, name }: { basePath: string; name: string }) => (
+  <div className="flex items-center gap-4 mt-4">
+    <a href={`${basePath}.svg`} download className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors">
+      <Download className="w-4 h-4" /> {name} (SVG)
+    </a>
+    <a href={`${basePath}.png`} download className="inline-flex items-center gap-2 text-sm font-mono text-slate-500 hover:text-slate-300 transition-colors">
+      <Download className="w-4 h-4" /> {name} (PNG)
+    </a>
+  </div>
+);
+
+const usePageMeta = (title: string, description?: string) => {
+  useEffect(() => {
+    const prev = document.title;
+    document.title = title;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const prevDesc = metaDesc?.getAttribute('content') || '';
+    if (description && metaDesc) metaDesc.setAttribute('content', description);
+    return () => {
+      document.title = prev;
+      if (metaDesc) metaDesc.setAttribute('content', prevDesc);
+    };
+  }, [title, description]);
+};
+
 const ResourcesPage = () => {
+  usePageMeta(
+    'Proof — Runtime Governance Enforcement Artifacts | Dan Mercede',
+    'Downloadable enforcement artifacts mapped to the four-layer runtime governance stack: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate.'
+  );
   const layers = [1, 2, 3, 4] as const;
 
   return (
     <div className="pt-20">
+      <LayerJumpBar />
       <Section>
         <SectionHeader title="Proof" subtitle="Enforcement Artifacts" />
 
@@ -707,6 +808,10 @@ const ResourcesPage = () => {
               No receipt, no commit.
             </p>
           </div>
+          <DiagramDownloads
+            basePath="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1"
+            name="Control Plane Architecture"
+          />
         </div>
 
         {/* 4-Layer Mini Diagram */}
@@ -761,13 +866,10 @@ const ResourcesPage = () => {
           <p className="text-sm font-mono text-slate-400 mb-4 tracking-wide">
             Gate 1: Authority &rarr; Gate 2: Attestation &rarr; Gate 3: Behavioral Constraint.
           </p>
-          <a
-            href="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
-            download
-            className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors"
-          >
-            <ArrowRight className="w-4 h-4" /> Download Pipeline Diagram (SVG)
-          </a>
+          <DiagramDownloads
+            basePath="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1"
+            name="Pipeline Diagram"
+          />
         </div>
 
         {/* Layers 2-4 — Vertical Enforcement-Layer Sections */}
@@ -807,13 +909,10 @@ const ResourcesPage = () => {
               loading="lazy"
             />
           </div>
-          <a
-            href="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
-            download
-            className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors"
-          >
-            <ArrowRight className="w-4 h-4" /> Download Economics Scorecard (SVG)
-          </a>
+          <DiagramDownloads
+            basePath="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1"
+            name="Economics Scorecard"
+          />
         </div>
 
         {/* Enforcement in Production — Case Studies */}
@@ -869,6 +968,10 @@ const ResourcesPage = () => {
 const CaseStudyPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const study = CASE_STUDIES.find(cs => cs.slug === slug);
+  usePageMeta(
+    study ? `${study.title} — Case Study | Dan Mercede` : 'Case Study Not Found | Dan Mercede',
+    study ? study.description : undefined
+  );
 
   if (!study) {
     return (
@@ -969,6 +1072,7 @@ const CaseStudyPage = () => {
 };
 
 const ThoughtsPage = () => {
+  usePageMeta('Thought Direction — Doctrine + Architecture | Dan Mercede', 'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const categories = ['all', ...Array.from(new Set(THOUGHTS.map((t: Thought) => t.category)))];
 
@@ -1035,7 +1139,9 @@ const ThoughtsPage = () => {
   );
 };
 
-const ConnectPage = () => (
+const ConnectPage = () => {
+  usePageMeta('Connect — Initiate Protocol | Dan Mercede', 'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.');
+  return (
   <div className="pt-20">
     <Section>
       <SectionHeader title="Connect" subtitle="Initiate Protocol" />
@@ -1081,9 +1187,12 @@ const ConnectPage = () => (
       </div>
     </Section>
   </div>
-);
+  );
+};
 
-const LegalPage = () => (
+const LegalPage = () => {
+  usePageMeta('Legal Notice | Dan Mercede', 'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.');
+  return (
   <div className="pt-20">
     <Section>
       <SectionHeader title="Legal Notice" subtitle="Terms & Conditions" />
@@ -1103,9 +1212,12 @@ const LegalPage = () => (
       </div>
     </Section>
   </div>
-);
+  );
+};
 
-const PrivacyPage = () => (
+const PrivacyPage = () => {
+  usePageMeta('Privacy Policy — Data Governance | Dan Mercede', 'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.');
+  return (
   <div className="pt-20">
     <Section>
       <SectionHeader title="Privacy Policy" subtitle="Data Governance" />
@@ -1125,9 +1237,12 @@ const PrivacyPage = () => (
       </div>
     </Section>
   </div>
-);
+  );
+};
 
-const ImprintPage = () => (
+const ImprintPage = () => {
+  usePageMeta('Imprint — Entity Details | Dan Mercede', 'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.');
+  return (
   <div className="pt-20">
     <Section>
       <SectionHeader title="Imprint" subtitle="Entity Details" />
@@ -1156,7 +1271,7 @@ const ImprintPage = () => (
       </div>
     </Section>
   </div>
-);
+  ); };
 
 // --- App Layout ---
 
