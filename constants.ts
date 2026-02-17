@@ -8,13 +8,14 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Thought } from './types';
+import { Pillar, Venture, Belief, Thought, Resource, CaseStudy } from './types';
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/' },
   { label: 'About', path: '/about' },
   { label: 'Ecosystem', path: '/ecosystem' },
   { label: 'Thoughts', path: '/thoughts' },
+  { label: 'Resources', path: '/resources' },
   { label: 'Connect', path: '/connect' },
 ];
 
@@ -240,3 +241,159 @@ export function getImageMeta(srcOrFilename: string): ImageMeta {
 
   return meta;
 }
+
+export const RESOURCES: Resource[] = [
+  {
+    title: "Governance Readiness Evidence Pack",
+    description: "47 audit-ready evidence items organized by enforcement layer. Covers authority gate verification, append-only receipt ledgers, behavioral containment, and workload isolation across all four enforcement stack layers.",
+    category: "lead-magnet",
+    fileName: "Governance_Readiness_Evidence_Pack.docx",
+    filePath: "/assets/Governance_Readiness_Evidence_Pack.docx",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "docx",
+    fileSize: "29 KB",
+  },
+  {
+    title: "Control-Plane Blueprint",
+    description: "Architecture walkthrough of all four enforcement layers with component-level detail. Covers intent boundary evaluation, cryptographic attestation, drift detection thresholds, and substrate isolation boundaries.",
+    category: "lead-magnet",
+    fileName: "Control_Plane_Blueprint.docx",
+    filePath: "/assets/Control_Plane_Blueprint.docx",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "docx",
+    fileSize: "23 KB",
+  },
+  {
+    title: "Case Study Template",
+    description: "Structured template mapping findings to enforcement stack layers. Includes sections for enforcement points deployed, control-plane components activated, and quantified outcomes tied to enterprise risk reduction.",
+    category: "template",
+    fileName: "Case_Study_Template.docx",
+    filePath: "/assets/Case_Study_Template.docx",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "docx",
+    fileSize: "13 KB",
+  },
+  {
+    title: "What We Deliver",
+    description: "One-page deliverable overview referencing all four enforcement layers. Maps control-plane gap map, failure-mode heatmap, and evidence checklist to engagement tiers with pricing.",
+    category: "sales-collateral",
+    fileName: "What_We_Deliver.pdf",
+    filePath: "/assets/What_We_Deliver.pdf",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "pdf",
+    fileSize: "4 KB",
+  },
+  {
+    title: "Speaking One-Sheet",
+    description: "Professional credential format mapping talk topics to enforcement stack layers and architectural doctrine. Audience targeting for CIO, CTO, and CISO buyers.",
+    category: "sales-collateral",
+    fileName: "Speaking_One_Sheet.pdf",
+    filePath: "/assets/Speaking_One_Sheet.pdf",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "pdf",
+    fileSize: "4 KB",
+  },
+  {
+    title: "Executive Deck",
+    description: "10-slide enforcement stack walkthrough with gate pipeline flow, ROI proof metrics, and engagement model. Navy/copper visual identity. Engineering-precise, declarative tone throughout.",
+    category: "deck",
+    fileName: "Executive_Deck.pptx",
+    filePath: "/assets/Executive_Deck.pptx",
+    enforcementLayers: [1, 2, 3, 4],
+    fileType: "pptx",
+    fileSize: "236 KB",
+  },
+];
+
+export const CASE_STUDIES: CaseStudy[] = [
+  {
+    title: "Runtime Governance in Financial Services",
+    slug: "financial-services",
+    industry: "Financial Services",
+    enforcementLayers: [1, 2],
+    layerNames: ["Authority Gate", "Immutable Receipts"],
+    metrics: [
+      { label: "Escalation Reduction", value: "67%" },
+      { label: "Task Completion", value: "94%" },
+      { label: "ROI Multiple", value: "4.2x" },
+      { label: "Cycle Time", value: "<48 hrs" },
+    ],
+    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to $4.2M financial exposure, SOC 2, and SOX compliance requirements.",
+    fileName: "Case_Study_Financial_Services.docx",
+    filePath: "/assets/Case_Study_Financial_Services.docx",
+    enforcementPoints: [
+      "Pre-execution authority verification for trading operations",
+      "Cryptographic attestation for state mutations",
+    ],
+    commercialMapping: [
+      "$4.2M financial exposure containment",
+      "SOC 2 audit defensibility",
+      "SOX compliance enforcement",
+      "Operational blast radius reduction",
+    ],
+  },
+  {
+    title: "Runtime Governance in Healthcare",
+    slug: "healthcare",
+    industry: "Healthcare",
+    enforcementLayers: [3, 4],
+    layerNames: ["Drift Guard", "Gated Substrate"],
+    metrics: [
+      { label: "SLA Compliance", value: "97%" },
+      { label: "Unattested Mutations", value: "Zero" },
+      { label: "Privilege Creep Reduction", value: "89%" },
+    ],
+    description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. Maps to HIPAA and FDA SaMD regulatory exposure.",
+    fileName: "Case_Study_Healthcare.docx",
+    filePath: "/assets/Case_Study_Healthcare.docx",
+    enforcementPoints: [
+      "Behavioral containment for clinical decision support",
+      "Workload isolation for PHI-handling agents",
+    ],
+    commercialMapping: [
+      "HIPAA compliance enforcement",
+      "FDA SaMD regulatory alignment",
+      "Patient safety risk containment",
+      "Audit defensibility for clinical AI",
+    ],
+  },
+];
+
+export const THOUGHTS: Thought[] = [
+  {
+    title: "Why Enterprise AI Fails at Runtime — Not Capability",
+    preview: "Execution outruns governance. Agentic systems act without authority, mutate state without attestation, and drift without constraint. The missing layer is deterministic enforcement at the execution boundary.",
+    date: "2026-02-17",
+    category: "Doctrine",
+  },
+  {
+    title: "The Four-Layer Enforcement Stack",
+    preview: "Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate. Four layers forming a deterministic enforcement cascade — each necessary, none sufficient alone.",
+    date: "2026-02-10",
+    category: "Architecture",
+  },
+  {
+    title: "Receipts Are Not Logs",
+    preview: "Logs are telemetry — receipts are enforcement artifacts. The distinction between observation and proof determines whether your AI system is auditable or merely observable.",
+    date: "2026-02-03",
+    category: "Enforcement",
+  },
+  {
+    title: "Fail-Closed Is Not Conservative — It Is Correct",
+    preview: "Fail-open governance assumes safety by default. Fail-closed governance assumes risk by default. In agentic systems with irreversible state mutation, only one of these assumptions survives production.",
+    date: "2026-01-27",
+    category: "Doctrine",
+  },
+  {
+    title: "Behavioral Drift: The Slow Failure Mode",
+    preview: "Autonomous systems do not fail at a transaction — they fail over time. Privilege creep, compounded deviation, authority decay. Drift Guard enforces containment across time, not just per-action.",
+    date: "2026-01-20",
+    category: "Architecture",
+  },
+  {
+    title: "Capability Removal vs. Capability Restriction",
+    preview: "If intelligence can route itself, governance is already compromised. The Gated Substrate layer removes capability at the execution environment — not by policy, but by physical isolation.",
+    date: "2026-01-13",
+    category: "Enforcement",
+  },
+];

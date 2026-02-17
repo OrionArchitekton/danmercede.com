@@ -35,3 +35,33 @@ export interface Belief {
   statement: string;
   detail: string;
 }
+
+export interface Resource {
+  title: string;
+  description: string;
+  category: 'lead-magnet' | 'template' | 'sales-collateral' | 'diagram' | 'deck';
+  fileName: string;
+  filePath: string;
+  enforcementLayers: number[];
+  fileType: 'pdf' | 'docx' | 'pptx';
+  fileSize: string;
+}
+
+export interface CaseStudyMetric {
+  label: string;
+  value: string;
+}
+
+export interface CaseStudy {
+  title: string;
+  slug: string;
+  industry: string;
+  enforcementLayers: number[];
+  layerNames: string[];
+  metrics: CaseStudyMetric[];
+  description: string;
+  fileName: string;
+  filePath: string;
+  enforcementPoints: string[];
+  commercialMapping: string[];
+}

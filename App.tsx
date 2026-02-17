@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS } from './constants';
 
-import { Venture } from './types';
+import { Venture, Resource, CaseStudy, Thought } from './types';
 
 // --- Shared Components ---
 
@@ -576,23 +576,282 @@ const EcosystemPage = () => {
   );
 };
 
-const ThoughtsPage = () => (
-  <div className="pt-20 min-h-[80vh] flex flex-col items-center justify-center">
-    <div className="text-center p-8 max-w-2xl">
-      <span className="text-copper-500 font-mono text-sm tracking-widest uppercase mb-4 block">Coming Soon</span>
-      <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Thought Direction</h2>
-      <p className="text-slate-400 mb-12">
-        Essays on governed AI, operator-grade systems, and the alignment of human and machine intent. No hot takes, only frameworks.
-      </p>
-      <div className="inline-flex flex-col items-start text-left border-l-2 border-slate-800 pl-6 space-y-2">
-        <span className="text-slate-500 text-sm font-mono">Pending Topics:</span>
-        <span className="text-slate-300">The Audit Log as Truth</span>
-        <span className="text-slate-300">Sovereign Intelligence Stacks</span>
-        <span className="text-slate-300">Capital Allocation in AI Agencies</span>
-      </div>
+// --- Resources Page ---
+const LAYER_NAMES: Record<number, string> = {
+  1: 'Authority Gate',
+  2: 'Immutable Receipts',
+  3: 'Drift Guard',
+  4: 'Gated Substrate',
+};
+
+const FILE_TYPE_LABELS: Record<string, string> = {
+  pdf: 'PDF',
+  docx: 'Word',
+  pptx: 'PowerPoint',
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'lead-magnet': 'Lead Magnet',
+  'template': 'Template',
+  'sales-collateral': 'Sales Collateral',
+  'diagram': 'Diagram',
+  'deck': 'Deck',
+};
+
+const ResourcesPage = () => {
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const categories = ['all', ...Array.from(new Set(RESOURCES.map(r => r.category)))];
+
+  const filtered = activeCategory === 'all'
+    ? RESOURCES
+    : RESOURCES.filter(r => r.category === activeCategory);
+
+  return (
+    <div className="pt-20">
+      <Section>
+        <SectionHeader title="Resources" subtitle="Enforcement Artifacts" />
+        <p className="text-slate-400 max-w-3xl mb-12">
+          Downloadable artifacts mapped to the four-layer enforcement stack. Each resource references runtime enforcement points, produces audit-ready evidence, and maps to enterprise risk reduction.
+        </p>
+
+        <div className="flex flex-wrap gap-2 mb-12">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded font-mono text-xs uppercase tracking-widest transition-all ${
+                activeCategory === cat
+                  ? 'bg-copper-500 text-white'
+                  : 'border border-white/10 text-slate-500 hover:text-slate-300 hover:border-copper-500/30'
+              }`}
+            >
+              {cat === 'all' ? 'All' : CATEGORY_LABELS[cat] || cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((resource, i) => (
+            <div
+              key={i}
+              className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-copper-500" />
+                  <span className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                    {CATEGORY_LABELS[resource.category] || resource.category}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-slate-600">
+                  {FILE_TYPE_LABELS[resource.fileType] || resource.fileType} · {resource.fileSize}
+                </span>
+              </div>
+
+              <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">
+                {resource.title}
+              </h3>
+              <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+                {resource.description}
+              </p>
+
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {resource.enforcementLayers.map(layer => (
+                  <span
+                    key={layer}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono bg-slate-800/60 text-slate-400 border border-white/5"
+                  >
+                    <Layers className="w-3 h-3 text-copper-500/60" />
+                    L{layer}
+                  </span>
+                ))}
+              </div>
+
+              <a
+                href={resource.filePath}
+                download={resource.fileName}
+                className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download {FILE_TYPE_LABELS[resource.fileType] || resource.fileType}
+              </a>
+            </div>
+          ))}
+        </div>
+      </Section>
     </div>
-  </div>
-);
+  );
+};
+
+// --- Case Study Page ---
+const CaseStudyPage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const study = CASE_STUDIES.find(cs => cs.slug === slug);
+
+  if (!study) {
+    return (
+      <div className="pt-20 min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Case Study Not Found</h2>
+          <Link to="/resources" className="text-copper-500 hover:text-copper-400 font-mono text-sm">
+            ← Back to Resources
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-20">
+      <Section>
+        <div className="mb-6">
+          <Link to="/resources" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            ← Resources
+          </Link>
+        </div>
+
+        <div className="border-l-2 border-copper-500 pl-6 mb-12">
+          <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-2">{study.industry}</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{study.title}</h1>
+          <p className="text-slate-400 max-w-3xl leading-relaxed">{study.description}</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+          {study.metrics.map((metric, i) => (
+            <div key={i} className="border border-white/5 bg-slate-900/40 rounded-lg p-5 text-center">
+              <div className="text-2xl md:text-3xl font-bold text-copper-500 mb-1">{metric.value}</div>
+              <div className="text-xs font-mono uppercase tracking-widest text-slate-500">{metric.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6">
+            <h3 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Enforcement Layers</h3>
+            <div className="space-y-3">
+              {study.layerNames.map((name, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-xs font-mono text-copper-500/80 bg-slate-800/60 px-2 py-0.5 rounded border border-white/5">
+                    L{study.enforcementLayers[i]}
+                  </span>
+                  <span className="text-slate-300 text-sm">{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6">
+            <h3 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Enforcement Points</h3>
+            <div className="space-y-2">
+              {study.enforcementPoints.map((point, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-copper-500/60 mt-0.5 shrink-0" />
+                  <span className="text-slate-400 text-sm">{point}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 mb-12">
+          <h3 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Commercial Mapping</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {study.commercialMapping.map((item, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <Shield className="w-4 h-4 text-copper-500/60 mt-0.5 shrink-0" />
+                <span className="text-slate-400 text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <a
+            href={study.filePath}
+            download={study.fileName}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-white rounded font-mono text-sm hover:bg-copper-600 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Download Full Case Study
+          </a>
+          <Link
+            to="/connect"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-copper-500/30 text-copper-500 rounded font-mono text-sm hover:bg-copper-500/10 transition-colors"
+          >
+            Schedule Your Readiness Scan
+          </Link>
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+const ThoughtsPage = () => {
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const categories = ['all', ...Array.from(new Set(THOUGHTS.map((t: Thought) => t.category)))];
+
+  const filtered = activeCategory === 'all'
+    ? THOUGHTS
+    : THOUGHTS.filter((t: Thought) => t.category === activeCategory);
+
+  return (
+    <div className="pt-20">
+      <Section>
+        <SectionHeader title="Thought Direction" subtitle="Doctrine + Architecture" />
+
+        <p className="text-slate-400 text-lg max-w-3xl mb-12">
+          Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes — only enforcement mechanics and architectural proof.
+        </p>
+
+        {/* Category filter */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded text-sm font-mono uppercase tracking-widest transition-all ${
+                activeCategory === cat
+                  ? 'bg-copper-500/20 text-copper-400 border border-copper-500/40'
+                  : 'bg-slate-900/40 text-slate-500 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
+              }`}
+            >
+              {cat === 'all' ? 'All' : cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Thoughts grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((thought: Thought, idx: number) => (
+            <div
+              key={idx}
+              className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-500/70">
+                  {thought.category}
+                </span>
+                <span className="text-xs font-mono text-slate-600">{thought.date}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
+                {thought.title}
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Doctrine anchor */}
+        <div className="mt-16 border-l-2 border-copper-500/30 pl-6 max-w-2xl">
+          <p className="text-slate-500 text-sm font-mono mb-2">Governing Principle</p>
+          <p className="text-slate-300 italic">
+            "If governance is not deterministically enforced before state mutation, it is not governance."
+          </p>
+        </div>
+      </Section>
+    </div>
+  );
+};
 
 const ConnectPage = () => (
   <div className="pt-20">
@@ -740,6 +999,8 @@ const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/ecosystem" element={<EcosystemPage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/case-studies/:slug" element={<CaseStudyPage />} />
             <Route path="/thoughts" element={<ThoughtsPage />} />
             <Route path="/connect" element={<ConnectPage />} />
             <Route path="/legal" element={<LegalPage />} />
