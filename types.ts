@@ -43,6 +43,11 @@ export interface Resource {
   fileName: string;
   filePath: string;
   enforcementLayers: number[];
+  enforcementLayer: number;
+  riskDomain: string;
+  gated: boolean;
+  enforcementPoint: string;
+  artifactType: 'evidence-pack' | 'blueprint' | 'template' | 'one-sheet' | 'diagram' | 'deck';
   fileType: 'pdf' | 'docx' | 'pptx';
   fileSize: string;
 }

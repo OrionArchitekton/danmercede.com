@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers } from 'lucide-react';
+import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS } from './constants';
 
@@ -576,7 +576,7 @@ const EcosystemPage = () => {
   );
 };
 
-// --- Resources Page ---
+// --- Proof Page (Enforcement Artifacts) ---
 const LAYER_NAMES: Record<number, string> = {
   1: 'Authority Gate',
   2: 'Immutable Receipts',
@@ -584,100 +584,185 @@ const LAYER_NAMES: Record<number, string> = {
   4: 'Gated Substrate',
 };
 
-const FILE_TYPE_LABELS: Record<string, string> = {
-  pdf: 'PDF',
-  docx: 'Word',
-  pptx: 'PowerPoint',
+const LAYER_INVARIANTS: Record<number, string> = {
+  1: 'Execution must depend on authority.',
+  2: 'Mutation must depend on attestation.',
+  3: 'Behavior must be constrained across time.',
+  4: 'Capability must be removed, not restricted.',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  'lead-magnet': 'Lead Magnet',
+const ARTIFACT_LABELS: Record<string, string> = {
+  'evidence-pack': 'Evidence Pack',
+  'blueprint': 'Blueprint',
   'template': 'Template',
-  'sales-collateral': 'Sales Collateral',
+  'one-sheet': 'One-Sheet',
   'diagram': 'Diagram',
-  'deck': 'Deck',
+  'deck': 'Executive Deck',
+};
+
+const ReadinessScanCTA = () => (
+  <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mt-10">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <p className="text-white font-semibold mb-1">Runtime governance starts with visibility.</p>
+        <p className="text-sm text-slate-400">Control-plane gap map · Failure-mode heatmap · Enforcement checklist · 30/60/90 roadmap</p>
+      </div>
+      <a
+        href={READINESS_SCAN.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-600 text-white text-sm font-mono rounded transition-colors whitespace-nowrap"
+      >
+        Schedule a Readiness Scan
+        <ArrowRight className="w-4 h-4" />
+      </a>
+    </div>
+  </div>
+);
+
+const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
+  const isGated = resource.gated;
+  return (
+    <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group">
+      <div className="flex items-start justify-between mb-3">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
+          <Layers className="w-3 h-3" />
+          L{resource.enforcementLayer} — {LAYER_NAMES[resource.enforcementLayer]}
+        </span>
+        <span className="text-xs font-mono text-slate-500">
+          {ARTIFACT_LABELS[resource.artifactType] || resource.artifactType}
+        </span>
+      </div>
+
+      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">
+        {resource.title}
+      </h3>
+
+      <p className="text-sm text-slate-400 mb-3 leading-relaxed">
+        {resource.description}
+      </p>
+
+      <div className="flex items-start gap-2 mb-4 p-3 rounded bg-slate-800/40 border border-white/5">
+        <AlertTriangle className="w-4 h-4 text-copper-500/70 mt-0.5 shrink-0" />
+        <div>
+          <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-0.5">Risk Domain</span>
+          <p className="text-xs text-slate-400 leading-relaxed">{resource.riskDomain}</p>
+        </div>
+      </div>
+
+      <div className="mb-5">
+        <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-1">Enforcement Point</span>
+        <p className="text-xs text-slate-300 leading-relaxed">{resource.enforcementPoint}</p>
+      </div>
+
+      {isGated ? (
+        <span className="inline-flex items-center gap-2 text-sm text-slate-500 font-mono cursor-default" title="Email required for access">
+          <Lock className="w-4 h-4" />
+          Request Enforcement Artifact
+        </span>
+      ) : (
+        <a
+          href={resource.filePath}
+          download={resource.fileName}
+          className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Download Proof Asset
+        </a>
+      )}
+    </div>
+  );
 };
 
 const ResourcesPage = () => {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const categories = ['all', ...Array.from(new Set(RESOURCES.map(r => r.category)))];
-
-  const filtered = activeCategory === 'all'
-    ? RESOURCES
-    : RESOURCES.filter(r => r.category === activeCategory);
+  const layers = [1, 2, 3, 4] as const;
 
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader title="Resources" subtitle="Enforcement Artifacts" />
-        <p className="text-slate-400 max-w-3xl mb-12">
-          Downloadable artifacts mapped to the four-layer enforcement stack. Each resource references runtime enforcement points, produces audit-ready evidence, and maps to enterprise risk reduction.
-        </p>
+        <SectionHeader title="Proof" subtitle="Enforcement Artifacts" />
 
-        <div className="flex flex-wrap gap-2 mb-12">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded font-mono text-xs uppercase tracking-widest transition-all ${
-                activeCategory === cat
-                  ? 'bg-copper-500 text-white'
-                  : 'border border-white/10 text-slate-500 hover:text-slate-300 hover:border-copper-500/30'
-              }`}
-            >
-              {cat === 'all' ? 'All' : CATEGORY_LABELS[cat] || cat}
-            </button>
-          ))}
+        {/* 4-Layer Mini Diagram */}
+        <div className="mb-14">
+          <p className="text-sm text-slate-400 mb-6 max-w-3xl">
+            Every artifact on this page maps to a deterministic enforcement point in the four-layer runtime governance stack.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {layers.map(layer => (
+              <div key={layer} className="border border-white/5 bg-slate-900/30 rounded-lg p-4 text-center">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">L{layer}</span>
+                <span className="text-sm font-semibold text-white block mb-1">{LAYER_NAMES[layer]}</span>
+                <span className="text-xs text-slate-500 leading-tight block">{LAYER_INVARIANTS[layer]}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((resource, i) => (
-            <div
-              key={i}
-              className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-copper-500" />
-                  <span className="text-xs font-mono uppercase tracking-widest text-slate-500">
-                    {CATEGORY_LABELS[resource.category] || resource.category}
-                  </span>
-                </div>
-                <span className="text-xs font-mono text-slate-600">
-                  {FILE_TYPE_LABELS[resource.fileType] || resource.fileType} · {resource.fileSize}
-                </span>
+        {/* Vertical Enforcement-Layer Sections */}
+        {layers.map(layer => {
+          const layerResources = RESOURCES.filter(r => r.enforcementLayer === layer);
+          if (layerResources.length === 0) return null;
+          return (
+            <div key={layer} className="mb-16">
+              <div className="border-l-2 border-copper-500 pl-6 mb-8">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer {layer}</span>
+                <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[layer]}</h2>
+                <p className="text-sm text-slate-400 italic">{LAYER_INVARIANTS[layer]}</p>
               </div>
-
-              <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">
-                {resource.title}
-              </h3>
-              <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-                {resource.description}
-              </p>
-
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {resource.enforcementLayers.map(layer => (
-                  <span
-                    key={layer}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono bg-slate-800/60 text-slate-400 border border-white/5"
-                  >
-                    <Layers className="w-3 h-3 text-copper-500/60" />
-                    L{layer}
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {layerResources.map((resource, i) => (
+                  <ProofArtifactCard key={i} resource={resource} />
                 ))}
               </div>
-
-              <a
-                href={resource.filePath}
-                download={resource.fileName}
-                className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Download {FILE_TYPE_LABELS[resource.fileType] || resource.fileType}
-              </a>
+              <ReadinessScanCTA />
             </div>
-          ))}
-        </div>
+          );
+        })}
+
+        {/* Enforcement in Production — Case Studies */}
+        {CASE_STUDIES.length > 0 && (
+          <div className="mb-16">
+            <div className="border-l-2 border-copper-500 pl-6 mb-8">
+              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement in Production</span>
+              <h2 className="text-2xl font-bold text-white mb-1">Case Studies</h2>
+              <p className="text-sm text-slate-400">Before/after enforcement metrics from governed deployments.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {CASE_STUDIES.map((study, i) => (
+                <Link
+                  key={i}
+                  to={`/case-studies/${study.slug}`}
+                  className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group block"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    {study.enforcementLayers.map(l => (
+                      <span key={l} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono bg-copper-500/10 text-copper-400 border border-copper-500/20">
+                        L{l}
+                      </span>
+                    ))}
+                    <span className="text-xs font-mono text-slate-500 ml-auto">{study.industry}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
+                    {study.title}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    {study.metrics.map((m, mi) => (
+                      <div key={mi} className="text-center p-2 rounded bg-slate-800/40 border border-white/5">
+                        <span className="text-lg font-bold text-copper-400 block">{m.value}</span>
+                        <span className="text-xs text-slate-500">{m.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-400 leading-relaxed mb-4">{study.description}</p>
+                  <span className="inline-flex items-center gap-1 text-sm text-copper-500 group-hover:text-copper-400 font-mono transition-colors">
+                    View Enforcement Detail <ArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <ReadinessScanCTA />
+          </div>
+        )}
       </Section>
     </div>
   );
@@ -693,8 +778,8 @@ const CaseStudyPage = () => {
       <div className="pt-20 min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-4">Case Study Not Found</h2>
-          <Link to="/resources" className="text-copper-500 hover:text-copper-400 font-mono text-sm">
-            ← Back to Resources
+          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-sm">
+            ← Back to Proof
           </Link>
         </div>
       </div>
@@ -705,8 +790,8 @@ const CaseStudyPage = () => {
     <div className="pt-20">
       <Section>
         <div className="mb-6">
-          <Link to="/resources" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
-            ← Resources
+          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            ← Proof
           </Link>
         </div>
 
@@ -999,7 +1084,7 @@ const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/ecosystem" element={<EcosystemPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/proof" element={<ResourcesPage />} />
             <Route path="/case-studies/:slug" element={<CaseStudyPage />} />
             <Route path="/thoughts" element={<ThoughtsPage />} />
             <Route path="/connect" element={<ConnectPage />} />
