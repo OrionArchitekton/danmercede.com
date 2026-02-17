@@ -682,11 +682,28 @@ const ResourcesPage = () => {
       <Section>
         <SectionHeader title="Proof" subtitle="Enforcement Artifacts" />
 
+        {/* Signature Diagram — Runtime Execution Control Plane Architecture */}
+        <div className="mb-16">
+          <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-6">
+            <img
+              src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
+              alt="Runtime Execution Control Plane Architecture — four-layer deterministic enforcement cascade: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
+              className="w-full h-auto"
+              loading="eager"
+            />
+          </div>
+          <div className="max-w-4xl">
+            <p className="text-base text-slate-300 leading-relaxed">
+              Governance is enforced at four deterministic boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
+            </p>
+            <p className="text-sm text-slate-500 mt-2">
+              Every artifact below maps to one of these enforcement points.
+            </p>
+          </div>
+        </div>
+
         {/* 4-Layer Mini Diagram */}
         <div className="mb-14">
-          <p className="text-sm text-slate-400 mb-6 max-w-3xl">
-            Every artifact on this page maps to a deterministic enforcement point in the four-layer runtime governance stack.
-          </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {layers.map(layer => (
               <div key={layer} className="border border-white/5 bg-slate-900/30 rounded-lg p-4 text-center">
@@ -698,8 +715,52 @@ const ResourcesPage = () => {
           </div>
         </div>
 
-        {/* Vertical Enforcement-Layer Sections */}
-        {layers.map(layer => {
+        {/* Layer 1 — Authority Gate */}
+        {(() => {
+          const l1Resources = RESOURCES.filter(r => r.enforcementLayer === 1);
+          return l1Resources.length > 0 ? (
+            <div className="mb-16">
+              <div className="border-l-2 border-copper-500 pl-6 mb-8">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer 1</span>
+                <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[1]}</h2>
+                <p className="text-sm text-slate-400 italic">{LAYER_INVARIANTS[1]}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {l1Resources.map((resource, i) => (
+                  <ProofArtifactCard key={i} resource={resource} />
+                ))}
+              </div>
+              <ReadinessScanCTA />
+            </div>
+          ) : null;
+        })()}
+
+        {/* Diagram — Gated Execution Pipeline (between L1 and L2) */}
+        <div className="mb-16">
+          <div className="border-l-2 border-copper-500 pl-6 mb-8">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement Architecture</span>
+            <h2 className="text-2xl font-bold text-white mb-1">Deterministic Gate Cascade</h2>
+            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE — enforcement evaluated at every boundary.</p>
+          </div>
+          <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
+            <img
+              src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
+              alt="Gated Execution Pipeline — deterministic gate cascade: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
+              className="w-full h-auto"
+              loading="lazy"
+            />
+          </div>
+          <a
+            href="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
+            download
+            className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors"
+          >
+            <ArrowRight className="w-4 h-4" /> Download Pipeline Diagram (SVG)
+          </a>
+        </div>
+
+        {/* Layers 2-4 — Vertical Enforcement-Layer Sections */}
+        {([2, 3, 4] as const).map(layer => {
           const layerResources = RESOURCES.filter(r => r.enforcementLayer === layer);
           if (layerResources.length === 0) return null;
           return (
@@ -718,6 +779,30 @@ const ResourcesPage = () => {
             </div>
           );
         })}
+
+        {/* Diagram — Governance Economics Scorecard (above Case Studies) */}
+        <div className="mb-16">
+          <div className="border-l-2 border-copper-500 pl-6 mb-8">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics</span>
+            <h2 className="text-2xl font-bold text-white mb-1">Governance Converts Risk Into Measurable Economics</h2>
+            <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
+          </div>
+          <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
+            <img
+              src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
+              alt="Governance Economics Scorecard — ROI framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
+              className="w-full h-auto"
+              loading="lazy"
+            />
+          </div>
+          <a
+            href="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
+            download
+            className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors"
+          >
+            <ArrowRight className="w-4 h-4" /> Download Economics Scorecard (SVG)
+          </a>
+        </div>
 
         {/* Enforcement in Production — Case Studies */}
         {CASE_STUDIES.length > 0 && (

@@ -7,6 +7,37 @@
     ],
     "headers": [
         {
+            "source": "/assets/runtime-governance/diagrams/(.*)\\.svg",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                },
+                {
+                    "key": "Content-Type",
+                    "value": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "source": "/assets/runtime-governance/diagrams/(.*)\\.webp",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                }
+            ]
+        },
+        {
+            "source": "/assets/runtime-governance/diagrams/(.*)\\.png",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                }
+            ]
+        },
+        {
             "source": "/sitemap.xml",
             "headers": [
                 {
