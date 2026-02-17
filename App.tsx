@@ -605,7 +605,7 @@ const ReadinessScanCTA = () => (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
         <p className="text-white font-semibold mb-1">Runtime governance starts with visibility.</p>
-        <p className="text-sm text-slate-400">Control-plane gap map · Failure-mode heatmap · Enforcement checklist · 30/60/90 roadmap</p>
+        <p className="text-sm text-slate-400">Control-plane gap map. Failure-mode heatmap. 30/60/90 enforcement roadmap.</p>
       </div>
       <a
         href={READINESS_SCAN.href}
@@ -683,7 +683,7 @@ const ResourcesPage = () => {
         <SectionHeader title="Proof" subtitle="Enforcement Artifacts" />
 
         {/* Signature Diagram — Runtime Execution Control Plane Architecture */}
-        <div className="mb-16">
+        <div id="control-plane" className="mb-16">
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-6">
             <img
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
@@ -698,6 +698,13 @@ const ResourcesPage = () => {
             </p>
             <p className="text-sm text-slate-500 mt-2">
               Every artifact below maps to one of these enforcement points.
+            </p>
+          </div>
+          <div className="mt-8 border-l-2 border-copper-500/40 pl-6 max-w-3xl">
+            <p className="text-lg text-white font-semibold leading-relaxed tracking-tight">
+              Evaluated before mutation.<br />
+              Ambiguity defaults to halt.<br />
+              No receipt, no commit.
             </p>
           </div>
         </div>
@@ -719,11 +726,11 @@ const ResourcesPage = () => {
         {(() => {
           const l1Resources = RESOURCES.filter(r => r.enforcementLayer === 1);
           return l1Resources.length > 0 ? (
-            <div className="mb-16">
+            <div id="authority" className="mb-16">
               <div className="border-l-2 border-copper-500 pl-6 mb-8">
                 <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer 1</span>
                 <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[1]}</h2>
-                <p className="text-sm text-slate-400 italic">{LAYER_INVARIANTS[1]}</p>
+                <p className="text-sm text-white font-bold">{LAYER_INVARIANTS[1]}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {l1Resources.map((resource, i) => (
@@ -736,12 +743,13 @@ const ResourcesPage = () => {
         })()}
 
         {/* Diagram — Gated Execution Pipeline (between L1 and L2) */}
-        <div className="mb-16">
+        <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement Architecture</span>
             <h2 className="text-2xl font-bold text-white mb-1">Deterministic Gate Cascade</h2>
             <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE — enforcement evaluated at every boundary.</p>
           </div>
+          <p className="text-base text-slate-300 mb-6">Every state mutation traverses three deterministic gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
@@ -750,6 +758,9 @@ const ResourcesPage = () => {
               loading="lazy"
             />
           </div>
+          <p className="text-sm font-mono text-slate-400 mb-4 tracking-wide">
+            Gate 1: Authority &rarr; Gate 2: Attestation &rarr; Gate 3: Behavioral Constraint.
+          </p>
           <a
             href="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
             download
@@ -764,11 +775,11 @@ const ResourcesPage = () => {
           const layerResources = RESOURCES.filter(r => r.enforcementLayer === layer);
           if (layerResources.length === 0) return null;
           return (
-            <div key={layer} className="mb-16">
+            <div key={layer} id={layer === 2 ? 'receipts' : layer === 3 ? 'drift' : 'substrate'} className="mb-16">
               <div className="border-l-2 border-copper-500 pl-6 mb-8">
                 <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer {layer}</span>
                 <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[layer]}</h2>
-                <p className="text-sm text-slate-400 italic">{LAYER_INVARIANTS[layer]}</p>
+                <p className="text-sm text-white font-bold">{LAYER_INVARIANTS[layer]}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {layerResources.map((resource, i) => (
@@ -781,12 +792,13 @@ const ResourcesPage = () => {
         })}
 
         {/* Diagram — Governance Economics Scorecard (above Case Studies) */}
-        <div className="mb-16">
+        <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics</span>
             <h2 className="text-2xl font-bold text-white mb-1">Governance Converts Risk Into Measurable Economics</h2>
             <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
+          <p className="text-base text-slate-300 mb-6">Governance converts operational risk into predictable unit economics.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
@@ -806,10 +818,10 @@ const ResourcesPage = () => {
 
         {/* Enforcement in Production — Case Studies */}
         {CASE_STUDIES.length > 0 && (
-          <div className="mb-16">
+          <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
               <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement in Production</span>
-              <h2 className="text-2xl font-bold text-white mb-1">Case Studies</h2>
+              <h2 className="text-2xl font-bold text-white mb-1">Enforcement in Production</h2>
               <p className="text-sm text-slate-400">Before/after enforcement metrics from governed deployments.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -832,9 +844,9 @@ const ResourcesPage = () => {
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     {study.metrics.map((m, mi) => (
-                      <div key={mi} className="text-center p-2 rounded bg-slate-800/40 border border-white/5">
-                        <span className="text-lg font-bold text-copper-400 block">{m.value}</span>
-                        <span className="text-xs text-slate-500">{m.label}</span>
+                      <div key={mi} className="text-center p-3 rounded bg-slate-800/60 border border-copper-500/15">
+                        <span className="text-xl font-bold text-copper-400 block tabular-nums">{m.value}</span>
+                        <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">{m.label}</span>
                       </div>
                     ))}
                   </div>
