@@ -756,18 +756,77 @@ const DiagramDownloads = ({ basePath, name }: { basePath: string; name: string }
   </div>
 );
 
-const usePageMeta = (title: string, description?: string) => {
+const SITE_ORIGIN = "https://www.danmercede.com";
+const DEFAULT_OG_IMAGE_PATH = "/og/danmercede-default-1200x630.webp";
+const DEFAULT_META_DESCRIPTION = "Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms.";
+
+const ensureSingleHeadTag = <T extends Element>(selector: string, create: () => T): T => {
+  const existing = Array.from(document.head.querySelectorAll<T>(selector));
+  const primary = existing[0] ?? create();
+
+  for (let i = 1; i < existing.length; i += 1) {
+    existing[i].remove();
+  }
+
+  if (!primary.isConnected) {
+    document.head.appendChild(primary);
+  }
+
+  return primary;
+};
+
+const upsertMetaByName = (name: string, content: string) => {
+  const tag = ensureSingleHeadTag(`meta[name="${name}"]`, () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", name);
+    return meta;
+  });
+  tag.setAttribute("content", content);
+};
+
+const upsertMetaByProperty = (property: string, content: string) => {
+  const tag = ensureSingleHeadTag(`meta[property="${property}"]`, () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("property", property);
+    return meta;
+  });
+  tag.setAttribute("content", content);
+};
+
+const upsertCanonical = (href: string) => {
+  const tag = ensureSingleHeadTag(`link[rel="canonical"]`, () => {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "canonical");
+    return link;
+  });
+  tag.setAttribute("href", href);
+};
+
+const usePageMeta = (title: string, description?: string, ogImagePath: string = DEFAULT_OG_IMAGE_PATH) => {
+  const { pathname } = useLocation();
+
   useEffect(() => {
-    const prev = document.title;
+    const canonicalPath = pathname || "/";
+    const canonicalUrl = new URL(canonicalPath, SITE_ORIGIN).toString();
+    const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
+    const effectiveDescription = description ?? DEFAULT_META_DESCRIPTION;
+
     document.title = title;
-    const metaDesc = document.querySelector('meta[name="description"]');
-    const prevDesc = metaDesc?.getAttribute('content') || '';
-    if (description && metaDesc) metaDesc.setAttribute('content', description);
-    return () => {
-      document.title = prev;
-      if (metaDesc) metaDesc.setAttribute('content', prevDesc);
-    };
-  }, [title, description]);
+    upsertMetaByName("description", effectiveDescription);
+    upsertCanonical(canonicalUrl);
+
+    upsertMetaByProperty("og:type", "website");
+    upsertMetaByProperty("og:site_name", "Dan Mercede");
+    upsertMetaByProperty("og:title", title);
+    upsertMetaByProperty("og:description", effectiveDescription);
+    upsertMetaByProperty("og:url", canonicalUrl);
+    upsertMetaByProperty("og:image", ogImageUrl);
+
+    upsertMetaByName("twitter:card", "summary_large_image");
+    upsertMetaByName("twitter:title", title);
+    upsertMetaByName("twitter:description", effectiveDescription);
+    upsertMetaByName("twitter:image", ogImageUrl);
+  }, [pathname, title, description, ogImagePath]);
 };
 
 const ResourcesPage = () => {
