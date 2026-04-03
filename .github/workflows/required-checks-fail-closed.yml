@@ -1,0 +1,125 @@
+name: required-checks-fail-closed
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  statuses: read
+  checks: read
+
+env:
+  REQUIRED_CHECKS: "build,gitleaks"
+  TIMEOUT_MINUTES: "15"
+  POLL_INTERVAL_SECONDS: "30"
+
+jobs:
+  required-checks-fail-closed:
+    name: required-checks-fail-closed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for required checks and compute verdict
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredChecks = process.env.REQUIRED_CHECKS
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            if (requiredChecks.length === 0) {
+              core.setFailed('REQUIRED_CHECKS is empty.');
+              return;
+            }
+
+            const timeoutMs = Number.parseInt(process.env.TIMEOUT_MINUTES, 10) * 60 * 1000;
+            const pollMs = Number.parseInt(process.env.POLL_INTERVAL_SECONDS, 10) * 1000;
+            const deadline = Date.now() + timeoutMs;
+            const sha = context.payload.pull_request.head.sha;
+
+            async function listAllCheckRuns() {
+              const checkRuns = [];
+              let page = 1;
+              while (true) {
+                const { data } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: sha,
+                  per_page: 100,
+                  page,
+                });
+                checkRuns.push(...data.check_runs);
+                if (data.check_runs.length < 100) break;
+                page += 1;
+              }
+              return checkRuns;
+            }
+
+            async function listAllStatuses() {
+              const statuses = [];
+              let page = 1;
+              while (true) {
+                const { data } = await github.rest.repos.listCommitStatusesForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: sha,
+                  per_page: 100,
+                  page,
+                });
+                statuses.push(...data);
+                if (data.length < 100) break;
+                page += 1;
+              }
+              return statuses;
+            }
+
+            function keepLatest(store, name, payload) {
+              const current = store.get(name);
+              if (!current || payload.at > current.at) {
+                store.set(name, payload);
+              }
+            }
+
+            while (Date.now() < deadline) {
+              const resolved = new Map();
+              const checkRuns = await listAllCheckRuns();
+              const statuses = await listAllStatuses();
+
+              for (const run of checkRuns) {
+                if (!run || run.name === 'required-checks-fail-closed') continue;
+                const updatedAt = Date.parse(run.completed_at || run.started_at || run.created_at || 0);
+                if (run.status === 'completed') {
+                  keepLatest(resolved, run.name, {
+                    at: Number.isFinite(updatedAt) ? updatedAt : 0,
+                    result: run.conclusion === 'success' ? 'pass' : 'fail',
+                  });
+                }
+              }
+
+              for (const status of statuses) {
+                if (!status) continue;
+                if (!['success', 'failure', 'error'].includes(status.state)) continue;
+                const updatedAt = Date.parse(status.updated_at || status.created_at || 0);
+                keepLatest(resolved, status.context, {
+                  at: Number.isFinite(updatedAt) ? updatedAt : 0,
+                  result: status.state === 'success' ? 'pass' : 'fail',
+                });
+              }
+
+              const failed = requiredChecks.filter((check) => resolved.get(check)?.result === 'fail');
+              if (failed.length > 0) {
+                core.setFailed(`FAIL: required checks failed: ${failed.join(', ')}`);
+                return;
+              }
+
+              const pending = requiredChecks.filter((check) => !resolved.has(check));
+              if (pending.length === 0) {
+                core.info('PASS: all required checks succeeded.');
+                return;
+              }
+
+              core.info(`Waiting for: ${pending.join(', ')}`);
+              await new Promise((resolve) => setTimeout(resolve, pollMs));
+            }
+
+            core.setFailed(`FAIL: timeout waiting for required checks: ${requiredChecks.join(', ')}`);

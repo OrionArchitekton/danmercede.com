@@ -1,0 +1,54 @@
+name: gitleaks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine scan range
+        id: range
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+            echo "log_range=${base}..${head}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            before="${{ github.event.before }}"
+            if [[ "$before" =~ ^0+$ ]]; then
+              echo "log_range=" >> "$GITHUB_OUTPUT"
+            else
+              echo "log_range=${before}..${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "log_range=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        with:
+          args: >-
+            detect
+            --source .
+            --verbose
+            ${{ steps.range.outputs.log_range != '' &&
+                format('--log-opts="{0}"', steps.range.outputs.log_range) ||
+                '' }}
