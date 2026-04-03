@@ -2,6 +2,8 @@ name: required-checks-fail-closed
 
 on:
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -32,10 +34,28 @@ jobs:
               return;
             }
 
-            const timeoutMs = Number.parseInt(process.env.TIMEOUT_MINUTES, 10) * 60 * 1000;
-            const pollMs = Number.parseInt(process.env.POLL_INTERVAL_SECONDS, 10) * 1000;
+            const timeoutMinutes = Number.parseInt(process.env.TIMEOUT_MINUTES, 10);
+            if (!Number.isFinite(timeoutMinutes) || timeoutMinutes <= 0) {
+              core.setFailed(`TIMEOUT_MINUTES must be a finite positive number, got: ${process.env.TIMEOUT_MINUTES}`);
+              return;
+            }
+
+            const pollIntervalSeconds = Number.parseInt(process.env.POLL_INTERVAL_SECONDS, 10);
+            if (!Number.isFinite(pollIntervalSeconds) || pollIntervalSeconds <= 0) {
+              core.setFailed(`POLL_INTERVAL_SECONDS must be a finite positive number, got: ${process.env.POLL_INTERVAL_SECONDS}`);
+              return;
+            }
+
+            const timeoutMs = timeoutMinutes * 60 * 1000;
+            const pollMs = pollIntervalSeconds * 1000;
             const deadline = Date.now() + timeoutMs;
-            const sha = context.payload.pull_request.head.sha;
+            const pullRequest = context.payload.pull_request || {};
+            const sha = context.sha || pullRequest.merge_commit_sha || pullRequest.head?.sha;
+
+            if (!sha) {
+              core.setFailed('Unable to determine the commit SHA to query for required checks.');
+              return;
+            }
 
             async function listAllCheckRuns() {
               const checkRuns = [];

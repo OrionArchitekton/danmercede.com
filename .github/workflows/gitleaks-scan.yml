@@ -50,5 +50,5 @@ jobs:
             --source .
             --verbose
             ${{ steps.range.outputs.log_range != '' &&
-                format('--log-opts="{0}"', steps.range.outputs.log_range) ||
+                format('--log-opts={0}', steps.range.outputs.log_range) ||
                 '' }}
