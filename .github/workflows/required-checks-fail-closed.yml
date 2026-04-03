@@ -21,125 +21,120 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for required checks and compute verdict
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const requiredChecks = process.env.REQUIRED_CHECKS
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean);
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA_CANDIDATES: ${{ github.sha }},${{ github.event.pull_request.merge_commit_sha }},${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
 
-            if (requiredChecks.length === 0) {
-              core.setFailed('REQUIRED_CHECKS is empty.');
-              return;
-            }
+          def fail(message: str) -> None:
+              print(message)
+              raise SystemExit(1)
 
-            const timeoutMinutes = Number.parseInt(process.env.TIMEOUT_MINUTES, 10);
-            if (!Number.isFinite(timeoutMinutes) || timeoutMinutes <= 0) {
-              core.setFailed(`TIMEOUT_MINUTES must be a finite positive number, got: ${process.env.TIMEOUT_MINUTES}`);
-              return;
-            }
+          required_checks = [
+              value.strip()
+              for value in os.environ.get("REQUIRED_CHECKS", "").split(",")
+              if value.strip()
+          ]
+          if not required_checks:
+              fail("REQUIRED_CHECKS is empty.")
 
-            const pollIntervalSeconds = Number.parseInt(process.env.POLL_INTERVAL_SECONDS, 10);
-            if (!Number.isFinite(pollIntervalSeconds) || pollIntervalSeconds <= 0) {
-              core.setFailed(`POLL_INTERVAL_SECONDS must be a finite positive number, got: ${process.env.POLL_INTERVAL_SECONDS}`);
-              return;
-            }
+          try:
+              timeout_minutes = int(os.environ["TIMEOUT_MINUTES"])
+              poll_interval_seconds = int(os.environ["POLL_INTERVAL_SECONDS"])
+          except (KeyError, ValueError):
+              fail(
+                  "TIMEOUT_MINUTES and POLL_INTERVAL_SECONDS must be finite positive integers."
+              )
 
-            const timeoutMs = timeoutMinutes * 60 * 1000;
-            const pollMs = pollIntervalSeconds * 1000;
-            const deadline = Date.now() + timeoutMs;
-            const pullRequest = context.payload.pull_request || {};
-            const sha = context.sha || pullRequest.merge_commit_sha || pullRequest.head?.sha;
+          if timeout_minutes <= 0:
+              fail(
+                  f"TIMEOUT_MINUTES must be a finite positive number, got: {os.environ.get('TIMEOUT_MINUTES')}"
+              )
+          if poll_interval_seconds <= 0:
+              fail(
+                  f"POLL_INTERVAL_SECONDS must be a finite positive number, got: {os.environ.get('POLL_INTERVAL_SECONDS')}"
+              )
 
-            if (!sha) {
-              core.setFailed('Unable to determine the commit SHA to query for required checks.');
-              return;
-            }
+          repo = os.environ["REPO"]
+          sha_candidates = []
+          for sha in os.environ.get("SHA_CANDIDATES", "").split(","):
+              sha = sha.strip()
+              if sha and sha not in sha_candidates:
+                  sha_candidates.append(sha)
 
-            async function listAllCheckRuns() {
-              const checkRuns = [];
-              let page = 1;
-              while (true) {
-                const { data } = await github.rest.checks.listForRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: sha,
-                  per_page: 100,
-                  page,
-                });
-                checkRuns.push(...data.check_runs);
-                if (data.check_runs.length < 100) break;
-                page += 1;
-              }
-              return checkRuns;
-            }
+          if not sha_candidates:
+              fail("Unable to determine the commit SHA to query for required checks.")
 
-            async function listAllStatuses() {
-              const statuses = [];
-              let page = 1;
-              while (true) {
-                const { data } = await github.rest.repos.listCommitStatusesForRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: sha,
-                  per_page: 100,
-                  page,
-                });
-                statuses.push(...data);
-                if (data.length < 100) break;
-                page += 1;
-              }
-              return statuses;
-            }
+          deadline = time.time() + (timeout_minutes * 60)
 
-            function keepLatest(store, name, payload) {
-              const current = store.get(name);
-              if (!current || payload.at > current.at) {
-                store.set(name, payload);
-              }
-            }
+          def gh_api(path: str) -> dict:
+              output = subprocess.check_output(["gh", "api", path], text=True)
+              return json.loads(output)
 
-            while (Date.now() < deadline) {
-              const resolved = new Map();
-              const checkRuns = await listAllCheckRuns();
-              const statuses = await listAllStatuses();
+          def keep_latest(store: dict, name: str, updated_at: str, result: str) -> None:
+              current = store.get(name)
+              if current is None or updated_at > current[0]:
+                  store[name] = (updated_at, result)
 
-              for (const run of checkRuns) {
-                if (!run || run.name === 'required-checks-fail-closed') continue;
-                const updatedAt = Date.parse(run.completed_at || run.started_at || run.created_at || 0);
-                if (run.status === 'completed') {
-                  keepLatest(resolved, run.name, {
-                    at: Number.isFinite(updatedAt) ? updatedAt : 0,
-                    result: run.conclusion === 'success' ? 'pass' : 'fail',
-                  });
-                }
-              }
+          while time.time() < deadline:
+              resolved = {}
 
-              for (const status of statuses) {
-                if (!status) continue;
-                if (!['success', 'failure', 'error'].includes(status.state)) continue;
-                const updatedAt = Date.parse(status.updated_at || status.created_at || 0);
-                keepLatest(resolved, status.context, {
-                  at: Number.isFinite(updatedAt) ? updatedAt : 0,
-                  result: status.state === 'success' ? 'pass' : 'fail',
-                });
-              }
+              for sha in sha_candidates:
+                  check_runs = gh_api(f"repos/{repo}/commits/{sha}/check-runs").get(
+                      "check_runs", []
+                  )
+                  statuses = gh_api(f"repos/{repo}/commits/{sha}/status").get(
+                      "statuses", []
+                  )
 
-              const failed = requiredChecks.filter((check) => resolved.get(check)?.result === 'fail');
-              if (failed.length > 0) {
-                core.setFailed(`FAIL: required checks failed: ${failed.join(', ')}`);
-                return;
-              }
+                  for run in check_runs:
+                      if not run or run.get("name") == "required-checks-fail-closed":
+                          continue
+                      if run.get("status") != "completed":
+                          continue
 
-              const pending = requiredChecks.filter((check) => !resolved.has(check));
-              if (pending.length === 0) {
-                core.info('PASS: all required checks succeeded.');
-                return;
-              }
+                      keep_latest(
+                          resolved,
+                          run.get("name"),
+                          run.get("completed_at")
+                          or run.get("started_at")
+                          or run.get("created_at")
+                          or "",
+                          "pass" if run.get("conclusion") == "success" else "fail",
+                      )
 
-              core.info(`Waiting for: ${pending.join(', ')}`);
-              await new Promise((resolve) => setTimeout(resolve, pollMs));
-            }
+                  for status in statuses:
+                      if not status:
+                          continue
+                      if status.get("state") not in {"success", "failure", "error"}:
+                          continue
 
-            core.setFailed(`FAIL: timeout waiting for required checks: ${requiredChecks.join(', ')}`);
+                      keep_latest(
+                          resolved,
+                          status.get("context"),
+                          status.get("updated_at") or status.get("created_at") or "",
+                          "pass" if status.get("state") == "success" else "fail",
+                      )
+
+              failed = [check for check in required_checks if resolved.get(check, ("", ""))[1] == "fail"]
+              if failed:
+                  fail(f"FAIL: required checks failed: {', '.join(failed)}")
+
+              pending = [check for check in required_checks if check not in resolved]
+              if not pending:
+                  print("PASS: all required checks succeeded.")
+                  raise SystemExit(0)
+
+              print(f"Waiting for: {', '.join(pending)}")
+              time.sleep(poll_interval_seconds)
+
+          fail(f"FAIL: timeout waiting for required checks: {', '.join(required_checks)}")
+          PY
