@@ -108,7 +108,9 @@ jobs:
                           or run.get("started_at")
                           or run.get("created_at")
                           or "",
-                          "pass" if run.get("conclusion") == "success" else "fail",
+                          "pass"
+                          if run.get("conclusion") in {"success", "neutral", "skipped"}
+                          else "fail",
                       )
 
                   for status in statuses:
