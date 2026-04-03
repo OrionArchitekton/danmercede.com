@@ -1,0 +1,142 @@
+name: required-checks-fail-closed
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  statuses: read
+  checks: read
+
+env:
+  REQUIRED_CHECKS: "build,gitleaks"
+  TIMEOUT_MINUTES: "15"
+  POLL_INTERVAL_SECONDS: "30"
+
+jobs:
+  required-checks-fail-closed:
+    name: required-checks-fail-closed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for required checks and compute verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA_CANDIDATES: ${{ github.sha }},${{ github.event.pull_request.merge_commit_sha }},${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
+
+          def fail(message: str) -> None:
+              print(message)
+              raise SystemExit(1)
+
+          required_checks = [
+              value.strip()
+              for value in os.environ.get("REQUIRED_CHECKS", "").split(",")
+              if value.strip()
+          ]
+          if not required_checks:
+              fail("REQUIRED_CHECKS is empty.")
+
+          try:
+              timeout_minutes = int(os.environ["TIMEOUT_MINUTES"])
+              poll_interval_seconds = int(os.environ["POLL_INTERVAL_SECONDS"])
+          except (KeyError, ValueError):
+              fail(
+                  "TIMEOUT_MINUTES and POLL_INTERVAL_SECONDS must be finite positive integers."
+              )
+
+          if timeout_minutes <= 0:
+              fail(
+                  f"TIMEOUT_MINUTES must be a finite positive number, got: {os.environ.get('TIMEOUT_MINUTES')}"
+              )
+          if poll_interval_seconds <= 0:
+              fail(
+                  f"POLL_INTERVAL_SECONDS must be a finite positive number, got: {os.environ.get('POLL_INTERVAL_SECONDS')}"
+              )
+
+          repo = os.environ["REPO"]
+          sha_candidates = []
+          for sha in os.environ.get("SHA_CANDIDATES", "").split(","):
+              sha = sha.strip()
+              if sha and sha not in sha_candidates:
+                  sha_candidates.append(sha)
+
+          if not sha_candidates:
+              fail("Unable to determine the commit SHA to query for required checks.")
+
+          deadline = time.time() + (timeout_minutes * 60)
+
+          def gh_api(path: str) -> dict:
+              output = subprocess.check_output(["gh", "api", path], text=True)
+              return json.loads(output)
+
+          def keep_latest(store: dict, name: str, updated_at: str, result: str) -> None:
+              current = store.get(name)
+              if current is None or updated_at > current[0]:
+                  store[name] = (updated_at, result)
+
+          while time.time() < deadline:
+              resolved = {}
+
+              for sha in sha_candidates:
+                  check_runs = gh_api(f"repos/{repo}/commits/{sha}/check-runs").get(
+                      "check_runs", []
+                  )
+                  statuses = gh_api(f"repos/{repo}/commits/{sha}/status").get(
+                      "statuses", []
+                  )
+
+                  for run in check_runs:
+                      if not run or run.get("name") == "required-checks-fail-closed":
+                          continue
+                      if run.get("status") != "completed":
+                          continue
+
+                      keep_latest(
+                          resolved,
+                          run.get("name"),
+                          run.get("completed_at")
+                          or run.get("started_at")
+                          or run.get("created_at")
+                          or "",
+                          "pass"
+                          if run.get("conclusion") in {"success", "neutral", "skipped"}
+                          else "fail",
+                      )
+
+                  for status in statuses:
+                      if not status:
+                          continue
+                      if status.get("state") not in {"success", "failure", "error"}:
+                          continue
+
+                      keep_latest(
+                          resolved,
+                          status.get("context"),
+                          status.get("updated_at") or status.get("created_at") or "",
+                          "pass" if status.get("state") == "success" else "fail",
+                      )
+
+              failed = [check for check in required_checks if resolved.get(check, ("", ""))[1] == "fail"]
+              if failed:
+                  fail(f"FAIL: required checks failed: {', '.join(failed)}")
+
+              pending = [check for check in required_checks if check not in resolved]
+              if not pending:
+                  print("PASS: all required checks succeeded.")
+                  raise SystemExit(0)
+
+              print(f"Waiting for: {', '.join(pending)}")
+              time.sleep(poll_interval_seconds)
+
+          fail(f"FAIL: timeout waiting for required checks: {', '.join(required_checks)}")
+          PY
