@@ -27,7 +27,7 @@ There is no backend and no live API. All content is defined statically in `const
 Prerequisites: Node 20 and npm.
 
 ```bash
-git clone https://github.com/<owner>/danmercede.com.git
+git clone https://github.com/danmercede/danmercede.com.git
 cd danmercede.com
 npm install
 npm run dev      # starts Vite on http://localhost:3000 (host 0.0.0.0)
