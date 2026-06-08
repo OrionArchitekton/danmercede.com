@@ -106,6 +106,7 @@ This is a marketing, portfolio, and lead-generation site. Contact runs through a
 │   └── assets/          # downloadable resources (PDF/DOCX/PPTX) and diagrams
 ├── vite.config.ts       # Vite config (build outDir, dev server, aliases)
 ├── vercel.json          # Vercel redirects, SPA rewrite, caching headers
+├── package.json         # Project dependencies and scripts
 └── .github/workflows/   # CI
 ```
 
