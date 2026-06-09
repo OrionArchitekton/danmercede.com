@@ -632,6 +632,61 @@ const ReadinessScanCTA = () => (
   </div>
 );
 
+const RunnableProofCallout = () => (
+  <div id="runnable-proof" className="mb-16">
+    <div className="border border-copper-500/30 bg-gradient-to-br from-copper-500/[0.07] to-slate-900/40 rounded-lg p-8">
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
+          <Layers className="w-3 h-3" />
+          L1 — Authority Gate
+        </span>
+        <span className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-emerald-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          Public · Runnable
+        </span>
+      </div>
+
+      <h3 className="text-xl md:text-2xl font-bold text-white mb-3">
+        failclosed — the Authority Gate, made runnable
+      </h3>
+      <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
+        failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
+      </p>
+      <p className="text-slate-500 text-sm font-mono mb-6">
+        Public. Runnable in two minutes. Receipt-backed.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <a
+          href="https://github.com/OrionArchitekton/failclosed"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded transition-colors"
+        >
+          View on GitHub
+          <ExternalLink className="w-4 h-4" />
+        </a>
+        <Link
+          to="/thoughts"
+          className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
+        >
+          Read the doctrine
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+        <a
+          href={READINESS_SCAN.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-copper-400 font-mono transition-colors"
+        >
+          Schedule a Readiness Scan
+          <ArrowRight className="w-4 h-4" />
+        </a>
+      </div>
+    </div>
+  </div>
+);
+
 const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
   const isGated = resource.gated;
   return (
@@ -695,6 +750,7 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
 const LAYER_JUMP_LINKS = [
   { id: 'control-plane', label: 'Control Plane' },
   { id: 'authority', label: 'Authority' },
+  { id: 'runnable-proof', label: 'Runnable' },
   { id: 'gate-cascade', label: 'Gate Cascade' },
   { id: 'receipts', label: 'Receipts' },
   { id: 'drift', label: 'Drift' },
@@ -905,6 +961,9 @@ const ResourcesPage = () => {
             </div>
           ) : null;
         })()}
+
+        {/* Runnable Proof — failclosed (Authority Gate, made runnable) */}
+        <RunnableProofCallout />
 
         {/* Diagram — Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
