@@ -12,9 +12,21 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    env:
+      TZ: America/Los_Angeles
     steps:
-      - name: Checkout
+      - name: Checkout danmercede.com
         uses: actions/checkout@v4
+
+      - name: Checkout dan-mercede-substrate (fail-open)
+        id: checkout-substrate
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: OrionArchitekton/dan-mercede-substrate
+          token: ${{ secrets.SUBSTRATE_READ_TOKEN }}
+          path: vendor/dan-mercede-substrate
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -25,5 +37,134 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        run: npm test
+
+      # Run compile separately (in STRICT mode) so we can gate the build on
+      # the committed constants.generated.ts matching what substrate would
+      # produce. Strict mode is required here to match the sync workflow's
+      # posture: if substrate has a corrupt matched canonical, fail-open
+      # compile would silently strip it AND `git diff --exit-code` would
+      # bless the stripped output if it was committed. Strict mode aborts
+      # before any write, surfacing the corruption in CI rather than masking
+      # it through a passing diff.
+      #
+      # If `npm run build` ran prebuild→compile inline, a stale/broken
+      # committed bundle could be silently rewritten in CI's working tree
+      # and the build would pass — while Vercel's fail-open build (which
+      # runs without substrate access) would deploy the committed broken
+      # bundle. Compile-then-diff catches that drift here.
+      - name: Compile from substrate in strict mode (if available)
+        if: steps.checkout-substrate.outcome == 'success'
+        env:
+          SUBSTRATE_PATH: ${{ format('{0}/vendor/dan-mercede-substrate', github.workspace) }}
+        run: npm run compile -- --strict
+
+      # Read the compile-status marker emitted by scripts/compileContent.ts so
+      # later steps can branch on whether compile WROTE a fresh bundle or
+      # SKIPPED writes (substrate yielded 0 matches, fatal diagnostic, etc.).
+      # Without this marker, CI cannot distinguish "compile wrote a bundle
+      # that happens to match committed" from "compile skipped writes
+      # entirely" — and the zero-match case lets PR-side hand-edits slip
+      # through the drift gate below.
+      - name: Read compile status
+        if: steps.checkout-substrate.outcome == 'success'
+        id: compile-status
+        run: |
+          set -euo pipefail
+          if [ -f .compile-status ]; then
+            STATUS=$(cat .compile-status)
+          else
+            STATUS=missing
+          fi
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "::notice::compile status: $STATUS"
+
+      # Drift gate: compile WROTE → committed file must match what substrate
+      # just produced. Working-tree-vs-index diff catches it.
+      - name: Verify committed constants.generated.ts matches substrate (compile WROTE)
+        if: steps.checkout-substrate.outcome == 'success' && steps.compile-status.outputs.status == 'WROTE'
+        run: |
+          if ! git diff --exit-code -- constants.generated.ts; then
+            echo "::error file=constants.generated.ts::Committed constants.generated.ts has drifted from dan-mercede-substrate. Run \`npm run compile\` locally and commit the result, or wait for the substrate-sync workflow to open a refresh PR."
+            exit 1
+          fi
+
+      # Zero-match bypass guard: compile SKIPPED (substrate reachable but
+      # produced 0 matches, or fatal diagnostic, or status marker missing) →
+      # committed file must match the base branch. Otherwise a PR can
+      # hand-edit constants.generated.ts during the substrate's zero-match
+      # seed period and ship unverified content because the drift gate above
+      # finds no diff (compile didn't touch the file). Only the
+      # substrate-sync workflow is the legitimate mutator of this file.
+      - name: Refuse generated-file mutation when compile skipped (zero-match bypass guard)
+        if: steps.checkout-substrate.outcome == 'success' && steps.compile-status.outputs.status != 'WROTE' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.base_ref }}"
+          echo "Compile status: ${{ steps.compile-status.outputs.status }}; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
+          git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          # Bootstrap-only admit: when constants.generated.ts does not yet
+          # exist on the base branch, this PR is the legitimate first
+          # establishment of the file (Spec 5 PR-B seed). The substrate-
+          # consumer contract becomes enforceable only after the file exists
+          # on main; until then, refusing the PR would block the very
+          # introduction of the contract. After PR-B merges, the file
+          # exists on main and this admit cannot re-fire except via a
+          # deletion-from-main PR, which is itself review-worthy.
+          if ! git cat-file -e "origin/${BASE_REF}:constants.generated.ts" 2>/dev/null; then
+            echo "::notice::constants.generated.ts does not exist on origin/${BASE_REF}; treating as bootstrap establishment and skipping zero-match bypass guard"
+            exit 0
+          fi
+          if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
+            echo "::error file=constants.generated.ts::Compile skipped writes (substrate yielded 0 matches, had a fatal diagnostic, or the status marker is missing), AND constants.generated.ts differs from the base branch. Hand-edits during the substrate's zero-match seed period are not permitted; only the substrate-sync workflow may mutate this file. To update content, author a substrate canonical instead."
+            exit 1
+          fi
+          echo "constants.generated.ts unchanged vs base; zero-match bypass guard cleared."
+
+      # Fail-closed fallback when substrate checkout failed on a PR.
+      #
+      # `constants.generated.ts` is a generated artifact — its only legitimate
+      # source of mutation is `npm run compile` against substrate. If substrate
+      # checkout flakes (token missing/expired, GH outage, repo perms changed),
+      # the strict-compile and drift-verify steps above are skipped — leaving
+      # the door open for a PR to hand-edit `constants.generated.ts` and ship
+      # unverified content as long as `npx vite build` succeeds. That breaks
+      # the substrate-consumer contract.
+      #
+      # When checkout failed AND this is a pull_request, refuse the PR if it
+      # modifies `constants.generated.ts` vs the base branch. The author can
+      # re-run CI when substrate is available; the substrate-sync workflow PR
+      # is the only legitimate path that mutates this file, and it does so
+      # under verified substrate access.
+      - name: Refuse generated-file mutation without substrate verification
+        if: steps.checkout-substrate.outcome != 'success' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.base_ref }}"
+          echo "Substrate checkout failed; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
+          git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          # Bootstrap-only admit: when constants.generated.ts does not yet
+          # exist on the base branch, this PR is the legitimate first
+          # establishment of the file (Spec 5 PR-B seed). The substrate-
+          # consumer contract becomes enforceable only after the file exists
+          # on main; until then, refusing the PR would block the very
+          # introduction of the contract. After PR-B merges, the file
+          # exists on main and this admit cannot re-fire except via a
+          # deletion-from-main PR, which is itself review-worthy.
+          if ! git cat-file -e "origin/${BASE_REF}:constants.generated.ts" 2>/dev/null; then
+            echo "::notice::constants.generated.ts does not exist on origin/${BASE_REF}; treating as bootstrap establishment and skipping no-substrate refusal"
+            exit 0
+          fi
+          if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
+            echo "::error file=constants.generated.ts::Substrate checkout failed AND constants.generated.ts was modified in this PR. The generated bundle cannot be verified against substrate truth in this run, so the change is refused. Re-run CI when substrate access is available, or restore the file to the base-branch version. Only the substrate-sync workflow may mutate this file unattended."
+            exit 1
+          fi
+          echo "constants.generated.ts unchanged vs base; allowing build to proceed without substrate verification."
+
+      # Build with prebuild explicitly skipped — we already compiled above
+      # (when substrate is available) or we intentionally want the committed
+      # bundle (when substrate is not). Using `npx vite build` bypasses the
+      # npm-script `prebuild` hook.
       - name: Build
-        run: npm run build
+        run: npx vite build
