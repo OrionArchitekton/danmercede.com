@@ -575,3 +575,95 @@ test('readSubstrateWithDiagnostics: mixed substrate (1 valid + 1 fatal) → entr
   // (which used to be the only fail-loud gate) but ALSO see a fatal diag and
   // refuse to write a partial bundle.
 });
+
+// ---------------------------------------------------------------------------
+// Cycle-2 regression: gray-matter must NOT auto-coerce YAML dates to Date
+// objects (JSON_SCHEMA engine). A UTC-midnight ISO timestamp string must
+// route through the PT-formatting path, not the calendar-literal path.
+// ---------------------------------------------------------------------------
+
+test('readSubstrateWithDiagnostics: unquoted YYYY-MM-DD is received as STRING, not Date (JSON_SCHEMA engine)', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'date-only.md', [
+    '---',
+    'slug: 2026-05-20-date-only',
+    'title: Date Only',
+    'date: 2026-05-20',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    'claim: claim',
+    'status: canonical',
+    '---',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  assert.equal(result.entries.length, 1);
+  // Calendar literal preserved regardless of runner TZ.
+  assert.equal(result.entries[0].date, '2026-05-20');
+});
+
+test('readSubstrateWithDiagnostics: UTC-midnight ISO timestamp renders as PT day (not calendar literal)', () => {
+  const priorTZ = process.env.TZ;
+  process.env.TZ = 'UTC';
+  try {
+    const root = mkSubstrateRoot();
+    const canonical = path.join(root, 'publishing', 'canonical');
+    // Real instant at UTC midnight = PT 17:00 of the prior day.
+    writeCanonical(canonical, 'utc-midnight.md', [
+      '---',
+      'slug: 2026-05-20-utc-midnight',
+      'title: UTC Midnight',
+      'date: 2026-05-20T00:00:00Z',
+      'type: essay-long',
+      'surface_targets:',
+      '  - danmercede.com',
+      'layer: authority-gate',
+      'claim: claim',
+      'status: canonical',
+      '---',
+    ].join('\n'));
+    const result = readSubstrateWithDiagnostics(root);
+    assert.equal(result.entries.length, 1);
+    // 2026-05-20T00:00:00Z = 2026-05-19T17:00:00 PT — must render as PT day.
+    // BEFORE cycle-2 fix this incorrectly returned "2026-05-20" because the
+    // Date object's iso ended in "T00:00:00.000Z" and was treated as
+    // date-only YAML.
+    assert.equal(result.entries[0].date, '2026-05-19');
+  } finally {
+    restoreEnv('TZ', priorTZ);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Cycle-2 regression: duplicate slugs raise FATAL diag (not silent "last wins")
+// ---------------------------------------------------------------------------
+
+test('dedupBySlug: duplicate slug raises FATAL diagnostic when diagnostics provided', () => {
+  const a = mkEntry('dup', '2026-05-20T07:00:00-07:00');
+  const b = mkEntry('dup', '2026-05-21T07:00:00-07:00');
+  const diagnostics: SubstrateDiagnostic[] = [];
+  const result = dedupBySlug([a, b], diagnostics);
+  assert.equal(result.length, 1);
+  const fatals = diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 1);
+  assert.match(fatals[0].reason, /duplicate slug "dup"/);
+});
+
+test('dedupBySlug: no diagnostics param preserves legacy "last wins" behavior (no throw)', () => {
+  const a = mkEntry('dup', '2026-05-20T07:00:00-07:00');
+  const b = mkEntry('dup', '2026-05-21T07:00:00-07:00');
+  const result = dedupBySlug([a, b]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].isoDate, b.isoDate);
+});
+
+test('dedupBySlug: distinct slugs do not raise diagnostics', () => {
+  const a = mkEntry('s1', '2026-05-20T07:00:00-07:00');
+  const b = mkEntry('s2', '2026-05-21T07:00:00-07:00');
+  const diagnostics: SubstrateDiagnostic[] = [];
+  const result = dedupBySlug([a, b], diagnostics);
+  assert.equal(result.length, 2);
+  assert.equal(diagnostics.filter(d => d.severity === 'fatal').length, 0);
+});

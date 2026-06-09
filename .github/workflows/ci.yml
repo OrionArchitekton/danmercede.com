@@ -40,18 +40,25 @@ jobs:
       - name: Run tests
         run: npm test
 
-      # Run compile separately so we can gate the build on the committed
-      # constants.generated.ts matching what substrate would produce. If we
-      # let `npm run build` run prebuild→compile inline, a stale/broken
+      # Run compile separately (in STRICT mode) so we can gate the build on
+      # the committed constants.generated.ts matching what substrate would
+      # produce. Strict mode is required here to match the sync workflow's
+      # posture: if substrate has a corrupt matched canonical, fail-open
+      # compile would silently strip it AND `git diff --exit-code` would
+      # bless the stripped output if it was committed. Strict mode aborts
+      # before any write, surfacing the corruption in CI rather than masking
+      # it through a passing diff.
+      #
+      # If `npm run build` ran prebuild→compile inline, a stale/broken
       # committed bundle could be silently rewritten in CI's working tree
       # and the build would pass — while Vercel's fail-open build (which
       # runs without substrate access) would deploy the committed broken
       # bundle. Compile-then-diff catches that drift here.
-      - name: Compile from substrate (if available)
+      - name: Compile from substrate in strict mode (if available)
         if: steps.checkout-substrate.outcome == 'success'
         env:
           SUBSTRATE_PATH: ${{ format('{0}/vendor/dan-mercede-substrate', github.workspace) }}
-        run: npm run compile
+        run: npm run compile -- --strict
 
       - name: Verify committed constants.generated.ts matches substrate
         if: steps.checkout-substrate.outcome == 'success'

@@ -21,6 +21,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
+import yaml from 'js-yaml';
+
+// Custom gray-matter engine that uses js-yaml's JSON_SCHEMA. This disables
+// YAML's default `!!timestamp` type-coercion, so unquoted YAML dates like
+// `date: 2026-05-20` and `date: 2026-05-20T00:00:00Z` are received as STRINGS
+// — not as JavaScript Date objects. Distinguishing date-only from full ISO
+// timestamps becomes unambiguous: a pure YYYY-MM-DD string is a calendar
+// date, anything else is an instant. Without this, gray-matter's default
+// SAFE_SCHEMA coerces both forms to Date objects whose .toISOString() ends
+// in "T00:00:00.000Z", making them indistinguishable and causing the
+// UTC-midnight instant `2026-05-20T00:00:00Z` to render as the calendar
+// day "2026-05-20" rather than the PT day "2026-05-19".
+const yamlEngine = {
+  parse: (raw: string): unknown => yaml.load(raw, { schema: yaml.JSON_SCHEMA }),
+  stringify: (data: unknown): string => yaml.dump(data, { schema: yaml.JSON_SCHEMA }),
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,9 +137,19 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
  * before.
  */
 function validateDate(date: unknown): { isoDate: string; displayDate: string } | null {
-  // Case 1: gray-matter Date object. Distinguish "date-only YAML" (parsed as
-  // UTC midnight, i.e. T00:00:00.000Z) from a real instant. Date-only YAML
-  // must be rendered as the literal calendar day.
+  // Case 1: caller-supplied Date object (no longer produced by our gray-matter
+  // reader — the JSON_SCHEMA engine emits strings — but tests and future
+  // callers may pass Date directly). When a Date is passed, we treat the
+  // UTC-midnight marker (`T00:00:00.000Z`) as a calendar-date signal because
+  // that is exactly the shape produced when gray-matter's default coercion
+  // would parse `date: 2026-05-20` (unquoted YAML).
+  //
+  // CAVEAT: a Date constructed from a real ISO instant `2026-05-20T00:00:00Z`
+  // is also UTC-midnight and indistinguishable here. Callers that need
+  // instant semantics for UTC-midnight timestamps should pass the ISO string,
+  // not a Date — the string path below disambiguates correctly because the
+  // raw scalar carries the `T00:00:00Z` time token. Our substrate reader
+  // takes this string path via the JSON_SCHEMA YAML engine.
   if (date instanceof Date) {
     if (isNaN(date.getTime())) return null;
     const iso = date.toISOString();
@@ -146,7 +172,10 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
     return { isoDate: probe.toISOString(), displayDate: trimmed };
   }
 
-  // Case 3: full ISO timestamp with time/offset. Format in PT.
+  // Case 3: any string carrying a time component (or offset/Z marker) is a
+  // real ISO instant; format in PT. This is where UTC-midnight timestamps
+  // like `2026-05-20T00:00:00Z` correctly render as the PT-local day
+  // (`2026-05-19`) rather than the calendar literal.
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) return null;
   return { isoDate: parsed.toISOString(), displayDate: PT_DATE_FORMATTER.format(parsed) };
@@ -289,7 +318,7 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
 
     let parsed;
     try {
-      parsed = matter(raw);
+      parsed = matter(raw, { engines: { yaml: yamlEngine } });
     } catch (e) {
       console.log(`   ⚠️  substrate canonical YAML parse failed: ${file} (${e})`);
       diagnostics.push({ file, severity: 'fatal', reason: `YAML parse failed: ${String(e)}` });
@@ -307,11 +336,27 @@ export function readSubstrateThoughts(substratePath: string): ThoughtEntry[] {
   return readSubstrateWithDiagnostics(substratePath).entries;
 }
 
-export function dedupBySlug(entries: ThoughtEntry[]): ThoughtEntry[] {
+/**
+ * Collapse same-slug entries to one. A duplicate slug among admitted
+ * danmercede.com canonicals is editorial corruption — directory iteration
+ * order is not a content contract, so "later wins" is nondeterministic AND
+ * silently deletes a publish-target canonical. When `diagnostics` is provided
+ * (i.e., main() path), each duplicate raises a FATAL diagnostic so `--strict`
+ * refuses to write a bundle that drops one. The non-diagnostics overload
+ * preserves the prior "last wins" behavior for the legacy test path.
+ */
+export function dedupBySlug(
+  entries: ThoughtEntry[],
+  diagnostics?: SubstrateDiagnostic[]
+): ThoughtEntry[] {
   const bySlug = new Map<string, ThoughtEntry>();
   for (const entry of entries) {
     if (bySlug.has(entry.slug)) {
-      console.log(`   ℹ️  duplicate slug, later wins: ${entry.slug}`);
+      const msg = `duplicate slug "${entry.slug}" among admitted canonicals — nondeterministic data loss`;
+      console.log(`   ⚠️  ${msg}`);
+      if (diagnostics) {
+        diagnostics.push({ file: entry.slug, severity: 'fatal', reason: msg });
+      }
     }
     bySlug.set(entry.slug, entry);
   }
@@ -355,11 +400,26 @@ function projectRoot(): string {
 }
 
 export function main(): void {
+  // --strict: fail-loud on FATAL diagnostics (corrupt matched canonical,
+  //   unreadable file, YAML parse failure, duplicate slug among admitted
+  //   canonicals) AND on substrate unreachable. Used by both CI (PR drift
+  //   gate) and the sync workflow. Required to prevent CI from blessing a
+  //   partial bundle stripped of corrupt entries.
+  // --require-matches: additionally fail-loud on 0 matches. Used ONLY by
+  //   the sync workflow, where 0 matches means "nothing to sync" — opening
+  //   a PR that deletes all entries would be silent data loss. CI does NOT
+  //   set this because during the initial-seed period substrate has 0
+  //   danmercede.com matches and the committed seed is intentional.
   const strict = process.argv.includes('--strict');
+  const requireMatches = process.argv.includes('--require-matches');
   const root = projectRoot();
   const substratePath = resolveSubstratePath(root);
 
-  console.log(`\n🛠  danmercede.com substrate compile (mode: ${strict ? 'strict' : 'fail-open'})`);
+  const modeLabel = [
+    strict ? 'strict' : 'fail-open',
+    requireMatches ? 'require-matches' : null,
+  ].filter(Boolean).join(', ');
+  console.log(`\n🛠  danmercede.com substrate compile (mode: ${modeLabel})`);
 
   if (!substratePath) {
     const msg = 'substrate root unreachable (SUBSTRATE_PATH unset and sibling ../dan-mercede-substrate not found)';
@@ -374,7 +434,9 @@ export function main(): void {
   console.log(`   ℹ️  substrate root: ${substratePath}`);
 
   const { entries: raw, diagnostics } = readSubstrateWithDiagnostics(substratePath);
-  const deduped = dedupBySlug(raw);
+  // Plumb diagnostics into dedup so duplicate slugs among admitted canonicals
+  // raise a fatal diagnostic (caught by the strict gate below).
+  const deduped = dedupBySlug(raw, diagnostics);
   const sorted = sortByIsoDateDesc(deduped);
 
   // Strict mode: fail-loud on any FATAL diagnostic. A fatal diagnostic means a
@@ -395,7 +457,7 @@ export function main(): void {
 
   if (sorted.length === 0) {
     const msg = `substrate yielded 0 canonicals matching surface_targets="${THIS_SURFACE}"`;
-    if (strict) {
+    if (requireMatches) {
       console.error(`❌ ${msg}`);
       process.exit(1);
     }

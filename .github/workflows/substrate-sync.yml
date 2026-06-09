@@ -43,10 +43,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile in strict mode
+      - name: Compile in strict mode (require ≥1 match)
         env:
           SUBSTRATE_PATH: ${{ github.workspace }}/vendor/dan-mercede-substrate
-        run: npm run compile -- --strict
+        # --strict: fail on any fatal corruption diagnostic (matched-target
+        #   with missing/invalid field, unreadable file, YAML parse failure,
+        #   duplicate slug among admitted canonicals). Required so a partial
+        #   substrate cannot silently strip a publish-target canonical.
+        # --require-matches: fail if substrate has 0 danmercede.com
+        #   canonicals. Required for the sync workflow because opening a
+        #   refresh PR that deletes all entries would be silent data loss.
+        #   CI does NOT set this because the initial seed period has 0
+        #   matches and the committed seed is intentional.
+        run: npm run compile -- --strict --require-matches
 
       - name: Diff against committed bundle
         id: diff

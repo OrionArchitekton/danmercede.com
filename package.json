@@ -19,9 +19,11 @@
     "d3": "^7.9.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "gray-matter": "^4.0.3",
+    "js-yaml": "^3.14.1",
     "tsx": "^4.7.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
