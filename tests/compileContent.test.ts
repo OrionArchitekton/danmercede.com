@@ -19,6 +19,7 @@ import {
   dedupBySlug,
   sortByIsoDateDesc,
   generateOutput,
+  decideOutput,
   type ThoughtEntry,
   type SubstrateDiagnostic,
 } from '../scripts/compileContent.js';
@@ -666,4 +667,111 @@ test('dedupBySlug: distinct slugs do not raise diagnostics', () => {
   const result = dedupBySlug([a, b], diagnostics);
   assert.equal(result.length, 2);
   assert.equal(diagnostics.filter(d => d.severity === 'fatal').length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Cycle-3 regression: decideOutput must skip (not write) in FAIL-OPEN mode
+// when fatal diagnostics are present. Previously, fail-open + fatal diags +
+// non-zero entries would overwrite constants.generated.ts with the partial
+// bundle, silently dropping intended public content. The fix is to skip
+// (preserve committed bundle) on fatal diagnostics in fail-open mode and
+// fail (exit 1) in strict mode.
+// ---------------------------------------------------------------------------
+
+test('decideOutput: fail-open + fatal diagnostic + valid entry → SKIP (preserve committed bundle)', () => {
+  const validEntry = mkEntry('s-valid', '2026-05-20T07:00:00-07:00');
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/fake',
+    entries: [validEntry],
+    diagnostics: [{ file: 'bad.md', severity: 'fatal', reason: 'missing required claim' }],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'skip');
+  if (decision.action === 'skip') {
+    assert.match(decision.reason, /fatal corruption/);
+    assert.match(decision.reason, /bad\.md/);
+  }
+});
+
+test('decideOutput: strict + fatal diagnostic + valid entry → FAIL (exit 1)', () => {
+  const validEntry = mkEntry('s-valid', '2026-05-20T07:00:00-07:00');
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/fake',
+    entries: [validEntry],
+    diagnostics: [{ file: 'bad.md', severity: 'fatal', reason: 'missing required claim' }],
+    strict: true,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'fail');
+});
+
+test('decideOutput: fail-open + no fatal + valid entries → WRITE', () => {
+  const entry = mkEntry('s-valid', '2026-05-20T07:00:00-07:00');
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/fake',
+    entries: [entry],
+    diagnostics: [{ file: 'skip.md', severity: 'skip', reason: 'wrong surface_targets' }],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'write');
+  if (decision.action === 'write') {
+    assert.equal(decision.entryCount, 1);
+    assert.match(decision.content, /THOUGHTS: Thought\[\]/);
+  }
+});
+
+test('decideOutput: fail-open + 0 entries + no fatal → SKIP', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/fake',
+    entries: [],
+    diagnostics: [],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'skip');
+  if (decision.action === 'skip') {
+    assert.match(decision.reason, /0 canonicals/);
+  }
+});
+
+test('decideOutput: require-matches + 0 entries → FAIL', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/fake',
+    entries: [],
+    diagnostics: [],
+    strict: false,
+    requireMatches: true,
+  });
+  assert.equal(decision.action, 'fail');
+});
+
+test('decideOutput: substrate unreachable + fail-open → SKIP', () => {
+  const decision = decideOutput({
+    substrateReachable: false,
+    substratePath: null,
+    entries: [],
+    diagnostics: [],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'skip');
+});
+
+test('decideOutput: substrate unreachable + strict → FAIL', () => {
+  const decision = decideOutput({
+    substrateReachable: false,
+    substratePath: null,
+    entries: [],
+    diagnostics: [],
+    strict: true,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'fail');
 });

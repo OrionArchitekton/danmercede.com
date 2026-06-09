@@ -399,6 +399,49 @@ function projectRoot(): string {
   return path.resolve(__dirname, '..');
 }
 
+/**
+ * Decision shape returned by `decideOutput`. Externalizes the write gate from
+ * `main()` so the fail-open-on-fatal-diagnostic behavior is testable without
+ * a subprocess. Action semantics:
+ *   - 'write' : write content to constants.generated.ts (success path).
+ *   - 'skip'  : do not write; preserve last committed bundle (fail-open
+ *               paths: substrate unreachable, 0 matches, fatal diagnostics).
+ *   - 'fail'  : exit 1 (strict-mode failures: unreachable, 0 matches under
+ *               --require-matches, fatal diagnostics under --strict).
+ */
+export type OutputDecision =
+  | { action: 'write'; content: string; entryCount: number }
+  | { action: 'skip'; reason: string }
+  | { action: 'fail'; reason: string };
+
+export interface DecideOutputArgs {
+  substrateReachable: boolean;
+  substratePath: string | null;
+  entries: ThoughtEntry[];
+  diagnostics: SubstrateDiagnostic[];
+  strict: boolean;
+  requireMatches: boolean;
+}
+
+export function decideOutput(args: DecideOutputArgs): OutputDecision {
+  const { substrateReachable, entries, diagnostics, strict, requireMatches } = args;
+  if (!substrateReachable) {
+    const reason = 'substrate root unreachable (SUBSTRATE_PATH unset and sibling ../dan-mercede-substrate not found)';
+    return strict ? { action: 'fail', reason } : { action: 'skip', reason };
+  }
+  const fatal = diagnostics.filter(d => d.severity === 'fatal');
+  if (fatal.length > 0) {
+    const summary = fatal.map(d => `${d.file}: ${d.reason}`).join('; ');
+    const reason = `substrate contains ${fatal.length} fatal corruption(s): ${summary}`;
+    return strict ? { action: 'fail', reason } : { action: 'skip', reason };
+  }
+  if (entries.length === 0) {
+    const reason = `substrate yielded 0 canonicals matching surface_targets="${THIS_SURFACE}"`;
+    return requireMatches ? { action: 'fail', reason } : { action: 'skip', reason };
+  }
+  return { action: 'write', content: generateOutput(entries), entryCount: entries.length };
+}
+
 export function main(): void {
   // --strict: fail-loud on FATAL diagnostics (corrupt matched canonical,
   //   unreadable file, YAML parse failure, duplicate slug among admitted
@@ -421,54 +464,42 @@ export function main(): void {
   ].filter(Boolean).join(', ');
   console.log(`\n🛠  danmercede.com substrate compile (mode: ${modeLabel})`);
 
-  if (!substratePath) {
-    const msg = 'substrate root unreachable (SUBSTRATE_PATH unset and sibling ../dan-mercede-substrate not found)';
-    if (strict) {
-      console.error(`❌ ${msg}`);
-      process.exit(1);
-    }
-    console.log(`   ℹ️  ${msg}; preserving committed constants.generated.ts`);
-    return;
+  let entries: ThoughtEntry[] = [];
+  let diagnostics: SubstrateDiagnostic[] = [];
+  if (substratePath) {
+    console.log(`   ℹ️  substrate root: ${substratePath}`);
+    const result = readSubstrateWithDiagnostics(substratePath);
+    // Plumb diagnostics into dedup so duplicate slugs among admitted
+    // canonicals raise a fatal diagnostic (caught by decideOutput below).
+    const deduped = dedupBySlug(result.entries, result.diagnostics);
+    entries = sortByIsoDateDesc(deduped);
+    diagnostics = result.diagnostics;
   }
 
-  console.log(`   ℹ️  substrate root: ${substratePath}`);
+  const decision = decideOutput({
+    substrateReachable: substratePath !== null,
+    substratePath,
+    entries,
+    diagnostics,
+    strict,
+    requireMatches,
+  });
 
-  const { entries: raw, diagnostics } = readSubstrateWithDiagnostics(substratePath);
-  // Plumb diagnostics into dedup so duplicate slugs among admitted canonicals
-  // raise a fatal diagnostic (caught by the strict gate below).
-  const deduped = dedupBySlug(raw, diagnostics);
-  const sorted = sortByIsoDateDesc(deduped);
-
-  // Strict mode: fail-loud on any FATAL diagnostic. A fatal diagnostic means a
-  // would-have-published canonical was structurally corrupt (or a file was
-  // unreadable / YAML-broken), which means the matched set is partial and the
-  // generated bundle would silently strip the missing one(s). Skip-class
-  // diagnostics (wrong surface/status/type) remain non-fatal.
-  if (strict) {
-    const fatal = diagnostics.filter(d => d.severity === 'fatal');
-    if (fatal.length > 0) {
-      console.error(`❌ substrate contains ${fatal.length} fatal corruption(s); refusing to write a partial bundle:`);
-      for (const d of fatal) {
-        console.error(`   - ${d.file}: ${d.reason}`);
-      }
+  switch (decision.action) {
+    case 'fail':
+      console.error(`❌ ${decision.reason}`);
       process.exit(1);
+      return; // unreachable
+    case 'skip':
+      console.log(`   ℹ️  ${decision.reason}; preserving committed constants.generated.ts`);
+      return;
+    case 'write': {
+      const outputPath = path.join(root, 'constants.generated.ts');
+      fs.writeFileSync(outputPath, decision.content, 'utf-8');
+      console.log(`\n📊 wrote ${decision.entryCount} thought(s) to constants.generated.ts`);
+      return;
     }
   }
-
-  if (sorted.length === 0) {
-    const msg = `substrate yielded 0 canonicals matching surface_targets="${THIS_SURFACE}"`;
-    if (requireMatches) {
-      console.error(`❌ ${msg}`);
-      process.exit(1);
-    }
-    console.log(`   ℹ️  ${msg}; preserving committed constants.generated.ts`);
-    return;
-  }
-
-  const output = generateOutput(sorted);
-  const outputPath = path.join(root, 'constants.generated.ts');
-  fs.writeFileSync(outputPath, output, 'utf-8');
-  console.log(`\n📊 wrote ${sorted.length} thought(s) to constants.generated.ts`);
 }
 
 const invokedDirectly = path.resolve(process.argv[1] ?? '') === __filename;
