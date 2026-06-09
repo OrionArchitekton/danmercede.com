@@ -15,10 +15,12 @@ import {
   deriveCategoryFromLayer,
   mapSubstrateToEntry,
   readSubstrateThoughts,
+  readSubstrateWithDiagnostics,
   dedupBySlug,
   sortByIsoDateDesc,
   generateOutput,
   type ThoughtEntry,
+  type SubstrateDiagnostic,
 } from '../scripts/compileContent.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -319,4 +321,257 @@ test('generateOutput: escapes embedded quotes correctly', () => {
   const out = generateOutput(entries);
   assert.match(out, /title: "He said \\"hello\\""/);
   assert.match(out, /preview: "Single ' and double \\" quotes"/);
+});
+
+// ---------------------------------------------------------------------------
+// Date-only handling (regression: timezone shift bug)
+//
+// Without the fix, `date: 2026-05-20` (quoted OR unquoted YAML) is parsed as
+// UTC midnight (2026-05-20T00:00:00.000Z) and PT_DATE_FORMATTER renders it as
+// "2026-05-19" in America/Los_Angeles. The fix preserves date-only inputs as
+// literal calendar days.
+// ---------------------------------------------------------------------------
+
+test('mapSubstrateToEntry: quoted date-only string preserves calendar day (no PT shift)', () => {
+  const entry = mapSubstrateToEntry(
+    validFrontmatter({ date: '2026-05-20' }),
+    'test.md'
+  );
+  assert.ok(entry, 'date-only quoted string should map');
+  assert.equal(entry!.date, '2026-05-20', 'must NOT shift back to 2026-05-19 in PT');
+});
+
+test('mapSubstrateToEntry: unquoted YAML date (gray-matter Date at UTC midnight) preserves calendar day', () => {
+  // gray-matter converts `date: 2026-05-20` (unquoted) to a Date at UTC midnight.
+  const entry = mapSubstrateToEntry(
+    validFrontmatter({ date: new Date('2026-05-20T00:00:00.000Z') }),
+    'test.md'
+  );
+  assert.ok(entry, 'date-only Date object should map');
+  assert.equal(entry!.date, '2026-05-20', 'must NOT shift back to 2026-05-19 in PT');
+});
+
+test('mapSubstrateToEntry: date-only preserved under UTC runner TZ', () => {
+  const priorTZ = process.env.TZ;
+  process.env.TZ = 'UTC';
+  try {
+    const entry = mapSubstrateToEntry(
+      validFrontmatter({ date: '2026-05-20' }),
+      'test.md'
+    );
+    assert.ok(entry);
+    assert.equal(entry!.date, '2026-05-20');
+  } finally {
+    restoreEnv('TZ', priorTZ);
+  }
+});
+
+test('mapSubstrateToEntry: date-only preserved under Asia/Tokyo runner TZ (ahead of UTC)', () => {
+  const priorTZ = process.env.TZ;
+  process.env.TZ = 'Asia/Tokyo';
+  try {
+    const entry = mapSubstrateToEntry(
+      validFrontmatter({ date: '2026-05-20' }),
+      'test.md'
+    );
+    assert.ok(entry);
+    // Should still be 2026-05-20, not shifted forward to 2026-05-21.
+    assert.equal(entry!.date, '2026-05-20');
+  } finally {
+    restoreEnv('TZ', priorTZ);
+  }
+});
+
+test('mapSubstrateToEntry: rejects calendar-impossible date-only (2026-02-30)', () => {
+  const entry = mapSubstrateToEntry(
+    validFrontmatter({ date: '2026-02-30' }),
+    'test.md'
+  );
+  assert.equal(entry, null, 'February 30 is not a real calendar day');
+});
+
+test('mapSubstrateToEntry: full ISO timestamp with offset still formats in PT', () => {
+  const priorTZ = process.env.TZ;
+  process.env.TZ = 'UTC';
+  try {
+    // 2026-05-20T23:30:00-07:00 = 2026-05-21T06:30:00Z. Should render as
+    // 2026-05-20 in LA (the offset already locates it as a PT evening).
+    const entry = mapSubstrateToEntry(
+      validFrontmatter({ date: '2026-05-20T23:30:00-07:00' }),
+      'test.md'
+    );
+    assert.ok(entry);
+    assert.equal(entry!.date, '2026-05-20');
+  } finally {
+    restoreEnv('TZ', priorTZ);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// readSubstrateWithDiagnostics + strict-mode fatal classification
+//
+// Regression: prior behavior would skip a corrupt would-be-published canonical
+// and silently strip it from the generated bundle. Strict mode must fail-loud
+// on FATAL diagnostics (matched-target + missing field, matched-target +
+// invalid date, unreadable file, YAML parse failure). Skip-class diagnostics
+// (wrong surface/status/type) must remain non-fatal.
+// ---------------------------------------------------------------------------
+
+function writeCanonical(dir: string, name: string, body: string): void {
+  fs.writeFileSync(path.join(dir, name), body, 'utf-8');
+}
+
+function mkSubstrateRoot(): string {
+  const root = mkTempDir('substrate-strict-');
+  const canonical = path.join(root, 'publishing', 'canonical');
+  fs.mkdirSync(canonical, { recursive: true });
+  return root;
+}
+
+test('readSubstrateWithDiagnostics: matched-target with missing required field → FATAL diag', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  // Matches surface/status/type but has NO claim → would-have-published but is corrupt.
+  writeCanonical(canonical, 'bad-missing-claim.md', [
+    '---',
+    'slug: 2026-05-20-bad',
+    'title: Bad Canonical',
+    'date: 2026-05-20',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    'status: canonical',
+    '---',
+    '',
+    'body',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  assert.equal(result.entries.length, 0);
+  const fatals = result.diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 1, 'matched-target + missing claim must be FATAL');
+  assert.match(fatals[0].reason, /missing required/);
+});
+
+test('readSubstrateWithDiagnostics: matched-target with invalid date → FATAL diag', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'bad-date.md', [
+    '---',
+    'slug: 2026-05-20-bad-date',
+    'title: Bad Date',
+    'date: not-a-real-date',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    'claim: claim text',
+    'status: canonical',
+    '---',
+    '',
+    'body',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  assert.equal(result.entries.length, 0);
+  const fatals = result.diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 1);
+  assert.match(fatals[0].reason, /invalid date/);
+});
+
+test('readSubstrateWithDiagnostics: YAML parse failure → FATAL diag', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'broken-yaml.md', [
+    '---',
+    'slug: x',
+    'title: [unclosed',
+    '---',
+    '',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  const fatals = result.diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 1);
+  assert.match(fatals[0].reason, /YAML parse failed/);
+});
+
+test('readSubstrateWithDiagnostics: wrong surface_targets → SKIP diag only (not fatal)', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'wrong-surface.md', [
+    '---',
+    'slug: 2026-05-20-other',
+    'title: Other Surface',
+    'date: 2026-05-20',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.online',
+    'layer: authority-gate',
+    'claim: claim',
+    'status: canonical',
+    '---',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  const fatals = result.diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 0, 'wrong surface must NOT be fatal');
+  const skips = result.diagnostics.filter(d => d.severity === 'skip');
+  assert.equal(skips.length, 1);
+});
+
+test('readSubstrateWithDiagnostics: draft status → SKIP diag only', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'draft.md', [
+    '---',
+    'slug: 2026-05-20-draft',
+    'title: Draft',
+    'date: 2026-05-20',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    'claim: claim',
+    'status: draft',
+    '---',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  assert.equal(result.diagnostics.filter(d => d.severity === 'fatal').length, 0);
+  assert.equal(result.diagnostics.filter(d => d.severity === 'skip').length, 1);
+});
+
+test('readSubstrateWithDiagnostics: mixed substrate (1 valid + 1 fatal) → entry yielded AND fatal diag', () => {
+  const root = mkSubstrateRoot();
+  const canonical = path.join(root, 'publishing', 'canonical');
+  writeCanonical(canonical, 'valid.md', [
+    '---',
+    'slug: 2026-05-20-valid',
+    'title: Valid',
+    'date: 2026-05-20',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    'claim: valid claim',
+    'status: canonical',
+    '---',
+  ].join('\n'));
+  writeCanonical(canonical, 'bad.md', [
+    '---',
+    'slug: 2026-05-21-bad',
+    'title: Bad',
+    'date: 2026-05-21',
+    'type: essay-long',
+    'surface_targets:',
+    '  - danmercede.com',
+    'layer: authority-gate',
+    // no claim → matched-target corruption
+    'status: canonical',
+    '---',
+  ].join('\n'));
+  const result = readSubstrateWithDiagnostics(root);
+  assert.equal(result.entries.length, 1, 'valid entry still yielded');
+  const fatals = result.diagnostics.filter(d => d.severity === 'fatal');
+  assert.equal(fatals.length, 1, 'one fatal raised for partial corruption');
+  // This is the key signal: under strict mode main() will see entries.length>0
+  // (which used to be the only fail-loud gate) but ALSO see a fatal diag and
+  // refuse to write a partial bundle.
 });
