@@ -104,6 +104,18 @@ jobs:
           BASE_REF="${{ github.base_ref }}"
           echo "Compile status: ${{ steps.compile-status.outputs.status }}; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
           git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          # Bootstrap-only admit: when constants.generated.ts does not yet
+          # exist on the base branch, this PR is the legitimate first
+          # establishment of the file (Spec 5 PR-B seed). The substrate-
+          # consumer contract becomes enforceable only after the file exists
+          # on main; until then, refusing the PR would block the very
+          # introduction of the contract. After PR-B merges, the file
+          # exists on main and this admit cannot re-fire except via a
+          # deletion-from-main PR, which is itself review-worthy.
+          if ! git cat-file -e "origin/${BASE_REF}:constants.generated.ts" 2>/dev/null; then
+            echo "::notice::constants.generated.ts does not exist on origin/${BASE_REF}; treating as bootstrap establishment and skipping zero-match bypass guard"
+            exit 0
+          fi
           if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
             echo "::error file=constants.generated.ts::Compile skipped writes (substrate yielded 0 matches, had a fatal diagnostic, or the status marker is missing), AND constants.generated.ts differs from the base branch. Hand-edits during the substrate's zero-match seed period are not permitted; only the substrate-sync workflow may mutate this file. To update content, author a substrate canonical instead."
             exit 1
@@ -132,6 +144,18 @@ jobs:
           BASE_REF="${{ github.base_ref }}"
           echo "Substrate checkout failed; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
           git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          # Bootstrap-only admit: when constants.generated.ts does not yet
+          # exist on the base branch, this PR is the legitimate first
+          # establishment of the file (Spec 5 PR-B seed). The substrate-
+          # consumer contract becomes enforceable only after the file exists
+          # on main; until then, refusing the PR would block the very
+          # introduction of the contract. After PR-B merges, the file
+          # exists on main and this admit cannot re-fire except via a
+          # deletion-from-main PR, which is itself review-worthy.
+          if ! git cat-file -e "origin/${BASE_REF}:constants.generated.ts" 2>/dev/null; then
+            echo "::notice::constants.generated.ts does not exist on origin/${BASE_REF}; treating as bootstrap establishment and skipping no-substrate refusal"
+            exit 0
+          fi
           if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
             echo "::error file=constants.generated.ts::Substrate checkout failed AND constants.generated.ts was modified in this PR. The generated bundle cannot be verified against substrate truth in this run, so the change is refused. Re-run CI when substrate access is available, or restore the file to the base-branch version. Only the substrate-sync workflow may mutate this file unattended."
             exit 1

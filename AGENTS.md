@@ -133,6 +133,26 @@ the only intended consumer; the filename is exported as
 `COMPILE_STATUS_FILENAME` from `scripts/compileContent.ts` and a test
 locks the value so a rename here can't silently desync the workflow.
 
+### Bootstrap admit (one-time, self-disabling)
+
+Both PR-side guard steps (`Refuse generated-file mutation when compile skipped`
+and `Refuse generated-file mutation without substrate verification`) include
+a bootstrap admit clause: if `constants.generated.ts` does not exist on the
+PR's base branch (`git cat-file -e "origin/${BASE_REF}:constants.generated.ts"`
+returns non-zero), the guard exits 0 with a notice.
+
+This clause exists because the substrate-consumer contract becomes
+enforceable only after `constants.generated.ts` exists on `main`. Until
+then, refusing the PR would block the very introduction of the contract
+(Spec 5 PR-B). The admit is intentionally permissive for this single
+introduction case.
+
+The admit is self-disabling: after PR-B merges, the file exists on `main`
+and the `cat-file -e` check returns 0, so the admit cannot re-fire on any
+normal PR. The only re-arm path is a PR that deletes
+`constants.generated.ts` from `main`, which is itself review-worthy and
+should be caught at the human review layer.
+
 ## Files
 
 | File | Role |
