@@ -414,6 +414,28 @@ export type OutputDecision =
   | { action: 'skip'; reason: string }
   | { action: 'fail'; reason: string };
 
+/**
+ * Marker file written to project root after `decideOutput`. Read by CI to
+ * branch the verification gate:
+ *   - `WROTE`   → compile produced a fresh bundle; CI's drift gate diffs
+ *                 working tree vs index (committed = substrate truth).
+ *   - `SKIPPED` → compile preserved the committed bundle; CI's
+ *                 zero-match-bypass guard diffs the committed bundle vs
+ *                 base branch (refuses PR-side hand-edits during the
+ *                 substrate's zero-match seed period).
+ *
+ * Without this signal, CI cannot distinguish "compile wrote a bundle that
+ * happens to match committed" from "compile skipped writes entirely", and
+ * a PR-side hand-edit to `constants.generated.ts` would pass the drift
+ * gate during the zero-match seed window. See AGENTS.md.
+ */
+export const COMPILE_STATUS_FILENAME = '.compile-status';
+export type CompileStatus = 'WROTE' | 'SKIPPED';
+
+export function formatCompileStatus(decision: OutputDecision): CompileStatus {
+  return decision.action === 'write' ? 'WROTE' : 'SKIPPED';
+}
+
 export interface DecideOutputArgs {
   substrateReachable: boolean;
   substratePath: string | null;
@@ -484,6 +506,16 @@ export function main(): void {
     strict,
     requireMatches,
   });
+
+  // Emit the compile-status marker BEFORE acting on the decision so CI can
+  // branch its verification gate on WROTE vs SKIPPED. Fail paths exit before
+  // any subsequent CI step runs, so the marker is moot on fail — but the
+  // marker file is written for write/skip so CI sees the explicit signal
+  // rather than inferring intent from git diff alone.
+  if (decision.action !== 'fail') {
+    const statusPath = path.join(root, COMPILE_STATUS_FILENAME);
+    fs.writeFileSync(statusPath, formatCompileStatus(decision), 'utf-8');
+  }
 
   switch (decision.action) {
     case 'fail':

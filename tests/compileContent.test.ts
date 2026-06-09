@@ -20,8 +20,11 @@ import {
   sortByIsoDateDesc,
   generateOutput,
   decideOutput,
+  formatCompileStatus,
+  COMPILE_STATUS_FILENAME,
   type ThoughtEntry,
   type SubstrateDiagnostic,
+  type OutputDecision,
 } from '../scripts/compileContent.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -774,4 +777,36 @@ test('decideOutput: substrate unreachable + strict → FAIL', () => {
     requireMatches: false,
   });
   assert.equal(decision.action, 'fail');
+});
+
+// ---------------------------------------------------------------------------
+// formatCompileStatus + COMPILE_STATUS_FILENAME — cycle-6 zero-match-bypass guard
+// ---------------------------------------------------------------------------
+
+test('formatCompileStatus: write decision → "WROTE"', () => {
+  const decision: OutputDecision = { action: 'write', content: 'x', entryCount: 1 };
+  assert.equal(formatCompileStatus(decision), 'WROTE');
+});
+
+test('formatCompileStatus: skip decision → "SKIPPED"', () => {
+  const decision: OutputDecision = { action: 'skip', reason: 'zero matches' };
+  assert.equal(formatCompileStatus(decision), 'SKIPPED');
+});
+
+test('formatCompileStatus: fail decision → "SKIPPED" (marker never written on fail, but the function is total)', () => {
+  // main() does not write the marker on fail (the process exits before any
+  // subsequent CI step runs), but formatCompileStatus is a total function so
+  // the type checker can prove the switch in main() is exhaustive. SKIPPED
+  // is the safe default — a CI consumer that somehow sees a stale fail-state
+  // marker treats it as "do not trust as fresh-compile output", which is
+  // exactly the desired fail-closed behavior.
+  const decision: OutputDecision = { action: 'fail', reason: 'unreachable' };
+  assert.equal(formatCompileStatus(decision), 'SKIPPED');
+});
+
+test('COMPILE_STATUS_FILENAME: stable contract with CI', () => {
+  // The CI workflow (.github/workflows/ci.yml) reads `.compile-status`
+  // verbatim — this assertion locks the filename so a rename here cannot
+  // silently desync the workflow.
+  assert.equal(COMPILE_STATUS_FILENAME, '.compile-status');
 });

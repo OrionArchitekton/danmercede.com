@@ -107,6 +107,32 @@ The committed `constants.generated.ts` is the durable source of truth that
 Vercel serves; the workflow regenerates it only when substrate confirms a
 non-empty match set.
 
+### Compile-status marker (`.compile-status`)
+
+`scripts/compileContent.ts:main()` writes a single-token marker to
+`.compile-status` at project root after `decideOutput` returns:
+
+- `WROTE`   — compile produced a fresh bundle from substrate matches
+- `SKIPPED` — compile preserved the committed bundle (substrate unreachable,
+              0 matches under default mode, or a fatal diagnostic fired)
+
+(`fail` actions exit 1 before the marker is written; no subsequent CI step
+runs in that case.)
+
+CI reads the marker to branch its verification gates:
+
+- `WROTE`   → drift gate diffs working tree vs committed (committed must
+              match substrate truth).
+- `SKIPPED` → zero-match-bypass guard diffs committed vs the PR's base
+              branch (refuses PR-side hand-edits during the zero-match
+              seed period — only the substrate-sync workflow is the
+              legitimate mutator).
+
+The marker is gitignored. The CI workflow (`.github/workflows/ci.yml`) is
+the only intended consumer; the filename is exported as
+`COMPILE_STATUS_FILENAME` from `scripts/compileContent.ts` and a test
+locks the value so a rename here can't silently desync the workflow.
+
 ## Files
 
 | File | Role |

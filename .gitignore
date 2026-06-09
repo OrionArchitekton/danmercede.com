@@ -16,6 +16,10 @@ build
 # CI-vendored substrate clone (substrate-sync workflow + ci.yml fail-open checkout)
 vendor/
 
+# Compile status marker (written by scripts/compileContent.ts main(); read by
+# CI to branch WROTE vs SKIPPED verification gates — see AGENTS.md).
+.compile-status
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

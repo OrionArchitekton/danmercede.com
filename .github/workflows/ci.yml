@@ -60,13 +60,55 @@ jobs:
           SUBSTRATE_PATH: ${{ format('{0}/vendor/dan-mercede-substrate', github.workspace) }}
         run: npm run compile -- --strict
 
-      - name: Verify committed constants.generated.ts matches substrate
+      # Read the compile-status marker emitted by scripts/compileContent.ts so
+      # later steps can branch on whether compile WROTE a fresh bundle or
+      # SKIPPED writes (substrate yielded 0 matches, fatal diagnostic, etc.).
+      # Without this marker, CI cannot distinguish "compile wrote a bundle
+      # that happens to match committed" from "compile skipped writes
+      # entirely" — and the zero-match case lets PR-side hand-edits slip
+      # through the drift gate below.
+      - name: Read compile status
         if: steps.checkout-substrate.outcome == 'success'
+        id: compile-status
+        run: |
+          set -euo pipefail
+          if [ -f .compile-status ]; then
+            STATUS=$(cat .compile-status)
+          else
+            STATUS=missing
+          fi
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "::notice::compile status: $STATUS"
+
+      # Drift gate: compile WROTE → committed file must match what substrate
+      # just produced. Working-tree-vs-index diff catches it.
+      - name: Verify committed constants.generated.ts matches substrate (compile WROTE)
+        if: steps.checkout-substrate.outcome == 'success' && steps.compile-status.outputs.status == 'WROTE'
         run: |
           if ! git diff --exit-code -- constants.generated.ts; then
             echo "::error file=constants.generated.ts::Committed constants.generated.ts has drifted from dan-mercede-substrate. Run \`npm run compile\` locally and commit the result, or wait for the substrate-sync workflow to open a refresh PR."
             exit 1
           fi
+
+      # Zero-match bypass guard: compile SKIPPED (substrate reachable but
+      # produced 0 matches, or fatal diagnostic, or status marker missing) →
+      # committed file must match the base branch. Otherwise a PR can
+      # hand-edit constants.generated.ts during the substrate's zero-match
+      # seed period and ship unverified content because the drift gate above
+      # finds no diff (compile didn't touch the file). Only the
+      # substrate-sync workflow is the legitimate mutator of this file.
+      - name: Refuse generated-file mutation when compile skipped (zero-match bypass guard)
+        if: steps.checkout-substrate.outcome == 'success' && steps.compile-status.outputs.status != 'WROTE' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.base_ref }}"
+          echo "Compile status: ${{ steps.compile-status.outputs.status }}; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
+          git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
+            echo "::error file=constants.generated.ts::Compile skipped writes (substrate yielded 0 matches, had a fatal diagnostic, or the status marker is missing), AND constants.generated.ts differs from the base branch. Hand-edits during the substrate's zero-match seed period are not permitted; only the substrate-sync workflow may mutate this file. To update content, author a substrate canonical instead."
+            exit 1
+          fi
+          echo "constants.generated.ts unchanged vs base; zero-match bypass guard cleared."
 
       # Fail-closed fallback when substrate checkout failed on a PR.
       #
