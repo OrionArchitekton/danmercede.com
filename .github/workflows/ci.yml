@@ -12,9 +12,21 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    env:
+      TZ: America/Los_Angeles
     steps:
-      - name: Checkout
+      - name: Checkout danmercede.com
         uses: actions/checkout@v4
+
+      - name: Checkout dan-mercede-substrate (fail-open)
+        id: checkout-substrate
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: OrionArchitekton/dan-mercede-substrate
+          token: ${{ secrets.SUBSTRATE_READ_TOKEN }}
+          path: vendor/dan-mercede-substrate
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -25,5 +37,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        run: npm test
+
       - name: Build
+        env:
+          SUBSTRATE_PATH: ${{ steps.checkout-substrate.outcome == 'success' && format('{0}/vendor/dan-mercede-substrate', github.workspace) || '' }}
         run: npm run build

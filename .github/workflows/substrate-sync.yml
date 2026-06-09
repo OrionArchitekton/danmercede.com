@@ -1,0 +1,87 @@
+name: Substrate Sync (fail-loud)
+
+# Regenerates constants.generated.ts from dan-mercede-substrate and opens a
+# review PR when the bundle drifts. FAIL-LOUD: if substrate is unreachable OR
+# yields 0 canonicals matching surface_targets="danmercede.com", the job halts
+# and no PR is opened. This prevents the workflow from ever silently stripping
+# substrate-sourced entries from the committed file.
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Mondays 08:10 PT (matches the danmercede.online cadence). 15:10 UTC PST /
+    # 16:10 UTC PDT — the half-hour drift across the seasonal boundary is
+    # acceptable for a weekly sync.
+    - cron: '10 15 * * 1'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      TZ: America/Los_Angeles
+    steps:
+      - name: Checkout danmercede.com
+        uses: actions/checkout@v4
+
+      - name: Checkout dan-mercede-substrate (fail-loud)
+        uses: actions/checkout@v4
+        with:
+          repository: OrionArchitekton/dan-mercede-substrate
+          token: ${{ secrets.SUBSTRATE_READ_TOKEN }}
+          path: vendor/dan-mercede-substrate
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile in strict mode
+        env:
+          SUBSTRATE_PATH: ${{ github.workspace }}/vendor/dan-mercede-substrate
+        run: npm run compile -- --strict
+
+      - name: Diff against committed bundle
+        id: diff
+        run: |
+          if git diff --quiet -- constants.generated.ts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No drift detected; constants.generated.ts already matches substrate."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Drift detected; opening review PR."
+          fi
+
+      - name: Remove vendored substrate before PR
+        if: steps.diff.outputs.changed == 'true'
+        run: rm -rf vendor/dan-mercede-substrate
+
+      - name: Open review PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: codex/substrate-sync
+          commit-message: 'sync: refresh constants.generated.ts from substrate'
+          title: 'sync: refresh constants.generated.ts from substrate'
+          body: |
+            Automated weekly sync from `dan-mercede-substrate/publishing/canonical/`.
+
+            **Posture:** strict compile succeeded — substrate is reachable and produced ≥1 canonical with `surface_targets: ["danmercede.com"]`. The committed `constants.generated.ts` has drifted from the substrate-produced bundle.
+
+            Review the diff and merge to land the refreshed bundle on `main`. The next Vercel deploy will pick it up.
+
+            If this PR keeps reappearing with the same diff, investigate whether `surface_targets` on the source canonical(s) is intended.
+
+            🤖 Opened by `.github/workflows/substrate-sync.yml`
+          add-paths: |
+            constants.generated.ts
+          labels: |
+            substrate-sync
+          delete-branch: true

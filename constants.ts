@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Thought, Resource, CaseStudy } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy } from './types';
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/' },
@@ -393,41 +393,4 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
 ];
 
-export const THOUGHTS: Thought[] = [
-  {
-    title: "Why Enterprise AI Fails at Runtime — Not Capability",
-    preview: "Execution outruns governance. Agentic systems act without authority, mutate state without attestation, and drift without constraint. The missing layer is deterministic enforcement at the execution boundary.",
-    date: "2026-02-17",
-    category: "Doctrine",
-  },
-  {
-    title: "The Four-Layer Enforcement Stack",
-    preview: "Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate. Four layers forming a deterministic enforcement cascade — each necessary, none sufficient alone.",
-    date: "2026-02-10",
-    category: "Architecture",
-  },
-  {
-    title: "Receipts Are Not Logs",
-    preview: "Logs are telemetry — receipts are enforcement artifacts. The distinction between observation and proof determines whether your AI system is auditable or merely observable.",
-    date: "2026-02-03",
-    category: "Enforcement",
-  },
-  {
-    title: "Fail-Closed Is Not Conservative — It Is Correct",
-    preview: "Fail-open governance assumes safety by default. Fail-closed governance assumes risk by default. In agentic systems with irreversible state mutation, only one of these assumptions survives production.",
-    date: "2026-01-27",
-    category: "Doctrine",
-  },
-  {
-    title: "Behavioral Drift: The Slow Failure Mode",
-    preview: "Autonomous systems do not fail at a transaction — they fail over time. Privilege creep, compounded deviation, authority decay. Drift Guard enforces containment across time, not just per-action.",
-    date: "2026-01-20",
-    category: "Architecture",
-  },
-  {
-    title: "Capability Removal vs. Capability Restriction",
-    preview: "If intelligence can route itself, governance is already compromised. The Gated Substrate layer removes capability at the execution environment — not by policy, but by physical isolation.",
-    date: "2026-01-13",
-    category: "Enforcement",
-  },
-];
+export { THOUGHTS } from './constants.generated';
