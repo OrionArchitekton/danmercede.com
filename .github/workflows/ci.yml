@@ -68,6 +68,34 @@ jobs:
             exit 1
           fi
 
+      # Fail-closed fallback when substrate checkout failed on a PR.
+      #
+      # `constants.generated.ts` is a generated artifact — its only legitimate
+      # source of mutation is `npm run compile` against substrate. If substrate
+      # checkout flakes (token missing/expired, GH outage, repo perms changed),
+      # the strict-compile and drift-verify steps above are skipped — leaving
+      # the door open for a PR to hand-edit `constants.generated.ts` and ship
+      # unverified content as long as `npx vite build` succeeds. That breaks
+      # the substrate-consumer contract.
+      #
+      # When checkout failed AND this is a pull_request, refuse the PR if it
+      # modifies `constants.generated.ts` vs the base branch. The author can
+      # re-run CI when substrate is available; the substrate-sync workflow PR
+      # is the only legitimate path that mutates this file, and it does so
+      # under verified substrate access.
+      - name: Refuse generated-file mutation without substrate verification
+        if: steps.checkout-substrate.outcome != 'success' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.base_ref }}"
+          echo "Substrate checkout failed; verifying constants.generated.ts unchanged vs origin/${BASE_REF}"
+          git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          if ! git diff --exit-code "origin/${BASE_REF}" -- constants.generated.ts; then
+            echo "::error file=constants.generated.ts::Substrate checkout failed AND constants.generated.ts was modified in this PR. The generated bundle cannot be verified against substrate truth in this run, so the change is refused. Re-run CI when substrate access is available, or restore the file to the base-branch version. Only the substrate-sync workflow may mutate this file unattended."
+            exit 1
+          fi
+          echo "constants.generated.ts unchanged vs base; allowing build to proceed without substrate verification."
+
       # Build with prebuild explicitly skipped — we already compiled above
       # (when substrate is available) or we intentionally want the committed
       # bundle (when substrate is not). Using `npx vite build` bypasses the
