@@ -186,6 +186,29 @@ protection / `REQUIRED_CHECKS` for that one merge), after personally
 reviewing the regenerated bundle diff. Verification self-heals on the
 next sync-workflow PR, which recompiles under the now-merged compiler.
 
+### Branch-protection anchor + gate trust posture (CI-hardening-2, 2026-06-10)
+
+The fail-closed gate (`required-checks-fail-closed.yml`) runs on
+`pull_request`, i.e. PR-controlled code — so it can NOT be the sole
+enforcer of a security property. The root anchor is branch protection on
+`main` requiring the individual checks **by name**:
+`build, gitleaks, required-checks-fail-closed, substrate-verify`. This is
+robust for `substrate-verify` specifically because that job runs on
+`pull_request_target` (base-branch definition), so a PR cannot edit what
+it does — requiring it by name means editing the aggregate gate can no
+longer bypass the substrate-consumer contract.
+
+Two reinforcing hardenings on the untrusted lane:
+
+- `ci.yml` pins `permissions: contents: read` and
+  `persist-credentials: false`. PR-controlled code in that job therefore
+  has no `statuses:write` token and no persisted credential to extract —
+  it cannot POST a forged required-check success status.
+- The gate computes its verdict ONLY from GitHub Actions check-runs
+  (filtered to the `github-actions` app), never from legacy commit
+  statuses. Every required check here is an Actions job, so this loses no
+  signal while removing the forged-status shadowing vector entirely.
+
 ## Files
 
 | File | Role |
@@ -196,11 +219,11 @@ next sync-workflow PR, which recompiles under the now-merged compiler.
 | `constants.generated.ts` | **GENERATED** — substrate-derived `THOUGHTS` bundle (committed) |
 | `constants.ts` | static site constants; re-exports `THOUGHTS` from `constants.generated` |
 | `types.ts` | shared types including `Thought` |
-| `.github/workflows/ci.yml` | untrusted lane: tests + Vercel-equivalent build; NO secrets, NO substrate |
+| `.github/workflows/ci.yml` | untrusted lane: tests + Vercel-equivalent build; NO secrets, NO substrate; `permissions: contents: read` + `persist-credentials: false` |
 | `.github/workflows/substrate-verify.yml` | trusted lane: generated-bundle verification (`pull_request_target`, base code only) |
 | `.github/workflows/substrate-sync.yml` | weekly sync workflow (FAIL-LOUD, opens review PR) |
 | `.github/workflows/gitleaks-scan.yml` | secret scan (unchanged) |
-| `.github/workflows/required-checks-fail-closed.yml` | required-check gate: `build,gitleaks` + self-arming `substrate-verify` (required once the trusted workflow exists on the PR's base branch) |
+| `.github/workflows/required-checks-fail-closed.yml` | required-check gate: `build,gitleaks` + self-arming `substrate-verify`; verdict from GitHub Actions check-runs only (no commit statuses). NOT a standalone enforcer — branch protection requires these by name |
 
 ## Initial Seed (2026-06-08)
 

@@ -110,6 +110,20 @@ jobs:
               if current is None or updated_at > current[0]:
                   store[name] = (updated_at, result)
 
+          # The verdict is computed ONLY from GitHub Actions check-runs — never
+          # from legacy commit statuses. Every required check in this repo
+          # (build, gitleaks, substrate-verify, plus this gate) is a GitHub
+          # Actions job, so a check-run is always available. Commit statuses
+          # are deliberately ignored: the untrusted ci.yml lane runs
+          # PR-controlled code, and a same-repo PR whose token carried
+          # statuses:write could POST a forged `substrate-verify`/`build`
+          # success status that would otherwise shadow a real check-run
+          # failure (latest-timestamp-wins). ci.yml now also pins
+          # `permissions: contents: read` + `persist-credentials: false` so
+          # that token cannot post statuses at all — this gate-side filter is
+          # the defense-in-depth backstop.
+          GITHUB_ACTIONS_APP_SLUG = "github-actions"
+
           while time.time() < deadline:
               resolved = {}
 
@@ -117,12 +131,14 @@ jobs:
                   check_runs = gh_api(f"repos/{repo}/commits/{sha}/check-runs").get(
                       "check_runs", []
                   )
-                  statuses = gh_api(f"repos/{repo}/commits/{sha}/status").get(
-                      "statuses", []
-                  )
 
                   for run in check_runs:
                       if not run or run.get("name") == "required-checks-fail-closed":
+                          continue
+                      # Only trust check-runs produced by the GitHub Actions
+                      # app. A check-run from any other app/integration for a
+                      # required-check name is not an accepted substitute.
+                      if (run.get("app") or {}).get("slug") != GITHUB_ACTIONS_APP_SLUG:
                           continue
                       if run.get("status") != "completed":
                           continue
@@ -137,19 +153,6 @@ jobs:
                           "pass"
                           if run.get("conclusion") in {"success", "neutral", "skipped"}
                           else "fail",
-                      )
-
-                  for status in statuses:
-                      if not status:
-                          continue
-                      if status.get("state") not in {"success", "failure", "error"}:
-                          continue
-
-                      keep_latest(
-                          resolved,
-                          status.get("context"),
-                          status.get("updated_at") or status.get("created_at") or "",
-                          "pass" if status.get("state") == "success" else "fail",
                       )
 
               failed = [check for check in required_checks if resolved.get(check, ("", ""))[1] == "fail"]

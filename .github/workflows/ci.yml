@@ -20,6 +20,15 @@ on:
     branches:
       - main
 
+# Least-privilege token for the untrusted lane (CI-hardening-2, 2026-06-10).
+# This job runs PR-controlled code, so its GITHUB_TOKEN must not be able to
+# mutate anything — in particular it must NOT hold statuses:write, or
+# PR-controlled npm scripts could POST a forged required-check success
+# (e.g. `substrate-verify`) that the fail-closed gate might otherwise honor.
+# `contents: read` is the only scope a build+test needs.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: build
@@ -29,6 +38,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Don't leave the GITHUB_TOKEN in .git/config where PR-controlled
+          # code running later in this job could extract and reuse it.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
