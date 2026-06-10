@@ -33,7 +33,7 @@ a danmercede.com `Thought` only when ALL of the following hold:
 | `type` | `"essay-long"` |
 | `slug` | non-empty string |
 | `title` | non-empty string |
-| `date` | ISO 8601 string OR `Date` (gray-matter parses unquoted dates) |
+| `date` | one of: date-only `YYYY-MM-DD` (rendered as that literal calendar day); a strict ISO 8601 instant **with explicit timezone** (`Z` / `±HH:MM` / `±HHMM`, e.g. `2026-05-20T07:00:00-07:00`, rendered as the PT-local day); or a `Date` object. Offset-less datetimes (`2026-05-20T14:30:00`) and engine-dependent shapes (`May 20 2026`) are REJECTED as fatal — they parse in the process timezone and would render differently per runner. Impossible calendar fields (`2026-02-30…`) are fatal, not normalized. |
 | `claim` | non-empty string |
 
 Canonicals that fail any filter are silently skipped (logged, not fatal).
