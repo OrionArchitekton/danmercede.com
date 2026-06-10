@@ -1,0 +1,133 @@
+name: Substrate Verify (trusted)
+
+# Trusted-lane verification of the substrate-consumer contract:
+# constants.generated.ts mutates only via substrate truth, never via PR
+# hand-edit. This workflow holds the SUBSTRATE_READ_TOKEN, so it must NEVER
+# execute PR-controlled code.
+#
+# SECURITY MODEL (Finding B hardening, 2026-06-09):
+#   - `pull_request_target` runs the workflow definition from the BASE
+#     branch, with secrets — so a PR cannot rewrite this file to leak them.
+#   - The checkout below is pinned to the PR's BASE commit: only
+#     already-merged, trusted code (including the compiler) ever executes.
+#   - The PR's constants.generated.ts is extracted as DATA via `git show`
+#     against refs/pull/N/head. No PR script, test, config, or dependency
+#     manifest is ever evaluated here.
+#   - `npm ci` (base lockfile) runs BEFORE the substrate checkout, so
+#     dependency lifecycle scripts never coexist with substrate content.
+#   - The substrate PAT is confined to its checkout step and not persisted
+#     to disk (persist-credentials: false).
+#
+# VERIFICATION RULE (single decision table):
+#   truth = freshly-compiled bundle      when compile status is WROTE
+#         = base-branch committed bundle otherwise (SKIPPED / no substrate)
+#   PR bundle must equal truth.
+#   Bootstrap admit: if base has no constants.generated.ts, pass.
+#
+# This relocates and unifies the PR-side guards that previously lived in
+# ci.yml (cycle-4 checkout-fail fallback, cycle-6 zero-match guard,
+# cycle-7 bootstrap admit). ci.yml is now secret-free.
+
+on:
+  pull_request_target:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  substrate-verify:
+    name: substrate-verify
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Los_Angeles
+    steps:
+      # Trusted code only: the PR's base commit. The persisted credential
+      # here is the workflow's own GITHUB_TOKEN (contents: read) — needed
+      # to fetch refs/pull/N/head below. Safe because no PR code executes
+      # in this job.
+      - name: Checkout base (trusted code)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Extract PR generated bundle (data only)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/pull/${PR_NUMBER}/head"
+          if git cat-file -e "FETCH_HEAD:constants.generated.ts" 2>/dev/null; then
+            git show "FETCH_HEAD:constants.generated.ts" > /tmp/pr-bundle.ts
+            echo "Extracted PR bundle ($(wc -c < /tmp/pr-bundle.ts) bytes)"
+          else
+            echo "PR has no constants.generated.ts"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Base lockfile, and deliberately ordered BEFORE the substrate
+      # checkout: dependency install scripts run while no substrate
+      # content or credential exists in the workspace.
+      - name: Install dependencies (base lockfile)
+        run: npm ci
+
+      - name: Checkout dan-mercede-substrate (token confined, not persisted)
+        id: checkout-substrate
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: OrionArchitekton/dan-mercede-substrate
+          token: ${{ secrets.SUBSTRATE_READ_TOKEN }}
+          path: vendor/dan-mercede-substrate
+          ref: main
+          persist-credentials: false
+
+      # Fail-open mode on purpose: unreachable substrate, zero matches, or
+      # fatal diagnostics all yield SKIPPED (committed bundle preserved),
+      # and the decision table below falls back to the base-branch bundle
+      # as truth. A corrupt or absent substrate therefore blocks bundle
+      # MUTATIONS without blocking unrelated PRs.
+      - name: Compile from substrate (base compiler, fail-open)
+        if: steps.checkout-substrate.outcome == 'success'
+        env:
+          SUBSTRATE_PATH: ${{ format('{0}/vendor/dan-mercede-substrate', github.workspace) }}
+        run: npm run compile
+
+      - name: Verify PR bundle against truth
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          STATUS=$(cat .compile-status 2>/dev/null || echo missing)
+          echo "compile status: ${STATUS}"
+
+          if [ "$STATUS" = "WROTE" ]; then
+            TRUTH=constants.generated.ts
+            TRUTH_DESC="substrate-compiled bundle (base compiler, status WROTE)"
+          else
+            if git cat-file -e "${BASE_SHA}:constants.generated.ts" 2>/dev/null; then
+              git show "${BASE_SHA}:constants.generated.ts" > /tmp/truth.ts
+              TRUTH=/tmp/truth.ts
+              TRUTH_DESC="base-branch committed bundle (compile status: ${STATUS})"
+            else
+              echo "::notice::bootstrap: constants.generated.ts absent on base; admitting first establishment"
+              exit 0
+            fi
+          fi
+
+          if [ ! -f /tmp/pr-bundle.ts ]; then
+            echo "::error file=constants.generated.ts::PR removes constants.generated.ts, which exists on the base branch. Deleting the generated bundle is review-worthy and is not admitted by automated verification."
+            exit 1
+          fi
+
+          if ! diff -u "$TRUTH" /tmp/pr-bundle.ts; then
+            echo "::error file=constants.generated.ts::PR bundle differs from ${TRUTH_DESC}. constants.generated.ts mutates only via substrate truth: author a substrate canonical and let the substrate-sync workflow open the refresh PR, or run 'npm run compile' against current substrate and commit the verbatim result."
+            exit 1
+          fi
+          echo "PR bundle matches ${TRUTH_DESC}."

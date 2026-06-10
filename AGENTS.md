@@ -83,9 +83,9 @@ logs the condition and exits 0 WITHOUT overwriting `constants.generated.ts`.
 The site continues to render whatever was last committed.
 
 Triggered by `npm run compile` (also wired into `prebuild`). The Vercel build
-runs `npm run build`, which triggers prebuild → compile. CI's substrate
-checkout step uses `continue-on-error: true` so a missing/unauthorized
-substrate clone does not abort the build.
+runs `npm run build`, which triggers prebuild → compile. The untrusted CI
+lane (`ci.yml`) takes the identical path: no substrate is present there, so
+compile SKIPs and the committed bundle is served.
 
 ### Sync workflow mode (`--strict`)
 
@@ -119,39 +119,65 @@ non-empty match set.
 (`fail` actions exit 1 before the marker is written; no subsequent CI step
 runs in that case.)
 
-CI reads the marker to branch its verification gates:
+The trusted verification lane reads the marker to pick its truth source
+(see "CI trust split" below):
 
-- `WROTE`   → drift gate diffs working tree vs committed (committed must
-              match substrate truth).
-- `SKIPPED` → zero-match-bypass guard diffs committed vs the PR's base
-              branch (refuses PR-side hand-edits during the zero-match
-              seed period — only the substrate-sync workflow is the
-              legitimate mutator).
+- `WROTE`   → truth = the freshly substrate-compiled bundle; the PR's
+              committed bundle must match it byte-for-byte.
+- `SKIPPED` → truth = the base branch's committed bundle; the PR must not
+              have mutated the file (refuses hand-edits during the
+              zero-match seed period — only the substrate-sync workflow
+              is the legitimate mutator).
 
-The marker is gitignored. The CI workflow (`.github/workflows/ci.yml`) is
-the only intended consumer; the filename is exported as
-`COMPILE_STATUS_FILENAME` from `scripts/compileContent.ts` and a test
-locks the value so a rename here can't silently desync the workflow.
+The marker is gitignored. The trusted-lane workflow
+(`.github/workflows/substrate-verify.yml`) is the only intended consumer;
+the filename is exported as `COMPILE_STATUS_FILENAME` from
+`scripts/compileContent.ts` and a test locks the value so a rename here
+can't silently desync the workflow.
 
-### Bootstrap admit (one-time, self-disabling)
+### CI trust split (Finding B hardening, 2026-06-09)
 
-Both PR-side guard steps (`Refuse generated-file mutation when compile skipped`
-and `Refuse generated-file mutation without substrate verification`) include
-a bootstrap admit clause: if `constants.generated.ts` does not exist on the
-PR's base branch (`git cat-file -e "origin/${BASE_REF}:constants.generated.ts"`
-returns non-zero), the guard exits 0 with a notice.
+CI is split into two lanes so that PR-controlled code can never read
+private substrate content or the substrate credential:
 
-This clause exists because the substrate-consumer contract becomes
-enforceable only after `constants.generated.ts` exists on `main`. Until
-then, refusing the PR would block the very introduction of the contract
-(Spec 5 PR-B). The admit is intentionally permissive for this single
-introduction case.
+**Untrusted lane — `.github/workflows/ci.yml` (`pull_request` + `push`):**
+runs PR-controlled code (npm lifecycle scripts, tests, vite config) and
+therefore carries NO secrets and never checks out substrate. Build uses
+`npm run build` (prebuild → fail-open compile → SKIPPED → committed
+bundle), which is exactly the Vercel production path.
 
-The admit is self-disabling: after PR-B merges, the file exists on `main`
-and the `cat-file -e` check returns 0, so the admit cannot re-fire on any
-normal PR. The only re-arm path is a PR that deletes
-`constants.generated.ts` from `main`, which is itself review-worthy and
-should be caught at the human review layer.
+**Trusted lane — `.github/workflows/substrate-verify.yml`
+(`pull_request_target`):** holds `SUBSTRATE_READ_TOKEN` and therefore
+NEVER executes PR-controlled code:
+
+- The workflow definition itself comes from the base branch
+  (`pull_request_target` semantics) — a PR cannot rewrite it to leak
+  secrets.
+- The checkout is pinned to the PR's base commit; the compiler that runs
+  is the base branch's compiler.
+- The PR's `constants.generated.ts` is extracted as DATA via
+  `git show refs/pull/N/head:constants.generated.ts` — no PR script,
+  test, config, or dependency manifest is evaluated.
+- `npm ci` (base lockfile) runs before the substrate checkout, so
+  dependency install scripts never coexist with substrate content.
+- The substrate PAT is confined to its checkout step with
+  `persist-credentials: false`.
+
+Verification is a single decision table: truth = compiled bundle when the
+marker says `WROTE`, else the base branch's bundle; the PR bundle must
+equal truth. If the base branch has no `constants.generated.ts` at all,
+the bootstrap admit passes the PR (one-time, self-disabling — after the
+file exists on `main`, the admit cannot re-fire; the only re-arm path is
+a deletion-from-main PR, which is itself review-worthy).
+
+**Compiler-change caveat:** the trusted lane runs the BASE compiler. A PR
+that changes the compiler's output shape must NOT regenerate the bundle in
+the same PR (verification would compare against old-compiler truth and
+fail). Sequence instead: merge the compiler change with the bundle
+untouched, then let the substrate-sync workflow regenerate under the new
+compiler. If a compiler change breaks the committed bundle's types (rare),
+the untrusted lane's build will catch it and the operator resolves with an
+explicit override.
 
 ## Files
 
@@ -163,10 +189,11 @@ should be caught at the human review layer.
 | `constants.generated.ts` | **GENERATED** — substrate-derived `THOUGHTS` bundle (committed) |
 | `constants.ts` | static site constants; re-exports `THOUGHTS` from `constants.generated` |
 | `types.ts` | shared types including `Thought` |
-| `.github/workflows/ci.yml` | build CI with substrate-checkout (FAIL-OPEN) |
+| `.github/workflows/ci.yml` | untrusted lane: tests + Vercel-equivalent build; NO secrets, NO substrate |
+| `.github/workflows/substrate-verify.yml` | trusted lane: generated-bundle verification (`pull_request_target`, base code only) |
 | `.github/workflows/substrate-sync.yml` | weekly sync workflow (FAIL-LOUD, opens review PR) |
 | `.github/workflows/gitleaks-scan.yml` | secret scan (unchanged) |
-| `.github/workflows/required-checks-fail-closed.yml` | required-check gate (unchanged) |
+| `.github/workflows/required-checks-fail-closed.yml` | required-check gate (`build,gitleaks`; add `substrate-verify` post-merge) |
 
 ## Initial Seed (2026-06-08)
 
