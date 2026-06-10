@@ -155,9 +155,11 @@ NEVER executes PR-controlled code:
   secrets.
 - The checkout is pinned to the PR's base commit; the compiler that runs
   is the base branch's compiler.
-- The PR's `constants.generated.ts` is extracted as DATA via
-  `git show refs/pull/N/head:constants.generated.ts` — no PR script,
-  test, config, or dependency manifest is evaluated.
+- The PR's `constants.generated.ts` is extracted as DATA: the workflow
+  first runs `git fetch --no-tags origin "refs/pull/N/head"` (required —
+  `actions/checkout` only fetches the base commit, not the PR ref), then
+  `git show FETCH_HEAD:constants.generated.ts`. No PR script, test,
+  config, or dependency manifest is evaluated.
 - `npm ci` (base lockfile) runs before the substrate checkout, so
   dependency install scripts never coexist with substrate content.
 - The substrate PAT is confined to its checkout step with
@@ -176,8 +178,13 @@ the same PR (verification would compare against old-compiler truth and
 fail). Sequence instead: merge the compiler change with the bundle
 untouched, then let the substrate-sync workflow regenerate under the new
 compiler. If a compiler change breaks the committed bundle's types (rare),
-the untrusted lane's build will catch it and the operator resolves with an
-explicit override.
+the untrusted lane's build will catch it and the PR must regenerate the
+bundle in-PR; `substrate-verify` will then fail by design. The operator
+resolves with an explicit override: admin-merge past the
+`substrate-verify` check (or temporarily remove it from branch
+protection / `REQUIRED_CHECKS` for that one merge), after personally
+reviewing the regenerated bundle diff. Verification self-heals on the
+next sync-workflow PR, which recompiles under the now-merged compiler.
 
 ## Files
 
