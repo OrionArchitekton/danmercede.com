@@ -208,6 +208,31 @@ Two reinforcing hardenings on the untrusted lane:
   (filtered to the `github-actions` app), never from legacy commit
   statuses. Every required check here is an Actions job, so this loses no
   signal while removing the forged-status shadowing vector entirely.
+- `substrate-verify` — the one check whose forgery would bypass the
+  substrate contract — is resolved NOT by name but from the Actions
+  workflow-runs API pinned to BOTH `substrate-verify.yml` AND
+  `event=pull_request_target`. App+name matching alone is insufficient: a
+  PR can add its own `pull_request` workflow with a job named
+  `substrate-verify`, producing a second `github-actions` check-run of
+  that name (latest-timestamp-wins could accept the forged pass). A
+  PR-added workflow lives at a different file `path`, so it cannot appear
+  in the pinned query. `build`/`gitleaks` keep name+app matching (build
+  forgery is self-defeating; gitleaks is backstopped by the external
+  GitGuardian app).
+
+**Residual (branch-protection layer, operator decision).** Classic branch
+protection requires `substrate-verify` by name with `app_id=15368`. But
+app-pinning does NOT disambiguate two `github-actions` check-runs of the
+same name, so the duplicate-named-check-run forgery above also applies to
+branch protection's own evaluation (latest-wins). The gate is now
+hardened against it, but the gate is advisory; the wall is branch
+protection. The fully robust fix is a **repository ruleset** with a
+"required workflows" rule pinning `.github/workflows/substrate-verify.yml`
+(rulesets can pin a required check to a specific workflow file; classic
+required-status-checks cannot). Deferred: practical risk is zero under
+the solo-operator model (the attack requires push access to a repo
+branch), and matters only once semi-trusted contributors exist — the same
+horizon as `SUBSTRATE_READ_TOKEN`.
 
 ## Files
 

@@ -124,6 +124,41 @@ jobs:
           # the defense-in-depth backstop.
           GITHUB_ACTIONS_APP_SLUG = "github-actions"
 
+          # substrate-verify is the only required check whose forgery would
+          # bypass the substrate-consumer contract, AND the only one that can
+          # be made truly unforgeable: it runs on `pull_request_target` from
+          # the BASE branch. App+name matching alone is NOT enough — a
+          # malicious PR can add its own `pull_request` workflow with a job
+          # named `substrate-verify`, producing a SECOND github-actions
+          # check-run of that name; latest-timestamp-wins could then accept
+          # the forged pass. We therefore resolve substrate-verify from the
+          # Actions workflow-runs API pinned to BOTH the workflow file path
+          # AND event=pull_request_target. A PR-added workflow lives at a
+          # different `path`, so it cannot appear in this query.
+          #
+          # build/gitleaks keep name+app matching: build forgery is
+          # self-defeating (it is the PR's own build), and gitleaks is
+          # backstopped by the external GitGuardian app a PR cannot edit.
+          # Neither is the substrate-contract anchor.
+          SUBSTRATE_VERIFY_CHECK = "substrate-verify"
+          SUBSTRATE_VERIFY_WORKFLOW = "substrate-verify.yml"
+
+          def resolve_substrate_verify() -> str | None:
+              # Returns 'pass' | 'fail' | None(pending). Only the base-branch
+              # pull_request_target run of substrate-verify.yml is trusted.
+              runs = gh_api(
+                  f"repos/{repo}/actions/workflows/{SUBSTRATE_VERIFY_WORKFLOW}/runs"
+                  f"?event=pull_request_target&per_page=50"
+              ).get("workflow_runs", [])
+              candidates = [
+                  r for r in runs
+                  if r.get("head_sha") in sha_candidates and r.get("status") == "completed"
+              ]
+              if not candidates:
+                  return None
+              latest = max(candidates, key=lambda r: r.get("updated_at") or "")
+              return "pass" if latest.get("conclusion") in {"success", "neutral", "skipped"} else "fail"
+
           while time.time() < deadline:
               resolved = {}
 
@@ -134,6 +169,11 @@ jobs:
 
                   for run in check_runs:
                       if not run or run.get("name") == "required-checks-fail-closed":
+                          continue
+                      # substrate-verify is resolved authoritatively below via
+                      # its pinned workflow file + event — never by name here,
+                      # so a forged duplicate-named check-run is ignored.
+                      if run.get("name") == SUBSTRATE_VERIFY_CHECK:
                           continue
                       # Only trust check-runs produced by the GitHub Actions
                       # app. A check-run from any other app/integration for a
@@ -154,6 +194,11 @@ jobs:
                           if run.get("conclusion") in {"success", "neutral", "skipped"}
                           else "fail",
                       )
+
+              if SUBSTRATE_VERIFY_CHECK in required_checks:
+                  sv = resolve_substrate_verify()
+                  if sv is not None:
+                      resolved[SUBSTRATE_VERIFY_CHECK] = ("", sv)
 
               failed = [check for check in required_checks if resolved.get(check, ("", ""))[1] == "fail"]
               if failed:
