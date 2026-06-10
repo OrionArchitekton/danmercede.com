@@ -11,7 +11,7 @@ permissions:
   checks: read
 
 env:
-  REQUIRED_CHECKS: "build,gitleaks"
+  BASE_REQUIRED_CHECKS: "build,gitleaks"
   TIMEOUT_MINUTES: "15"
   POLL_INTERVAL_SECONDS: "30"
 
@@ -20,10 +20,36 @@ jobs:
     name: required-checks-fail-closed
     runs-on: ubuntu-latest
     steps:
+      # Self-arming substrate-verify requirement: require the trusted-lane
+      # check only once .github/workflows/substrate-verify.yml exists on the
+      # PR's BASE branch. On the PR that INTRODUCES that workflow, the base
+      # lacks it — and pull_request_target runs base-branch workflows, so the
+      # check cannot report on its own introduction PR; requiring it there
+      # would deadlock the introduction. The moment the workflow lands on
+      # main, every subsequent PR fail-closes on substrate-verify, closing
+      # the window where a hand-edit to constants.generated.ts would fail
+      # substrate-verify without anything requiring that check.
+      - name: Determine required checks (self-arming substrate-verify)
+        id: required
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          REQUIRED="${BASE_REQUIRED_CHECKS}"
+          if gh api "repos/${REPO}/contents/.github/workflows/substrate-verify.yml?ref=${BASE_SHA}" --silent >/dev/null 2>&1; then
+            REQUIRED="${REQUIRED},substrate-verify"
+          fi
+          echo "checks=${REQUIRED}" >> "$GITHUB_OUTPUT"
+          echo "::notice::required checks: ${REQUIRED}"
+
       - name: Wait for required checks and compute verdict
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          REQUIRED_CHECKS: ${{ steps.required.outputs.checks }}
           SHA_CANDIDATES: ${{ github.sha }},${{ github.event.pull_request.merge_commit_sha }},${{ github.event.pull_request.head.sha }}
         shell: bash
         run: |

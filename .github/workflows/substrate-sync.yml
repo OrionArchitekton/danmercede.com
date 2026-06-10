@@ -26,6 +26,11 @@ jobs:
       - name: Checkout danmercede.com
         uses: actions/checkout@v4
 
+      # persist-credentials: false — the substrate PAT is used only for this
+      # fetch and never written to the vendored clone's git config, so no
+      # later step (including dependency code running during compile) can
+      # read it from disk. (The main checkout above keeps its default
+      # GITHUB_TOKEN persistence; this workflow runs main's code only.)
       - name: Checkout dan-mercede-substrate (fail-loud)
         uses: actions/checkout@v4
         with:
@@ -33,6 +38,7 @@ jobs:
           token: ${{ secrets.SUBSTRATE_READ_TOKEN }}
           path: vendor/dan-mercede-substrate
           ref: main
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
