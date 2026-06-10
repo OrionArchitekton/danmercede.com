@@ -216,9 +216,20 @@ Two reinforcing hardenings on the untrusted lane:
   `substrate-verify`, producing a second `github-actions` check-run of
   that name (latest-timestamp-wins could accept the forged pass). A
   PR-added workflow lives at a different file `path`, so it cannot appear
-  in the pinned query. `build`/`gitleaks` keep name+app matching (build
-  forgery is self-defeating; gitleaks is backstopped by the external
-  GitGuardian app).
+  in the pinned query. `build`/`gitleaks` keep name+app matching.
+
+  **Why build/gitleaks are not (and cannot be) pinned like substrate-verify:**
+  both run on `pull_request` — i.e. PR-controlled code. A PR can neuter
+  them by editing their own workflow files (`ci.yml`, `gitleaks-scan.yml`)
+  to pass trivially, so they are forgeable regardless of whether the gate
+  matches by name or by workflow file. Only a `pull_request_target` check
+  (base-branch code) can be made unforgeable, which is exactly why
+  `substrate-verify` is the sole security anchor of the substrate-consumer
+  contract. `build`/`gitleaks` are quality/advisory: build forgery is
+  self-defeating (it is the PR's own build), and a forged `gitleaks` pass
+  is still visible via the external GitGuardian app (PR-uneditable). The
+  broader fix for "don't trust PR-controlled required checks" is the
+  deferred ruleset migration below.
 
 **Residual (branch-protection layer, operator decision).** Classic branch
 protection requires `substrate-verify` by name with `app_id=15368`. But

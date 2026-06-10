@@ -9,6 +9,14 @@ permissions:
   contents: read
   statuses: read
   checks: read
+  # actions: read is required by the substrate-verify resolver, which calls
+  # the Actions workflow-runs API (`actions/workflows/substrate-verify.yml/
+  # runs`). An explicit permissions block sets every unlisted scope to
+  # `none`, so without this line the call works only incidentally because
+  # the repo is public (public Actions metadata is readable). Declaring it
+  # keeps the gate correct if the repo ever goes private — otherwise the
+  # call would 403, crash the step, and fail-closed-block every PR.
+  actions: read
 
 env:
   BASE_REQUIRED_CHECKS: "build,gitleaks"
