@@ -59,6 +59,7 @@ jobs:
           REPO: ${{ github.repository }}
           REQUIRED_CHECKS: ${{ steps.required.outputs.checks }}
           SHA_CANDIDATES: ${{ github.sha }},${{ github.event.pull_request.merge_commit_sha }},${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         shell: bash
         run: |
           python3 - <<'PY'
@@ -107,6 +108,12 @@ jobs:
           if not sha_candidates:
               fail("Unable to determine the commit SHA to query for required checks.")
 
+          # PR number scopes the trusted substrate-verify run to THIS pull
+          # request (see resolve_substrate_verify). Parsed defensively: the
+          # gate is pull_request-only so it is normally present.
+          pr_number_raw = os.environ.get("PR_NUMBER", "").strip()
+          pr_number = int(pr_number_raw) if pr_number_raw.isdigit() else None
+
           deadline = time.time() + (timeout_minutes * 60)
 
           def gh_api(path: str) -> dict:
@@ -153,14 +160,31 @@ jobs:
 
           def resolve_substrate_verify() -> str | None:
               # Returns 'pass' | 'fail' | None(pending). Only the base-branch
-              # pull_request_target run of substrate-verify.yml is trusted.
+              # pull_request_target run of substrate-verify.yml that belongs to
+              # THIS pull request is trusted. Two filters, both required:
+              #   - head_sha ∈ sha_candidates  → the current commit, not an
+              #     older commit on this same PR.
+              #   - pr_number ∈ run.pull_requests → this PR, not a different or
+              #     already-merged PR that happens to share a head_sha.
+              # The API populates `pull_requests` for the current OPEN PR's runs
+              # and leaves it empty for closed/merged PRs (verified), so a stale
+              # run from another PR cannot be reused as this PR's verdict.
+              if pr_number is None:
+                  # The gate only triggers on pull_request, so PR_NUMBER is
+                  # always present; absence is anomalous — refuse to resolve.
+                  return None
               runs = gh_api(
                   f"repos/{repo}/actions/workflows/{SUBSTRATE_VERIFY_WORKFLOW}/runs"
                   f"?event=pull_request_target&per_page=50"
               ).get("workflow_runs", [])
               candidates = [
                   r for r in runs
-                  if r.get("head_sha") in sha_candidates and r.get("status") == "completed"
+                  if r.get("head_sha") in sha_candidates
+                  and r.get("status") == "completed"
+                  and any(
+                      (pr or {}).get("number") == pr_number
+                      for pr in (r.get("pull_requests") or [])
+                  )
               ]
               if not candidates:
                   return None
