@@ -9,6 +9,14 @@ permissions:
   contents: read
   statuses: read
   checks: read
+  # actions: read is required by the substrate-verify resolver, which calls
+  # the Actions workflow-runs API (`actions/workflows/substrate-verify.yml/
+  # runs`). An explicit permissions block sets every unlisted scope to
+  # `none`, so without this line the call works only incidentally because
+  # the repo is public (public Actions metadata is readable). Declaring it
+  # keeps the gate correct if the repo ever goes private — otherwise the
+  # call would 403, crash the step, and fail-closed-block every PR.
+  actions: read
 
 env:
   BASE_REQUIRED_CHECKS: "build,gitleaks"
@@ -51,6 +59,7 @@ jobs:
           REPO: ${{ github.repository }}
           REQUIRED_CHECKS: ${{ steps.required.outputs.checks }}
           SHA_CANDIDATES: ${{ github.sha }},${{ github.event.pull_request.merge_commit_sha }},${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         shell: bash
         run: |
           python3 - <<'PY'
@@ -99,6 +108,12 @@ jobs:
           if not sha_candidates:
               fail("Unable to determine the commit SHA to query for required checks.")
 
+          # PR number scopes the trusted substrate-verify run to THIS pull
+          # request (see resolve_substrate_verify). Parsed defensively: the
+          # gate is pull_request-only so it is normally present.
+          pr_number_raw = os.environ.get("PR_NUMBER", "").strip()
+          pr_number = int(pr_number_raw) if pr_number_raw.isdigit() else None
+
           deadline = time.time() + (timeout_minutes * 60)
 
           def gh_api(path: str) -> dict:
@@ -110,6 +125,72 @@ jobs:
               if current is None or updated_at > current[0]:
                   store[name] = (updated_at, result)
 
+          # The verdict is computed ONLY from GitHub Actions check-runs — never
+          # from legacy commit statuses. Every required check in this repo
+          # (build, gitleaks, substrate-verify, plus this gate) is a GitHub
+          # Actions job, so a check-run is always available. Commit statuses
+          # are deliberately ignored: the untrusted ci.yml lane runs
+          # PR-controlled code, and a same-repo PR whose token carried
+          # statuses:write could POST a forged `substrate-verify`/`build`
+          # success status that would otherwise shadow a real check-run
+          # failure (latest-timestamp-wins). ci.yml now also pins
+          # `permissions: contents: read` + `persist-credentials: false` so
+          # that token cannot post statuses at all — this gate-side filter is
+          # the defense-in-depth backstop.
+          GITHUB_ACTIONS_APP_SLUG = "github-actions"
+
+          # substrate-verify is the only required check whose forgery would
+          # bypass the substrate-consumer contract, AND the only one that can
+          # be made truly unforgeable: it runs on `pull_request_target` from
+          # the BASE branch. App+name matching alone is NOT enough — a
+          # malicious PR can add its own `pull_request` workflow with a job
+          # named `substrate-verify`, producing a SECOND github-actions
+          # check-run of that name; latest-timestamp-wins could then accept
+          # the forged pass. We therefore resolve substrate-verify from the
+          # Actions workflow-runs API pinned to BOTH the workflow file path
+          # AND event=pull_request_target. A PR-added workflow lives at a
+          # different `path`, so it cannot appear in this query.
+          #
+          # build/gitleaks keep name+app matching: build forgery is
+          # self-defeating (it is the PR's own build), and gitleaks is
+          # backstopped by the external GitGuardian app a PR cannot edit.
+          # Neither is the substrate-contract anchor.
+          SUBSTRATE_VERIFY_CHECK = "substrate-verify"
+          SUBSTRATE_VERIFY_WORKFLOW = "substrate-verify.yml"
+
+          def resolve_substrate_verify() -> str | None:
+              # Returns 'pass' | 'fail' | None(pending). Only the base-branch
+              # pull_request_target run of substrate-verify.yml that belongs to
+              # THIS pull request is trusted. Two filters, both required:
+              #   - head_sha ∈ sha_candidates  → the current commit, not an
+              #     older commit on this same PR.
+              #   - pr_number ∈ run.pull_requests → this PR, not a different or
+              #     already-merged PR that happens to share a head_sha.
+              # The API populates `pull_requests` for the current OPEN PR's runs
+              # and leaves it empty for closed/merged PRs (verified), so a stale
+              # run from another PR cannot be reused as this PR's verdict.
+              if pr_number is None:
+                  # The gate only triggers on pull_request, so PR_NUMBER is
+                  # always present; absence is anomalous — refuse to resolve.
+                  return None
+              runs = gh_api(
+                  f"repos/{repo}/actions/workflows/{SUBSTRATE_VERIFY_WORKFLOW}/runs"
+                  f"?event=pull_request_target&per_page=50"
+              ).get("workflow_runs", [])
+              candidates = [
+                  r for r in runs
+                  if r.get("head_sha") in sha_candidates
+                  and r.get("status") == "completed"
+                  and any(
+                      (pr or {}).get("number") == pr_number
+                      for pr in (r.get("pull_requests") or [])
+                  )
+              ]
+              if not candidates:
+                  return None
+              latest = max(candidates, key=lambda r: r.get("updated_at") or "")
+              return "pass" if latest.get("conclusion") in {"success", "neutral", "skipped"} else "fail"
+
           while time.time() < deadline:
               resolved = {}
 
@@ -117,12 +198,19 @@ jobs:
                   check_runs = gh_api(f"repos/{repo}/commits/{sha}/check-runs").get(
                       "check_runs", []
                   )
-                  statuses = gh_api(f"repos/{repo}/commits/{sha}/status").get(
-                      "statuses", []
-                  )
 
                   for run in check_runs:
                       if not run or run.get("name") == "required-checks-fail-closed":
+                          continue
+                      # substrate-verify is resolved authoritatively below via
+                      # its pinned workflow file + event — never by name here,
+                      # so a forged duplicate-named check-run is ignored.
+                      if run.get("name") == SUBSTRATE_VERIFY_CHECK:
+                          continue
+                      # Only trust check-runs produced by the GitHub Actions
+                      # app. A check-run from any other app/integration for a
+                      # required-check name is not an accepted substitute.
+                      if (run.get("app") or {}).get("slug") != GITHUB_ACTIONS_APP_SLUG:
                           continue
                       if run.get("status") != "completed":
                           continue
@@ -139,18 +227,10 @@ jobs:
                           else "fail",
                       )
 
-                  for status in statuses:
-                      if not status:
-                          continue
-                      if status.get("state") not in {"success", "failure", "error"}:
-                          continue
-
-                      keep_latest(
-                          resolved,
-                          status.get("context"),
-                          status.get("updated_at") or status.get("created_at") or "",
-                          "pass" if status.get("state") == "success" else "fail",
-                      )
+              if SUBSTRATE_VERIFY_CHECK in required_checks:
+                  sv = resolve_substrate_verify()
+                  if sv is not None:
+                      resolved[SUBSTRATE_VERIFY_CHECK] = ("", sv)
 
               failed = [check for check in required_checks if resolved.get(check, ("", ""))[1] == "fail"]
               if failed:

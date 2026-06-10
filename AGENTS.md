@@ -186,6 +186,65 @@ protection / `REQUIRED_CHECKS` for that one merge), after personally
 reviewing the regenerated bundle diff. Verification self-heals on the
 next sync-workflow PR, which recompiles under the now-merged compiler.
 
+### Branch-protection anchor + gate trust posture (CI-hardening-2, 2026-06-10)
+
+The fail-closed gate (`required-checks-fail-closed.yml`) runs on
+`pull_request`, i.e. PR-controlled code — so it can NOT be the sole
+enforcer of a security property. The root anchor is branch protection on
+`main` requiring the individual checks **by name**:
+`build, gitleaks, required-checks-fail-closed, substrate-verify`. This is
+robust for `substrate-verify` specifically because that job runs on
+`pull_request_target` (base-branch definition), so a PR cannot edit what
+it does — requiring it by name means editing the aggregate gate can no
+longer bypass the substrate-consumer contract.
+
+Two reinforcing hardenings on the untrusted lane:
+
+- `ci.yml` pins `permissions: contents: read` and
+  `persist-credentials: false`. PR-controlled code in that job therefore
+  has no `statuses:write` token and no persisted credential to extract —
+  it cannot POST a forged required-check success status.
+- The gate computes its verdict ONLY from GitHub Actions check-runs
+  (filtered to the `github-actions` app), never from legacy commit
+  statuses. Every required check here is an Actions job, so this loses no
+  signal while removing the forged-status shadowing vector entirely.
+- `substrate-verify` — the one check whose forgery would bypass the
+  substrate contract — is resolved NOT by name but from the Actions
+  workflow-runs API pinned to BOTH `substrate-verify.yml` AND
+  `event=pull_request_target`. App+name matching alone is insufficient: a
+  PR can add its own `pull_request` workflow with a job named
+  `substrate-verify`, producing a second `github-actions` check-run of
+  that name (latest-timestamp-wins could accept the forged pass). A
+  PR-added workflow lives at a different file `path`, so it cannot appear
+  in the pinned query. `build`/`gitleaks` keep name+app matching.
+
+  **Why build/gitleaks are not (and cannot be) pinned like substrate-verify:**
+  both run on `pull_request` — i.e. PR-controlled code. A PR can neuter
+  them by editing their own workflow files (`ci.yml`, `gitleaks-scan.yml`)
+  to pass trivially, so they are forgeable regardless of whether the gate
+  matches by name or by workflow file. Only a `pull_request_target` check
+  (base-branch code) can be made unforgeable, which is exactly why
+  `substrate-verify` is the sole security anchor of the substrate-consumer
+  contract. `build`/`gitleaks` are quality/advisory: build forgery is
+  self-defeating (it is the PR's own build), and a forged `gitleaks` pass
+  is still visible via the external GitGuardian app (PR-uneditable). The
+  broader fix for "don't trust PR-controlled required checks" is the
+  deferred ruleset migration below.
+
+**Residual (branch-protection layer, operator decision).** Classic branch
+protection requires `substrate-verify` by name with `app_id=15368`. But
+app-pinning does NOT disambiguate two `github-actions` check-runs of the
+same name, so the duplicate-named-check-run forgery above also applies to
+branch protection's own evaluation (latest-wins). The gate is now
+hardened against it, but the gate is advisory; the wall is branch
+protection. The fully robust fix is a **repository ruleset** with a
+"required workflows" rule pinning `.github/workflows/substrate-verify.yml`
+(rulesets can pin a required check to a specific workflow file; classic
+required-status-checks cannot). Deferred: practical risk is zero under
+the solo-operator model (the attack requires push access to a repo
+branch), and matters only once semi-trusted contributors exist — the same
+horizon as `SUBSTRATE_READ_TOKEN`.
+
 ## Files
 
 | File | Role |
@@ -196,11 +255,11 @@ next sync-workflow PR, which recompiles under the now-merged compiler.
 | `constants.generated.ts` | **GENERATED** — substrate-derived `THOUGHTS` bundle (committed) |
 | `constants.ts` | static site constants; re-exports `THOUGHTS` from `constants.generated` |
 | `types.ts` | shared types including `Thought` |
-| `.github/workflows/ci.yml` | untrusted lane: tests + Vercel-equivalent build; NO secrets, NO substrate |
+| `.github/workflows/ci.yml` | untrusted lane: tests + Vercel-equivalent build; NO secrets, NO substrate; `permissions: contents: read` + `persist-credentials: false` |
 | `.github/workflows/substrate-verify.yml` | trusted lane: generated-bundle verification (`pull_request_target`, base code only) |
 | `.github/workflows/substrate-sync.yml` | weekly sync workflow (FAIL-LOUD, opens review PR) |
 | `.github/workflows/gitleaks-scan.yml` | secret scan (unchanged) |
-| `.github/workflows/required-checks-fail-closed.yml` | required-check gate: `build,gitleaks` + self-arming `substrate-verify` (required once the trusted workflow exists on the PR's base branch) |
+| `.github/workflows/required-checks-fail-closed.yml` | required-check gate: `build,gitleaks` + self-arming `substrate-verify`; verdict from GitHub Actions check-runs only (no commit statuses). NOT a standalone enforcer — branch protection requires these by name |
 
 ## Initial Seed (2026-06-08)
 
