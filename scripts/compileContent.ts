@@ -138,8 +138,35 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 // Strict ISO-8601 instant: date + 'T' + time (seconds and fraction optional)
 // + REQUIRED explicit timezone (Z or ±HH:MM / ±HHMM). The mandatory offset is
 // what makes the value runner-independent — see validateDate Case 3.
+//
+// Bare ±HH offsets (`-07`) are ISO-8601-permitted but deliberately NOT
+// admitted: ECMAScript cannot parse them (`new Date('…-07')` → Invalid Date,
+// verified on Node 20/V8), so admitting them in the regex would only move the
+// rejection from here to the isNaN check while making this contract claim
+// support the engine does not have.
 const ISO_INSTANT_RE =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})$/;
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})$/;
+
+// ECMAScript NORMALIZES some impossible calendar fields instead of rejecting
+// them: `2026-02-30T00:00:00Z` parses to 2026-03-02, `2026-04-31` to 05-01,
+// and hour 24 rolls to the next day (verified on Node 20/V8). A regex match
+// must therefore be followed by explicit field validation — isNaN alone is
+// not a calendar-validity gate. (Out-of-range months, minutes, seconds, and
+// timezone offsets ARE engine-rejected, but one authoritative validator is
+// less fragile than documenting which fields the engine happens to catch.)
+function hasRealCalendarFields(match: RegExpExecArray): boolean {
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = match[6] === undefined ? 0 : Number(match[6]);
+  if (month < 1 || month > 12) return false;
+  // Date.UTC(year, month, 0) = last day of `month` (deterministic UTC math).
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (day < 1 || day > daysInMonth) return false;
+  return hour <= 23 && minute <= 59 && second <= 59;
+}
 
 /**
  * Normalize a substrate `date` value to:
@@ -203,7 +230,8 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
   // UTC runner vs a PT laptop. Offset-less datetimes
   // (`2026-05-20T14:30:00`) are rejected for the same reason — ECMAScript
   // parses them as local time, which is runner-dependent.
-  if (!ISO_INSTANT_RE.test(trimmed)) return null;
+  const match = ISO_INSTANT_RE.exec(trimmed);
+  if (!match || !hasRealCalendarFields(match)) return null;
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) return null;
   return { isoDate: parsed.toISOString(), displayDate: PT_DATE_FORMATTER.format(parsed) };

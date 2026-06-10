@@ -282,6 +282,35 @@ test('mapSubstrateToEntry: rejects offset-less ISO datetime (runner-local semant
   );
 });
 
+test('mapSubstrateToEntry: rejects impossible calendar fields the engine would normalize', () => {
+  // V8 silently rolls these over (Feb 30 → Mar 2, Apr 31 → May 1, hour 24 →
+  // next day) instead of rejecting; the explicit field validator must catch
+  // them so strict sync fails loud rather than committing corrupted dates.
+  for (const date of [
+    '2026-02-30T00:00:00Z',
+    '2026-04-31T00:00:00Z',
+    '2026-05-20T24:00:00Z',
+    '2026-13-01T00:00:00Z',
+    '2026-05-20T14:60:00Z',
+    '2026-05-20T14:30:60Z',
+  ]) {
+    assert.equal(
+      mapSubstrateToEntry(validFrontmatter({ date }), 'test.md'),
+      null,
+      `expected rejection for ${date}`
+    );
+  }
+});
+
+test('mapSubstrateToEntry: rejects bare ±HH timezone offset (engine-unparseable)', () => {
+  // ISO 8601 permits `-07`, but ECMAScript returns Invalid Date for it —
+  // the regex intentionally matches only the engine-parseable ISO subset.
+  assert.equal(
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T07:00:00-07' }), 'test.md'),
+    null
+  );
+});
+
 test('mapSubstrateToEntry: accepts strict ISO instants with explicit timezone', () => {
   for (const date of [
     '2026-05-20T14:30Z',
