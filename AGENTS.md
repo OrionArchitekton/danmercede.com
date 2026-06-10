@@ -200,7 +200,7 @@ next sync-workflow PR, which recompiles under the now-merged compiler.
 | `.github/workflows/substrate-verify.yml` | trusted lane: generated-bundle verification (`pull_request_target`, base code only) |
 | `.github/workflows/substrate-sync.yml` | weekly sync workflow (FAIL-LOUD, opens review PR) |
 | `.github/workflows/gitleaks-scan.yml` | secret scan (unchanged) |
-| `.github/workflows/required-checks-fail-closed.yml` | required-check gate (`build,gitleaks`; add `substrate-verify` post-merge) |
+| `.github/workflows/required-checks-fail-closed.yml` | required-check gate: `build,gitleaks` + self-arming `substrate-verify` (required once the trusted workflow exists on the PR's base branch) |
 
 ## Initial Seed (2026-06-08)
 
