@@ -103,6 +103,40 @@ test('resolveSubstratePath falls back to sibling when SUBSTRATE_PATH points to n
   }
 });
 
+test('resolveSubstratePath survives statSync throwing (path component is a file → ENOTDIR)', () => {
+  const prior = clearEnv('SUBSTRATE_PATH');
+  const parent = mkTempDir('parent-');
+  const sibling = path.join(parent, 'dan-mercede-substrate');
+  fs.mkdirSync(sibling);
+  const projectRoot = path.join(parent, 'consumer');
+  fs.mkdirSync(projectRoot);
+  const blocker = path.join(parent, 'a-regular-file');
+  fs.writeFileSync(blocker, 'not a directory', 'utf-8');
+  try {
+    // statSync on a path whose component is a regular file throws ENOTDIR;
+    // resolution must treat that as "unusable" and fall through, not crash.
+    process.env.SUBSTRATE_PATH = path.join(blocker, 'child');
+    assert.equal(resolveSubstratePath(projectRoot), sibling);
+  } finally {
+    restoreEnv('SUBSTRATE_PATH', prior);
+  }
+});
+
+test('resolveSubstratePath returns null when SUBSTRATE_PATH points at a file (not a directory)', () => {
+  const prior = clearEnv('SUBSTRATE_PATH');
+  const parent = mkTempDir('parent-');
+  const projectRoot = path.join(parent, 'consumer');
+  fs.mkdirSync(projectRoot);
+  const filePath = path.join(parent, 'a-regular-file');
+  fs.writeFileSync(filePath, 'not a directory', 'utf-8');
+  try {
+    process.env.SUBSTRATE_PATH = filePath;
+    assert.equal(resolveSubstratePath(projectRoot), null);
+  } finally {
+    restoreEnv('SUBSTRATE_PATH', prior);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // deriveCategoryFromLayer
 // ---------------------------------------------------------------------------
@@ -222,6 +256,43 @@ test('mapSubstrateToEntry: TZ-independent date format (UTC runner → PT date)',
     assert.equal(entry!.date, '2026-05-20');
   } finally {
     restoreEnv('TZ', priorTZ);
+  }
+});
+
+test('mapSubstrateToEntry: rejects engine-dependent date string ("May 20 2026")', () => {
+  // new Date('May 20 2026') parses in the PROCESS timezone — runner-dependent.
+  assert.equal(
+    mapSubstrateToEntry(validFrontmatter({ date: 'May 20 2026' }), 'test.md'),
+    null
+  );
+});
+
+test('mapSubstrateToEntry: rejects space-separated datetime ("2026-05-20 00:00:00")', () => {
+  assert.equal(
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20 00:00:00' }), 'test.md'),
+    null
+  );
+});
+
+test('mapSubstrateToEntry: rejects offset-less ISO datetime (runner-local semantics)', () => {
+  // ECMAScript parses `2026-05-20T14:30:00` as LOCAL time → differs per runner.
+  assert.equal(
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T14:30:00' }), 'test.md'),
+    null
+  );
+});
+
+test('mapSubstrateToEntry: accepts strict ISO instants with explicit timezone', () => {
+  for (const date of [
+    '2026-05-20T14:30Z',
+    '2026-05-20T14:30:00Z',
+    '2026-05-20T14:30:00.123Z',
+    '2026-05-20T07:00:00-07:00',
+    '2026-05-20T07:00:00-0700',
+  ]) {
+    const entry = mapSubstrateToEntry(validFrontmatter({ date }), 'test.md');
+    assert.ok(entry, `expected acceptance for ${date}`);
+    assert.equal(entry!.date, '2026-05-20', `expected PT day for ${date}`);
   }
 });
 

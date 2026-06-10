@@ -100,16 +100,28 @@ export interface SubstrateDiagnostic {
   reason: string;
 }
 
+// existsSync→statSync is not atomic: the path can vanish between the calls, a
+// component can be a file (ENOTDIR), or permissions/NFS can make stat throw
+// even though exists returned true. Treat any stat failure as "not a usable
+// directory" rather than crashing path resolution.
+function isUsableDirectory(candidate: string): boolean {
+  try {
+    return fs.statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export function resolveSubstratePath(projectRoot: string): string | null {
   const envPath = process.env.SUBSTRATE_PATH;
   if (envPath && envPath.trim() !== '') {
-    if (fs.existsSync(envPath) && fs.statSync(envPath).isDirectory()) {
+    if (isUsableDirectory(envPath)) {
       return envPath;
     }
-    console.log(`   ℹ️  SUBSTRATE_PATH set to "${envPath}" but directory does not exist; trying sibling fallback`);
+    console.log(`   ℹ️  SUBSTRATE_PATH set to "${envPath}" but is not an accessible directory; trying sibling fallback`);
   }
   const sibling = path.resolve(projectRoot, '..', 'dan-mercede-substrate');
-  if (fs.existsSync(sibling) && fs.statSync(sibling).isDirectory()) {
+  if (isUsableDirectory(sibling)) {
     return sibling;
   }
   return null;
@@ -123,6 +135,12 @@ export function deriveCategoryFromLayer(layer: unknown): string {
 // Pure date-only YYYY-MM-DD pattern (no time component).
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+// Strict ISO-8601 instant: date + 'T' + time (seconds and fraction optional)
+// + REQUIRED explicit timezone (Z or ±HH:MM / ±HHMM). The mandatory offset is
+// what makes the value runner-independent — see validateDate Case 3.
+const ISO_INSTANT_RE =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})$/;
+
 /**
  * Normalize a substrate `date` value to:
  *   - `isoDate`: a sortable ISO-8601 instant for ordering (always present)
@@ -132,9 +150,10 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
  * gray-matter Date object that represents UTC midnight from date-only YAML)
  * are treated as calendar dates and rendered LITERALLY — not converted through
  * a JS Date instant in America/Los_Angeles, which would shift them one day
- * earlier (UTC midnight is the previous day in PT). Full ISO timestamps with a
- * time component or explicit offset are formatted via PT_DATE_FORMATTER as
- * before.
+ * earlier (UTC midnight is the previous day in PT). Time-bearing strings must
+ * be strict ISO-8601 instants with an explicit timezone (Z or ±HH:MM) and are
+ * formatted via PT_DATE_FORMATTER; anything else (engine-dependent shapes,
+ * offset-less datetimes) returns null → fatal at the caller.
  */
 function validateDate(date: unknown): { isoDate: string; displayDate: string } | null {
   // Case 1: caller-supplied Date object (no longer produced by our gray-matter
@@ -172,10 +191,19 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
     return { isoDate: probe.toISOString(), displayDate: trimmed };
   }
 
-  // Case 3: any string carrying a time component (or offset/Z marker) is a
-  // real ISO instant; format in PT. This is where UTC-midnight timestamps
-  // like `2026-05-20T00:00:00Z` correctly render as the PT-local day
+  // Case 3: a strict ISO-8601 instant WITH an explicit timezone (Z or
+  // ±HH:MM); format in PT. This is where UTC-midnight timestamps like
+  // `2026-05-20T00:00:00Z` correctly render as the PT-local day
   // (`2026-05-19`) rather than the calendar literal.
+  //
+  // Anything else is rejected (fatal at the caller): bare `new Date()`
+  // accepts engine-dependent shapes like `May 20 2026` or
+  // `2026-05-20 00:00:00` and interprets them in the PROCESS timezone, so
+  // the same canonical would produce different isoDate/display/sort on a
+  // UTC runner vs a PT laptop. Offset-less datetimes
+  // (`2026-05-20T14:30:00`) are rejected for the same reason — ECMAScript
+  // parses them as local time, which is runner-dependent.
+  if (!ISO_INSTANT_RE.test(trimmed)) return null;
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) return null;
   return { isoDate: parsed.toISOString(), displayDate: PT_DATE_FORMATTER.format(parsed) };
