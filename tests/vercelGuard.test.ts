@@ -33,6 +33,14 @@ const SENTINEL =
 /** Prefer the repo-local tsx binary; fall back to PATH (npm scripts add .bin). */
 function resolveTsx(): string {
   const local = path.join(projectRoot, 'node_modules', '.bin', 'tsx');
+  // On Windows the .bin shim is `tsx.cmd`/`tsx.bat`; the extensionless file is
+  // not executable via cmd.exe under `shell: true`. Resolve the .cmd variant.
+  if (process.platform === 'win32') {
+    const localCmd = local + '.cmd';
+    if (fs.existsSync(localCmd)) {
+      return localCmd;
+    }
+  }
   return fs.existsSync(local) ? local : 'tsx';
 }
 

@@ -531,7 +531,7 @@ export function main(): void {
     console.log(
       'VERCEL build environment detected — skipping compile; the committed bundle is served (Spec 4b D1).'
     );
-    process.exit(0);
+    return;
   }
 
   // --strict: fail-loud on FATAL diagnostics (corrupt matched canonical,
