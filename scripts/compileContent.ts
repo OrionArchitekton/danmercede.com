@@ -521,6 +521,19 @@ export function decideOutput(args: DecideOutputArgs): OutputDecision {
 }
 
 export function main(): void {
+  // Spec 4b D1 (parity with danmercede.online): Vercel never compiles. The
+  // committed bundle is the deploy truth; CI owns compilation. This guard must
+  // run BEFORE substrate resolution and any filesystem write so the Vercel
+  // prebuild hook cannot overwrite the committed bundle — even if substrate
+  // ever becomes reachable from the Vercel build environment (the softer
+  // "substrate unreachable -> fail-open skip" path is not a hard guarantee).
+  if (process.env.VERCEL) {
+    console.log(
+      'VERCEL build environment detected — skipping compile; the committed bundle is served (Spec 4b D1).'
+    );
+    return;
+  }
+
   // --strict: fail-loud on FATAL diagnostics (corrupt matched canonical,
   //   unreadable file, YAML parse failure, duplicate slug among admitted
   //   canonicals) AND on substrate unreachable. Used by both CI (PR drift
