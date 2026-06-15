@@ -8,6 +8,108 @@ import type { Thought } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
+    title: "The Gate Is the Product",
+    preview: "Agent generation is not the constraint — a fleet produces more than a human can review. The merge-authority gate, plus the work of converging what was generated, is the constraint. So governance ships shadow-first, and authority is delivered on demand and never left at rest.",
+    date: "2026-06-16",
+    category: "Doctrine",
+  },
+  {
+    title: "Open-Source the Gate, Not the Verdict",
+    preview: "The model that reads a diff is replaceable; the deterministic gate around it is not. What you publish, and what does the governing, is the gate: default-deny, runnable, receipt-leaving — with the model behind a seam you can swap without touching it.",
+    date: "2026-06-09",
+    category: "Architecture",
+  },
+  {
+    title: "A Governance Claim You Cannot Run Is Advisory",
+    preview: "A governance claim that cannot be executed and verified is advisory, regardless of how rigorously it is argued. The proof obligation is a runnable artifact — something a skeptic can clone and watch refuse — not a manifesto.",
+    date: "2026-06-02",
+    category: "Doctrine",
+  },
+  {
+    title: "Distrust the Model's Own Output Shape",
+    preview: "When a model's output gates the next step, that output is untrusted input. Strip the fences, validate the schema, and on malformed or self-contradictory output, abstain. The one thing a deterministic gate must never do is pass the model's verdict through unparsed.",
+    date: "2026-05-26",
+    category: "Architecture",
+  },
+  {
+    title: "The Merge Is a State Mutation",
+    preview: "A merge changes production state, which makes the release gate an authority gate. If the fail-closed merge check cannot resolve, the merge halts. It does not proceed on the assumption that green-enough is good enough.",
+    date: "2026-05-19",
+    category: "Architecture",
+  },
+  {
+    title: "Posted Is Not Published",
+    preview: "A publish receipt earns its terminal state through independent visibility verification or an explicit, documented abort — never through the act of posting. The platform accepting a write is a claim; the content being visible is the proof.",
+    date: "2026-05-12",
+    category: "Enforcement",
+  },
+  {
+    title: "Gated Substrate Is a Pinned SHA, Not a Newer State",
+    preview: "Separating who originates content from what gets distributed holds only if distribution is gated on an exact, attested source. \"Any newer state\" is an open gate. The contract is a pinned hash, and moving it is a reviewed event.",
+    date: "2026-05-05",
+    category: "Enforcement",
+  },
+  {
+    title: "Content Has a Substrate Too",
+    preview: "If governance must precede state mutation, publishing must proceed from a source of truth. Nothing becomes canonical until it passes a deterministic editorial gate — and the place it passes through is a substrate, not a folder of drafts.",
+    date: "2026-04-28",
+    category: "Enforcement",
+  },
+  {
+    title: "The Gate Defends State From Its Own Author",
+    preview: "A gate that mutates state before it validates is not a gate. Enforcement has to fail fast before the write, and it has to serialize the writer against itself — because the first thing that corrupts canon is a second concurrent write from the same hand.",
+    date: "2026-04-21",
+    category: "Architecture",
+  },
+  {
+    title: "Redact at the Boundary, Fail-Closed, or the Pipeline Leaks",
+    preview: "If a pipeline can write a record before passing it through redaction, secret leakage is structural, not accidental. The redaction gate belongs at the write boundary, and it must fail closed on shapes it does not recognize — not enumerate the prefixes it does.",
+    date: "2026-04-14",
+    category: "Enforcement",
+  },
+  {
+    title: "A Proof Pack Demonstrates Enforcement — It Does Not Add It",
+    preview: "A demo that replays stop, authorize, replay is an evidence artifact about a governed path that already exists. It proves the receipts. It is not permitted to author new policy, fixtures, or kernel behavior to make the demonstration look better.",
+    date: "2026-04-07",
+    category: "Enforcement",
+  },
+  {
+    title: "Deleting the Fallback Is the Enforcement",
+    preview: "A migration is not enforced until the legacy path is removed. While a fail-open fallback exists, the new authority is advisory — and a process that can still boot without it has not adopted it.",
+    date: "2026-03-31",
+    category: "Enforcement",
+  },
+  {
+    title: "A Reviewer That Cannot Abstain Is Not a Gate",
+    preview: "An automated reviewer that cannot distinguish \"I have no grounding\" from \"this passes\" will emit false approvals. A gate must be able to abstain — grounded-or-silent — and a contract breach must fail the check, not pass it.",
+    date: "2026-03-24",
+    category: "Architecture",
+  },
+  {
+    title: "A Repo Boundary Is an Enforcement Primitive",
+    preview: "A clean repository split is not bookkeeping. The contract for what a repository owns — and what it must not — plus a CI gate that fails closed when a change violates it, is where cross-repo authority is actually enforced.",
+    date: "2026-03-17",
+    category: "Enforcement",
+  },
+  {
+    title: "Extraction Without a Frozen Contract Is Just Relocation",
+    preview: "Pulling a kernel out of a legacy core does not produce governance. It produces governance only if each invariant is canonized and locked at the moment it is lifted. Otherwise the coupling moved; it did not leave.",
+    date: "2026-03-10",
+    category: "Architecture",
+  },
+  {
+    title: "Memory Is a Governance Surface, Not a Store",
+    preview: "If the record of what a system decided is mutable or optional, every attestation built on it is unfounded. Memory in a governed system is not storage you read back later — it is the control surface the enforcement plane writes to in-path.",
+    date: "2026-03-03",
+    category: "Doctrine",
+  },
+  {
+    title: "The Choke Point Is the Control",
+    preview: "You cannot govern a capability you can still reach around. Enforcement begins by collapsing every call path to a single mediated route, and deleting the alternatives — including the credentials that made them reachable.",
+    date: "2026-02-24",
+    category: "Enforcement",
+  },
+  {
     title: "Why Enterprise AI Fails at Runtime — Not Capability",
     preview: "Execution outruns governance. Agentic systems act without authority, mutate state without attestation, and drift without constraint. The missing layer is deterministic enforcement at the execution boundary.",
     date: "2026-02-17",
