@@ -4,6 +4,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Resource hints: warm the esm.sh module CDN + font origins before the importmap is parsed (React is CDN-externalized) -->
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="dns-prefetch" href="https://esm.sh" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!--SEO_BLOCK-->
   <title>Dan Mercede — AI Systems Architect of the Governed AI Operating System</title>
   <meta name="description" content="Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms." />

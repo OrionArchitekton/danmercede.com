@@ -160,11 +160,13 @@ const HomePage = () => {
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
               <img
-                src="/dan-mercede-founder-headshot-sm.png"
+                src="/dan-mercede-founder-headshot-sm.webp"
                 alt={getImageMeta("/dan-mercede-founder-headshot-sm.png").alt}
                 title="Dan Mercede — Founder of Cosmocrat"
                 width="1200"
                 height="1500"
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
               />
               {/* Subtle Dark Overlay (5%) */}
@@ -920,7 +922,7 @@ const ResourcesPage = () => {
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
               alt="Runtime Execution Control Plane Architecture — four-layer deterministic enforcement cascade: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
               className="w-full h-auto"
-              loading="eager"
+              loading="lazy"
             />
           </div>
           <div className="max-w-4xl">
