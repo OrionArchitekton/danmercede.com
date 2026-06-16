@@ -7,9 +7,9 @@
     "compile": "tsx scripts/compileContent.ts",
     "prebuild": "npm run compile",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && tsx scripts/injectRouteMeta.ts",
     "preview": "vite preview",
-    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts"
+    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.562.0",
