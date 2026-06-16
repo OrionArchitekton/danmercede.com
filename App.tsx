@@ -5,6 +5,15 @@ import ConstellationBackground from './components/ConstellationBackground';
 import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought } from './types';
+import {
+  ROUTE_META,
+  caseStudyMeta,
+  type RouteMeta,
+  SITE_ORIGIN,
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_META_DESCRIPTION,
+  DEFAULT_TITLE,
+} from './seoMeta';
 
 // --- Shared Components ---
 
@@ -112,7 +121,7 @@ const Footer = () => (
 // --- Pages ---
 
 const HomePage = () => {
-  usePageMeta('Dan Mercede — AI Systems Architect of the Governed AI Operating System');
+  usePageMeta();
   return (
     <>
       {/* Hero */}
@@ -260,7 +269,7 @@ const HomePage = () => {
 };
 
 const AboutPage = () => {
-  usePageMeta('About — Dan Mercede', 'Systems architect and founder building governed AI operating systems with deterministic enforcement at runtime.');
+  usePageMeta();
   return (
   <div className="pt-20">
     <Section>
@@ -325,7 +334,7 @@ const AboutPage = () => {
 };
 
 const EcosystemPage = () => {
-  usePageMeta('Ecosystem — Orion Ventures | Dan Mercede');
+  usePageMeta();
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const location = useLocation();
@@ -812,10 +821,6 @@ const DiagramDownloads = ({ basePath, name }: { basePath: string; name: string }
   </div>
 );
 
-const SITE_ORIGIN = "https://www.danmercede.com";
-const DEFAULT_OG_IMAGE_PATH = "/og/danmercede-default-1200x630.webp";
-const DEFAULT_META_DESCRIPTION = "Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms.";
-
 const ensureSingleHeadTag = <T extends Element>(selector: string, create: () => T): T => {
   const existing = Array.from(document.head.querySelectorAll<T>(selector));
   const primary = existing[0] ?? create();
@@ -858,38 +863,48 @@ const upsertCanonical = (href: string) => {
   tag.setAttribute("href", href);
 };
 
-const usePageMeta = (title: string, description?: string, ogImagePath: string = DEFAULT_OG_IMAGE_PATH) => {
+// Per-route head meta. Static routes resolve from ROUTE_META (the single source
+// shared with the build-time prerender injector); dynamic routes (case studies)
+// pass an explicit override. og:type/site_name/image and the rendered tag set
+// are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
+// crawler-facing static head agree.
+const usePageMeta = (override?: RouteMeta) => {
   const { pathname } = useLocation();
+  const overrideTitle = override?.title;
+  const overrideDescription = override?.description;
+  const overrideOgImage = override?.ogImage;
 
   useEffect(() => {
-    const canonicalPath = pathname || "/";
-    const canonicalUrl = new URL(canonicalPath, SITE_ORIGIN).toString();
+    // Normalize trailing slashes (except root) so /about and /about/ resolve the
+    // same route meta and produce a stable canonical that matches the static head.
+    const normalizedPath = pathname === "/" ? "/" : pathname.replace(/\/+$/, "");
+    const base: Partial<RouteMeta> = ROUTE_META[normalizedPath] ?? {};
+    const title = overrideTitle ?? base.title ?? DEFAULT_TITLE;
+    const description = overrideDescription ?? base.description ?? DEFAULT_META_DESCRIPTION;
+    const ogImagePath = overrideOgImage ?? base.ogImage ?? DEFAULT_OG_IMAGE_PATH;
+    const canonicalUrl = new URL(normalizedPath || "/", SITE_ORIGIN).toString();
     const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
-    const effectiveDescription = description ?? DEFAULT_META_DESCRIPTION;
 
     document.title = title;
-    upsertMetaByName("description", effectiveDescription);
+    upsertMetaByName("description", description);
     upsertCanonical(canonicalUrl);
 
-    upsertMetaByProperty("og:type", "website");
+    upsertMetaByProperty("og:type", "profile");
     upsertMetaByProperty("og:site_name", "Dan Mercede");
     upsertMetaByProperty("og:title", title);
-    upsertMetaByProperty("og:description", effectiveDescription);
+    upsertMetaByProperty("og:description", description);
     upsertMetaByProperty("og:url", canonicalUrl);
     upsertMetaByProperty("og:image", ogImageUrl);
 
     upsertMetaByName("twitter:card", "summary_large_image");
     upsertMetaByName("twitter:title", title);
-    upsertMetaByName("twitter:description", effectiveDescription);
+    upsertMetaByName("twitter:description", description);
     upsertMetaByName("twitter:image", ogImageUrl);
-  }, [pathname, title, description, ogImagePath]);
+  }, [pathname, overrideTitle, overrideDescription, overrideOgImage]);
 };
 
 const ResourcesPage = () => {
-  usePageMeta(
-    'Proof — Runtime Governance Enforcement Artifacts | Dan Mercede',
-    'Downloadable enforcement artifacts mapped to the four-layer runtime governance stack: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate.'
-  );
+  usePageMeta();
   const layers = [1, 2, 3, 4] as const;
 
   return (
@@ -1086,10 +1101,7 @@ const ResourcesPage = () => {
 const CaseStudyPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const study = CASE_STUDIES.find(cs => cs.slug === slug);
-  usePageMeta(
-    study ? `${study.title} — Case Study | Dan Mercede` : 'Case Study Not Found | Dan Mercede',
-    study ? study.description : undefined
-  );
+  usePageMeta(caseStudyMeta(slug));
 
   if (!study) {
     return (
@@ -1190,7 +1202,7 @@ const CaseStudyPage = () => {
 };
 
 const ThoughtsPage = () => {
-  usePageMeta('Thought Direction — Doctrine + Architecture | Dan Mercede', 'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.');
+  usePageMeta();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const categories = ['all', ...Array.from(new Set(THOUGHTS.map((t: Thought) => t.category)))];
 
@@ -1258,7 +1270,7 @@ const ThoughtsPage = () => {
 };
 
 const ConnectPage = () => {
-  usePageMeta('Connect — Initiate Protocol | Dan Mercede', 'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.');
+  usePageMeta();
   return (
   <div className="pt-20">
     <Section>
@@ -1309,7 +1321,7 @@ const ConnectPage = () => {
 };
 
 const LegalPage = () => {
-  usePageMeta('Legal Notice | Dan Mercede', 'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.');
+  usePageMeta();
   return (
   <div className="pt-20">
     <Section>
@@ -1334,7 +1346,7 @@ const LegalPage = () => {
 };
 
 const PrivacyPage = () => {
-  usePageMeta('Privacy Policy — Data Governance | Dan Mercede', 'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.');
+  usePageMeta();
   return (
   <div className="pt-20">
     <Section>
@@ -1359,7 +1371,7 @@ const PrivacyPage = () => {
 };
 
 const ImprintPage = () => {
-  usePageMeta('Imprint — Entity Details | Dan Mercede', 'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.');
+  usePageMeta();
   return (
   <div className="pt-20">
     <Section>
