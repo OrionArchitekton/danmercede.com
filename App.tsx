@@ -75,14 +75,20 @@ const Navigation = () => {
         </div>
 
         {/* Mobile Toggle */}
-        <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-white">
-          {isOpen ? <X /> : <Menu />}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-white"
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isOpen}
+          aria-controls="mobile-menu"
+        >
+          {isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden absolute top-20 w-full bg-slate-950 border-b border-copper-500/30">
+        <div id="mobile-menu" className="md:hidden absolute top-20 w-full bg-slate-950 border-b border-copper-500/30">
           <div className="flex flex-col p-6 space-y-4">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -366,6 +372,14 @@ const EcosystemPage = () => {
     }
   };
 
+  // Keyboard activation (Enter/Space) for the role="button" expand/collapse cards.
+  const handleToggleKey = (e: React.KeyboardEvent, slug: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleExpand(slug);
+    }
+  };
+
   const renderVentureDetail = (venture: Venture) => (
     <div className="col-span-1 md:col-span-2 bg-slate-950 border-y border-copper-500/30 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
       <div className="absolute top-0 left-0 w-1 h-full bg-copper-500"></div>
@@ -437,8 +451,12 @@ const EcosystemPage = () => {
             return (
               <React.Fragment key={venture.slug}>
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleExpand(venture.slug)}
-                  className={`group relative border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full ${isCosmocrat
+                  onKeyDown={(e) => handleToggleKey(e, venture.slug)}
+                  aria-expanded={isExpanded}
+                  className={`group relative border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500 ${isCosmocrat
                     ? 'border-copper-500/30 bg-copper-500/5'
                     : isExpanded
                       ? 'border-copper-500/50 bg-slate-900/80'
@@ -514,8 +532,12 @@ const EcosystemPage = () => {
       {/* Secondary: Extended Ecosystem */}
       <Section>
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => setShowSecondary(!showSecondary)}
-          className="cursor-pointer flex items-center justify-between mb-8 group"
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSecondary(!showSecondary); } }}
+          aria-expanded={showSecondary}
+          className="cursor-pointer flex items-center justify-between mb-8 group focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500/50 rounded-sm"
         >
           <div className="border-l-2 border-slate-700 pl-6">
             <h2 className="text-2xl font-bold text-slate-400 group-hover:text-slate-300 transition-colors tracking-tight">Extended Ecosystem</h2>
@@ -537,8 +559,12 @@ const EcosystemPage = () => {
               return (
                 <React.Fragment key={venture.slug}>
                   <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => toggleExpand(venture.slug)}
-                    className={`group relative bg-slate-900/30 border p-6 transition-all duration-300 cursor-pointer flex flex-col h-full ${isExpanded
+                    onKeyDown={(e) => handleToggleKey(e, venture.slug)}
+                    aria-expanded={isExpanded}
+                    className={`group relative bg-slate-900/30 border p-6 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500 ${isExpanded
                       ? 'border-copper-500/50 bg-slate-900/80'
                       : 'border-white/5 hover:border-white/10 hover:bg-slate-800/30'
                       }`}
@@ -1421,9 +1447,10 @@ const App: React.FC = () => {
       <ScrollToTop />
       <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-white overflow-hidden">
         <ConstellationBackground />
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded">Skip to content</a>
         <Navigation />
 
-        <main className="relative z-10">
+        <main id="main-content" tabIndex={-1} className="relative z-10 focus:outline-none">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />

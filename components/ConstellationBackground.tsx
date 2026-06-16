@@ -15,6 +15,8 @@ const ConstellationBackground: React.FC = () => {
   useEffect(() => {
     if (!svgRef.current) return;
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const svg = d3.select(svgRef.current);
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -83,7 +85,10 @@ const ConstellationBackground: React.FC = () => {
         .attr('fill', '#94a3b8') // Slate 400
         .attr('opacity', 0.6);
 
-      requestAnimationFrame(tick);
+      // Honor reduced-motion: render a single static frame, do not loop.
+      if (!prefersReducedMotion) {
+        requestAnimationFrame(tick);
+      }
     };
 
     const animationId = requestAnimationFrame(tick);
@@ -103,6 +108,7 @@ const ConstellationBackground: React.FC = () => {
   return (
     <svg
       ref={svgRef}
+      aria-hidden="true"
       className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-40"
       style={{ background: 'transparent' }} // Let body background show through
     />
