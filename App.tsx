@@ -80,7 +80,9 @@ const Navigation = () => {
           className="md:hidden text-white"
           aria-label={isOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isOpen}
-          aria-controls="mobile-menu"
+          // #mobile-menu only mounts while open; only reference it when present
+          // so collapsed state does not advertise a dangling aria-controls target.
+          aria-controls={isOpen ? 'mobile-menu' : undefined}
         >
           {isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
