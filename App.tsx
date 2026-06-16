@@ -875,11 +875,14 @@ const usePageMeta = (override?: RouteMeta) => {
   const overrideOgImage = override?.ogImage;
 
   useEffect(() => {
-    const base: Partial<RouteMeta> = ROUTE_META[pathname] ?? {};
+    // Normalize trailing slashes (except root) so /about and /about/ resolve the
+    // same route meta and produce a stable canonical that matches the static head.
+    const normalizedPath = pathname === "/" ? "/" : pathname.replace(/\/+$/, "");
+    const base: Partial<RouteMeta> = ROUTE_META[normalizedPath] ?? {};
     const title = overrideTitle ?? base.title ?? DEFAULT_TITLE;
     const description = overrideDescription ?? base.description ?? DEFAULT_META_DESCRIPTION;
     const ogImagePath = overrideOgImage ?? base.ogImage ?? DEFAULT_OG_IMAGE_PATH;
-    const canonicalUrl = new URL(pathname || "/", SITE_ORIGIN).toString();
+    const canonicalUrl = new URL(normalizedPath || "/", SITE_ORIGIN).toString();
     const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
 
     document.title = title;

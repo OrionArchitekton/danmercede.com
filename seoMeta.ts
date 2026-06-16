@@ -82,7 +82,7 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
 // All case-study route paths, derived from committed content — so a new case
 // study is prerendered automatically with no hand-maintained slug list.
 export function caseStudyPaths(): string[] {
-  return CASE_STUDIES.map((cs) => `/case-studies/${cs.slug}`);
+  return CASE_STUDIES.filter((cs) => cs.slug).map((cs) => `/case-studies/${cs.slug}`);
 }
 
 export function resolveMeta(m: RouteMeta) {
