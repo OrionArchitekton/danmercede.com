@@ -4,9 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Resource hints: warm the esm.sh module CDN + font origins before the importmap is parsed (React is CDN-externalized) -->
-  <link rel="preconnect" href="https://esm.sh" crossorigin />
-  <link rel="dns-prefetch" href="https://esm.sh" />
+  <!-- Resource hints: warm the Google Fonts origins (the only third-party the production build fetches; React is bundled by Vite and the esm.sh importmap is inert at runtime). -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!--SEO_BLOCK-->
