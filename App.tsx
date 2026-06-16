@@ -112,7 +112,7 @@ const Footer = () => (
 // --- Pages ---
 
 const HomePage = () => {
-  usePageMeta('Dan Mercede — Systems Architect of the Governed AI Operating System');
+  usePageMeta('Dan Mercede — AI Systems Architect of the Governed AI Operating System');
   return (
     <>
       {/* Hero */}
