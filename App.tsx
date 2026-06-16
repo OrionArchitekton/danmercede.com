@@ -820,7 +820,11 @@ const LayerJumpBar = () => {
             <a
               key={id}
               href={`#${id}`}
-              onClick={e => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+              onClick={e => {
+                e.preventDefault();
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+              }}
               className={`whitespace-nowrap px-3 py-1.5 rounded text-xs font-mono uppercase tracking-widest transition-colors ${
                 active === id
                   ? 'bg-copper-500/15 text-copper-400 border border-copper-500/30'
@@ -1445,7 +1449,21 @@ const App: React.FC = () => {
       <ScrollToTop />
       <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-white overflow-hidden">
         <ConstellationBackground />
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded">Skip to content</a>
+        <a
+          href="#main-content"
+          onClick={e => {
+            // Focus the main region without writing #main-content into the route
+            // hash, which the ecosystem page interprets as an expanded-venture slug.
+            e.preventDefault();
+            const main = document.getElementById('main-content');
+            if (main) {
+              main.focus();
+              const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+              main.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+            }
+          }}
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded"
+        >Skip to content</a>
         <Navigation />
 
         <main id="main-content" tabIndex={-1} className="relative z-10 focus:outline-none">
