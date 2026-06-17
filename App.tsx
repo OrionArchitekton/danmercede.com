@@ -1180,7 +1180,7 @@ const CaseStudyPage = () => {
             <div className="space-y-3">
               {study.layerNames.map((name, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-copper-500/80 bg-slate-800/60 px-2 py-0.5 rounded border border-white/5">
+                  <span className="text-xs font-mono text-copper-400 bg-slate-800/60 px-2 py-0.5 rounded border border-white/5">
                     L{study.enforcementLayers[i]}
                   </span>
                   <span className="text-slate-300 text-sm">{name}</span>
@@ -1278,7 +1278,7 @@ const ThoughtsPage = () => {
               className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
             >
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-500/70">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
                   {thought.category}
                 </span>
                 <span className="text-xs font-mono text-slate-400">{thought.date}</span>
