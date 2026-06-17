@@ -59,15 +59,20 @@ test('site.webmanifest theme/background match the served body bg (W13)', () => {
 // W9 — sitemap lastmod reflects REAL change, never an every-build auto-bump
 // ---------------------------------------------------------------------------
 
-test('sitemap lastmods are valid YYYY-MM-DD dates, none in the future (W9)', () => {
+test('sitemap lastmods are valid YYYY-MM-DD dates, not fabricated-future (W9)', () => {
   const xml = read('public/sitemap.xml');
   const mods = [...xml.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1].trim());
   assert.ok(mods.length > 0, 'sitemap has lastmod entries');
-  const today = new Date().toISOString().slice(0, 10);
+  // Anti-fabrication guard: a lastmod must be a real calendar date and not
+  // claim freshness from a far-future date. A small slack tolerates CI clock
+  // skew / timezone so the suite is not fragile around the stamp date itself.
+  const slackDays = 2;
+  const maxMs = Date.now() + slackDays * 24 * 60 * 60 * 1000;
   for (const d of mods) {
     assert.match(d, /^\d{4}-\d{2}-\d{2}$/, `lastmod ${d} must be YYYY-MM-DD`);
-    assert.ok(!Number.isNaN(Date.parse(d)), `lastmod ${d} must be a real date`);
-    assert.ok(d <= today, `lastmod ${d} must not be in the future (no fabricated freshness)`);
+    const parsed = Date.parse(`${d}T00:00:00Z`);
+    assert.ok(!Number.isNaN(parsed), `lastmod ${d} must be a real date`);
+    assert.ok(parsed <= maxMs, `lastmod ${d} must not be fabricated-future (no inflated freshness)`);
   }
 });
 
