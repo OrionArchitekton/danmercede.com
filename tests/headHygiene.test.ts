@@ -70,9 +70,17 @@ test('sitemap lastmods are valid YYYY-MM-DD dates, not fabricated-future (W9)', 
   const maxMs = Date.now() + slackDays * 24 * 60 * 60 * 1000;
   for (const d of mods) {
     assert.match(d, /^\d{4}-\d{2}-\d{2}$/, `lastmod ${d} must be YYYY-MM-DD`);
-    const parsed = Date.parse(`${d}T00:00:00Z`);
-    assert.ok(!Number.isNaN(parsed), `lastmod ${d} must be a real date`);
-    assert.ok(parsed <= maxMs, `lastmod ${d} must not be fabricated-future (no inflated freshness)`);
+    const parsed = new Date(`${d}T00:00:00Z`);
+    assert.ok(!Number.isNaN(parsed.getTime()), `lastmod ${d} must be a real date`);
+    // Date.parse/new Date normalizes overflow dates (2026-02-31 -> 2026-03-03),
+    // so a format-valid but non-calendar date would otherwise slip through.
+    // Round-trip the parsed value back to YYYY-MM-DD and require it to match.
+    assert.equal(
+      parsed.toISOString().slice(0, 10),
+      d,
+      `lastmod ${d} must be a real calendar date (no overflow normalization)`,
+    );
+    assert.ok(parsed.getTime() <= maxMs, `lastmod ${d} must not be fabricated-future (no inflated freshness)`);
   }
 });
 

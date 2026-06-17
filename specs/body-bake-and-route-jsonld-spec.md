@@ -40,7 +40,7 @@ that coexists with the "Vercel never recompiles content" guard. Extend it:
 
 React is externalized via the esm.sh importmap and never executes in Node, so
 the injector is importmap-agnostic. Deploy topology: Vercel runs
-`npm run build` (`vite build && tsx injectRouteMeta.ts`) on deploy, so this
+`npm run build` (`vite build && tsx scripts/injectRouteMeta.ts`) on deploy, so this
 source change reaches production without a committed-bundle regen.
 
 ## Scope
