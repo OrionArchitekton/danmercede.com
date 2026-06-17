@@ -146,7 +146,7 @@ const HomePage = () => {
               <p className="text-xl md:text-2xl text-slate-300 mb-4 font-light">
                 {HERO_CONTENT.positioning}
               </p>
-              <p className="text-slate-500 mb-10 max-w-md">
+              <p className="text-slate-400 mb-10 max-w-md">
                 {HERO_CONTENT.philosophy}
               </p>
               {/* Hero CTA - Single Conversion Path */}
@@ -190,7 +190,7 @@ const HomePage = () => {
         <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12">
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
-            <span className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
+            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
               If governance isn't enforced at runtime, it isn't governance.
             </span>
             <div className="h-px flex-grow bg-white/5"></div>
@@ -232,7 +232,7 @@ const HomePage = () => {
 
         {/* System Interoperability Anchor */}
         <div className="border-t border-white/5 pt-8">
-          <p className="text-center text-slate-500 text-sm max-w-3xl mx-auto">
+          <p className="text-center text-slate-400 text-sm max-w-3xl mx-auto">
             Each entity operates independently but shares a common governance framework and capital structure managed by <span className="text-slate-400">Orion Apex Capital</span>.
           </p>
         </div>
@@ -242,7 +242,7 @@ const HomePage = () => {
       <div className="border-y border-white/5 bg-slate-950 py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-8 md:gap-16">
           {SIGNALS.map((signal, idx) => (
-            <span key={idx} className="text-slate-500 font-mono text-xs md:text-sm uppercase tracking-widest">
+            <span key={idx} className="text-slate-400 font-mono text-xs md:text-sm uppercase tracking-widest">
               {signal}
             </span>
           ))}
@@ -252,7 +252,7 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Runtime Governance Readiness Scan
           </h3>
@@ -389,20 +389,20 @@ const EcosystemPage = () => {
         <div className="lg:col-span-8">
           <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             {venture.name}
-            <span className="text-slate-500 font-light">—</span>
+            <span className="text-slate-400 font-light">—</span>
             <span className="text-copper-400 font-light">{venture.role}</span>
           </h3>
           <div className="space-y-6">
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Role in the Ecosystem</h4>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Role in the Ecosystem</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.ecosystemRole}</p>
             </div>
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Relationship to the System</h4>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Relationship to the System</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.systemRelationship}</p>
             </div>
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-2">Operating Constraints</h4>
+              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Operating Constraints</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.operatingConstraints}</p>
             </div>
           </div>
@@ -421,11 +421,11 @@ const EcosystemPage = () => {
         <div className="lg:col-span-4 border-l border-white/5 pl-8 hidden lg:block">
           <div className="space-y-6">
             <div>
-              <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Entity Status</span>
+              <span className="block text-xs text-slate-400 uppercase tracking-widest mb-1">Entity Status</span>
               <span className="text-white font-mono text-sm">{venture.status}</span>
             </div>
             <div>
-              <span className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Canonical Ref</span>
+              <span className="block text-xs text-slate-400 uppercase tracking-widest mb-1">Canonical Ref</span>
               <span className="text-slate-400 font-mono text-xs break-all">
                 danmercede.com/ecosystem#{venture.slug}
               </span>
@@ -516,7 +516,7 @@ const EcosystemPage = () => {
       {/* Readiness Scan CTA Band */}
       <div className="border-y border-copper-500/10 bg-slate-900/40 py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">Enterprise Entry Point</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Enterprise Entry Point</p>
           <a
             href={READINESS_SCAN.href}
             target="_blank"
@@ -546,9 +546,9 @@ const EcosystemPage = () => {
             <p className="text-slate-400 font-mono text-sm tracking-widest uppercase">Supporting Ventures & Vehicles</p>
           </div>
           {showSecondary ? (
-            <ChevronUp className="w-5 h-5 text-slate-500" />
+            <ChevronUp className="w-5 h-5 text-slate-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-slate-500 group-hover:text-slate-400 transition-colors" />
+            <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-slate-300 transition-colors" />
           )}
         </div>
 
@@ -589,7 +589,7 @@ const EcosystemPage = () => {
                     <div className="flex-grow">
                       <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-400">{venture.role}</p>
                       <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
+                      <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
                     </div>
                     <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
                       <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
@@ -691,7 +691,7 @@ const RunnableProofCallout = () => (
       <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
         failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
       </p>
-      <p className="text-slate-500 text-sm font-mono mb-6">
+      <p className="text-slate-400 text-sm font-mono mb-6">
         Public. Runnable in two minutes. Receipt-backed.
       </p>
 
@@ -735,7 +735,7 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
           <Layers className="w-3 h-3" />
           L{resource.enforcementLayer} — {LAYER_NAMES[resource.enforcementLayer]}
         </span>
-        <span className="text-xs font-mono text-slate-500">
+        <span className="text-xs font-mono text-slate-400">
           {ARTIFACT_LABELS[resource.artifactType] || resource.artifactType}
         </span>
       </div>
@@ -751,24 +751,24 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
       <div className="flex items-start gap-2 mb-4 p-3 rounded bg-slate-800/40 border border-white/5">
         <AlertTriangle className="w-4 h-4 text-copper-500/70 mt-0.5 shrink-0" />
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-0.5">Risk Domain</span>
+          <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-0.5">Risk Domain</span>
           <p className="text-xs text-slate-400 leading-relaxed">{resource.riskDomain}</p>
         </div>
       </div>
 
       <div className="mb-4">
-        <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-1">Enforcement Point</span>
+        <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-1">Enforcement Point</span>
         <p className="text-xs text-slate-300 leading-relaxed">{resource.enforcementPoint}</p>
       </div>
 
-      <div className="flex items-center gap-2 mb-5 text-xs font-mono text-slate-500">
+      <div className="flex items-center gap-2 mb-5 text-xs font-mono text-slate-400">
         <FileText className="w-3.5 h-3.5 text-copper-500/50" />
         <span className="uppercase tracking-widest">Artifact Output:</span>
         <span className="text-slate-400">{LAYER_OUTPUTS[resource.enforcementLayer]}</span>
       </div>
 
       {isGated ? (
-        <span className="inline-flex items-center gap-2 text-sm text-slate-500 font-mono cursor-default" title="Email required for access">
+        <span className="inline-flex items-center gap-2 text-sm text-slate-400 font-mono cursor-default" title="Email required for access">
           <Lock className="w-4 h-4" />
           Request Enforcement Artifact
         </span>
@@ -832,7 +832,7 @@ const LayerJumpBar = () => {
               className={`whitespace-nowrap px-3 py-1.5 rounded text-xs font-mono uppercase tracking-widest transition-colors ${
                 active === id
                   ? 'bg-copper-500/15 text-copper-400 border border-copper-500/30'
-                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  : 'text-slate-400 hover:text-slate-300 border border-transparent'
               }`}
             >
               {label}
@@ -849,7 +849,7 @@ const DiagramDownloads = ({ basePath, name }: { basePath: string; name: string }
     <a href={`${basePath}.svg`} download className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors">
       <Download className="w-4 h-4" /> {name} (SVG)
     </a>
-    <a href={`${basePath}.png`} download className="inline-flex items-center gap-2 text-sm font-mono text-slate-500 hover:text-slate-300 transition-colors">
+    <a href={`${basePath}.png`} download className="inline-flex items-center gap-2 text-sm font-mono text-slate-400 hover:text-slate-300 transition-colors">
       <Download className="w-4 h-4" /> {name} (PNG)
     </a>
   </div>
@@ -961,7 +961,7 @@ const ResourcesPage = () => {
             <p className="text-base text-slate-300 leading-relaxed">
               Governance is enforced at four deterministic boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
             </p>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-slate-400 mt-2">
               Every artifact below maps to one of these enforcement points.
             </p>
           </div>
@@ -985,7 +985,7 @@ const ResourcesPage = () => {
               <div key={layer} className="border border-white/5 bg-slate-900/30 rounded-lg p-4 text-center">
                 <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">L{layer}</span>
                 <span className="text-sm font-semibold text-white block mb-1">{LAYER_NAMES[layer]}</span>
-                <span className="text-xs text-slate-500 leading-tight block">{LAYER_INVARIANTS[layer]}</span>
+                <span className="text-xs text-slate-400 leading-tight block">{LAYER_INVARIANTS[layer]}</span>
               </div>
             ))}
           </div>
@@ -1103,7 +1103,7 @@ const ResourcesPage = () => {
                         L{l}
                       </span>
                     ))}
-                    <span className="text-xs font-mono text-slate-500 ml-auto">{study.industry}</span>
+                    <span className="text-xs font-mono text-slate-400 ml-auto">{study.industry}</span>
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
                     {study.title}
@@ -1160,7 +1160,7 @@ const CaseStudyPage = () => {
         </div>
 
         <div className="border-l-2 border-copper-500 pl-6 mb-12">
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-500 block mb-2">{study.industry}</span>
+          <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-2">{study.industry}</span>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{study.title}</h1>
           <p className="text-slate-400 max-w-3xl leading-relaxed">{study.description}</p>
         </div>
@@ -1169,7 +1169,7 @@ const CaseStudyPage = () => {
           {study.metrics.map((metric, i) => (
             <div key={i} className="border border-white/5 bg-slate-900/40 rounded-lg p-5 text-center">
               <div className="text-2xl md:text-3xl font-bold text-copper-500 mb-1">{metric.value}</div>
-              <div className="text-xs font-mono uppercase tracking-widest text-slate-500">{metric.label}</div>
+              <div className="text-xs font-mono uppercase tracking-widest text-slate-400">{metric.label}</div>
             </div>
           ))}
         </div>
@@ -1262,7 +1262,7 @@ const ThoughtsPage = () => {
               className={`px-4 py-2 rounded text-sm font-mono uppercase tracking-widest transition-all ${
                 activeCategory === cat
                   ? 'bg-copper-500/20 text-copper-400 border border-copper-500/40'
-                  : 'bg-slate-900/40 text-slate-500 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
+                  : 'bg-slate-900/40 text-slate-400 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
               }`}
             >
               {cat === 'all' ? 'All' : cat}
@@ -1293,7 +1293,7 @@ const ThoughtsPage = () => {
 
         {/* Doctrine anchor */}
         <div className="mt-16 border-l-2 border-copper-500/30 pl-6 max-w-2xl">
-          <p className="text-slate-500 text-sm font-mono mb-2">Governing Principle</p>
+          <p className="text-slate-400 text-sm font-mono mb-2">Governing Principle</p>
           <p className="text-slate-300 italic">
             "If governance is not deterministically enforced before state mutation, it is not governance."
           </p>
@@ -1334,7 +1334,7 @@ const ConnectPage = () => {
             <a href="mailto:contact@danmercede.com" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
               <Mail className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
               <div>
-                <span className="block text-xs text-slate-500 uppercase tracking-wider">Email</span>
+                <span className="block text-xs text-slate-400 uppercase tracking-wider">Email</span>
                 <span className="text-white">Direct Contact</span>
               </div>
             </a>
@@ -1342,7 +1342,7 @@ const ConnectPage = () => {
             <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
               <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
               <div>
-                <span className="block text-xs text-slate-500 uppercase tracking-wider">Social</span>
+                <span className="block text-xs text-slate-400 uppercase tracking-wider">Social</span>
                 <span className="text-white">LinkedIn</span>
               </div>
             </a>
