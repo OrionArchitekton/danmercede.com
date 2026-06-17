@@ -104,16 +104,27 @@ type VercelHeaderRule = {
  * undefined when no rule matches (Vercel default caching applies).
  */
 function cacheControlFor(rules: VercelHeaderRule[], pathName: string): string | undefined {
+  return firstMatchHeaders(rules, pathName)['cache-control'];
+}
+
+/**
+ * Resolve the full header map Vercel would apply to a path under first-match
+ * semantics (the branch's own helper models Vercel headers as first-match wins):
+ * the FIRST rule whose `source` matches supplies the headers; later rules do not
+ * merge. Keys are lower-cased. Empty object when no rule matches.
+ */
+function firstMatchHeaders(rules: VercelHeaderRule[], pathName: string): Record<string, string> {
   for (const rule of rules) {
     // host-conditional preview rules etc. carry a `has`; ignore those here.
     if ((rule as { has?: unknown }).has) continue;
     const re = new RegExp(`^${rule.source}$`);
     if (re.test(pathName)) {
-      const cc = rule.headers.find((h) => h.key.toLowerCase() === 'cache-control');
-      if (cc) return cc.value;
+      const out: Record<string, string> = {};
+      for (const h of rule.headers) out[h.key.toLowerCase()] = h.value;
+      return out;
     }
   }
-  return undefined;
+  return {};
 }
 
 test('vercel.json immutable /assets rule caches a hashed bundle but NOT a human doc (W3)', () => {
@@ -168,4 +179,25 @@ test('every /assets document artifact referenced in constants.ts is NOT immutabl
     const cc = cacheControlFor(vercel.headers, p) ?? '';
     assert.doesNotMatch(cc, /\bimmutable\b/, `${p} (human download) must not be immutable`);
   }
+});
+
+test('runtime-governance diagram SVG keeps its image/svg+xml Content-Type under the broad rule (W3)', () => {
+  // The broad hashed-asset rule also matches `*.svg`, so under first-match
+  // semantics it could shadow the diagram-specific rule that adds
+  // `Content-Type: image/svg+xml`. The diagram rules must therefore sit BEFORE
+  // the broad rule so a real diagram SVG still resolves to the explicit
+  // content-type rule — and still keeps the immutable cache.
+  const vercel = JSON.parse(read('vercel.json')) as { headers: VercelHeaderRule[] };
+  const diagramSvg = '/assets/runtime-governance/diagrams/control-plane-architecture/x-v1.svg';
+  const headers = firstMatchHeaders(vercel.headers, diagramSvg);
+  assert.equal(
+    headers['content-type'],
+    'image/svg+xml',
+    'diagram SVG must keep its explicit image/svg+xml Content-Type (not shadowed by the broad /assets rule)',
+  );
+  assert.match(
+    headers['cache-control'] ?? '',
+    /\bimmutable\b/,
+    'diagram SVG keeps the immutable year cache',
+  );
 });
