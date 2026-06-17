@@ -1,13 +1,17 @@
-// Build-time per-route SEO meta injector.
+// Build-time per-route prerender injector (head + JSON-LD + body).
 //
 // Why this exists: danmercede.com is a react-router SPA whose per-route <head>
-// meta is set at runtime by usePageMeta (post-hydration). No-JS crawlers and
-// social unfurlers hitting a deep link (/about, /proof, /case-studies/:slug)
-// therefore read the homepage's meta. This postbuild step emits one static
-// HTML file per route with the correct head, served by Vercel's filesystem
-// precedence (before the SPA catch-all rewrite) — no server, no framework, and
-// no React executed in Node (so it is unaffected by the esm.sh importmap that
-// externalizes React).
+// meta, structured data, and body are produced at runtime (post-hydration).
+// No-JS crawlers — including ChatGPT/Perplexity/Claude, which execute no JS —
+// hitting a deep link (/about, /proof, /case-studies/:slug) therefore read the
+// homepage's head and an empty <div id="root"> body. This postbuild step emits
+// one static HTML file per route carrying that route's:
+//   1. <head> meta  (title/og/twitter/canonical)        — renderSeoBlock
+//   2. JSON-LD      (Article/ProfilePage + BreadcrumbList) — renderRouteJsonLd (W4)
+//   3. <body> copy  (h1 + paragraphs, crawlable)          — renderBodyBlock (W1)
+// served by Vercel filesystem precedence (before the SPA catch-all rewrite) —
+// no server, no framework, and no React executed in Node (so it is unaffected
+// by the esm.sh importmap that externalizes React).
 //
 // Routing: emits build/<route>/index.html (directory-index), which Vercel
 // serves for /<route> via filesystem precedence. No vercel.json change needed.
@@ -20,7 +24,14 @@ import {
   caseStudyPaths,
   renderSeoBlock,
   injectSeoBlock,
+  renderBodyBlock,
+  renderRouteJsonLd,
+  injectBlock,
   SEO_BLOCK_START,
+  BODY_BLOCK_START,
+  BODY_BLOCK_END,
+  JSONLD_BLOCK_START,
+  JSONLD_BLOCK_END,
   type RouteMeta,
 } from '../seoMeta';
 
@@ -31,10 +42,12 @@ async function main() {
   const baseHtml = await fs.readFile(indexPath, 'utf8').catch(() => {
     throw new Error(`${indexPath} not found — run \`vite build\` first.`);
   });
-  if (!baseHtml.includes(SEO_BLOCK_START)) {
-    throw new Error(
-      `SEO block anchors (${SEO_BLOCK_START}) not found in build/index.html — did the index.html anchors survive the build?`,
-    );
+  for (const anchor of [SEO_BLOCK_START, BODY_BLOCK_START, JSONLD_BLOCK_START]) {
+    if (!baseHtml.includes(anchor)) {
+      throw new Error(
+        `injector anchor (${anchor}) not found in build/index.html — did the index.html anchors survive the build?`,
+      );
+    }
   }
 
   const routes: Array<{ path: string; meta: RouteMeta }> = [];
@@ -51,7 +64,24 @@ async function main() {
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
-    const html = injectSeoBlock(baseHtml, renderSeoBlock(routePath, meta));
+    // 1) per-route <head> meta (title/og/twitter/canonical)
+    let html = injectSeoBlock(baseHtml, renderSeoBlock(routePath, meta));
+    // 2) per-route JSON-LD (Article/ProfilePage + BreadcrumbList) — W4
+    html = injectBlock(
+      html,
+      JSONLD_BLOCK_START,
+      JSONLD_BLOCK_END,
+      renderRouteJsonLd(routePath, meta),
+      '  ',
+    );
+    // 3) crawlable <body> content (h1 + paragraphs) — W1 body-bake
+    html = injectBlock(
+      html,
+      BODY_BLOCK_START,
+      BODY_BLOCK_END,
+      renderBodyBlock(routePath, meta),
+      '  ',
+    );
     const outDir = path.join(BUILD_DIR, routePath.replace(/^\//, ''));
     await fs.mkdir(outDir, { recursive: true });
     await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
