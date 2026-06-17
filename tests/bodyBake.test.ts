@@ -124,6 +124,36 @@ test('FAQPage is never emitted (deprecated rich result, 2026)', () => {
   }
 });
 
+test('all three bio routes (/, /about, /ecosystem) emit a ProfilePage', () => {
+  for (const routePath of ['/', '/about', '/ecosystem']) {
+    const block = renderRouteJsonLd(routePath, ROUTE_META[routePath]);
+    const doc = JSON.parse(block.replace(/^\s*<script[^>]*>/, '').replace(/<\/script>\s*$/, '').replace(/\\u003c/g, '<'));
+    const types = doc['@graph'].map((n: { '@type': string }) => n['@type']);
+    assert.ok(types.includes('ProfilePage'), `${routePath} must emit ProfilePage`);
+  }
+});
+
+test('JSON-LD cannot break out of its <script> tag (</script> is escaped)', () => {
+  const block = renderRouteJsonLd('/x', {
+    title: 'Pwn </script><img src=x onerror=alert(1)>',
+    description: 'evil </script> payload',
+    schemaType: 'Article',
+  });
+  // The literal closing-tag sequence must not survive in the emitted markup.
+  assert.doesNotMatch(block, /<\/script><img/);
+  // The dangerous `<` is escaped to < (escaping `<` alone is sufficient to
+  // prevent the parser from ever seeing a `</script>` close).
+  assert.match(block, /\\u003c\/script>/, 'the opening < of </script> is escaped as \\u003c');
+  assert.doesNotMatch(block.slice(0, -'  </script>'.length), /<\/script>/, 'no raw </script> inside the JSON payload');
+  // The single trailing real </script> that closes the block is still intact.
+  assert.ok(block.trimEnd().endsWith('</script>'));
+  // And the escaped payload still parses back to the original string.
+  const json = block.replace(/^\s*<script[^>]*>/, '').replace(/<\/script>\s*$/, '');
+  const doc = JSON.parse(json);
+  const article = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'Article');
+  assert.match(article.headline, /<\/script>/, 'round-trips to the original unescaped string');
+});
+
 test('case-study breadcrumb chains Home > Proof > Title', () => {
   const csPath = caseStudyPaths()[0];
   const slug = csPath.split('/').pop();
