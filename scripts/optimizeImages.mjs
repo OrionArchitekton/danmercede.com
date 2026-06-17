@@ -39,6 +39,12 @@ async function walk(dir) {
   return out;
 }
 
+try {
+  if (!(await fs.stat(PUB)).isDirectory()) throw new Error('not a directory');
+} catch {
+  console.error(`optimizeImages: target is not a readable directory: ${PUB}`);
+  process.exit(1);
+}
 const files = await walk(PUB);
 let totalBefore = 0, totalAfter = 0, changed = 0;
 const rows = [];

@@ -42,15 +42,20 @@ test('no committed public/ image exceeds its per-type byte budget', () => {
   assert.deepEqual(
     offenders,
     [],
-    `Oversized image asset(s) — re-run \`npm run optimize:images -- --apply\`:\n  ${offenders.join('\n  ')}`,
+    `Oversized image asset(s). Re-encode rasters in place via \`npm i -D sharp && npm run optimize:images -- --apply\`; SVGs are not handled by the optimizer and must be reduced manually (e.g. svgo):\n  ${offenders.join('\n  ')}`,
   );
 });
 
-test('DEFAULT_OG_IMAGE_PATH resolves to a non-empty file in public/', () => {
-  const p = path.join(PUBLIC, DEFAULT_OG_IMAGE_PATH.replace(/^\//, ''));
+test('DEFAULT_OG_IMAGE_PATH resolves to a non-empty file inside public/', () => {
+  const resolved = path.resolve(PUBLIC, DEFAULT_OG_IMAGE_PATH.replace(/^\//, ''));
+  // Containment: a traversal value (e.g. "/../secret") must NOT satisfy the "in public/" contract.
+  assert.ok(
+    resolved === PUBLIC || resolved.startsWith(PUBLIC + path.sep),
+    `DEFAULT_OG_IMAGE_PATH (${DEFAULT_OG_IMAGE_PATH}) must resolve inside public/ (resolved to ${resolved}).`,
+  );
   let size = -1;
   try {
-    size = statSync(p).size;
+    size = statSync(resolved).size;
   } catch {
     /* missing → size stays -1 */
   }
