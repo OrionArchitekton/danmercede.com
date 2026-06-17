@@ -4,6 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Theme color matches the served body background (#020617) and the manifest
+       theme_color (W13). -->
+  <meta name="theme-color" content="#020617" />
   <!-- Resource hints: warm the Google Fonts origins (the only third-party the production build fetches; React is bundled by Vite and the esm.sh importmap is inert at runtime). -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,45 +39,12 @@
   <link rel="manifest" href="/site.webmanifest">
   <link rel="icon" href="/favicon.ico">
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind is bundled at build time (W2); the in-browser CDN JIT compiler
+       was removed. Base styles + the custom theme live in index.css and
+       tailwind.config.js. -->
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap"
     rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            copper: {
-              400: '#D99A6C',
-              500: '#B87333', // Primary Copper
-              600: '#9C622B',
-            },
-            void: '#020617', // Slate 950 essentially
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    body {
-      background-color: #020617;
-      color: #e2e8f0;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
-  </style>
   <script type="importmap">
 {
   "imports": {
@@ -183,9 +153,52 @@
       "keywords": ["governance ROI", "AI economics", "enforcement metrics", "cost per task", "escalation rate", "audit defensibility"]
     }
     </script>
+  <!--ROUTE_JSONLD-->
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "@id": "https://www.danmercede.com/#profilepage",
+      "name": "Dan Mercede — AI Systems Architect of the Governed AI Operating System",
+      "description": "Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms.",
+      "url": "https://www.danmercede.com/",
+      "mainEntity": {
+        "@id": "https://www.danmercede.com/#person"
+      },
+      "isPartOf": {
+        "@id": "https://www.danmercede.com/#website"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://www.danmercede.com/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.danmercede.com/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  <!--/ROUTE_JSONLD-->
 </head>
 
 <body>
+  <!--BODY_BLOCK-->
+  <div id="prerender-content" data-prerender="true" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;">
+    <h1>Dan Mercede</h1>
+    <p>Enterprise AI doesn't fail on capability — it fails at runtime.</p>
+    <p>I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.</p>
+    <p>If governance isn't enforced at runtime, it isn't governance.</p>
+    <p>Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.</p>
+  </div>
+  <!--/BODY_BLOCK-->
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

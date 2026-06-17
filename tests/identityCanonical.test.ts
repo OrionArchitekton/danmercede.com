@@ -1,0 +1,83 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PERSON_ID, SITE_ORIGIN } from '../seoMeta';
+
+// O7 — spoke -> hub identity guardrail (hub side).
+//
+// The hub danmercede.com is the single canonical entity authority for the Dan
+// Mercede footprint: it owns the one `Person` node (`#person`); every spoke
+// (danmercede.info / .online / danielmercede.com / .info) backlinks to it via
+// sameAs and emits NO local Person node. This test locks the hub end of that
+// contract so a future edit cannot silently fork the canonical identity.
+//
+// Full contract: docs/identity-contract.md.
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(path.join(root, 'index.html'), 'utf8');
+
+/** Extract every application/ld+json block as parsed objects. */
+function jsonLdBlocks(): unknown[] {
+  const blocks: unknown[] = [];
+  const re = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    blocks.push(JSON.parse(m[1]));
+  }
+  return blocks;
+}
+
+/** Flatten @graph wrappers into a flat node list. */
+function allNodes(): Array<Record<string, unknown>> {
+  const nodes: Array<Record<string, unknown>> = [];
+  for (const b of jsonLdBlocks()) {
+    const obj = b as Record<string, unknown>;
+    if (Array.isArray(obj['@graph'])) {
+      nodes.push(...(obj['@graph'] as Array<Record<string, unknown>>));
+    } else {
+      nodes.push(obj);
+    }
+  }
+  return nodes;
+}
+
+test('hub declares exactly one Person node and it is the canonical #person', () => {
+  const persons = allNodes().filter((n) => n['@type'] === 'Person');
+  assert.equal(persons.length, 1, 'the hub must declare exactly one Person node');
+  assert.equal(persons[0]['@id'], PERSON_ID, `the Person @id must be ${PERSON_ID}`);
+});
+
+test('PERSON_ID is anchored to the canonical www host', () => {
+  assert.equal(PERSON_ID, `${SITE_ORIGIN}/#person`);
+  assert.equal(SITE_ORIGIN, 'https://www.danmercede.com');
+});
+
+test('canonical Person.sameAs covers all four spokes plus GitHub', () => {
+  const person = allNodes().find((n) => n['@type'] === 'Person')!;
+  const sameAs = (person.sameAs as string[]).map((u) => u.replace(/\/+$/, ''));
+  const required = [
+    'https://www.danielmercede.com',
+    'https://www.danmercede.info',
+    'https://www.danielmercede.info',
+    'https://www.danmercede.online',
+    'https://github.com/OrionArchitekton',
+  ];
+  for (const r of required) {
+    assert.ok(sameAs.includes(r), `Person.sameAs must include ${r}`);
+  }
+});
+
+test('per-route ProfilePage/Article nodes reference the canonical #person, never a new Person', () => {
+  // The homepage ROUTE_JSONLD block carries a ProfilePage whose mainEntity is
+  // the canonical person; assert it does not introduce a second Person @id.
+  const nodes = allNodes();
+  const profilePages = nodes.filter((n) => n['@type'] === 'ProfilePage');
+  for (const pp of profilePages) {
+    const mainEntity = pp.mainEntity as { '@id'?: string } | undefined;
+    assert.equal(mainEntity?.['@id'], PERSON_ID, 'ProfilePage.mainEntity must be the canonical #person');
+  }
+  // Still exactly one Person across the whole document.
+  assert.equal(nodes.filter((n) => n['@type'] === 'Person').length, 1);
+});

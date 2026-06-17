@@ -19,54 +19,162 @@ export const DEFAULT_TITLE =
 export const SEO_BLOCK_START = '<!--SEO_BLOCK-->';
 export const SEO_BLOCK_END = '<!--/SEO_BLOCK-->';
 
+// Anchors delimiting the crawlable body block injected INTO <body>. The SPA
+// hydrates over `#root`; this static block is a sibling so it is visible to
+// raw-HTML crawlers (ChatGPT/Perplexity/Claude — none execute JS) and replaced
+// by React on hydration (it lives outside #root and is removed at runtime).
+export const BODY_BLOCK_START = '<!--BODY_BLOCK-->';
+export const BODY_BLOCK_END = '<!--/BODY_BLOCK-->';
+
+// Anchors delimiting the per-route JSON-LD block injected into <head>. The
+// homepage entity graph (Person/WebSite/ImageObject) stays static below this
+// block; content routes get an additional Article/ProfilePage + BreadcrumbList.
+export const JSONLD_BLOCK_START = '<!--ROUTE_JSONLD-->';
+export const JSONLD_BLOCK_END = '<!--/ROUTE_JSONLD-->';
+
+// Stable @id anchors for the homepage entity graph (defined in index.html).
+// Per-route JSON-LD links back to these so the answer-engine entity graph
+// resolves to one canonical Person/WebSite.
+export const PERSON_ID = `${SITE_ORIGIN}/#person`;
+export const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
+
 const OG_IMAGE_ALT =
   'Dan Mercede, systems architect and founder of the governed AI operating system';
+
+// Crawlable body copy for a route: one H1 and one or more paragraphs. Sourced
+// from the rendered page copy so the static body and the hydrated body agree.
+export interface RouteBody {
+  h1: string;
+  // Lead positioning line, rendered as the first paragraph after the H1.
+  lead?: string;
+  paragraphs: string[];
+}
 
 export interface RouteMeta {
   title: string;
   description?: string;
   ogImage?: string;
+  // Crawlable body content baked into <body> at build time (W1). Optional:
+  // routes without it fall back to a minimal title+description body.
+  body?: RouteBody;
+  // JSON-LD primary @type for the route's content node (W4). One of
+  // 'Article' | 'ProfilePage'. Omitted routes get no per-route content node
+  // (only the homepage entity graph + a BreadcrumbList).
+  schemaType?: 'Article' | 'ProfilePage';
 }
 
 // Static routes (mirrors the <Route> table in App.tsx). The homepage entry is
 // the default that lives un-injected in index.html.
 export const ROUTE_META: Record<string, RouteMeta> = {
-  '/': { title: DEFAULT_TITLE },
+  '/': {
+    title: DEFAULT_TITLE,
+    schemaType: 'ProfilePage',
+    body: {
+      h1: 'Dan Mercede',
+      lead: "Enterprise AI doesn't fail on capability — it fails at runtime.",
+      paragraphs: [
+        'I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.',
+        "If governance isn't enforced at runtime, it isn't governance.",
+        'Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.',
+      ],
+    },
+  },
   '/about': {
     title: 'About — Dan Mercede',
     description:
       'Systems architect and founder building governed AI operating systems with deterministic enforcement at runtime.',
+    schemaType: 'ProfilePage',
+    body: {
+      h1: 'The Throughline',
+      lead: 'From operations to architecture, the mission has remained constant: governance over chaos.',
+      paragraphs: [
+        'I build governed AI operating systems — systems that remember, decide, execute, and remain auditable under real conditions.',
+        "I don't believe in disruption for its own sake. I believe in systems that endure. My background isn't a straight line, but a thematic progression from managing complex human workflows to building the digital substrates that automate them.",
+      ],
+    },
   },
-  '/ecosystem': { title: 'Ecosystem — Orion Ventures | Dan Mercede' },
+  '/ecosystem': {
+    title: 'Ecosystem — Orion Ventures | Dan Mercede',
+    body: {
+      h1: 'Ecosystem',
+      lead: 'Orion Ventures — independent entities under one governance framework.',
+      paragraphs: [
+        'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligence, governing how AI systems remember, decide, execute, and are audited over time.',
+        'Orion Apex Capital originates, owns, and governs the ecosystem; Orion Intelligence Agency, ReplyBy, Apex Trading Systems, and Path of Life Hub deploy, validate, or operate under the Cosmocrat governance model.',
+      ],
+    },
+  },
   '/proof': {
     title: 'Proof — Runtime Governance Enforcement Artifacts | Dan Mercede',
     description:
       'Downloadable enforcement artifacts mapped to the four-layer runtime governance stack: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate.',
+    schemaType: 'Article',
+    body: {
+      h1: 'Proof',
+      lead: 'Enforcement Artifacts.',
+      paragraphs: [
+        'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
+        'Downloadable enforcement artifacts map to the four-layer runtime governance stack — Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate — structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
+      ],
+    },
   },
   '/thoughts': {
     title: 'Thought Direction — Doctrine + Architecture | Dan Mercede',
     description:
       'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
+    schemaType: 'Article',
+    body: {
+      h1: 'Thought Direction',
+      lead: 'Doctrine and architecture.',
+      paragraphs: [
+        'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
+      ],
+    },
   },
   '/connect': {
     title: 'Connect — Initiate Protocol | Dan Mercede',
     description:
       'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.',
+    body: {
+      h1: 'Connect',
+      lead: 'Initiate protocol.',
+      paragraphs: [
+        'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.',
+      ],
+    },
   },
   '/legal': {
     title: 'Legal Notice | Dan Mercede',
     description:
       'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.',
+    body: {
+      h1: 'Legal Notice',
+      paragraphs: [
+        'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.',
+      ],
+    },
   },
   '/privacy': {
     title: 'Privacy Policy — Data Governance | Dan Mercede',
     description:
       'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.',
+    body: {
+      h1: 'Privacy Policy',
+      paragraphs: [
+        'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.',
+      ],
+    },
   },
   '/imprint': {
     title: 'Imprint — Entity Details | Dan Mercede',
     description:
       'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.',
+    body: {
+      h1: 'Imprint',
+      paragraphs: [
+        'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.',
+      ],
+    },
   },
 };
 
@@ -74,9 +182,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
 // (CaseStudyPage) and the prerender injector produce identical strings.
 export function caseStudyMeta(slug: string | undefined): RouteMeta {
   const study = CASE_STUDIES.find((cs) => cs.slug === slug);
-  return study
-    ? { title: `${study.title} — Case Study | Dan Mercede`, description: study.description }
-    : { title: 'Case Study Not Found | Dan Mercede' };
+  if (!study) {
+    return { title: 'Case Study Not Found | Dan Mercede' };
+  }
+  return {
+    title: `${study.title} — Case Study | Dan Mercede`,
+    description: study.description,
+    schemaType: 'Article',
+    body: {
+      h1: study.title,
+      lead: study.industry,
+      paragraphs: [study.description],
+    },
+  };
 }
 
 // All case-study route paths, derived from committed content — so a new case
@@ -137,12 +255,118 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
 
 // Replace the content between the SEO anchors with a freshly-rendered block.
 export function injectSeoBlock(html: string, blockBody: string): string {
-  const start = html.indexOf(SEO_BLOCK_START);
-  const end = html.indexOf(SEO_BLOCK_END);
+  return injectBlock(html, SEO_BLOCK_START, SEO_BLOCK_END, blockBody, '  ');
+}
+
+// Generic anchored-region replacer used by the SEO/body/JSON-LD injectors. The
+// content between `startMarker` and `endMarker` is replaced; the markers
+// themselves survive so a re-run is idempotent. `indent` is the whitespace
+// placed before the closing marker (cosmetic, to keep emitted HTML tidy).
+export function injectBlock(
+  html: string,
+  startMarker: string,
+  endMarker: string,
+  blockBody: string,
+  indent = '',
+): string {
+  const start = html.indexOf(startMarker);
+  const end = html.indexOf(endMarker);
   if (start === -1 || end === -1 || end < start) {
-    throw new Error('SEO block markers not found in HTML');
+    throw new Error(`block markers not found in HTML (${startMarker})`);
   }
-  const before = html.slice(0, start + SEO_BLOCK_START.length);
+  const before = html.slice(0, start + startMarker.length);
   const after = html.slice(end);
-  return `${before}\n${blockBody}\n  ${after}`;
+  return `${before}\n${blockBody}\n${indent}${after}`;
+}
+
+// Escape text destined for HTML text content (not an attribute). Closes the
+// `</`-injection vector and ampersands so baked copy can never break out of the
+// element it sits in.
+function escapeText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Render the crawlable <body> block for a route (W1 body-bake). Emits a real
+// <h1> + <p> set wrapped in a hidden-but-crawlable container. The block lives
+// OUTSIDE #root, so React's render into #root never collides with it; we also
+// remove it on hydration (see index.tsx) to avoid duplicate content for users.
+// Deterministic, browserless, no React — safe in the Node build.
+export function renderBodyBlock(path: string, m: RouteMeta): string {
+  const r = resolveMeta(m);
+  const b: RouteBody = m.body ?? { h1: r.title, paragraphs: [r.description] };
+  const parts: string[] = [
+    `  <div id="prerender-content" data-prerender="true" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;">`,
+    `    <h1>${escapeText(b.h1)}</h1>`,
+  ];
+  if (b.lead) {
+    parts.push(`    <p>${escapeText(b.lead)}</p>`);
+  }
+  for (const p of b.paragraphs) {
+    parts.push(`    <p>${escapeText(p)}</p>`);
+  }
+  parts.push(`  </div>`);
+  return parts.join('\n');
+}
+
+// Render the per-route JSON-LD block (W4): an Article or ProfilePage content
+// node plus a BreadcrumbList, both linked to the canonical homepage entity
+// graph (#person / #website) so answer engines resolve one Dan Mercede entity.
+// FAQPage is intentionally NOT emitted — its rich result was deprecated 2026.
+export function renderRouteJsonLd(path: string, m: RouteMeta): string {
+  const r = resolveMeta(m);
+  const canonical = new URL(path, SITE_ORIGIN).toString();
+  const graph: Record<string, unknown>[] = [];
+
+  if (m.schemaType === 'Article') {
+    graph.push({
+      '@type': 'Article',
+      '@id': `${canonical}#article`,
+      headline: r.title,
+      description: r.description,
+      url: canonical,
+      author: { '@id': PERSON_ID },
+      publisher: { '@id': PERSON_ID },
+      isPartOf: { '@id': WEBSITE_ID },
+      mainEntityOfPage: canonical,
+    });
+  } else if (m.schemaType === 'ProfilePage') {
+    graph.push({
+      '@type': 'ProfilePage',
+      '@id': `${canonical}#profilepage`,
+      name: r.title,
+      description: r.description,
+      url: canonical,
+      mainEntity: { '@id': PERSON_ID },
+      isPartOf: { '@id': WEBSITE_ID },
+    });
+  }
+
+  graph.push(renderBreadcrumb(path, r.title));
+
+  const doc = { '@context': 'https://schema.org', '@graph': graph };
+  return `  <script type="application/ld+json">\n${JSON.stringify(doc, null, 2)}\n  </script>`;
+}
+
+// BreadcrumbList from the homepage down to the current route. Single-segment
+// routes (/about) get Home > Title; case studies get Home > Proof > Title.
+function renderBreadcrumb(path: string, leafName: string): Record<string, unknown> {
+  const items: Array<{ name: string; url: string }> = [
+    { name: 'Home', url: `${SITE_ORIGIN}/` },
+  ];
+  if (path.startsWith('/case-studies/')) {
+    items.push({ name: 'Proof', url: new URL('/proof', SITE_ORIGIN).toString() });
+  }
+  if (path !== '/') {
+    items.push({ name: leafName, url: new URL(path, SITE_ORIGIN).toString() });
+  }
+  return {
+    '@type': 'BreadcrumbList',
+    '@id': `${new URL(path, SITE_ORIGIN).toString()}#breadcrumb`,
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      item: it.url,
+    })),
+  };
 }
