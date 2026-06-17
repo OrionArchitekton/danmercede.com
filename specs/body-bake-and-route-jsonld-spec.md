@@ -48,6 +48,15 @@ source change reaches production without a committed-bundle regen.
 - **In:** `seoMeta.ts` (body + schema render), `scripts/injectRouteMeta.ts`
   (bake body + JSON-LD), `index.html` (`BODY_BLOCK` + `ROUTE_JSONLD` anchors +
   homepage bake), `index.tsx` (remove prerender node on hydration), tests.
+- **In (W3 cache scope):** `vercel.json` — the `/assets` immutable cache rule
+  IS intentionally in scope. It is now scoped to content-hashed static assets
+  only (Vite-emitted `js`/`css`/fonts/images/`map`); the stable-named human
+  download artifacts that also live under `/assets/` (proof `pdf`/`docx`/`pptx`
+  + case-study docs from `constants.ts`, linked via `App.tsx` download anchors)
+  must NOT be year-cached `immutable` — if such an artifact is corrected under
+  the same filename, a year-long `immutable` cache would never revalidate. Docs
+  fall to a short-TTL `max-age=300, must-revalidate` rule. The
+  `runtime-governance/diagrams` rules are unchanged.
 - **Out:** SSR/SSG framework; the esm.sh importmap; runtime React rendering;
   the other four brand surfaces (separate spoke work); regenerating the
   committed `build/` bundle in this PR (HUB substrate-verify rail).
@@ -82,5 +91,7 @@ source change reaches production without a committed-bundle regen.
   `<h1>` and Article schema in raw HTML (no JS).
 - **Rollback:** revert the `seoMeta.ts`/`injectRouteMeta.ts`/`index.html` body +
   JSON-LD additions (drop the two new injected blocks); the head-only injector
-  and committed bundle behavior return. No `vercel.json`, runtime, or data
-  changes to undo.
+  and committed bundle behavior return. The one `vercel.json` change in this PR
+  is the W3 `/assets` cache-scope narrowing (immutable now matches hashed static
+  assets only; documents get a short TTL); reverting it restores the prior broad
+  `/assets/(.*)` immutable rule. No runtime or data changes to undo.
