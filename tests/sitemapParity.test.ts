@@ -14,7 +14,12 @@ test('public/sitemap.xml exactly covers ROUTE_META ∪ case-study paths (no drif
   const xml = readFileSync(path.join(root, 'public', 'sitemap.xml'), 'utf8');
   // Compare route sets independent of cosmetic trailing-slash differences.
   const normalize = (u: string) => u.replace(/\/+$/, '');
-  const locs = new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => normalize(m[1].trim())));
+  const locList = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => normalize(m[1].trim()));
+  // A Set hides repeats, so a sitemap with a duplicated <loc> would pass the "exactly covers"
+  // check; assert uniqueness against the raw list first.
+  const dupes = [...new Set(locList.filter((u, i) => locList.indexOf(u) !== i))];
+  assert.deepEqual(dupes, [], `Duplicate <loc> entries in public/sitemap.xml: ${dupes.join(', ')}`);
+  const locs = new Set(locList);
   const expected = new Set([
     ...Object.keys(ROUTE_META).map((p) => normalize(new URL(p, SITE_ORIGIN).toString())),
     ...caseStudyPaths().map((p) => normalize(new URL(p, SITE_ORIGIN).toString())),
