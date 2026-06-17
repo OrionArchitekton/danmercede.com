@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "vite build && tsx scripts/injectRouteMeta.ts",
     "preview": "vite preview",
-    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts"
+    "optimize:images": "node scripts/optimizeImages.mjs public",
+    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.562.0",
