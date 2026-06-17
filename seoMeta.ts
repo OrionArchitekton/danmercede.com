@@ -95,6 +95,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   },
   '/ecosystem': {
     title: 'Ecosystem — Orion Ventures | Dan Mercede',
+    schemaType: 'ProfilePage',
     body: {
       h1: 'Ecosystem',
       lead: 'Orion Ventures — independent entities under one governance framework.',
@@ -313,6 +314,19 @@ export function renderBodyBlock(path: string, m: RouteMeta): string {
   return parts.join('\n');
 }
 
+// Escape a serialized JSON string for safe embedding inside an HTML
+// <script type="application/ld+json"> element. JSON.stringify alone leaves a
+// literal `</script>` (e.g. inside a title/description) able to close the tag
+// early and inject markup. Escaping `<` as < (and the line/para separators
+// for strict JS parsers) keeps the JSON byte-for-byte equivalent while making
+// the closing-tag sequence impossible. Standard JSON-LD-in-HTML hardening.
+function escapeJsonForHtml(json: string): string {
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 // Render the per-route JSON-LD block (W4): an Article or ProfilePage content
 // node plus a BreadcrumbList, both linked to the canonical homepage entity
 // graph (#person / #website) so answer engines resolve one Dan Mercede entity.
@@ -349,7 +363,7 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
   graph.push(renderBreadcrumb(path, r.title));
 
   const doc = { '@context': 'https://schema.org', '@graph': graph };
-  return `  <script type="application/ld+json">\n${JSON.stringify(doc, null, 2)}\n  </script>`;
+  return `  <script type="application/ld+json">\n${escapeJsonForHtml(JSON.stringify(doc, null, 2))}\n  </script>`;
 }
 
 // BreadcrumbList from the homepage down to the current route. Single-segment
