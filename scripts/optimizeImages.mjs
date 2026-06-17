@@ -60,7 +60,23 @@ for (const f of files.sort()) {
   // only adopt if it actually shrinks (guard against re-growing an already-optimized asset)
   if (buf.length < st.size) {
     totalAfter += buf.length; changed++;
-    if (APPLY) await fs.writeFile(f, buf);
+    if (APPLY) {
+      // Atomic, validated replace — never write over the live asset in place. A
+      // partial write (process kill, ENOSPC, or an I/O error after truncation)
+      // would leave corrupt bytes at the still-referenced filename, and the size-
+      // only image-budget guard cannot catch a corrupt-but-nonzero file. Write a
+      // sibling temp, decode it back to confirm it is a valid image, then rename
+      // atomically over the original; leave the original untouched on any error.
+      const tmp = `${f}.opt-${process.pid}.tmp`;
+      try {
+        await fs.writeFile(tmp, buf);
+        await sharp(tmp).metadata(); // throws if the written bytes are not decodable
+        await fs.rename(tmp, f);     // atomic within the same directory
+      } catch (e) {
+        await fs.rm(tmp, { force: true });
+        throw e;
+      }
+    }
     rows.push(`  ${(st.size/1024).toFixed(0).padStart(6)}KB -> ${(buf.length/1024).toFixed(0).padStart(5)}KB  ${noResize ? '[no-resize]' : `${meta.width}x${meta.height}->max${MAX_EDGE}`}  ${path.relative(PUB, f)}`);
   } else {
     totalAfter += st.size;
