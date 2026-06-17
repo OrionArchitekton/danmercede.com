@@ -56,7 +56,10 @@ source change reaches production without a committed-bundle regen.
   must NOT be year-cached `immutable` — if such an artifact is corrected under
   the same filename, a year-long `immutable` cache would never revalidate. Docs
   fall to a short-TTL `max-age=300, must-revalidate` rule. The
-  `runtime-governance/diagrams` rules are unchanged.
+  `runtime-governance/diagrams` rules keep their exact headers but are reordered
+  ABOVE the broad `/assets` rules so first-match (Vercel) semantics still give
+  diagram SVGs their explicit `Content-Type: image/svg+xml` (the broad rule also
+  matches `*.svg`, so without the reorder it would shadow that content type).
 - **Out:** SSR/SSG framework; the esm.sh importmap; runtime React rendering;
   the other four brand surfaces (separate spoke work); regenerating the
   committed `build/` bundle in this PR (HUB substrate-verify rail).

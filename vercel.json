@@ -88,24 +88,6 @@
       ]
     },
     {
-      "source": "/assets/(.*)\\.(js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|webp|avif|gif|ico|map)$",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/assets/(.*)\\.(pdf|docx|pptx|xlsx|doc|ppt|csv|zip)$",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300, must-revalidate"
-        }
-      ]
-    },
-    {
       "source": "/assets/runtime-governance/diagrams/(.*)\\.svg",
       "headers": [
         {
@@ -133,6 +115,24 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)\\.(js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|webp|avif|gif|ico|map)$",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)\\.(pdf|docx|pptx|xlsx|doc|ppt|csv|zip)$",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
         }
       ]
     },
