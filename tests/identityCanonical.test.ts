@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PERSON_ID, SITE_ORIGIN } from '../seoMeta';
+import { PERSON_ID, WEBSITE_ID, SITE_ORIGIN } from '../seoMeta';
 
 // O7 — spoke -> hub identity guardrail (hub side).
 //
@@ -49,14 +49,27 @@ test('hub declares exactly one Person node and it is the canonical #person', () 
   assert.equal(persons[0]['@id'], PERSON_ID, `the Person @id must be ${PERSON_ID}`);
 });
 
-test('PERSON_ID is anchored to the canonical www host', () => {
+test('hub declares exactly one WebSite node and it is the canonical site', () => {
+  const websites = allNodes().filter((n) => n['@type'] === 'WebSite');
+  assert.equal(websites.length, 1, 'the hub must declare exactly one WebSite node');
+  assert.equal(websites[0]['@id'], WEBSITE_ID, `the WebSite @id must be ${WEBSITE_ID}`);
+  assert.equal(
+    String(websites[0].url).replace(/\/+$/, ''),
+    SITE_ORIGIN,
+    `the canonical WebSite url must equal SITE_ORIGIN (${SITE_ORIGIN})`,
+  );
+});
+
+test('PERSON_ID / WEBSITE_ID are anchored to the canonical www host', () => {
   assert.equal(PERSON_ID, `${SITE_ORIGIN}/#person`);
+  assert.equal(WEBSITE_ID, `${SITE_ORIGIN}/#website`);
   assert.equal(SITE_ORIGIN, 'https://www.danmercede.com');
 });
 
 test('canonical Person.sameAs covers all four spokes plus GitHub', () => {
-  const person = allNodes().find((n) => n['@type'] === 'Person')!;
-  const sameAs = (person.sameAs as string[]).map((u) => u.replace(/\/+$/, ''));
+  const person = allNodes().find((n) => n['@type'] === 'Person');
+  assert.ok(person, 'Person node must be declared');
+  const sameAs = ((person.sameAs as string[]) || []).map((u) => u.replace(/\/+$/, ''));
   const required = [
     'https://www.danielmercede.com',
     'https://www.danmercede.info',

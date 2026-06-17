@@ -281,9 +281,11 @@ export function injectBlock(
 
 // Escape text destined for HTML text content (not an attribute). Closes the
 // `</`-injection vector and ampersands so baked copy can never break out of the
-// element it sits in.
-function escapeText(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// element it sits in. Total over null/undefined (a route/case-study with a
+// missing optional field must never crash the build-time generator).
+function escapeText(s: string | null | undefined): string {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // Render the crawlable <body> block for a route (W1 body-bake). Emits a real
@@ -293,7 +295,10 @@ function escapeText(s: string): string {
 // Deterministic, browserless, no React — safe in the Node build.
 export function renderBodyBlock(path: string, m: RouteMeta): string {
   const r = resolveMeta(m);
-  const b: RouteBody = m.body ?? { h1: r.title, paragraphs: [r.description] };
+  // Fallback body when a route omits `body`: title + description. resolveMeta
+  // always yields a non-empty description, but guard anyway so a future shape
+  // change can never inject `undefined` into the paragraph list.
+  const b: RouteBody = m.body ?? { h1: r.title, paragraphs: r.description ? [r.description] : [] };
   const parts: string[] = [
     `  <div id="prerender-content" data-prerender="true" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;">`,
     `    <h1>${escapeText(b.h1)}</h1>`,

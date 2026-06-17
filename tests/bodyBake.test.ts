@@ -78,8 +78,15 @@ test('every case-study route renders a non-empty body block', () => {
 
 test('the prerendered body block lives OUTSIDE #root so React never collides with it', () => {
   const block = renderBodyBlock('/', ROUTE_META['/']);
+  // DOM placement: prerender content is a sibling of #root, never inside it.
   assert.match(block, /id="prerender-content"/);
   assert.doesNotMatch(block, /id="root"/);
+  // Accessibility/visibility contract: hidden from users, still crawlable. A
+  // refactor that drops aria-hidden or the visually-hidden style would expose
+  // duplicate content to sighted users + AT — lock all three.
+  assert.match(block, /aria-hidden="true"/);
+  assert.match(block, /data-prerender="true"/);
+  assert.match(block, /style="[^"]*position:absolute[^"]*"/);
 });
 
 test('index.html BODY_BLOCK equals renderBodyBlock("/") (no homepage body drift)', () => {
