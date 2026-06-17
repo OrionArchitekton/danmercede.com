@@ -141,9 +141,9 @@ test('JSON-LD cannot break out of its <script> tag (</script> is escaped)', () =
   });
   // The literal closing-tag sequence must not survive in the emitted markup.
   assert.doesNotMatch(block, /<\/script><img/);
-  // The dangerous `<` is escaped to < (escaping `<` alone is sufficient to
-  // prevent the parser from ever seeing a `</script>` close).
-  assert.match(block, /\\u003c\/script>/, 'the opening < of </script> is escaped as \\u003c');
+  // The dangerous `<` is escaped to < — the parser never sees a `</script>`
+  // close inside the payload (acceptance criterion 5: `<` is escaped).
+  assert.match(block, /\\u003c\/script/, 'the opening < of </script> is escaped as \\u003c');
   assert.doesNotMatch(block.slice(0, -'  </script>'.length), /<\/script>/, 'no raw </script> inside the JSON payload');
   // The single trailing real </script> that closes the block is still intact.
   assert.ok(block.trimEnd().endsWith('</script>'));
@@ -152,6 +152,31 @@ test('JSON-LD cannot break out of its <script> tag (</script> is escaped)', () =
   const doc = JSON.parse(json);
   const article = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'Article');
   assert.match(article.headline, /<\/script>/, 'round-trips to the original unescaped string');
+});
+
+test('JSON-LD escapes the full `< > &` set per acceptance criterion 5', () => {
+  // Acceptance criterion 5 requires the baked JSON-LD to be escaped for
+  // `< > &` (not just the `<` script-breakout char). A title/description
+  // carrying all three plus a raw `>` and `&` must emit none of them raw
+  // inside the <script> payload, yet round-trip back to the original strings.
+  const block = renderRouteJsonLd('/x', {
+    title: 'a < b > c & d </script>',
+    description: 'x > y && z < w',
+    schemaType: 'Article',
+  });
+  // Strip the wrapping <script ...> ... </script> to inspect only the payload.
+  const payload = block.replace(/^\s*<script[^>]*>/, '').replace(/<\/script>\s*$/, '');
+  assert.doesNotMatch(payload, /</, 'no raw < survives in the JSON-LD payload');
+  assert.doesNotMatch(payload, />/, 'no raw > survives in the JSON-LD payload');
+  assert.doesNotMatch(payload, /&/, 'no raw & survives in the JSON-LD payload');
+  assert.match(payload, /\\u003c/, '< is escaped to \\u003c');
+  assert.match(payload, /\\u003e/, '> is escaped to \\u003e');
+  assert.match(payload, /\\u0026/, '& is escaped to \\u0026');
+  // The escaped JSON still parses, and the values round-trip exactly.
+  const doc = JSON.parse(payload);
+  const article = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'Article');
+  assert.equal(article.headline, 'a < b > c & d </script>', 'headline round-trips with < > & intact');
+  assert.equal(article.description, 'x > y && z < w', 'description round-trips with < > & intact');
 });
 
 test('case-study breadcrumb chains Home > Proof > Title', () => {

@@ -317,12 +317,17 @@ export function renderBodyBlock(path: string, m: RouteMeta): string {
 // Escape a serialized JSON string for safe embedding inside an HTML
 // <script type="application/ld+json"> element. JSON.stringify alone leaves a
 // literal `</script>` (e.g. inside a title/description) able to close the tag
-// early and inject markup. Escaping `<` as < (and the line/para separators
-// for strict JS parsers) keeps the JSON byte-for-byte equivalent while making
-// the closing-tag sequence impossible. Standard JSON-LD-in-HTML hardening.
+// early and inject markup. We escape the full `< > &` set (acceptance
+// criterion 5 \u2014 the baked body and JSON-LD are both escaped for `< > &`) plus
+// the U+2028/U+2029 line/para separators for strict JS parsers. `\uXXXX`
+// escapes keep the JSON byte-for-byte equivalent (JSON.parse decodes them back
+// to the original string) while making any markup breakout impossible.
+// Standard JSON-LD-in-HTML hardening.
 function escapeJsonForHtml(json: string): string {
   return json
     .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 }
