@@ -168,11 +168,13 @@ const HomePage = () => {
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
               <img
-                src="/dan-mercede-founder-headshot-sm.png"
-                alt={getImageMeta("/dan-mercede-founder-headshot-sm.png").alt}
+                src="/dan-mercede-founder-headshot-sm.webp"
+                alt={getImageMeta("/dan-mercede-founder-headshot-sm.webp").alt}
                 title="Dan Mercede — Founder of Cosmocrat"
                 width="1200"
                 height="1500"
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
               />
               {/* Subtle Dark Overlay (5%) */}

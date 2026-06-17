@@ -196,6 +196,11 @@ export const IMAGE_METADATA = {
     description:
       "Scaled founder headshot of Dan Mercede focused on hands-on AI system design and governance.",
   },
+  "dan-mercede-founder-headshot-sm.webp": {
+    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
+    description:
+      "Scaled founder headshot of Dan Mercede focused on hands-on AI system design and governance.",
+  },
   "dan-mercede-founder-headshot-xs.png": {
     alt: "Dan Mercede working as founder and systems architect on governed AI systems",
     description:
