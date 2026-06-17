@@ -12,10 +12,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // a route/case-study would prerender a crawler head but silently leave the sitemap stale.
 test('public/sitemap.xml exactly covers ROUTE_META ∪ case-study paths (no drift)', () => {
   const xml = readFileSync(path.join(root, 'public', 'sitemap.xml'), 'utf8');
-  const locs = new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim()));
+  // Compare route sets independent of cosmetic trailing-slash differences.
+  const normalize = (u: string) => u.replace(/\/+$/, '');
+  const locs = new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => normalize(m[1].trim())));
   const expected = new Set([
-    ...Object.keys(ROUTE_META).map((p) => new URL(p, SITE_ORIGIN).toString()),
-    ...caseStudyPaths().map((p) => new URL(p, SITE_ORIGIN).toString()),
+    ...Object.keys(ROUTE_META).map((p) => normalize(new URL(p, SITE_ORIGIN).toString())),
+    ...caseStudyPaths().map((p) => normalize(new URL(p, SITE_ORIGIN).toString())),
   ]);
   const missing = [...expected].filter((u) => !locs.has(u));
   const extra = [...locs].filter((u) => !expected.has(u));

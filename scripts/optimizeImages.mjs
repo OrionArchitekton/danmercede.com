@@ -43,12 +43,13 @@ const files = await walk(PUB);
 let totalBefore = 0, totalAfter = 0, changed = 0;
 const rows = [];
 for (const f of files.sort()) {
-  if (SKIP.test(f)) continue;
+  const fp = f.split(path.sep).join('/'); // normalize separators so SKIP/NO_RESIZE path regexes work cross-OS
+  if (SKIP.test(fp)) continue;
   const st = await fs.stat(f);
   if (st.size < MIN_BYTES) continue;
   const ext = path.extname(f).toLowerCase().replace('.', '').replace('jpeg', 'jpg');
   const meta = await sharp(f).metadata();
-  const noResize = NO_RESIZE.test(f);
+  const noResize = NO_RESIZE.test(fp);
   let pipe = sharp(f);
   if (!noResize) pipe = pipe.resize(MAX_EDGE, MAX_EDGE, { fit: 'inside', withoutEnlargement: true });
   if (ext === 'png')  pipe = pipe.png({ quality: 90, effort: 8, dither: 1.0 });
