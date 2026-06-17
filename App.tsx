@@ -114,10 +114,10 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center">
       <div className="mb-8 md:mb-0">
         <h4 className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</h4>
-        <p className="text-slate-500 text-xs font-mono mb-1">Founder & Systems Architect</p>
+        <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
-      <div className="flex space-x-6 text-slate-500">
+      <div className="flex space-x-6 text-slate-400">
         <Link to="/legal" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Legal</Link>
         <Link to="/privacy" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Privacy</Link>
         <Link to="/imprint" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Imprint</Link>
