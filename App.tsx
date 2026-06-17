@@ -115,7 +115,7 @@ const Footer = () => (
       <div className="mb-8 md:mb-0">
         <h4 className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</h4>
         <p className="text-slate-500 text-xs font-mono mb-1">Founder & Systems Architect</p>
-        <p className="text-slate-600 text-xs">{FOOTER_DATA.entity}</p>
+        <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
       <div className="flex space-x-6 text-slate-500">
         <Link to="/legal" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Legal</Link>
@@ -159,7 +159,7 @@ const HomePage = () => {
                 >
                   {READINESS_SCAN.cta}
                 </a>
-                <p className="text-slate-600 text-xs font-mono max-w-md">
+                <p className="text-slate-400 text-xs font-mono max-w-md">
                   Deliverables: {READINESS_SCAN.deliverables.join(' · ')}
                 </p>
               </div>
@@ -269,7 +269,7 @@ const HomePage = () => {
           </a>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             {READINESS_SCAN.deliverables.map((d, i) => (
-              <span key={i} className="text-slate-600 text-xs font-mono border border-white/5 px-3 py-1 rounded-sm">{d}</span>
+              <span key={i} className="text-slate-400 text-xs font-mono border border-white/5 px-3 py-1 rounded-sm">{d}</span>
             ))}
           </div>
         </div>
@@ -495,13 +495,13 @@ const EcosystemPage = () => {
                     </p>
                   </div>
                   <div className="mt-8 flex justify-between items-center border-t border-white/5 pt-4">
-                    <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-600 group-hover:text-copper-500'}`}>
+                    <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-copper-500'}`}>
                       {isExpanded ? 'Close Details' : 'View Details'}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-copper-500" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-600 group-hover:text-copper-500 transition-colors" />
+                      <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-copper-500 transition-colors" />
                     )}
                   </div>
                 </div>
@@ -525,7 +525,7 @@ const EcosystemPage = () => {
           >
             {READINESS_SCAN.cta}
           </a>
-          <p className="text-slate-600 text-xs font-mono mt-4">
+          <p className="text-slate-400 text-xs font-mono mt-4">
             {READINESS_SCAN.deliverables.join(' · ')}
           </p>
         </div>
@@ -543,7 +543,7 @@ const EcosystemPage = () => {
         >
           <div className="border-l-2 border-slate-700 pl-6">
             <h2 className="text-2xl font-bold text-slate-400 group-hover:text-slate-300 transition-colors tracking-tight">Extended Ecosystem</h2>
-            <p className="text-slate-600 font-mono text-sm tracking-widest uppercase">Supporting Ventures & Vehicles</p>
+            <p className="text-slate-400 font-mono text-sm tracking-widest uppercase">Supporting Ventures & Vehicles</p>
           </div>
           {showSecondary ? (
             <ChevronUp className="w-5 h-5 text-slate-500" />
@@ -587,18 +587,18 @@ const EcosystemPage = () => {
                       </span>
                     </div>
                     <div className="flex-grow">
-                      <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-600">{venture.role}</p>
+                      <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-400">{venture.role}</p>
                       <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
                       <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
                     </div>
                     <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
-                      <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-700 group-hover:text-slate-500'}`}>
+                      <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
                         {isExpanded ? 'Close' : 'Details'}
                       </span>
                       {isExpanded ? (
                         <ChevronUp className="w-4 h-4 text-copper-500" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-slate-700 group-hover:text-slate-500 transition-colors" />
+                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-300 transition-colors" />
                       )}
                     </div>
                   </div>
@@ -612,7 +612,7 @@ const EcosystemPage = () => {
       </Section>
 
       <div className="border-t border-white/5 bg-slate-900/30 py-16 text-center">
-        <p className="text-slate-600 font-mono text-xs uppercase tracking-widest max-w-2xl mx-auto px-6">
+        <p className="text-slate-400 font-mono text-xs uppercase tracking-widest max-w-2xl mx-auto px-6">
           Each entity operates independently under a shared governance framework. The runtime stack (Cosmocrat + OIA) is the enterprise entry point.
         </p>
       </div>
@@ -1281,7 +1281,7 @@ const ThoughtsPage = () => {
                 <span className="text-xs font-mono uppercase tracking-widest text-copper-500/70">
                   {thought.category}
                 </span>
-                <span className="text-xs font-mono text-slate-600">{thought.date}</span>
+                <span className="text-xs font-mono text-slate-400">{thought.date}</span>
               </div>
               <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
                 {thought.title}
@@ -1321,7 +1321,7 @@ const ConnectPage = () => {
             <ul className="space-y-2">
               {TARGET_AUDIENCE.map((target, idx) => (
                 <li key={idx} className="flex items-center text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-slate-600 mr-3" />
+                  <CheckCircle2 className="w-4 h-4 text-slate-400 mr-3" />
                   {target}
                 </li>
               ))}
