@@ -40,9 +40,12 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outli
   return <button className={`${baseClasses} ${variants[variant]}`}>{children}</button>;
 };
 
-const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
+// `as` lets a route's lead heading render as the page-level <h1> (identical
+// styling) so each top-level route exposes one screen-reader-perceivable h1;
+// subsequent section headers stay h2. Default h2 keeps existing call sites intact.
+const SectionHeader: React.FC<{ title: string; subtitle?: string; as?: 'h1' | 'h2' }> = ({ title, subtitle, as: Heading = 'h2' }) => (
   <div className="mb-16 border-l-2 border-copper-500 pl-6">
-    <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">{title}</h2>
+    <Heading className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">{title}</Heading>
     {subtitle && <p className="text-copper-400 font-mono text-sm tracking-widest uppercase">{subtitle}</p>}
   </div>
 );
@@ -52,6 +55,19 @@ const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Disclosure-menu keyboard a11y: focus the first link when the menu opens;
+  // close on Escape and return focus to the toggle button.
+  useEffect(() => {
+    if (isOpen) menuRef.current?.querySelector<HTMLAnchorElement>('a')?.focus();
+  }, [isOpen]);
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    toggleRef.current?.focus();
+  };
 
   return (
     <nav className="fixed w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
@@ -76,6 +92,7 @@ const Navigation = () => {
 
         {/* Mobile Toggle */}
         <button
+          ref={toggleRef}
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden text-white"
           aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -90,7 +107,12 @@ const Navigation = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div id="mobile-menu" className="md:hidden absolute top-20 w-full bg-slate-950 border-b border-copper-500/30">
+        <div
+          id="mobile-menu"
+          ref={menuRef}
+          onKeyDown={(e) => { if (e.key === 'Escape') closeMenu(); }}
+          className="md:hidden absolute top-20 w-full bg-slate-950 border-b border-copper-500/30"
+        >
           <div className="flex flex-col p-6 space-y-4">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -285,7 +307,7 @@ const AboutPage = () => {
     <Section>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8">
-          <SectionHeader title="The Throughline" subtitle="Canonical Narrative" />
+          <SectionHeader as="h1" title="The Throughline" subtitle="Canonical Narrative" />
           <div className="prose prose-invert prose-lg text-slate-400">
             <p className="text-xl text-white font-light mb-4">
               From operations to architecture, the mission has remained constant: <span className="text-copper-400">Governance over chaos.</span>
@@ -440,7 +462,7 @@ const EcosystemPage = () => {
     <div className="pt-20">
       {/* Primary: Runtime Governance Stack */}
       <Section>
-        <SectionHeader title="Runtime Governance Stack" subtitle="Core Systems" />
+        <SectionHeader as="h1" title="Runtime Governance Stack" subtitle="Core Systems" />
         <p className="text-slate-400 mb-12 max-w-3xl -mt-10">
           The platform and the implementation arm. Cosmocrat is the Governed AI Operating System. Orion Intelligence Agency deploys and hardens it in production.
         </p>
@@ -902,8 +924,9 @@ const upsertCanonical = (href: string) => {
 // pass an explicit override. og:type/site_name/image and the rendered tag set
 // are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
 // crawler-facing static head agree.
-const usePageMeta = (override?: RouteMeta) => {
+const usePageMeta = (override?: Partial<RouteMeta>, opts?: { noindex?: boolean }) => {
   const { pathname } = useLocation();
+  const noindex = opts?.noindex ?? false;
   const overrideTitle = override?.title;
   const overrideDescription = override?.description;
   const overrideOgImage = override?.ogImage;
@@ -931,10 +954,19 @@ const usePageMeta = (override?: RouteMeta) => {
     upsertMetaByProperty("og:image", ogImageUrl);
 
     upsertMetaByName("twitter:card", "summary_large_image");
+    upsertMetaByName("twitter:site", "@danmercede");
+    upsertMetaByName("twitter:creator", "@danmercede");
     upsertMetaByName("twitter:title", title);
     upsertMetaByName("twitter:description", description);
     upsertMetaByName("twitter:image", ogImageUrl);
-  }, [pathname, overrideTitle, overrideDescription, overrideOgImage]);
+
+    // Robots: indexable by default; the catch-all 404 opts into noindex so
+    // unknown paths are not indexed as thin homepage duplicates (soft-404).
+    upsertMetaByName(
+      "robots",
+      noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
+    );
+  }, [pathname, overrideTitle, overrideDescription, overrideOgImage, noindex]);
 };
 
 const ResourcesPage = () => {
@@ -945,7 +977,7 @@ const ResourcesPage = () => {
     <div className="pt-20">
       <LayerJumpBar />
       <Section>
-        <SectionHeader title="Proof" subtitle="Enforcement Artifacts" />
+        <SectionHeader as="h1" title="Proof" subtitle="Enforcement Artifacts" />
 
         {/* Signature Diagram — Runtime Execution Control Plane Architecture */}
         <div id="control-plane" className="mb-16">
@@ -1247,7 +1279,7 @@ const ThoughtsPage = () => {
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader title="Thought Direction" subtitle="Doctrine + Architecture" />
+        <SectionHeader as="h1" title="Thought Direction" subtitle="Doctrine + Architecture" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
           Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes — only enforcement mechanics and architectural proof.
@@ -1308,7 +1340,7 @@ const ConnectPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader title="Connect" subtitle="Initiate Protocol" />
+      <SectionHeader as="h1" title="Connect" subtitle="Initiate Protocol" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-8">
@@ -1359,7 +1391,7 @@ const LegalPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader title="Legal Notice" subtitle="Terms & Conditions" />
+      <SectionHeader as="h1" title="Legal Notice" subtitle="Terms & Conditions" />
       <div className="prose prose-invert prose-lg text-slate-400 max-w-4xl">
         <p className="mb-6">
           <strong>1. Information on this Website</strong><br />
@@ -1384,7 +1416,7 @@ const PrivacyPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader title="Privacy Policy" subtitle="Data Governance" />
+      <SectionHeader as="h1" title="Privacy Policy" subtitle="Data Governance" />
       <div className="prose prose-invert prose-lg text-slate-400 max-w-4xl">
         <p className="mb-6">
           <strong>1. General</strong><br />
@@ -1409,7 +1441,7 @@ const ImprintPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader title="Imprint" subtitle="Entity Details" />
+      <SectionHeader as="h1" title="Imprint" subtitle="Entity Details" />
       <div className="bg-slate-900/40 p-10 border border-white/5 max-w-2xl">
         <div className="space-y-6 text-slate-400">
           <div>
@@ -1436,6 +1468,37 @@ const ImprintPage = () => {
     </Section>
   </div>
   ); };
+
+// Catch-all 404 for unknown paths. The SPA's `/(.*)` Vercel rewrite serves
+// index.html (HTTP 200) for every path, so without this an unknown URL rendered
+// the empty homepage shell (a thin soft-404). This renders a clear 404 surface
+// and opts into <meta name="robots" content="noindex"> so crawlers don't index
+// nonexistent paths as homepage duplicates.
+const NotFoundPage = () => {
+  usePageMeta(
+    {
+      title: 'Page Not Found — Dan Mercede',
+      description: 'The page you requested does not exist. Return to danmercede.com.',
+    },
+    { noindex: true },
+  );
+  return (
+    <div className="pt-20">
+      <Section>
+        <SectionHeader as="h1" title="Page Not Found" subtitle="404" />
+        <p className="text-slate-400 mb-8 max-w-2xl -mt-10">
+          The page you're looking for doesn't exist or has moved.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center text-copper-500 font-bold uppercase tracking-wider text-sm hover:text-copper-400 transition-colors"
+        >
+          Return home <ArrowRight className="ml-2 w-4 h-4" />
+        </Link>
+      </Section>
+    </div>
+  );
+};
 
 // --- App Layout ---
 
@@ -1482,6 +1545,7 @@ const App: React.FC = () => {
             <Route path="/legal" element={<LegalPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/imprint" element={<ImprintPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
 
