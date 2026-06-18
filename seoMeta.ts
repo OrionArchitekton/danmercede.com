@@ -1,4 +1,4 @@
-import { CASE_STUDIES } from './constants';
+import { CASE_STUDIES, WORKS } from './constants';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -58,9 +58,11 @@ export interface RouteMeta {
   // routes without it fall back to a minimal title+description body.
   body?: RouteBody;
   // JSON-LD primary @type for the route's content node (W4). One of
-  // 'Article' | 'ProfilePage'. Omitted routes get no per-route content node
-  // (only the homepage entity graph + a BreadcrumbList).
-  schemaType?: 'Article' | 'ProfilePage';
+  // 'Article' | 'ProfilePage' | 'CollectionPage'. Omitted routes get no
+  // per-route content node (only the homepage entity graph + a BreadcrumbList).
+  // CollectionPage drives the /works surface: a portfolio collection whose items
+  // are SoftwareSourceCode nodes, all backref-ing the canonical #person.
+  schemaType?: 'Article' | 'ProfilePage' | 'CollectionPage';
 }
 
 // Static routes (mirrors the <Route> table in App.tsx). The homepage entry is
@@ -129,6 +131,20 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       lead: 'Doctrine and architecture.',
       paragraphs: [
         'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
+      ],
+    },
+  },
+  '/works': {
+    title: 'Works — Open Source & Governance Tooling | Dan Mercede',
+    description:
+      'Open-source tools Dan Mercede has shipped publicly — starting with orion-skills, a collection of first-party Claude Code skills extracted from production operator workflows.',
+    schemaType: 'CollectionPage',
+    body: {
+      h1: 'Works',
+      lead: 'Open source and public tooling.',
+      paragraphs: [
+        'Tools and skills shipped publicly — extracted from real production operator workflows.',
+        'Each entry links to its source repository; the collection resolves to the canonical Dan Mercede entity.',
       ],
     },
   },
@@ -365,6 +381,33 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
       url: canonical,
       mainEntity: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },
+    });
+  } else if (m.schemaType === 'CollectionPage') {
+    // /works: a portfolio CollectionPage whose mainEntity is the canonical
+    // #person and whose hasPart lists SoftwareSourceCode works. Every node
+    // backrefs #person by @id (creator) — NO second Person is introduced, so
+    // the single-Person identity invariant (tests/identityCanonical.test.ts)
+    // holds. NB: extending RouteMeta.schemaType WITHOUT this branch would emit
+    // only a BreadcrumbList (silent no-op); both edits are required.
+    graph.push({
+      '@type': 'CollectionPage',
+      '@id': `${canonical}#works-collection`,
+      name: r.title,
+      description: r.description,
+      url: canonical,
+      mainEntity: { '@id': PERSON_ID },
+      isPartOf: { '@id': WEBSITE_ID },
+      hasPart: WORKS.map((w) => ({
+        '@type': 'SoftwareSourceCode',
+        '@id': `${canonical}#${w.slug}`,
+        name: w.title,
+        description: w.description,
+        url: w.link || w.repo,
+        codeRepository: w.repo,
+        creator: { '@id': PERSON_ID },
+        ...(w.license ? { license: w.license } : {}),
+        ...(w.date ? { datePublished: w.date } : {}),
+      })),
     });
   }
 

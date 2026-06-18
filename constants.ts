@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work } from './types';
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/' },
@@ -16,6 +16,7 @@ export const NAV_ITEMS = [
   { label: 'Ecosystem', path: '/ecosystem' },
   { label: 'Thoughts', path: '/thoughts' },
   { label: 'Proof', path: '/proof' },
+  { label: 'Works', path: '/works' },
   { label: 'Connect', path: '/connect' },
 ];
 
@@ -395,6 +396,24 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Patient safety risk containment",
       "Audit defensibility for clinical AI",
     ],
+  },
+];
+
+// Curated Works / Open-Source surface (W1: static, like VENTURES/CASE_STUDIES —
+// not substrate-sourced). Append a new entry here whenever a public work ships
+// (see docs/runbooks/works-update-on-ship.md).
+export const WORKS: Work[] = [
+  {
+    title: 'orion-skills',
+    description:
+      'An open collection of first-party Claude Code skills — structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs — extracted from production operator workflows.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-skills',
+    link: 'https://github.com/OrionArchitekton/orion-skills',
+    gist: 'https://gist.github.com/OrionArchitekton/6406f7c87d87668023b6594211fd791e',
+    license: 'MIT',
+    date: '2026-06-17',
+    slug: 'orion-skills',
   },
 ];
 
