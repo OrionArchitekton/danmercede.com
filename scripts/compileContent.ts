@@ -3,7 +3,8 @@
  *
  * Reads substrate canonicals from `<substrate>/publishing/canonical/`, filters
  * those with `surface_targets` including "danmercede.com", maps each to the
- * 4-field `Thought` shape, and writes `constants.generated.ts`.
+ * `Thought` shape (title/preview/date/category + slug + full essay body), and
+ * writes `constants.generated.ts`.
  *
  * Posture (fail-mode asymmetry — see AGENTS.md):
  * - Consumer mode (default; Vercel prebuild): FAIL-OPEN. If substrate is
@@ -12,9 +13,11 @@
  * - Sync workflow mode (`--strict`): FAIL-LOUD. Exit 1 on either failure.
  *   The workflow halts and does not open a PR that would silently strip entries.
  *
- * Spec 5 PR-B. Mapper shape ported from danmercede.online (Spec 4) but
- * specialized for the 4-field Thought type — no inbox, no body extraction, no
- * forbidden-content scan (substrate canonicals are operator-authored and trusted).
+ * Spec 5 PR-B. Mapper shape ported from danmercede.online (Spec 4); round-2
+ * R1 extends it to extract the full essay body (parsed.content) — mirroring
+ * danmercede.online's `content: body` — so the hub bakes the full corpus into
+ * served per-thought pages, not just the preview. No inbox, no forbidden-content
+ * scan (substrate canonicals are operator-authored and trusted).
  */
 
 import * as fs from 'fs';
@@ -74,6 +77,10 @@ export interface ThoughtEntry {
   date: string;
   category: string;
   slug: string;
+  // Full essay body (substrate canonical markdown body below the frontmatter,
+  // trimmed). Blank-line-separated paragraphs; baked verbatim into served
+  // per-thought pages (R1). Empty string when the canonical has no body.
+  body: string;
   isoDate: string;
 }
 
@@ -249,6 +256,7 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
  */
 export function mapSubstrateToEntry(
   data: Record<string, unknown>,
+  body: string,
   filename: string,
   diagnostics?: SubstrateDiagnostic[]
 ): ThoughtEntry | null {
@@ -308,6 +316,7 @@ export function mapSubstrateToEntry(
     date: dateResult.displayDate,
     category: deriveCategoryFromLayer(data['layer']),
     slug: slug as string,
+    body,
     isoDate: dateResult.isoDate,
   };
 }
@@ -381,7 +390,10 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
       continue;
     }
 
-    const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, file, diagnostics);
+    // Extract the full essay body (markdown below the frontmatter), mirroring
+    // danmercede.online's `const body = parsed.content.trim()` (R1).
+    const body = parsed.content.trim();
+    const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, body, file, diagnostics);
     if (entry) entries.push(entry);
   }
 
@@ -444,6 +456,12 @@ export function generateOutput(entries: ThoughtEntry[]): string {
     lines.push(`    preview: ${JSON.stringify(e.preview)},`);
     lines.push(`    date: ${JSON.stringify(e.date)},`);
     lines.push(`    category: ${JSON.stringify(e.category)},`);
+    lines.push(`    slug: ${JSON.stringify(e.slug)},`);
+    // JSON.stringify encodes the multi-line essay body as a single-line,
+    // newline-escaped TS string literal (\n between paragraphs). Consumers
+    // (seoMeta thoughtMeta) split on the blank-line boundary to rebuild
+    // paragraphs for the baked body block.
+    lines.push(`    body: ${JSON.stringify(e.body)},`);
     lines.push('  },');
   }
   lines.push('];');

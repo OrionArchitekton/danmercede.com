@@ -22,6 +22,9 @@ import {
   ROUTE_META,
   caseStudyMeta,
   caseStudyPaths,
+  thoughtMeta,
+  thoughtPaths,
+  renderThoughtSitemapEntries,
   renderSeoBlock,
   injectSeoBlock,
   renderBodyBlock,
@@ -61,6 +64,12 @@ async function main() {
     const slug = csPath.split('/').pop();
     routes.push({ path: csPath, meta: caseStudyMeta(slug) });
   }
+  // Dynamic per-thought routes, derived from the committed THOUGHTS corpus (R2).
+  // Each bakes the full essay body (R1) and an Article JSON-LD node.
+  for (const tPath of thoughtPaths()) {
+    const slug = tPath.split('/').pop();
+    routes.push({ path: tPath, meta: thoughtMeta(slug) });
+  }
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -88,9 +97,34 @@ async function main() {
     written++;
   }
 
+  // Regenerate the per-thought sitemap entries into the BUILT sitemap so the
+  // served sitemap is always in lockstep with the THOUGHTS corpus. The committed
+  // public/sitemap.xml (copied to build/ by Vite) carries only static + case-study
+  // routes; a substrate-sync that changes THOUGHTS needs no sitemap edit.
+  const sitemapPath = path.join(BUILD_DIR, 'sitemap.xml');
+  const sitemapXml = await fs.readFile(sitemapPath, 'utf8').catch(() => {
+    throw new Error(
+      `${sitemapPath} not found — public/sitemap.xml must ship so Vite copies it to build/.`,
+    );
+  });
+  const closeTag = '</urlset>';
+  if (!sitemapXml.includes(closeTag)) {
+    throw new Error('build/sitemap.xml is missing </urlset> — cannot inject thought entries.');
+  }
+  const thoughtEntries = renderThoughtSitemapEntries();
+  if (thoughtEntries) {
+    await fs.writeFile(
+      sitemapPath,
+      sitemapXml.replace(closeTag, `${thoughtEntries}\n${closeTag}`),
+      'utf8',
+    );
+  }
+
   console.log(
     `[injectRouteMeta] wrote ${written} per-route static HTML files ` +
-      `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ${caseStudyPaths().length} case studies)`,
+      `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ` +
+      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts) ` +
+      `+ injected ${thoughtPaths().length} thought entries into build/sitemap.xml`,
   );
 }
 

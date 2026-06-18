@@ -29,6 +29,13 @@ export interface Thought {
   preview: string;
   date: string;
   category: string;
+  // Per-thought route slug (substrate `slug`). Drives /thoughts/<slug> routing,
+  // prerender, and sitemap parity (round-2 R2).
+  slug: string;
+  // Full rendered essay body (substrate canonical markdown body, blank-line-
+  // separated paragraphs). Baked into the served per-thought page so no-JS
+  // answer engines read the full corpus, not just the `preview` lead (R1).
+  body: string;
 }
 
 export interface Work {

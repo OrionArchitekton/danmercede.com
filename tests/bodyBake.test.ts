@@ -7,6 +7,8 @@ import {
   ROUTE_META,
   caseStudyMeta,
   caseStudyPaths,
+  thoughtMeta,
+  thoughtPaths,
   renderBodyBlock,
   renderRouteJsonLd,
   injectBlock,
@@ -74,6 +76,75 @@ test('every case-study route renders a non-empty body block', () => {
     assert.match(block, /<h1>.+<\/h1>/, `${csPath} must have an h1`);
     assert.match(block, /<p>.+<\/p>/, `${csPath} must have a paragraph`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// R1 — full essay-body corpus bake (per-thought routes)
+// ---------------------------------------------------------------------------
+
+test('R1: there is at least one published thought route to bake', () => {
+  assert.ok(thoughtPaths().length > 0, 'expected the THOUGHTS corpus to be non-empty');
+});
+
+test('R1: a per-thought route bakes the FULL essay body (h1 + many paragraphs, not just a preview)', () => {
+  // Pick a thought whose canonical carries a multi-paragraph essay body.
+  const tPath = thoughtPaths()[0];
+  const slug = tPath.split('/').pop();
+  const meta = thoughtMeta(slug);
+  const block = renderBodyBlock(tPath, meta);
+  const h1 = (block.match(/<h1>/g) || []).length;
+  const p = (block.match(/<p>/g) || []).length;
+  assert.equal(h1, 1, 'exactly one <h1> per thought route');
+  // Lead (the claim) + at least 2 body paragraphs = the full essay, not a
+  // single preview line. The round-1 regression served only the 1-line preview.
+  assert.ok(p >= 3, `expected the full essay (>=3 <p>), got ${p} on ${tPath}`);
+});
+
+test('R1: EVERY published thought route bakes an h1 and at least one full body paragraph', () => {
+  for (const tPath of thoughtPaths()) {
+    const slug = tPath.split('/').pop();
+    const block = renderBodyBlock(tPath, thoughtMeta(slug));
+    assert.match(block, /<h1>.+<\/h1>/, `${tPath} must have an h1`);
+    assert.match(block, /<p>.+<\/p>/, `${tPath} must have at least one body paragraph`);
+  }
+});
+
+test('R1: across the corpus, at least one thought bakes a genuinely multi-paragraph essay', () => {
+  // Guards against a corpus that silently degraded to preview-only bodies.
+  const maxParas = Math.max(
+    ...thoughtPaths().map((tPath) => {
+      const slug = tPath.split('/').pop();
+      const block = renderBodyBlock(tPath, thoughtMeta(slug));
+      return (block.match(/<p>/g) || []).length;
+    }),
+  );
+  assert.ok(maxParas >= 3, `expected at least one multi-paragraph essay body, max was ${maxParas}`);
+});
+
+test('R1/W4: a per-thought route emits an Article authored by the canonical #person (no competing Person, no FAQPage)', () => {
+  const tPath = thoughtPaths()[0];
+  const slug = tPath.split('/').pop();
+  const block = renderRouteJsonLd(tPath, thoughtMeta(slug));
+  const doc = JSON.parse(block.replace(/^\s*<script[^>]*>/, '').replace(/<\/script>\s*$/, '').replace(/\\u003c/g, '<').replace(/\\u003e/g, '>').replace(/\\u0026/g, '&'));
+  const types = doc['@graph'].map((n: { '@type': string }) => n['@type']);
+  assert.ok(types.includes('Article'), 'Article present');
+  assert.ok(types.includes('BreadcrumbList'), 'BreadcrumbList present');
+  assert.ok(!types.includes('Person'), 'NO competing Person node on a thought route');
+  assert.ok(!types.includes('FAQPage'), 'NEVER FAQPage');
+  const article = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'Article');
+  assert.equal(article.author['@id'], PERSON_ID, 'Article author backrefs the hub #person');
+  assert.equal(article.publisher['@id'], PERSON_ID, 'Article publisher backrefs the hub #person');
+  assert.equal(article.isPartOf['@id'], WEBSITE_ID);
+});
+
+test('R2: a per-thought breadcrumb chains Home > Thoughts > Title', () => {
+  const tPath = thoughtPaths()[0];
+  const slug = tPath.split('/').pop();
+  const block = renderRouteJsonLd(tPath, thoughtMeta(slug));
+  const doc = JSON.parse(block.replace(/^\s*<script[^>]*>/, '').replace(/<\/script>\s*$/, ''));
+  const crumb = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'BreadcrumbList');
+  const names = crumb.itemListElement.map((i: { name: string }) => i.name);
+  assert.deepEqual(names.slice(0, 2), ['Home', 'Thoughts']);
 });
 
 test('the prerendered body block lives OUTSIDE #root so React never collides with it', () => {
