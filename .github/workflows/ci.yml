@@ -57,3 +57,34 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Round-2 R9: assert the BUILT/served DOM body, not just the emitter.
+      # tests/bodyBake.test.ts asserts the renderBodyBlock() emitter string and
+      # the source index.html template — it never reads build/ output, so an
+      # empty served <body> can ship green (passing-test-masks-prod-bug class).
+      # This gate reads the actual built homepage AND a per-route bake
+      # (build/proof, build/thoughts) and fails closed if the crawlable body is
+      # empty (h1<1 OR p<1), catching both a homepage and a per-route bake
+      # regression before deploy.
+      - name: Assert built DOM body (round-2 R9)
+        run: |
+          fail=0
+          for f in build/index.html build/proof/index.html build/thoughts/index.html; do
+            if [ ! -f "$f" ]; then
+              echo "R9 FAIL: $f missing (build did not emit it)"
+              fail=1
+              continue
+            fi
+            h1=$(grep -o '<h1' "$f" | wc -l | tr -d ' ')
+            p=$(grep -o '<p' "$f" | wc -l | tr -d ' ')
+            echo "R9 built-DOM body $f -> h1=$h1 p=$p"
+            if [ "$h1" -lt 1 ] || [ "$p" -lt 1 ]; then
+              echo "R9 FAIL: $f served body is empty (h1=$h1 p=$p; require h1>=1 AND p>=1)"
+              fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "R9 assertion failed: built/served DOM body missing h1/p — empty-body regression."
+            exit 1
+          fi
+          echo "R9 OK: all asserted built pages carry a non-empty crawlable body."
