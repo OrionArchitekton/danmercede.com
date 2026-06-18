@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_OG_IMAGE_PATH } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(root, 'public');
+const HOMEPAGE_HERO_IMAGE_PATH = '/dan-mercede-founder-headshot-hero.webp';
+const HOMEPAGE_HERO_BUDGET_KB = 700;
 
 // Per-type byte budgets (KB), set with headroom above the current committed maxima
 // (png ~2.47MB, webp ~1.1MB, og/jpg ~118KB, signature SVG ~4.2MB). The point: a future
@@ -63,4 +65,23 @@ test('DEFAULT_OG_IMAGE_PATH resolves to a non-empty file inside public/', () => 
     size > 0,
     `DEFAULT_OG_IMAGE_PATH (${DEFAULT_OG_IMAGE_PATH}) must exist and be non-empty in public/ (got ${size} bytes) — a renamed/removed OG card silently breaks social unfurls.`,
   );
+});
+
+test('homepage LCP hero uses the optimized committed asset', () => {
+  const rel = HOMEPAGE_HERO_IMAGE_PATH.replace(/^\//, '');
+  const resolved = path.join(PUBLIC, rel);
+  const kb = statSync(resolved).size / 1024;
+
+  assert.ok(
+    kb <= HOMEPAGE_HERO_BUDGET_KB,
+    `Homepage hero ${rel} must stay <= ${HOMEPAGE_HERO_BUDGET_KB}KB (got ${kb.toFixed(0)}KB).`,
+  );
+
+  const indexHtml = readFileSync(path.join(root, 'index.html'), 'utf8');
+  const appSource = readFileSync(path.join(root, 'App.tsx'), 'utf8');
+  const seoSource = readFileSync(path.join(root, 'seoMeta.ts'), 'utf8');
+
+  assert.match(indexHtml, new RegExp(`href="${HOMEPAGE_HERO_IMAGE_PATH}"`));
+  assert.match(appSource, new RegExp(`src="${HOMEPAGE_HERO_IMAGE_PATH}"`));
+  assert.match(seoSource, new RegExp(`href="${HOMEPAGE_HERO_IMAGE_PATH}"`));
 });

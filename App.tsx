@@ -192,8 +192,8 @@ const HomePage = () => {
             {/* Image Placeholder */}
             <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
               <img
-                src="/dan-mercede-founder-headshot-sm.webp"
-                alt={getImageMeta("/dan-mercede-founder-headshot-sm.webp").alt}
+                src="/dan-mercede-founder-headshot-hero.webp"
+                alt={getImageMeta("/dan-mercede-founder-headshot-hero.webp").alt}
                 title="Dan Mercede — Founder of Cosmocrat"
                 width="1200"
                 height="1500"
