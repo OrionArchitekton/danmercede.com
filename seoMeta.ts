@@ -247,6 +247,11 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
   const d = escapeAttr(r.description);
   const alt = escapeAttr(OG_IMAGE_ALT);
   return [
+    // Preload the LCP hero — HOMEPAGE ONLY. The hero <img> renders only on
+    // HomePage, so preloading it on other routes downloads ~1.1MB they never use.
+    ...(path === '/'
+      ? [`  <link rel="preload" as="image" href="/dan-mercede-founder-headshot-sm.webp" fetchpriority="high" />`]
+      : []),
     `  <title>${t}</title>`,
     `  <meta name="description" content="${d}" />`,
     `  <meta name="robots" content="index, follow, max-image-preview:large" />`,
