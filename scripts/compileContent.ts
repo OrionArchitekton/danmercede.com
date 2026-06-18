@@ -23,23 +23,40 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import matter from 'gray-matter';
 import yaml from 'js-yaml';
 
-// Custom gray-matter engine that uses js-yaml's JSON_SCHEMA. This disables
-// YAML's default `!!timestamp` type-coercion, so unquoted YAML dates like
+// Parse frontmatter with js-yaml's JSON_SCHEMA. This disables YAML's default
+// `!!timestamp` type-coercion, so unquoted YAML dates like
 // `date: 2026-05-20` and `date: 2026-05-20T00:00:00Z` are received as STRINGS
-// — not as JavaScript Date objects. Distinguishing date-only from full ISO
+// - not as JavaScript Date objects. Distinguishing date-only from full ISO
 // timestamps becomes unambiguous: a pure YYYY-MM-DD string is a calendar
-// date, anything else is an instant. Without this, gray-matter's default
-// SAFE_SCHEMA coerces both forms to Date objects whose .toISOString() ends
+// date, anything else is an instant. Without this, timestamp-aware YAML parsers
+// can coerce both forms to Date objects whose .toISOString() ends
 // in "T00:00:00.000Z", making them indistinguishable and causing the
 // UTC-midnight instant `2026-05-20T00:00:00Z` to render as the calendar
 // day "2026-05-20" rather than the PT day "2026-05-19".
-const yamlEngine = {
-  parse: (raw: string): unknown => yaml.load(raw, { schema: yaml.JSON_SCHEMA }),
-  stringify: (data: unknown): string => yaml.dump(data, { schema: yaml.JSON_SCHEMA }),
-};
+interface ParsedCanonicalMarkdown {
+  data: Record<string, unknown>;
+  content: string;
+}
+
+function parseCanonicalMarkdown(raw: string): ParsedCanonicalMarkdown {
+  const normalized = raw.replace(/\r\n?/g, '\n');
+  const match = /^---\n([\s\S]*?)\n---(?:\n|$)/.exec(normalized);
+  if (!match) return { data: {}, content: normalized };
+
+  const loaded = yaml.load(match[1], { schema: yaml.JSON_SCHEMA });
+  if (loaded == null) {
+    return { data: {}, content: normalized.slice(match[0].length) };
+  }
+  if (typeof loaded !== 'object' || Array.isArray(loaded)) {
+    throw new Error('frontmatter must parse to a mapping');
+  }
+  return {
+    data: loaded as Record<string, unknown>,
+    content: normalized.slice(match[0].length),
+  };
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -181,7 +198,7 @@ function hasRealCalendarFields(match: RegExpExecArray): boolean {
  *   - `displayDate`: the human-rendered calendar day in YYYY-MM-DD form
  *
  * Date-only inputs (YAML `date: 2026-05-20`, quoted `"2026-05-20"`, or a
- * gray-matter Date object that represents UTC midnight from date-only YAML)
+ * caller-provided Date object that represents UTC midnight from date-only YAML)
  * are treated as calendar dates and rendered LITERALLY — not converted through
  * a JS Date instant in America/Los_Angeles, which would shift them one day
  * earlier (UTC midnight is the previous day in PT). Time-bearing strings must
@@ -190,12 +207,12 @@ function hasRealCalendarFields(match: RegExpExecArray): boolean {
  * offset-less datetimes) returns null → fatal at the caller.
  */
 function validateDate(date: unknown): { isoDate: string; displayDate: string } | null {
-  // Case 1: caller-supplied Date object (no longer produced by our gray-matter
-  // reader — the JSON_SCHEMA engine emits strings — but tests and future
-  // callers may pass Date directly). When a Date is passed, we treat the
+  // Case 1: caller-supplied Date object (no longer produced by our frontmatter
+  // reader - the JSON_SCHEMA engine emits strings - but tests and future callers
+  // may pass Date directly). When a Date is passed, we treat the
   // UTC-midnight marker (`T00:00:00.000Z`) as a calendar-date signal because
-  // that is exactly the shape produced when gray-matter's default coercion
-  // would parse `date: 2026-05-20` (unquoted YAML).
+  // that is exactly the shape produced when timestamp-aware YAML coercion would
+  // parse `date: 2026-05-20` (unquoted YAML).
   //
   // CAVEAT: a Date constructed from a real ISO instant `2026-05-20T00:00:00Z`
   // is also UTC-midnight and indistinguishable here. Callers that need
@@ -294,7 +311,8 @@ export function mapSubstrateToEntry(
   const missing: string[] = [];
   if (typeof slug !== 'string' || !slug.trim()) missing.push('slug');
   if (typeof title !== 'string' || !title.trim()) missing.push('title');
-  // gray-matter parses unquoted YAML dates as Date objects; allow both.
+  // The compiler's JSON_SCHEMA parser emits date strings, but keep Date support
+  // for direct callers and regression tests.
   if (!(dateRaw instanceof Date) && (typeof dateRaw !== 'string' || !dateRaw.trim())) missing.push('date');
   if (typeof claim !== 'string' || !claim.trim()) missing.push('claim');
   if (missing.length > 0) {
@@ -383,7 +401,7 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
 
     let parsed;
     try {
-      parsed = matter(raw, { engines: { yaml: yamlEngine } });
+      parsed = parseCanonicalMarkdown(raw);
     } catch (e) {
       console.log(`   ⚠️  substrate canonical YAML parse failed: ${file} (${e})`);
       diagnostics.push({ file, severity: 'fatal', reason: `YAML parse failed: ${String(e)}` });

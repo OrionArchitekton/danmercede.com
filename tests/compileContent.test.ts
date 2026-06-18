@@ -461,8 +461,9 @@ test('mapSubstrateToEntry: quoted date-only string preserves calendar day (no PT
   assert.equal(entry!.date, '2026-05-20', 'must NOT shift back to 2026-05-19 in PT');
 });
 
-test('mapSubstrateToEntry: unquoted YAML date (gray-matter Date at UTC midnight) preserves calendar day', () => {
-  // gray-matter converts `date: 2026-05-20` (unquoted) to a Date at UTC midnight.
+test('mapSubstrateToEntry: UTC-midnight Date object preserves calendar day', () => {
+  // Historical timestamp-aware YAML parsers converted `date: 2026-05-20`
+  // (unquoted) to a Date at UTC midnight; keep direct Date support stable.
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: new Date('2026-05-20T00:00:00.000Z') }),
     '', 'test.md'
@@ -697,9 +698,9 @@ test('readSubstrateWithDiagnostics: mixed substrate (1 valid + 1 fatal) → entr
 });
 
 // ---------------------------------------------------------------------------
-// Cycle-2 regression: gray-matter must NOT auto-coerce YAML dates to Date
-// objects (JSON_SCHEMA engine). A UTC-midnight ISO timestamp string must
-// route through the PT-formatting path, not the calendar-literal path.
+// Cycle-2 regression: the frontmatter parser must NOT auto-coerce YAML dates
+// to Date objects (JSON_SCHEMA engine). A UTC-midnight ISO timestamp string
+// must route through the PT-formatting path, not the calendar-literal path.
 // ---------------------------------------------------------------------------
 
 test('readSubstrateWithDiagnostics: unquoted YYYY-MM-DD is received as STRING, not Date (JSON_SCHEMA engine)', () => {
