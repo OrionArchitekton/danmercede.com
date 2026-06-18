@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS } from './constants';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -220,6 +220,53 @@ export function caseStudyPaths(): string[] {
   return CASE_STUDIES.filter((cs) => cs.slug).map((cs) => `/case-studies/${cs.slug}`);
 }
 
+// Split a substrate essay body into crawlable paragraphs. The body is stored
+// as a single newline-escaped string (compileContent's generateOutput) with
+// blank lines separating paragraphs; split on one-or-more blank lines and drop
+// empties so each paragraph becomes its own baked <p> (R1 full-body bake).
+export function bodyToParagraphs(body: string): string[] {
+  return body
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter((p) => p.length > 0);
+}
+
+// Dynamic per-thought meta (round-2 R1/R2). The title FORMAT lives here only so
+// the runtime (ThoughtDetailPage) and the prerender injector emit identical
+// strings. The baked body carries the FULL essay (every paragraph of the
+// substrate canonical), not just the preview — that is the corpus bake. JSON-LD
+// is an Article authored/published by the canonical #person (never a competing
+// Person node, never FAQPage).
+export function thoughtMeta(slug: string | undefined): RouteMeta {
+  const thought = THOUGHTS.find((t) => t.slug === slug);
+  if (!thought) {
+    return { title: 'Thought Not Found | Dan Mercede' };
+  }
+  const paragraphs = bodyToParagraphs(thought.body);
+  return {
+    title: `${thought.title} — Thought | Dan Mercede`,
+    // The preview (substrate `claim`) is the thesis — the ideal meta description.
+    description: thought.preview,
+    schemaType: 'Article',
+    body: {
+      h1: thought.title,
+      // Lead = the thesis claim; the full essay paragraphs follow it.
+      lead: thought.preview,
+      // Fall back to the preview if a canonical ever has an empty body, so the
+      // route never bakes an h1 with zero paragraphs.
+      paragraphs: paragraphs.length > 0 ? paragraphs : [thought.preview],
+    },
+  };
+}
+
+// All per-thought route paths, derived from the committed THOUGHTS corpus — so
+// a newly-compiled canonical is prerendered + sitemap-covered automatically
+// with no hand-maintained slug list. Closes the round-1 gap where the corpus
+// was outside both the route set AND the sitemap.
+export function thoughtPaths(): string[] {
+  return THOUGHTS.filter((t) => t.slug).map((t) => `/thoughts/${t.slug}`);
+}
+
 export function resolveMeta(m: RouteMeta) {
   return {
     title: m.title || DEFAULT_TITLE,
@@ -431,6 +478,10 @@ function renderBreadcrumb(path: string, leafName: string): Record<string, unknow
   ];
   if (path.startsWith('/case-studies/')) {
     items.push({ name: 'Proof', url: new URL('/proof', SITE_ORIGIN).toString() });
+  }
+  // Per-thought detail pages sit under the /thoughts index: Home > Thoughts > Title.
+  if (path.startsWith('/thoughts/')) {
+    items.push({ name: 'Thoughts', url: new URL('/thoughts', SITE_ORIGIN).toString() });
   }
   if (path !== '/') {
     items.push({ name: leafName, url: new URL(path, SITE_ORIGIN).toString() });

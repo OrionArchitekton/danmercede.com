@@ -42,7 +42,9 @@ scan runs on substrate-admitted entries.
 
 ### How substrate fields map to `Thought`
 
-The `Thought` type lives in `types.ts` and is exactly four fields:
+The `Thought` type lives in `types.ts`. Round-2 R1 (full essay-body corpus bake)
+widened it from the original 4 fields to carry the slug and full essay body, so
+per-thought pages (`/thoughts/<slug>`) bake the full corpus, not just the preview:
 
 ```ts
 interface Thought {
@@ -50,6 +52,8 @@ interface Thought {
   preview: string;
   date: string;
   category: string;
+  slug: string;   // round-2 R2: drives /thoughts/<slug> routing + sitemap
+  body: string;   // round-2 R1: full essay body (substrate markdown content)
 }
 ```
 
@@ -59,6 +63,8 @@ interface Thought {
 | `preview` | `claim` (the substrate's thesis statement) |
 | `date` | `date`, formatted as `YYYY-MM-DD` in `America/Los_Angeles` |
 | `category` | derived from `layer` via `LAYER_TO_CATEGORY` (default: `"Doctrine"`) |
+| `slug` | `slug` (verbatim) — the per-thought route + sitemap key |
+| `body` | the canonical markdown body below the frontmatter (`parsed.content.trim()`), blank-line-separated paragraphs |
 
 Adding new layer values: extend `LAYER_TO_CATEGORY` in
 `scripts/compileContent.ts`. The default is intentionally lenient — an

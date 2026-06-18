@@ -176,19 +176,25 @@ function validFrontmatter(overrides: Record<string, unknown> = {}): Record<strin
 }
 
 test('mapSubstrateToEntry: valid canonical maps to ThoughtEntry', () => {
-  const entry = mapSubstrateToEntry(validFrontmatter(), 'test.md');
+  const entry = mapSubstrateToEntry(
+    validFrontmatter(),
+    'Full essay paragraph one.\n\nFull essay paragraph two.',
+    'test.md'
+  );
   assert.ok(entry, 'entry should not be null');
   assert.equal(entry!.title, 'Test Title');
   assert.equal(entry!.preview, 'Test claim text.');
   assert.equal(entry!.date, '2026-05-20');
   assert.equal(entry!.category, 'Architecture');
   assert.equal(entry!.slug, '2026-05-20-test');
+  // R1: the full essay body is carried through verbatim (not just the claim).
+  assert.equal(entry!.body, 'Full essay paragraph one.\n\nFull essay paragraph two.');
 });
 
 test('mapSubstrateToEntry: filters wrong surface_targets', () => {
   const entry = mapSubstrateToEntry(
     validFrontmatter({ surface_targets: ['linkedin', 'danmercede.online'] }),
-    'test.md'
+    '', 'test.md'
   );
   assert.equal(entry, null);
 });
@@ -196,19 +202,19 @@ test('mapSubstrateToEntry: filters wrong surface_targets', () => {
 test('mapSubstrateToEntry: filters missing surface_targets', () => {
   const fm = validFrontmatter();
   delete fm.surface_targets;
-  assert.equal(mapSubstrateToEntry(fm, 'test.md'), null);
+  assert.equal(mapSubstrateToEntry(fm, '', 'test.md'), null);
 });
 
 test('mapSubstrateToEntry: filters non-canonical status', () => {
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ status: 'draft' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ status: 'draft' }), '', 'test.md'),
     null
   );
 });
 
 test('mapSubstrateToEntry: filters unaccepted type (status-update)', () => {
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ type: 'status-update' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ type: 'status-update' }), '', 'test.md'),
     null
   );
 });
@@ -216,19 +222,19 @@ test('mapSubstrateToEntry: filters unaccepted type (status-update)', () => {
 test('mapSubstrateToEntry: skips missing required fields (claim)', () => {
   const fm = validFrontmatter();
   delete fm.claim;
-  assert.equal(mapSubstrateToEntry(fm, 'test.md'), null);
+  assert.equal(mapSubstrateToEntry(fm, '', 'test.md'), null);
 });
 
 test('mapSubstrateToEntry: skips missing required fields (slug)', () => {
   const fm = validFrontmatter();
   delete fm.slug;
-  assert.equal(mapSubstrateToEntry(fm, 'test.md'), null);
+  assert.equal(mapSubstrateToEntry(fm, '', 'test.md'), null);
 });
 
 test('mapSubstrateToEntry: accepts Date object for date (unquoted YAML)', () => {
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: new Date('2026-05-20T07:00:00-07:00') }),
-    'test.md'
+    '', 'test.md'
   );
   assert.ok(entry);
   assert.equal(entry!.date, '2026-05-20');
@@ -237,7 +243,7 @@ test('mapSubstrateToEntry: accepts Date object for date (unquoted YAML)', () => 
 test('mapSubstrateToEntry: rejects invalid Date object', () => {
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: new Date('not-a-date') }),
-    'test.md'
+    '', 'test.md'
   );
   assert.equal(entry, null);
 });
@@ -250,7 +256,7 @@ test('mapSubstrateToEntry: TZ-independent date format (UTC runner → PT date)',
     // Display TZ pinned to LA → date should still be 2026-05-20.
     const entry = mapSubstrateToEntry(
       validFrontmatter({ date: '2026-05-20T23:30:00-07:00' }),
-      'test.md'
+      '', 'test.md'
     );
     assert.ok(entry);
     assert.equal(entry!.date, '2026-05-20');
@@ -262,14 +268,14 @@ test('mapSubstrateToEntry: TZ-independent date format (UTC runner → PT date)',
 test('mapSubstrateToEntry: rejects engine-dependent date string ("May 20 2026")', () => {
   // new Date('May 20 2026') parses in the PROCESS timezone — runner-dependent.
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ date: 'May 20 2026' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ date: 'May 20 2026' }), '', 'test.md'),
     null
   );
 });
 
 test('mapSubstrateToEntry: rejects space-separated datetime ("2026-05-20 00:00:00")', () => {
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20 00:00:00' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20 00:00:00' }), '', 'test.md'),
     null
   );
 });
@@ -277,7 +283,7 @@ test('mapSubstrateToEntry: rejects space-separated datetime ("2026-05-20 00:00:0
 test('mapSubstrateToEntry: rejects offset-less ISO datetime (runner-local semantics)', () => {
   // ECMAScript parses `2026-05-20T14:30:00` as LOCAL time → differs per runner.
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T14:30:00' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T14:30:00' }), '', 'test.md'),
     null
   );
 });
@@ -295,7 +301,7 @@ test('mapSubstrateToEntry: rejects impossible calendar fields the engine would n
     '2026-05-20T14:30:60Z',
   ]) {
     assert.equal(
-      mapSubstrateToEntry(validFrontmatter({ date }), 'test.md'),
+      mapSubstrateToEntry(validFrontmatter({ date }), '', 'test.md'),
       null,
       `expected rejection for ${date}`
     );
@@ -306,7 +312,7 @@ test('mapSubstrateToEntry: rejects bare ±HH timezone offset (engine-unparseable
   // ISO 8601 permits `-07`, but ECMAScript returns Invalid Date for it —
   // the regex intentionally matches only the engine-parseable ISO subset.
   assert.equal(
-    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T07:00:00-07' }), 'test.md'),
+    mapSubstrateToEntry(validFrontmatter({ date: '2026-05-20T07:00:00-07' }), '', 'test.md'),
     null
   );
 });
@@ -319,7 +325,7 @@ test('mapSubstrateToEntry: accepts strict ISO instants with explicit timezone', 
     '2026-05-20T07:00:00-07:00',
     '2026-05-20T07:00:00-0700',
   ]) {
-    const entry = mapSubstrateToEntry(validFrontmatter({ date }), 'test.md');
+    const entry = mapSubstrateToEntry(validFrontmatter({ date }), '', 'test.md');
     assert.ok(entry, `expected acceptance for ${date}`);
     assert.equal(entry!.date, '2026-05-20', `expected PT day for ${date}`);
   }
@@ -336,6 +342,9 @@ test('readSubstrateThoughts: admits only valid danmercede.com canonical from fix
   assert.equal(entries[0].title, 'Pre-Execution Authority Gates');
   assert.equal(entries[0].category, 'Architecture');
   assert.equal(entries[0].date, '2026-05-20');
+  // R1: the canonical markdown body (below the frontmatter) is extracted.
+  assert.ok(entries[0].body.length > 0, 'full essay body must be extracted, not empty');
+  assert.match(entries[0].body, /Body text/);
 });
 
 test('readSubstrateThoughts: missing canonical dir returns [] (fail-open)', () => {
@@ -354,6 +363,7 @@ function mkEntry(slug: string, isoDate: string): ThoughtEntry {
     preview: `Preview ${slug}`,
     date: isoDate.slice(0, 10),
     category: 'Doctrine',
+    body: `Body for ${slug}.`,
     isoDate,
   };
 }
@@ -393,6 +403,7 @@ test('generateOutput: emits valid TS with header + import + array', () => {
       preview: 'Preview 1',
       date: '2026-05-20',
       category: 'Doctrine',
+      body: 'Para one.\n\nPara two.',
       isoDate: '2026-05-20T07:00:00-07:00',
     },
   ];
@@ -404,6 +415,9 @@ test('generateOutput: emits valid TS with header + import + array', () => {
   assert.match(out, /preview: "Preview 1"/);
   assert.match(out, /date: "2026-05-20"/);
   assert.match(out, /category: "Doctrine"/);
+  assert.match(out, /slug: "s1"/);
+  // Multi-line body serialized as a single-line newline-escaped TS literal.
+  assert.match(out, /body: "Para one\.\\n\\nPara two\."/);
 });
 
 test('generateOutput: zero entries produces empty array literal', () => {
@@ -419,12 +433,14 @@ test('generateOutput: escapes embedded quotes correctly', () => {
       preview: 'Single \' and double " quotes',
       date: '2026-05-20',
       category: 'Doctrine',
+      body: 'Body with "quotes" & <angle> brackets.',
       isoDate: '2026-05-20T07:00:00-07:00',
     },
   ];
   const out = generateOutput(entries);
   assert.match(out, /title: "He said \\"hello\\""/);
   assert.match(out, /preview: "Single ' and double \\" quotes"/);
+  assert.match(out, /body: "Body with \\"quotes\\" & <angle> brackets\."/);
 });
 
 // ---------------------------------------------------------------------------
@@ -439,7 +455,7 @@ test('generateOutput: escapes embedded quotes correctly', () => {
 test('mapSubstrateToEntry: quoted date-only string preserves calendar day (no PT shift)', () => {
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: '2026-05-20' }),
-    'test.md'
+    '', 'test.md'
   );
   assert.ok(entry, 'date-only quoted string should map');
   assert.equal(entry!.date, '2026-05-20', 'must NOT shift back to 2026-05-19 in PT');
@@ -449,7 +465,7 @@ test('mapSubstrateToEntry: unquoted YAML date (gray-matter Date at UTC midnight)
   // gray-matter converts `date: 2026-05-20` (unquoted) to a Date at UTC midnight.
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: new Date('2026-05-20T00:00:00.000Z') }),
-    'test.md'
+    '', 'test.md'
   );
   assert.ok(entry, 'date-only Date object should map');
   assert.equal(entry!.date, '2026-05-20', 'must NOT shift back to 2026-05-19 in PT');
@@ -461,7 +477,7 @@ test('mapSubstrateToEntry: date-only preserved under UTC runner TZ', () => {
   try {
     const entry = mapSubstrateToEntry(
       validFrontmatter({ date: '2026-05-20' }),
-      'test.md'
+      '', 'test.md'
     );
     assert.ok(entry);
     assert.equal(entry!.date, '2026-05-20');
@@ -476,7 +492,7 @@ test('mapSubstrateToEntry: date-only preserved under Asia/Tokyo runner TZ (ahead
   try {
     const entry = mapSubstrateToEntry(
       validFrontmatter({ date: '2026-05-20' }),
-      'test.md'
+      '', 'test.md'
     );
     assert.ok(entry);
     // Should still be 2026-05-20, not shifted forward to 2026-05-21.
@@ -489,7 +505,7 @@ test('mapSubstrateToEntry: date-only preserved under Asia/Tokyo runner TZ (ahead
 test('mapSubstrateToEntry: rejects calendar-impossible date-only (2026-02-30)', () => {
   const entry = mapSubstrateToEntry(
     validFrontmatter({ date: '2026-02-30' }),
-    'test.md'
+    '', 'test.md'
   );
   assert.equal(entry, null, 'February 30 is not a real calendar day');
 });
@@ -502,7 +518,7 @@ test('mapSubstrateToEntry: full ISO timestamp with offset still formats in PT', 
     // 2026-05-20 in LA (the offset already locates it as a PT evening).
     const entry = mapSubstrateToEntry(
       validFrontmatter({ date: '2026-05-20T23:30:00-07:00' }),
-      'test.md'
+      '', 'test.md'
     );
     assert.ok(entry);
     assert.equal(entry!.date, '2026-05-20');

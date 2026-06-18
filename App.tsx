@@ -8,6 +8,8 @@ import { Venture, Resource, CaseStudy, Thought, Work } from './types';
 import {
   ROUTE_META,
   caseStudyMeta,
+  thoughtMeta,
+  bodyToParagraphs,
   type RouteMeta,
   SITE_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
@@ -1366,9 +1368,10 @@ const ThoughtsPage = () => {
         {/* Thoughts grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((thought: Thought, idx: number) => (
-            <div
+            <Link
               key={idx}
-              className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+              to={`/thoughts/${thought.slug}`}
+              className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
@@ -1380,7 +1383,10 @@ const ThoughtsPage = () => {
                 {thought.title}
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
-            </div>
+              <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
+                Read →
+              </span>
+            </Link>
           ))}
         </div>
 
@@ -1391,6 +1397,57 @@ const ThoughtsPage = () => {
             "If governance is not deterministically enforced before state mutation, it is not governance."
           </p>
         </div>
+      </Section>
+    </div>
+  );
+};
+
+const ThoughtDetailPage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const thought = THOUGHTS.find((t: Thought) => t.slug === slug);
+  usePageMeta(thoughtMeta(slug));
+
+  if (!thought) {
+    return (
+      <div className="pt-20 min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Thought Not Found</h2>
+          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-sm">
+            ← Back to Thoughts
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // The full essay body, split into paragraphs (same split the prerender bake
+  // uses), so the hydrated DOM matches the crawler-facing baked body.
+  const paragraphs = bodyToParagraphs(thought.body);
+
+  return (
+    <div className="pt-20">
+      <Section>
+        <div className="mb-6">
+          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            ← Thoughts
+          </Link>
+        </div>
+
+        <article className="border-l-2 border-copper-500 pl-6 max-w-3xl">
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
+              {thought.category}
+            </span>
+            <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">{thought.title}</h1>
+          <p className="text-slate-300 text-lg leading-relaxed mb-8 italic">{thought.preview}</p>
+          <div className="space-y-5">
+            {paragraphs.map((para, i) => (
+              <p key={i} className="text-slate-400 leading-relaxed">{para}</p>
+            ))}
+          </div>
+        </article>
       </Section>
     </div>
   );
@@ -1602,6 +1659,7 @@ const App: React.FC = () => {
             <Route path="/proof" element={<ResourcesPage />} />
             <Route path="/case-studies/:slug" element={<CaseStudyPage />} />
             <Route path="/thoughts" element={<ThoughtsPage />} />
+            <Route path="/thoughts/:slug" element={<ThoughtDetailPage />} />
             <Route path="/works" element={<WorksPage />} />
             <Route path="/connect" element={<ConnectPage />} />
             <Route path="/legal" element={<LegalPage />} />

@@ -22,6 +22,8 @@ import {
   ROUTE_META,
   caseStudyMeta,
   caseStudyPaths,
+  thoughtMeta,
+  thoughtPaths,
   renderSeoBlock,
   injectSeoBlock,
   renderBodyBlock,
@@ -61,6 +63,12 @@ async function main() {
     const slug = csPath.split('/').pop();
     routes.push({ path: csPath, meta: caseStudyMeta(slug) });
   }
+  // Dynamic per-thought routes, derived from the committed THOUGHTS corpus (R2).
+  // Each bakes the full essay body (R1) and an Article JSON-LD node.
+  for (const tPath of thoughtPaths()) {
+    const slug = tPath.split('/').pop();
+    routes.push({ path: tPath, meta: thoughtMeta(slug) });
+  }
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -90,7 +98,8 @@ async function main() {
 
   console.log(
     `[injectRouteMeta] wrote ${written} per-route static HTML files ` +
-      `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ${caseStudyPaths().length} case studies)`,
+      `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ` +
+      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts)`,
   );
 }
 
