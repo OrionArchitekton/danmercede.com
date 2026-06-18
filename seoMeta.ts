@@ -249,6 +249,7 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
   return [
     `  <title>${t}</title>`,
     `  <meta name="description" content="${d}" />`,
+    `  <meta name="robots" content="index, follow, max-image-preview:large" />`,
     `  <link rel="canonical" href="${canonical}" />`,
     `  <meta property="og:type" content="profile" />`,
     `  <meta property="og:site_name" content="Dan Mercede" />`,
@@ -263,6 +264,8 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     `  <meta property="profile:first_name" content="Dan" />`,
     `  <meta property="profile:last_name" content="Mercede" />`,
     `  <meta name="twitter:card" content="summary_large_image" />`,
+    `  <meta name="twitter:site" content="@danmercede" />`,
+    `  <meta name="twitter:creator" content="@danmercede" />`,
     `  <meta name="twitter:title" content="${t}" />`,
     `  <meta name="twitter:description" content="${d}" />`,
     `  <meta name="twitter:image" content="${ogImageUrl}" />`,
@@ -408,10 +411,16 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
     });
   }
 
-  graph.push(renderBreadcrumb(path, r.title));
+  graph.push(renderBreadcrumb(path, breadcrumbLabel(r.title)));
 
   const doc = { '@context': 'https://schema.org', '@graph': graph };
   return `  <script type="application/ld+json">\n${escapeJsonForHtml(JSON.stringify(doc, null, 2))}\n  </script>`;
+}
+
+// Concise breadcrumb leaf: strip the trailing brand suffix (" — Dan Mercede" /
+// " | Dan Mercede") so the crumb is the page label, not the full SEO <title>.
+function breadcrumbLabel(title: string): string {
+  return title.replace(/\s*[—|]\s*Dan Mercede\s*$/, '').trim();
 }
 
 // BreadcrumbList from the homepage down to the current route. Single-segment

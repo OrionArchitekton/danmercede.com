@@ -4,7 +4,5 @@ Disallow: /admin
 Disallow: /api
 Disallow: /preview
 Disallow: /draft
-Disallow: /_next/
-Disallow: /static/
 
 Sitemap: https://www.danmercede.com/sitemap.xml

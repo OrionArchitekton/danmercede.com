@@ -88,6 +88,15 @@
       ]
     },
     {
+      "source": "/([^/]+)\\.(webp|png|jpe?g|avif|gif)$",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/assets/runtime-governance/diagrams/(.*)\\.svg",
       "headers": [
         {
