@@ -924,7 +924,9 @@ const upsertCanonical = (href: string) => {
 // pass an explicit override. og:type/site_name/image and the rendered tag set
 // are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
 // crawler-facing static head agree.
-const usePageMeta = (override?: Partial<RouteMeta>, opts?: { noindex?: boolean }) => {
+type PageMetaOverride = Partial<Pick<RouteMeta, 'title' | 'description' | 'ogImage'>>;
+
+const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) => {
   const { pathname } = useLocation();
   const noindex = opts?.noindex ?? false;
   const overrideTitle = override?.title;
