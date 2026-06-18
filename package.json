@@ -10,7 +10,7 @@
     "build": "vite build && tsx scripts/injectRouteMeta.ts",
     "preview": "vite preview",
     "optimize:images": "node scripts/optimizeImages.mjs public",
-    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts"
+    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts tests/worksJsonLd.test.ts"
   },
   "dependencies": {
     "d3": "^7.9.0",

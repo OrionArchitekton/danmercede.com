@@ -42,7 +42,10 @@ The hub MUST:
    (`https://www.danmercede.com/#person`).
 2. Keep `Person.sameAs` covering all four spokes + GitHub.
 3. Reference the canonical `#person` from every per-route `ProfilePage` /
-   `Article` node (`mainEntity` / `author`), never introduce a second Person.
+   `Article` / `CollectionPage` node (`mainEntity` / `author` / `creator`),
+   never introduce a second Person. The `/works` `CollectionPage` and its nested
+   `SoftwareSourceCode` items backref `#person` by `@id` (`creator`); they add no
+   Person node.
 
 ## Enforcement
 
