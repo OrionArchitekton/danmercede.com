@@ -267,6 +267,31 @@ export function thoughtPaths(): string[] {
   return THOUGHTS.filter((t) => t.slug).map((t) => `/thoughts/${t.slug}`);
 }
 
+// Per-thought <url> sitemap blocks, GENERATED at build time (injectRouteMeta
+// writes them into build/sitemap.xml). The committed public/sitemap.xml carries
+// only the static + case-study routes; the thought entries are derived from the
+// THOUGHTS corpus here so a substrate-sync that adds/removes a thought stays in
+// lockstep with ZERO hand-maintenance (substrate-sync only commits
+// constants.generated.ts — it must not need to also edit the sitemap). lastmod =
+// each essay's own publish date (never a build-time bump — W9 lastmod policy).
+export function renderThoughtSitemapEntries(): string {
+  const blocks = THOUGHTS.filter((t) => t.slug).map((t) =>
+    [
+      '  <url>',
+      `    <loc>${SITE_ORIGIN}/thoughts/${t.slug}</loc>`,
+      `    <lastmod>${t.date}</lastmod>`,
+      '    <changefreq>monthly</changefreq>',
+      '    <priority>0.7</priority>',
+      '  </url>',
+    ].join('\n'),
+  );
+  if (blocks.length === 0) return '';
+  return (
+    '  <!-- Thought corpus (per-thought routes; lastmod = each essay publish date, R2; generated at build from THOUGHTS) -->\n' +
+    blocks.join('\n')
+  );
+}
+
 export function resolveMeta(m: RouteMeta) {
   return {
     title: m.title || DEFAULT_TITLE,
