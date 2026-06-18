@@ -31,6 +31,18 @@ export interface Thought {
   category: string;
 }
 
+export interface Work {
+  title: string;
+  description: string;
+  category: string;        // surface label, e.g. "Open Source"
+  repo: string;            // codeRepository URL (GitHub) — drives the JSON-LD codeRepository
+  link?: string;           // primary external link (defaults to repo if absent)
+  gist?: string;           // optional supporting gist URL surfaced as a sample
+  license?: string;        // e.g. "MIT"
+  date?: string;           // YYYY-MM-DD (shipped/published)
+  slug: string;
+}
+
 export interface Belief {
   statement: string;
   detail: string;

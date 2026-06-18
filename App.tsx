@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS } from './constants';
 
-import { Venture, Resource, CaseStudy, Thought } from './types';
+import { Venture, Resource, CaseStudy, Thought, Work } from './types';
 import {
   ROUTE_META,
   caseStudyMeta,
@@ -1235,6 +1235,65 @@ const CaseStudyPage = () => {
   );
 };
 
+const WorksPage = () => {
+  usePageMeta();
+  return (
+    <div className="pt-20">
+      <Section>
+        <SectionHeader title="Works" subtitle="Open Source & Public Tooling" />
+
+        <p className="text-slate-400 text-lg max-w-3xl mb-12">
+          Tools and skills shipped publicly — extracted from real production operator workflows. Each entry links to its source repository.
+        </p>
+
+        {/* Works grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {WORKS.map((work: Work, idx: number) => (
+            <div
+              key={idx}
+              className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
+                  {work.category}
+                </span>
+                {work.date && <span className="text-xs font-mono text-slate-400">{work.date}</span>}
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
+                {work.title}
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed flex-grow">{work.description}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <a
+                  href={work.link || work.repo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
+                >
+                  Repository <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+                </a>
+                {work.gist && (
+                  <a
+                    href={work.gist}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
+                  >
+                    Sample <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+                  </a>
+                )}
+                {work.license && (
+                  <span className="text-xs font-mono text-slate-500 uppercase tracking-wider ml-auto">{work.license}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+};
+
 const ThoughtsPage = () => {
   usePageMeta();
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -1478,6 +1537,7 @@ const App: React.FC = () => {
             <Route path="/proof" element={<ResourcesPage />} />
             <Route path="/case-studies/:slug" element={<CaseStudyPage />} />
             <Route path="/thoughts" element={<ThoughtsPage />} />
+            <Route path="/works" element={<WorksPage />} />
             <Route path="/connect" element={<ConnectPage />} />
             <Route path="/legal" element={<LegalPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
