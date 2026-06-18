@@ -1248,9 +1248,9 @@ const WorksPage = () => {
 
         {/* Works grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {WORKS.map((work: Work, idx: number) => (
+          {WORKS.map((work: Work) => (
             <div
-              key={idx}
+              key={work.slug}
               className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col"
             >
               <div className="flex items-center justify-between mb-4">
@@ -1270,7 +1270,7 @@ const WorksPage = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
                 >
-                  Repository <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+                  {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
                 </a>
                 {work.gist && (
                   <a

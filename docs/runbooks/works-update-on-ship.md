@@ -29,7 +29,7 @@ work is the hub Works entry; the working-log entry is the dated announcement.
 
 - Local git identity **`Dan Mercede <dan@danmercede.com>`**, set in each fresh
   worktree before the first commit. The global default is the Orion Apex Capital
-  capital email — it must **never** enter brand history.
+  email — it must **never** enter brand history.
 - **No `Co-Authored-By:` / Claude trailer** on brand commits.
 - Fresh worktree per repo from current `main` under `/home/orion/.worktrees`;
   open a PR (never push `main`); one `git push` per command; never force-push.

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderRouteJsonLd, ROUTE_META, PERSON_ID } from '../seoMeta';
+import { WORKS } from '../constants';
 
 // /works Works-surface identity guardrail.
 //
@@ -41,7 +42,12 @@ test('every /works SoftwareSourceCode item backrefs #person via creator and carr
   const nodes = graphFor('/works');
   const collection = nodes.find((n) => n['@type'] === 'CollectionPage') as Record<string, unknown>;
   const items = (collection.hasPart as Array<Record<string, unknown>>) || [];
-  assert.ok(items.length >= 1, 'the Works collection must list at least one work item');
+  assert.ok(WORKS.length >= 1, 'the WORKS collection must list at least one work');
+  assert.equal(
+    items.length,
+    WORKS.length,
+    'CollectionPage.hasPart must have one SoftwareSourceCode per WORKS entry (guards JSON-LD ↔ WORKS drift)',
+  );
   for (const it of items) {
     assert.equal(it['@type'], 'SoftwareSourceCode', 'each work item must be a SoftwareSourceCode');
     assert.equal(
@@ -53,5 +59,23 @@ test('every /works SoftwareSourceCode item backrefs #person via creator and carr
       typeof it.codeRepository === 'string' && (it.codeRepository as string).length > 0,
       'each work item must carry a codeRepository URL',
     );
+  }
+});
+
+test('the orion-skills work maps optional license -> license and date -> datePublished', () => {
+  const nodes = graphFor('/works');
+  const collection = nodes.find((n) => n['@type'] === 'CollectionPage') as Record<string, unknown>;
+  const items = (collection.hasPart as Array<Record<string, unknown>>) || [];
+  const src = WORKS.find((w) => w.slug === 'orion-skills');
+  assert.ok(src, 'WORKS must contain the orion-skills entry');
+  const node = items.find(
+    (it) => typeof it['@id'] === 'string' && (it['@id'] as string).endsWith('#orion-skills'),
+  );
+  assert.ok(node, 'the /works JSON-LD must contain the orion-skills SoftwareSourceCode node');
+  if (src!.license) {
+    assert.equal(node!.license, src!.license, 'Work.license must map to JSON-LD license');
+  }
+  if (src!.date) {
+    assert.equal(node!.datePublished, src!.date, 'Work.date must map to JSON-LD datePublished');
   }
 });
