@@ -1,0 +1,90 @@
+name: Prod Smoke (served-output, creds-free)
+
+# Round-2 R5 — post-deploy synthetic smoke.
+#
+# Catches the "empty body survives CI because CI tests the BUILD not the SERVED
+# output" class — the regression that lived for months: the build emitted a
+# crawlable <body> in CI, but a deploy/runtime fault could still serve an empty
+# page to real crawlers (ChatGPT/Perplexity/Claude — none execute JS), and
+# nothing asserted the LIVE HTML. This job curls the production origin and
+# asserts the served markup actually carries a heading, prose, and structured
+# data — the three signals an answer engine needs.
+#
+# Creds-free by construction: pure curl + grep against the public origin, NO
+# secrets, NO checkout of the private substrate. `permissions: contents: read`
+# is the only scope it needs (it reads nothing it does not also fetch over HTTP).
+# Runs on a schedule (independent of any deploy) plus on-demand.
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Unique minute for this repo across the estate's smoke fleet (13:41 UTC).
+    - cron: '41 13 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert live served HTML carries h1 + prose + JSON-LD
+        run: |
+          set -euo pipefail
+
+          # assert_url <url>: fetch the URL and assert the SERVED markup carries
+          # all three crawl signals — a heading, a paragraph, and a JSON-LD
+          # block. Each assertion names the URL + the missing signal on failure.
+          # The JSON-LD grep is attribute-order tolerant: it matches the tag
+          # open + the type attribute anywhere on the line, so a re-ordered
+          # `<script ... type="application/ld+json">` still counts. Mirrors the
+          # `grep -o '<h1' | wc -l` idiom from .github/workflows/ci.yml.
+          assert_url() {
+            url="$1"
+            echo "smoke: fetching $url"
+            # -sL: silent + follow redirects. We fetch the body and the final
+            # HTTP status in one call (status appended on its own trailing line
+            # via -w), then split them — portable across curl versions (avoids
+            # --fail-with-body, which older curl builds reject) and lets a
+            # 404/5xx surface a clear message instead of an empty assertion.
+            resp="$(curl -sL --max-time 30 -w '\n%{http_code}' "$url")" || {
+              echo "R5 FAIL: $url — curl could not reach the host (network error)"
+              exit 1
+            }
+            status="${resp##*$'\n'}"
+            body="${resp%$'\n'*}"
+            if [ "$status" != "200" ]; then
+              echo "R5 FAIL: $url — served HTTP $status (expected 200)"
+              exit 1
+            fi
+
+            h1=$(printf '%s' "$body" | grep -o '<h1' | wc -l | tr -d ' ')
+            p=$(printf '%s' "$body" | grep -o '<p' | wc -l | tr -d ' ')
+            ld=$(printf '%s' "$body" | grep -o '<script[^>]*type="application/ld+json"' | wc -l | tr -d ' ')
+            echo "smoke: $url -> h1=$h1 p=$p jsonld=$ld"
+
+            if [ "$h1" -lt 1 ]; then
+              echo "R5 FAIL: $url — served body has NO <h1 (h1=$h1; require >=1)"
+              exit 1
+            fi
+            if [ "$p" -lt 1 ]; then
+              echo "R5 FAIL: $url — served body has NO <p (p=$p; require >=1)"
+              exit 1
+            fi
+            if [ "$ld" -lt 1 ]; then
+              echo "R5 FAIL: $url — served head has NO <script type=\"application/ld+json\" block (jsonld=$ld; require >=1)"
+              exit 1
+            fi
+            echo "smoke OK: $url carries h1 + prose + JSON-LD."
+          }
+
+          # 1) Homepage.
+          assert_url "https://www.danmercede.com"
+          # 2) A REAL corpus route (verified present in the committed THOUGHTS
+          #    bundle: constants.generated.ts slug
+          #    "2026-06-16-the-gate-is-the-product"). Smoking a deep per-thought
+          #    bake catches a route-level served-body regression the homepage
+          #    alone would miss.
+          assert_url "https://www.danmercede.com/thoughts/2026-06-16-the-gate-is-the-product"
+
+          echo "R5 OK: all smoked URLs serve a non-empty, structured, crawlable page."
