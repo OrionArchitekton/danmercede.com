@@ -420,6 +420,17 @@ export const WORKS: Work[] = [
     date: '2026-06-17',
     slug: 'orion-skills',
   },
+  {
+    title: 'mcp-context-budget',
+    description:
+      'A local-first CLI that keeps your MCP tool surface from eating the agent context budget — it scans tool schemas and response fixtures for token bloat, selects the smallest relevant tool set for a given task, emits a budget lockfile, and fails CI when a config regresses. Self-contained: no external services, runs from a fresh clone against fixture data.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/mcp-context-budget',
+    link: 'https://github.com/OrionArchitekton/mcp-context-budget',
+    license: 'MIT',
+    date: '2026-06-18',
+    slug: 'mcp-context-budget',
+  },
 ];
 
 export { THOUGHTS } from './constants.generated';
