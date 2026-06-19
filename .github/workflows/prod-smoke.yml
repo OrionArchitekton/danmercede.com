@@ -1,0 +1,177 @@
+name: Prod Smoke (served-output, creds-free)
+
+# Round-2 R5 — post-deploy synthetic smoke.
+#
+# Catches the "empty body survives CI because CI tests the BUILD not the SERVED
+# output" class — the regression that lived for months: the build emitted a
+# crawlable <body> in CI, but a deploy/runtime fault could still serve an empty
+# page to real crawlers (ChatGPT/Perplexity/Claude — none execute JS), and
+# nothing asserted the LIVE HTML. This job curls the production origin and
+# asserts the served markup actually carries a heading, prose, and structured
+# data — the three signals an answer engine needs.
+#
+# Round-2 hardening: presence-grep (`grep -o '<h1' | wc -l >= 1`) passed a
+# thin/degraded body — an empty <h1></h1>, an invalid `{not json` LD block, or
+# the original p=2 `/thoughts` shell all satisfied a count. This job now runs a
+# stdlib python3 validator that asserts content DEPTH: non-empty stripped inner
+# text in an <h1> AND a <p>, a JSON-LD block that json.loads to a non-empty
+# dict/list, and a conservative minimum stripped visible-text length (a hollow
+# shell floor). python3 is preinstalled on ubuntu-latest; no pip installs.
+#
+# Creds-free by construction: pure curl + python3 stdlib against the public
+# origin, NO secrets, NO checkout of the private substrate. `permissions:
+# contents: read` is the only scope it needs.
+# Runs on a schedule (independent of any deploy) plus on-demand.
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Unique minute for this repo across the estate's smoke fleet (13:41 UTC).
+    - cron: '41 13 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert live served HTML carries depth (h1 + prose + JSON-LD + body)
+        env:
+          # Space-separated URL set. Hub keeps homepage + a REAL corpus route
+          # (slug verified in the committed THOUGHTS bundle:
+          # constants.generated.ts "2026-06-16-the-gate-is-the-product"), so a
+          # deep per-thought bake regression the homepage alone would miss is
+          # smoked too.
+          SMOKE_URLS: >-
+            https://www.danmercede.com
+            https://www.danmercede.com/thoughts/2026-06-16-the-gate-is-the-product
+          # Minimum stripped visible-text length floor (chars). Measured live
+          # 2026-06-19: homepage textlen=482, /thoughts route textlen=1139. Floor
+          # 250 sits comfortably below the smaller real page (homepage) yet far
+          # above a hollow shell — it would catch the original p=2 /thoughts
+          # shell and any empty/degraded body without false-failing real copy.
+          MIN_TEXT_LEN: '250'
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re, sys, json, html, urllib.request
+          from html.parser import HTMLParser
+
+          MIN_TEXT_LEN = int(os.environ["MIN_TEXT_LEN"])
+          urls = os.environ["SMOKE_URLS"].split()
+
+          class Extractor(HTMLParser):
+              # Strips <script>/<style>/<noscript>/<template> content from the
+              # visible-text accumulation, captures inner text of <h1>/<p>, and
+              # captures raw bodies of <script type="application/ld+json">.
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.skip = 0
+                  self.h1_depth = 0
+                  self.p_depth = 0
+                  self.h1_texts = []
+                  self.p_texts = []
+                  self.ld_blocks = []
+                  self._in_ld = False
+                  self._ld_buf = []
+                  self._cur_h1 = []
+                  self._cur_p = []
+                  self.text_parts = []
+              def handle_starttag(self, tag, attrs):
+                  a = dict(attrs)
+                  if tag in ("script", "style", "noscript", "template"):
+                      self.skip += 1
+                      if tag == "script" and (a.get("type") or "").strip().lower() == "application/ld+json":
+                          self._in_ld = True
+                          self._ld_buf = []
+                  if tag == "h1":
+                      self.h1_depth += 1; self._cur_h1 = []
+                  if tag == "p":
+                      self.p_depth += 1; self._cur_p = []
+              def handle_startendtag(self, tag, attrs):
+                  # self-closing (e.g. <p/>) — no inner text, ignore for capture
+                  pass
+              def handle_endtag(self, tag):
+                  if tag in ("script", "style", "noscript", "template"):
+                      if self.skip > 0: self.skip -= 1
+                      if tag == "script" and self._in_ld:
+                          self._in_ld = False
+                          self.ld_blocks.append("".join(self._ld_buf))
+                  if tag == "h1" and self.h1_depth > 0:
+                      self.h1_depth -= 1
+                      self.h1_texts.append("".join(self._cur_h1).strip())
+                  if tag == "p" and self.p_depth > 0:
+                      self.p_depth -= 1
+                      self.p_texts.append("".join(self._cur_p).strip())
+              def handle_data(self, data):
+                  if self._in_ld:
+                      self._ld_buf.append(data)
+                  if self.skip == 0:
+                      self.text_parts.append(data)
+                      if self.h1_depth > 0: self._cur_h1.append(data)
+                      if self.p_depth > 0: self._cur_p.append(data)
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (prod-smoke)"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  if r.status != 200:
+                      raise RuntimeError(f"served HTTP {r.status} (expected 200)")
+                  return r.read().decode("utf-8", "replace")
+
+          failed = False
+          for url in urls:
+              print(f"smoke: fetching {url}")
+              try:
+                  body = fetch(url)
+              except Exception as e:
+                  print(f"R5 FAIL: {url} — fetch error: {e}")
+                  failed = True
+                  continue
+
+              pr = Extractor()
+              pr.feed(body)
+
+              h1_nonempty = [t for t in pr.h1_texts if t.strip()]
+              p_nonempty = [t for t in pr.p_texts if t.strip()]
+
+              valid_ld = 0
+              for blk in pr.ld_blocks:
+                  try:
+                      obj = json.loads(blk)
+                  except Exception:
+                      continue
+                  if isinstance(obj, (dict, list)) and len(obj) > 0:
+                      valid_ld += 1
+
+              text = re.sub(r"\s+", " ", "".join(pr.text_parts)).strip()
+              text_len = len(text)
+
+              print(f"smoke: {url} -> h1_nonempty={len(h1_nonempty)} "
+                    f"p_nonempty={len(p_nonempty)} valid_jsonld={valid_ld} text_len={text_len}")
+
+              if len(h1_nonempty) < 1:
+                  print(f"R5 FAIL: {url} — NO <h1> with non-empty text "
+                        f"(empty/degraded heading; require >=1)")
+                  failed = True
+              if len(p_nonempty) < 1:
+                  print(f"R5 FAIL: {url} — NO <p> with non-empty text "
+                        f"(empty/degraded prose; require >=1)")
+                  failed = True
+              if valid_ld < 1:
+                  print(f"R5 FAIL: {url} — NO valid JSON-LD block "
+                        f"(missing or non-parseable application/ld+json; require >=1)")
+                  failed = True
+              if text_len < MIN_TEXT_LEN:
+                  print(f"R5 FAIL: {url} — stripped body text {text_len} < floor "
+                        f"{MIN_TEXT_LEN} (hollow shell served to crawlers)")
+                  failed = True
+
+              if not failed:
+                  print(f"smoke OK: {url} carries non-empty h1 + prose + valid JSON-LD + real body.")
+
+          if failed:
+              print("R5 FAIL: one or more smoked URLs served a thin/degraded/structurally-broken page.")
+              sys.exit(1)
+          print("R5 OK: all smoked URLs serve a non-empty, structured, deep, crawlable page.")
+          PY
