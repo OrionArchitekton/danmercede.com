@@ -64,6 +64,19 @@ const __dirname = path.dirname(__filename);
 const THIS_SURFACE = 'danmercede.com';
 const ACCEPTED_TYPES = new Set<string>(['essay-long']);
 
+// Hub-side consumer allowlist (mirrors the lane's [syndication] backfill_slugs +
+// the distribution_opt_in_lane_side_not_sealed_substrate lesson). Flagship
+// long-form essays whose substrate surface_targets do NOT include danmercede.com
+// (substrate is immutable — frontmatter re-tagging is a no-op) are admitted to the
+// hub /thoughts corpus by slug. This overrides ONLY the surface_targets gate; the
+// status / type / required-field / date gates still apply. INVARIANT: the lane's
+// [syndication] backfill_slugs MUST be a subset of this list (an essay may only
+// carry a .com canonical if it has a real .com page).
+export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
+  '2026-06-08-authority-gate-made-runnable',
+  '2026-05-20-pre-execution-authority-gates',
+];
+
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
 // back to DEFAULT_CATEGORY. Extend cautiously when new layers are minted in
 // substrate; an unexpected new layer landing as "Doctrine" is the safer default
@@ -154,6 +167,35 @@ export function resolveSubstratePath(projectRoot: string): string | null {
 export function deriveCategoryFromLayer(layer: unknown): string {
   if (typeof layer !== 'string') return DEFAULT_CATEGORY;
   return LAYER_TO_CATEGORY[layer] ?? DEFAULT_CATEGORY;
+}
+
+// Substrate authoring uses `[[entity]]` / `[[entity|display]]` wiki-link syntax (the
+// LLM-wiki canon). danmercede.com has no wiki routes, so leaving them in the baked body
+// renders literal broken `[[authority-gate]]` tokens publicly. De-link to plain prose
+// before baking — `[[authority-gate]]` -> "authority gate", `[[slug|Display]]` -> "Display".
+// Code-aware (mirrors the lane's _delink_wiki): fenced ```...``` and inline `...` spans are
+// preserved verbatim so a Bash `[[ $x == y ]]` conditional or array literal inside code is
+// neither rewritten nor (in the guard test) flagged.
+const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]+`/g;
+const WIKILINK_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+
+function delinkSegment(seg: string): string {
+  return seg.replace(WIKILINK_RE, (_full, target: string, display?: string) =>
+    display !== undefined ? display : target.replace(/[-_]/g, ' '),
+  );
+}
+
+export function delinkWikiLinks(text: string): string {
+  let out = '';
+  let last = 0;
+  for (const m of text.matchAll(CODE_SPAN_RE)) {
+    const idx = m.index ?? 0;
+    out += delinkSegment(text.slice(last, idx));
+    out += m[0]; // code span preserved verbatim
+    last = idx + m[0].length;
+  }
+  out += delinkSegment(text.slice(last));
+  return out;
 }
 
 // Pure date-only YYYY-MM-DD pattern (no time component).
@@ -282,10 +324,17 @@ export function mapSubstrateToEntry(
   };
 
   const surfaceTargets = data['surface_targets'];
-  if (!Array.isArray(surfaceTargets) || !surfaceTargets.includes(THIS_SURFACE)) {
+  const surfaceTargeted =
+    Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
+  const slugRaw = data['slug'];
+  const allowlisted = typeof slugRaw === 'string' && HUB_ESSAY_ALLOWLIST.includes(slugRaw);
+  if (!surfaceTargeted && !allowlisted) {
     console.log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
     pushDiag('skip', 'surface_targets does not include danmercede.com');
     return null;
+  }
+  if (allowlisted && !surfaceTargeted) {
+    console.log(`   ✅ substrate canonical admitted via HUB_ESSAY_ALLOWLIST: ${filename}`);
   }
 
   if (data['status'] !== 'canonical') {
@@ -409,8 +458,9 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     }
 
     // Extract the full essay body (markdown below the frontmatter), mirroring
-    // danmercede.online's `const body = parsed.content.trim()` (R1).
-    const body = parsed.content.trim();
+    // danmercede.online's `const body = parsed.content.trim()` (R1), then de-link
+    // substrate `[[wiki-links]]` so they never bake as literal tokens on .com.
+    const body = delinkWikiLinks(parsed.content.trim());
     const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, body, file, diagnostics);
     if (entry) entries.push(entry);
   }

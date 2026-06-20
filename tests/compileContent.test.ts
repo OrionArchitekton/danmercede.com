@@ -10,9 +10,11 @@ import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+import { THOUGHTS } from '../constants.js';
 import {
   resolveSubstratePath,
   deriveCategoryFromLayer,
+  delinkWikiLinks,
   mapSubstrateToEntry,
   readSubstrateThoughts,
   readSubstrateWithDiagnostics,
@@ -22,6 +24,7 @@ import {
   decideOutput,
   formatCompileStatus,
   COMPILE_STATUS_FILENAME,
+  HUB_ESSAY_ALLOWLIST,
   type ThoughtEntry,
   type SubstrateDiagnostic,
   type OutputDecision,
@@ -926,4 +929,81 @@ test('COMPILE_STATUS_FILENAME: stable contract with CI', () => {
   // verbatim — this assertion locks the filename so a rename here cannot
   // silently desync the workflow.
   assert.equal(COMPILE_STATUS_FILENAME, '.compile-status');
+});
+
+// ---------------------------------------------------------------------------
+// HUB_ESSAY_ALLOWLIST (flagship-essay consumer-side admission)
+// ---------------------------------------------------------------------------
+
+test('HUB_ESSAY_ALLOWLIST contains the 2 flagship essays', () => {
+  assert.ok(HUB_ESSAY_ALLOWLIST.includes('2026-06-08-authority-gate-made-runnable'));
+  assert.ok(HUB_ESSAY_ALLOWLIST.includes('2026-05-20-pre-execution-authority-gates'));
+});
+
+test('mapSubstrateToEntry admits an allowlisted slug whose surface_targets exclude danmercede.com', () => {
+  const slug = HUB_ESSAY_ALLOWLIST[0];
+  const data = {
+    slug,
+    title: 'The Authority Gate',
+    date: '2026-06-08',
+    claim: 'A claim.',
+    status: 'canonical',
+    type: 'essay-long',
+    layer: 'authority-gate',
+    surface_targets: ['linkedin', 'danmercede.online'],
+  };
+  const entry = mapSubstrateToEntry(data, 'Essay body.', `${slug}.md`);
+  assert.ok(entry, 'allowlisted essay should be admitted');
+  assert.equal(entry?.slug, slug);
+  assert.equal(entry?.category, 'Architecture'); // layer authority-gate -> Architecture
+  assert.equal(entry?.body, 'Essay body.');
+});
+
+test('mapSubstrateToEntry still skips a non-allowlisted slug whose surface_targets exclude danmercede.com', () => {
+  const data = {
+    slug: 'not-allowlisted-slug',
+    title: 'X',
+    date: '2026-06-08',
+    claim: 'C.',
+    status: 'canonical',
+    type: 'essay-long',
+    surface_targets: ['linkedin'],
+  };
+  assert.equal(mapSubstrateToEntry(data, 'b', 'x.md'), null);
+});
+
+test('allowlist overrides ONLY surface_targets — an allowlisted slug of an unaccepted type is still skipped', () => {
+  const slug = HUB_ESSAY_ALLOWLIST[0];
+  const data = {
+    slug,
+    title: 'X',
+    date: '2026-06-08',
+    claim: 'C.',
+    status: 'canonical',
+    type: 'diagram',
+    surface_targets: ['linkedin'],
+  };
+  assert.equal(mapSubstrateToEntry(data, 'b', 'x.md'), null);
+});
+
+// ---------------------------------------------------------------------------
+// delinkWikiLinks (no [[wiki-link]] tokens leak onto the public .com page)
+// ---------------------------------------------------------------------------
+
+test('delinkWikiLinks rewrites [[target]] and [[target|display]], preserving code spans', () => {
+  assert.equal(delinkWikiLinks('the [[authority-gate]] holds'), 'the authority gate holds');
+  assert.equal(delinkWikiLinks('see [[immutable-receipts|receipts]] now'), 'see receipts now');
+  // inline + fenced code preserved verbatim (a Bash `[[ ]]` is not wiki markup)
+  assert.equal(delinkWikiLinks('run `if [[ $x ]]; then` ok'), 'run `if [[ $x ]]; then` ok');
+  assert.equal(delinkWikiLinks('```\n[[ 1, 2 ]]\n```'), '```\n[[ 1, 2 ]]\n```');
+});
+
+test('no published THOUGHTS body carries a residual [[ wiki-link outside code (leak guard)', () => {
+  const stripCode = (s: string): string => s.replace(/```[\s\S]*?```|`[^`\n]+`/g, '');
+  for (const t of THOUGHTS) {
+    assert.ok(
+      !stripCode(t.body).includes('[['),
+      `THOUGHT ${t.slug} body has a residual [[ wiki-link (must be de-linked before bake)`,
+    );
+  }
 });
