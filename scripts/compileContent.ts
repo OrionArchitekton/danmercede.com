@@ -169,6 +169,35 @@ export function deriveCategoryFromLayer(layer: unknown): string {
   return LAYER_TO_CATEGORY[layer] ?? DEFAULT_CATEGORY;
 }
 
+// Substrate authoring uses `[[entity]]` / `[[entity|display]]` wiki-link syntax (the
+// LLM-wiki canon). danmercede.com has no wiki routes, so leaving them in the baked body
+// renders literal broken `[[authority-gate]]` tokens publicly. De-link to plain prose
+// before baking — `[[authority-gate]]` -> "authority gate", `[[slug|Display]]` -> "Display".
+// Code-aware (mirrors the lane's _delink_wiki): fenced ```...``` and inline `...` spans are
+// preserved verbatim so a Bash `[[ $x == y ]]` conditional or array literal inside code is
+// neither rewritten nor (in the guard test) flagged.
+const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]+`/g;
+const WIKILINK_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+
+function delinkSegment(seg: string): string {
+  return seg.replace(WIKILINK_RE, (_full, target: string, display?: string) =>
+    display !== undefined ? display : target.replace(/[-_]/g, ' '),
+  );
+}
+
+export function delinkWikiLinks(text: string): string {
+  let out = '';
+  let last = 0;
+  for (const m of text.matchAll(CODE_SPAN_RE)) {
+    const idx = m.index ?? 0;
+    out += delinkSegment(text.slice(last, idx));
+    out += m[0]; // code span preserved verbatim
+    last = idx + m[0].length;
+  }
+  out += delinkSegment(text.slice(last));
+  return out;
+}
+
 // Pure date-only YYYY-MM-DD pattern (no time component).
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -429,8 +458,9 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     }
 
     // Extract the full essay body (markdown below the frontmatter), mirroring
-    // danmercede.online's `const body = parsed.content.trim()` (R1).
-    const body = parsed.content.trim();
+    // danmercede.online's `const body = parsed.content.trim()` (R1), then de-link
+    // substrate `[[wiki-links]]` so they never bake as literal tokens on .com.
+    const body = delinkWikiLinks(parsed.content.trim());
     const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, body, file, diagnostics);
     if (entry) entries.push(entry);
   }

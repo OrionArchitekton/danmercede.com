@@ -10,9 +10,11 @@ import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
+import { THOUGHTS } from '../constants.js';
 import {
   resolveSubstratePath,
   deriveCategoryFromLayer,
+  delinkWikiLinks,
   mapSubstrateToEntry,
   readSubstrateThoughts,
   readSubstrateWithDiagnostics,
@@ -982,4 +984,26 @@ test('allowlist overrides ONLY surface_targets — an allowlisted slug of an una
     surface_targets: ['linkedin'],
   };
   assert.equal(mapSubstrateToEntry(data, 'b', 'x.md'), null);
+});
+
+// ---------------------------------------------------------------------------
+// delinkWikiLinks (no [[wiki-link]] tokens leak onto the public .com page)
+// ---------------------------------------------------------------------------
+
+test('delinkWikiLinks rewrites [[target]] and [[target|display]], preserving code spans', () => {
+  assert.equal(delinkWikiLinks('the [[authority-gate]] holds'), 'the authority gate holds');
+  assert.equal(delinkWikiLinks('see [[immutable-receipts|receipts]] now'), 'see receipts now');
+  // inline + fenced code preserved verbatim (a Bash `[[ ]]` is not wiki markup)
+  assert.equal(delinkWikiLinks('run `if [[ $x ]]; then` ok'), 'run `if [[ $x ]]; then` ok');
+  assert.equal(delinkWikiLinks('```\n[[ 1, 2 ]]\n```'), '```\n[[ 1, 2 ]]\n```');
+});
+
+test('no published THOUGHTS body carries a residual [[ wiki-link outside code (leak guard)', () => {
+  const stripCode = (s: string): string => s.replace(/```[\s\S]*?```|`[^`\n]+`/g, '');
+  for (const t of THOUGHTS) {
+    assert.ok(
+      !stripCode(t.body).includes('[['),
+      `THOUGHT ${t.slug} body has a residual [[ wiki-link (must be de-linked before bake)`,
+    );
+  }
 });
