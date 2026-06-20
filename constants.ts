@@ -431,6 +431,17 @@ export const WORKS: Work[] = [
     date: '2026-06-18',
     slug: 'mcp-context-budget',
   },
+  {
+    title: 'schemafit',
+    description:
+      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/schemafit',
+    link: 'https://github.com/OrionArchitekton/schemafit',
+    license: 'MIT',
+    date: '2026-06-19',
+    slug: 'schemafit',
+  },
 ];
 
 export { THOUGHTS } from './constants.generated';
