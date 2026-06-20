@@ -64,6 +64,19 @@ const __dirname = path.dirname(__filename);
 const THIS_SURFACE = 'danmercede.com';
 const ACCEPTED_TYPES = new Set<string>(['essay-long']);
 
+// Hub-side consumer allowlist (mirrors the lane's [syndication] backfill_slugs +
+// the distribution_opt_in_lane_side_not_sealed_substrate lesson). Flagship
+// long-form essays whose substrate surface_targets do NOT include danmercede.com
+// (substrate is immutable — frontmatter re-tagging is a no-op) are admitted to the
+// hub /thoughts corpus by slug. This overrides ONLY the surface_targets gate; the
+// status / type / required-field / date gates still apply. INVARIANT: the lane's
+// [syndication] backfill_slugs MUST be a subset of this list (an essay may only
+// carry a .com canonical if it has a real .com page).
+export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
+  '2026-06-08-authority-gate-made-runnable',
+  '2026-05-20-pre-execution-authority-gates',
+];
+
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
 // back to DEFAULT_CATEGORY. Extend cautiously when new layers are minted in
 // substrate; an unexpected new layer landing as "Doctrine" is the safer default
@@ -282,10 +295,17 @@ export function mapSubstrateToEntry(
   };
 
   const surfaceTargets = data['surface_targets'];
-  if (!Array.isArray(surfaceTargets) || !surfaceTargets.includes(THIS_SURFACE)) {
+  const surfaceTargeted =
+    Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
+  const slugRaw = data['slug'];
+  const allowlisted = typeof slugRaw === 'string' && HUB_ESSAY_ALLOWLIST.includes(slugRaw);
+  if (!surfaceTargeted && !allowlisted) {
     console.log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
     pushDiag('skip', 'surface_targets does not include danmercede.com');
     return null;
+  }
+  if (allowlisted && !surfaceTargeted) {
+    console.log(`   ✅ substrate canonical admitted via HUB_ESSAY_ALLOWLIST: ${filename}`);
   }
 
   if (data['status'] !== 'canonical') {
