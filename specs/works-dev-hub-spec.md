@@ -75,8 +75,7 @@ Restructure within the existing `Section`/`SectionHeader`/card system (copper-on
   §8). Clearly a curated pointer, not a library.
 - **Outbound:** two external links — `WORKS_HUB.signalUrl` ("Live signal log") and
   `WORKS_HUB.githubUrl` ("GitHub") — `<a target="_blank" rel="noopener noreferrer">`.
-- **CTA block:** the `WORKS_HUB.availability` line + primary `<Link to="/connect">Get in touch</Link>`
-  + a secondary GitHub link. One primary action.
+- **CTA block:** the `WORKS_HUB.availability` line + a single primary `<Link to="/connect">Get in touch</Link>`. GitHub is surfaced once, in the Outbound rail above — it is intentionally NOT duplicated in the CTA (avoids a WCAG 2.4.6 duplicate-link-text ambiguity; keeps the CTA to one action).
 
 ### 3.3 Crawler bake (`seoMeta.ts`) — the AEO payoff
 
@@ -111,7 +110,7 @@ Person") stays green.
   not a soft intention.
 - **AC2** — `WorksPage` renders Build (the `WORKS` grid), Selected essays (≤5, each →
   `/thoughts/<slug>`) + "Full archive → /thoughts", Outbound (.online + GitHub), and the
-  availability CTA (→ `/connect` + GitHub).
+  availability CTA (→ `/connect`; GitHub lives once in the Outbound rail, not duplicated in the CTA).
 - **AC3** — The baked `build/works/index.html` contains, as crawlable HTML: the availability line
   (text), the 3-5 featured-essay internal links (`href="/thoughts/<slug>"`), and the outbound
   links. Proven by a `renderBodyBlock('/works', …)` unit test + a post-build grep.

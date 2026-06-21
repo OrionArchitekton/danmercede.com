@@ -80,6 +80,20 @@ test('the baked /works featured deep-links EQUAL featuredEssays() (no prerender 
   assert.deepEqual(bakedSlugs, expected, 'baked featured deep-links must equal featuredEssays() exactly');
 });
 
+test('the baked /works featured links carry the resolved TITLES too (parity defense-in-depth)', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  const baked = [...block.matchAll(/<a href="\/thoughts\/([^"/]+)">([^<]+)<\/a>/g)].map((m) => ({
+    slug: m[1],
+    title: m[2],
+  }));
+  // featuredEssays() returns RAW titles; the bake escapes < > & via escapeText —
+  // apply the same escaping to the expected side so the comparison is robust to a
+  // future title containing those chars (today's 5 titles contain none).
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const expected = featuredEssays().map((e) => ({ slug: e.slug, title: esc(e.title) }));
+  assert.deepEqual(baked, expected, 'baked featured slug+title must equal featuredEssays() exactly');
+});
+
 // AC4 — /works is a pointer, not a library: NO essay bodies leak into the bake.
 test('the /works baked body hosts NO essay bodies (stays a small pointer: lead + 3 framing paragraphs)', () => {
   const block = renderBodyBlock('/works', ROUTE_META['/works']);
