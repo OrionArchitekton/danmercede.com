@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, featuredEssays, WORKS_HUB } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work } from './types';
 import {
@@ -1273,16 +1273,18 @@ const CaseStudyPage = () => {
 
 const WorksPage = () => {
   usePageMeta();
+  const featured = featuredEssays();
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader title="Works" subtitle="Open Source & Public Tooling" />
+        <SectionHeader as="h1" title="Works" subtitle="Build · Selected Essays · Signal" />
 
-        <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Tools and skills shipped publicly — extracted from real production operator workflows. Each entry links to its source repository.
+        <p className="text-slate-400 text-lg max-w-3xl mb-16">
+          Open-source tooling and field-tested patterns from shipping governed agentic systems in production.
         </p>
 
-        {/* Works grid */}
+        {/* Build — open source & tooling (existing WORKS grid, unchanged) */}
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build — Open Source &amp; Tooling</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {WORKS.map((work: Work) => (
             <div
@@ -1324,6 +1326,46 @@ const WorksPage = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Selected essays — a CAPPED pointer into /thoughts (no bodies, no filter) */}
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Selected Essays</h2>
+        <ul className="space-y-3 max-w-3xl">
+          {featured.map((essay) => (
+            <li key={essay.slug}>
+              <Link
+                to={`/thoughts/${essay.slug}`}
+                className="group inline-flex items-baseline gap-2 text-slate-300 hover:text-copper-400 transition-colors"
+              >
+                <span className="text-copper-500/60 font-mono text-xs" aria-hidden="true">→</span>
+                <span className="border-b border-transparent group-hover:border-copper-400/40">{essay.title}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 max-w-3xl">
+          <Link to="/thoughts" className="inline-flex items-center text-copper-500/80 font-mono text-xs uppercase tracking-widest hover:text-copper-400">
+            Full archive <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+          </Link>
+        </div>
+
+        {/* Signal — outbound rail */}
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Signal</h2>
+        <div className="flex flex-wrap gap-6 max-w-3xl">
+          <a href={WORKS_HUB.signalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
+            Live signal log <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+          </a>
+          <a href={WORKS_HUB.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
+            GitHub <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+          </a>
+        </div>
+
+        {/* CTA — one action: availability → connect */}
+        <div className="mt-20 border-l-2 border-copper-500 pl-6 max-w-2xl">
+          <p className="text-xl text-white mb-6">{WORKS_HUB.availability}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button to={WORKS_HUB.contactHref} variant="primary">Get in touch</Button>
+          </div>
         </div>
       </Section>
     </div>
