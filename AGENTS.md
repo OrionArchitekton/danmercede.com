@@ -15,6 +15,30 @@ Repo identity:
   `personal-brand-dan-mercede-web`)
 - **Deploy target:** Vercel project `danmercede-com`
 
+## Content Surfaces — `/works` vs `/thoughts`
+
+These two surfaces have distinct, non-overlapping jobs. Keep them distinct.
+
+- **`/thoughts` = the writing.** The full essay corpus — every `/thoughts/<slug>`
+  page plus the index with its category filter. Substrate-sourced (`THOUGHTS`).
+  This is the sole home of the essays; `/works` must never re-create the library.
+- **`/works` = the building.** Open-source artifacts (`WORKS`) plus a **hard-capped
+  (3–5) curated pointer** to flagship essays — `FEATURED_ESSAY_SLUGS` resolved by
+  `featuredEssays()` (fail-loud: throws on any slug absent from `THOUGHTS`, so a
+  typo can never ship a dangling link). `/works` carries NO essay bodies and NO
+  second filter/library; it links out to `/thoughts/<slug>` and to the full
+  archive. The 3–5 cap is **code-enforced** (`tests/worksHub.test.ts` asserts
+  `3 ≤ FEATURED_ESSAY_SLUGS.length ≤ 5`) — it is the guardrail that stops `/works`
+  drifting into a second `/thoughts`. To change the featured set, edit
+  `FEATURED_ESSAY_SLUGS` in `constants.ts` (stay within the cap).
+- **Dual-render parity.** Every crawl-relevant element on `/works` (the availability
+  line, the featured deep-links, the outbound rail) is baked into the
+  `renderBodyBlock` prerender block in `seoMeta.ts` so no-JS answer engines read it.
+  The React `WorksPage` and the bake both read the SAME `featuredEssays()` /
+  `WORKS_HUB` constants — a parity test asserts the baked set equals
+  `featuredEssays()`, so the visible and crawler renders cannot drift. This is
+  prerender fallback, not cloaking.
+
 ## Substrate-Consumer Contract
 
 This repo consumes substrate canonicals via `scripts/compileContent.ts`. The
