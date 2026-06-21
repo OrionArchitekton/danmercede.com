@@ -9,6 +9,7 @@ import {
   PenTool
 } from 'lucide-react';
 import { Pillar, Venture, Belief, Resource, CaseStudy, Work } from './types';
+import { THOUGHTS } from './constants.generated';
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/' },
@@ -444,4 +445,46 @@ export const WORKS: Work[] = [
   },
 ];
 
-export { THOUGHTS } from './constants.generated';
+export { THOUGHTS };
+
+// --- /works dev-hub data (PR2) ---------------------------------------------
+// FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a
+// CAPPED pointer into /thoughts. The cap (3-5) is load-bearing — it keeps /works
+// from drifting into a second /thoughts. Enforced by tests/worksHub.test.ts.
+export const FEATURED_ESSAY_SLUGS: readonly string[] = [
+  '2026-06-08-authority-gate-made-runnable',
+  '2026-05-20-pre-execution-authority-gates',
+  '2026-02-10-the-four-layer-enforcement-stack',
+  '2026-05-19-the-merge-is-a-state-mutation',
+  '2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability',
+];
+
+// Resolve each featured slug to its THOUGHTS entry (title kept in sync with the
+// corpus). FAIL-LOUD: throws if a slug is not in THOUGHTS, so a typo or an
+// unpublished slug is caught at build/test, never shipped as a dangling link.
+// Preserves FEATURED_ESSAY_SLUGS order. The optional `slugs` param exists only so
+// the fail-loud path is unit-testable with a bogus slug; production calls pass none.
+export function featuredEssays(
+  slugs: readonly string[] = FEATURED_ESSAY_SLUGS,
+): { slug: string; title: string }[] {
+  const bySlug = new Map(THOUGHTS.map((t) => [t.slug, t]));
+  return slugs.map((slug) => {
+    const t = bySlug.get(slug);
+    if (!t) {
+      throw new Error(
+        `featuredEssays: slug "${slug}" is not in THOUGHTS — fix FEATURED_ESSAY_SLUGS or publish the essay.`,
+      );
+    }
+    return { slug: t.slug, title: t.title };
+  });
+}
+
+// /works dev-hub framing: the single availability CTA, the contact route, and the
+// outbound rail. Copy is operator-tunable. Consumed by BOTH the React WorksPage
+// and the crawler bake so the visible and baked renders cannot drift.
+export const WORKS_HUB = {
+  availability: 'Available for staff/principal AI-systems roles and speaking.',
+  contactHref: '/connect',
+  githubUrl: 'https://github.com/OrionArchitekton',
+  signalUrl: 'https://danmercede.online',
+} as const;
