@@ -435,13 +435,24 @@ export const WORKS: Work[] = [
   {
     title: 'schemafit',
     description:
-      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone.',
+      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini, Mistral, Cohere) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/schemafit',
     link: 'https://schemafit.danmercede.com/',
     license: 'MIT',
     date: '2026-06-19',
     slug: 'schemafit',
+  },
+  {
+    title: 'failclosed',
+    description:
+      'Fail-closed merge admission control for agent-written code — runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory. Enforcement precedes the merge decision; the reviewer is a configurable command seam. Python 3.9+, self-contained.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/failclosed',
+    link: 'https://failclosed.danmercede.com/',
+    license: 'MIT',
+    date: '2026-06-21',
+    slug: 'failclosed',
   },
 ];
 
