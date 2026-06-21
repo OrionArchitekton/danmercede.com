@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, featuredEssays, WORKS_HUB } from './constants';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -48,6 +48,10 @@ export interface RouteBody {
   // Lead positioning line, rendered as the first paragraph after the H1.
   lead?: string;
   paragraphs: string[];
+  // Crawlable links baked into the prerender block (W1 deep-link bake). Used by
+  // /works to concentrate crawl authority on the flagship essays + outbound rail.
+  // Mirrors the visible React render (prerender parity) — NOT crawler-only content.
+  links?: { href: string; text: string }[];
 }
 
 export interface RouteMeta {
@@ -63,6 +67,20 @@ export interface RouteMeta {
   // CollectionPage drives the /works surface: a portfolio collection whose items
   // are SoftwareSourceCode nodes, all backref-ing the canonical #person.
   schemaType?: 'Article' | 'ProfilePage' | 'CollectionPage';
+}
+
+// Build the /works crawlable link set: the featured-essay deep-links (in lockstep
+// with featuredEssays() so the baked block can't drift from the visible render),
+// the bare full-archive link, then the outbound rail. Evaluated at module load —
+// featuredEssays() throws here if a featured slug is unresolved, failing the build
+// loud (the desired fail-closed behavior). Used only by ROUTE_META['/works'].body.
+function worksBodyLinks(): { href: string; text: string }[] {
+  return [
+    ...featuredEssays().map((e) => ({ href: `/thoughts/${e.slug}`, text: e.title })),
+    { href: '/thoughts', text: 'Full archive' },
+    { href: WORKS_HUB.signalUrl, text: 'Live signal log' },
+    { href: WORKS_HUB.githubUrl, text: 'GitHub' },
+  ];
 }
 
 // Static routes (mirrors the <Route> table in App.tsx). The homepage entry is
@@ -135,17 +153,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/works': {
-    title: 'Works — Open Source & Governance Tooling | Dan Mercede',
+    title: 'Works — Build, Selected Essays & Signal | Dan Mercede',
     description:
-      'Open-source tools Dan Mercede has shipped publicly — starting with orion-skills, a collection of first-party Claude Code skills extracted from production operator workflows.',
+      'Open-source tooling and field-tested patterns from shipping governed agentic systems in production, with selected essays on the doctrine behind the build.',
     schemaType: 'CollectionPage',
     body: {
       h1: 'Works',
-      lead: 'Open source and public tooling.',
+      lead: 'Open-source tooling and field-tested patterns from shipping governed agentic systems in production.',
       paragraphs: [
-        'Tools and skills shipped publicly — extracted from real production operator workflows.',
-        'Each entry links to its source repository; the collection resolves to the canonical Dan Mercede entity.',
+        'Build — open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
+        'Selected essays point to the doctrine behind the build; the full archive lives at /thoughts.',
+        WORKS_HUB.availability,
       ],
+      links: worksBodyLinks(),
     },
   },
   '/connect': {
@@ -405,6 +425,11 @@ export function renderBodyBlock(path: string, m: RouteMeta): string {
   }
   for (const p of b.paragraphs) {
     parts.push(`    <p>${escapeText(p)}</p>`);
+  }
+  if (b.links) {
+    for (const link of b.links) {
+      parts.push(`    <a href="${escapeAttr(link.href)}">${escapeText(link.text)}</a>`);
+    }
   }
   parts.push(`  </div>`);
   return parts.join('\n');

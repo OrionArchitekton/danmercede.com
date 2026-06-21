@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS } from '../constants';
+import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 // ---------------------------------------------------------------------------
 // AC1 — the curated-pointer hard cap is code-enforced (load-bearing)
@@ -42,4 +43,46 @@ test('WORKS_HUB carries the single CTA copy + contact/outbound rail', () => {
   assert.equal(WORKS_HUB.contactHref, '/connect');
   assert.equal(WORKS_HUB.githubUrl, 'https://github.com/OrionArchitekton');
   assert.equal(WORKS_HUB.signalUrl, 'https://danmercede.online');
+});
+
+// ---------------------------------------------------------------------------
+// AC3 — the crawler bake carries availability text + featured deep-links + outbound
+// ---------------------------------------------------------------------------
+
+test('the /works baked body contains the availability line as crawlable text', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  assert.ok(block.includes(WORKS_HUB.availability), 'availability line baked as text');
+});
+
+test('the /works baked body bakes each featured essay as an escaped /thoughts/<slug> <a>', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  for (const e of featuredEssays()) {
+    assert.match(
+      block,
+      new RegExp(`<a href="/thoughts/${e.slug}">`),
+      `featured deep-link to /thoughts/${e.slug} baked`,
+    );
+  }
+});
+
+test('the /works baked body bakes the outbound rail (signal + GitHub)', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  assert.ok(block.includes(`href="${WORKS_HUB.signalUrl}"`), 'signal outbound baked');
+  assert.ok(block.includes(`href="${WORKS_HUB.githubUrl}"`), 'GitHub outbound baked');
+});
+
+// Parity — the baked featured set CANNOT drift from featuredEssays(); the React
+// WorksPage reads the same featuredEssays(), so all three renders agree.
+test('the baked /works featured deep-links EQUAL featuredEssays() (no prerender drift)', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  const bakedSlugs = [...block.matchAll(/<a href="\/thoughts\/([^"/]+)">/g)].map((m) => m[1]);
+  const expected = featuredEssays().map((e) => e.slug);
+  assert.deepEqual(bakedSlugs, expected, 'baked featured deep-links must equal featuredEssays() exactly');
+});
+
+// AC4 — /works is a pointer, not a library: NO essay bodies leak into the bake.
+test('the /works baked body hosts NO essay bodies (stays a small pointer: lead + 3 framing paragraphs)', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  const paras = (block.match(/<p>/g) || []).length;
+  assert.ok(paras <= 4, `/works must stay a pointer (<=4 <p>), got ${paras} — did an essay body leak in?`);
 });
