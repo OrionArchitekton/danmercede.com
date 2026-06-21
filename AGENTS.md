@@ -17,7 +17,7 @@ Repo identity:
 
 ## Content Surfaces — `/works` vs `/thoughts`
 
-These two surfaces have distinct, non-overlapping jobs. Keep them distinct.
+These two surfaces have separate, non-overlapping jobs — keep them that way.
 
 - **`/thoughts` = the writing.** The full essay corpus — every `/thoughts/<slug>`
   page plus the index with its category filter. Substrate-sourced (`THOUGHTS`).
