@@ -415,7 +415,7 @@ export const WORKS: Work[] = [
       'An open collection of first-party Claude Code skills — structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs — extracted from production operator workflows.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/orion-skills',
-    link: 'https://github.com/OrionArchitekton/orion-skills',
+    link: 'https://orion-skills.danmercede.com/',
     gist: 'https://gist.github.com/OrionArchitekton/6406f7c87d87668023b6594211fd791e',
     license: 'MIT',
     date: '2026-06-17',
