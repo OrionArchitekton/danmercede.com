@@ -1288,7 +1288,7 @@ const WorksPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Newest shipped work first. Source array stays append-on-ship (see
               docs/runbooks/works-update-on-ship.md); display sorts by date desc. */}
-          {[...WORKS].sort((a, b) => b.date.localeCompare(a.date)).map((work: Work) => (
+          {[...WORKS].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((work: Work) => (
             <div
               key={work.slug}
               className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col"
