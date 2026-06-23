@@ -31,7 +31,7 @@ work is the hub Works entry; the working-log entry is the dated announcement.
   worktree before the first commit. The global default is the Orion Apex Capital
   email — it must **never** enter brand history.
 - **No `Co-Authored-By:` / Claude trailer** on brand commits.
-- Fresh worktree per repo from current `main` under `/home/orion/.worktrees`;
+- Fresh worktree per repo from current `main` under `~/.worktrees`;
   open a PR (never push `main`); one `git push` per command; never force-push.
 
 ## Surface 1 — Works page (this repo, danmercede.com)
