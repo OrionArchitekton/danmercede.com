@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+    
+    <defs>
+      <linearGradient id="copper" x1="0" y1="0" x2="0.8" y2="1">
+        <stop offset="0%" stop-color="#FFC08B"/>
+        <stop offset="42%" stop-color="#E68249"/>
+        <stop offset="100%" stop-color="#B95122"/>
+      </linearGradient>
+      <radialGradient id="navyBg" cx="50%" cy="42%" r="75%">
+        <stop offset="0%" stop-color="#07143A"/>
+        <stop offset="62%" stop-color="#020B29"/>
+        <stop offset="100%" stop-color="#010619"/>
+      </radialGradient>
+    </defs>
+    
+    
+      <rect width="1000" height="1000" fill="url(#navyBg)"/>
+      <polygon points="500,125 825,315 825,685 500,875 175,685 175,315" fill="none" stroke="url(#copper)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="500" cy="125" r="35" fill="url(#copper)"/><circle cx="825" cy="315" r="35" fill="url(#copper)"/><circle cx="825" cy="685" r="35" fill="url(#copper)"/><circle cx="500" cy="875" r="35" fill="url(#copper)"/><circle cx="175" cy="685" r="35" fill="url(#copper)"/><circle cx="175" cy="315" r="35" fill="url(#copper)"/>
+      <path d="M637 0C1094 0 1373 287 1373 746C1373 1203 1091 1490 643 1490H111V0ZM419 259V1231H624C920 1231 1063 1059 1063 746C1063 432 922 259 621 259Z" fill="#FFFFFF" transform="translate(265.542,655.000) scale(0.17333984,-0.17333984)"/>
+      <path d="M111 0H413V708C413 807 408 974 404 1132C455 965 505 800 536 708L791 0H1041L1293 708C1325 803 1377 979 1428 1153C1424 989 1418 812 1418 708V0H1719V1490H1270L1027 796C1000 708 953 551 917 423C881 551 834 708 806 796L560 1490H111Z" fill="url(#copper)" transform="translate(466.307,655.000) scale(0.17333984,-0.17333984)"/>
+    
+    </svg>
