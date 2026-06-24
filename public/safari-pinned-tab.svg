@@ -1,17 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
     
-    <defs>
-      <linearGradient id="copper" x1="0" y1="0" x2="0.8" y2="1">
-        <stop offset="0%" stop-color="#FFC08B"/>
-        <stop offset="42%" stop-color="#E68249"/>
-        <stop offset="100%" stop-color="#B95122"/>
-      </linearGradient>
-      <radialGradient id="navyBg" cx="50%" cy="42%" r="75%">
-        <stop offset="0%" stop-color="#07143A"/>
-        <stop offset="62%" stop-color="#020B29"/>
-        <stop offset="100%" stop-color="#010619"/>
-      </radialGradient>
-    </defs>
+    <!-- mask-icon must be strictly monochrome: pure #000000, no colored defs -->
     
     
       
