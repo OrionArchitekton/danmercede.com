@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="500" viewBox="0 0 2000 500">
+      
+    <defs>
+      <linearGradient id="copper" x1="0" y1="0" x2="0.8" y2="1">
+        <stop offset="0%" stop-color="#FFC08B"/>
+        <stop offset="42%" stop-color="#E68249"/>
+        <stop offset="100%" stop-color="#B95122"/>
+      </linearGradient>
+      <radialGradient id="navyBg" cx="50%" cy="42%" r="75%">
+        <stop offset="0%" stop-color="#07143A"/>
+        <stop offset="62%" stop-color="#020B29"/>
+        <stop offset="100%" stop-color="#010619"/>
+      </radialGradient>
+    </defs>
+    
+      <g transform="translate(55,70) scale(0.36)">
+      
+      <polygon points="500,125 825,315 825,685 500,875 175,685 175,315" fill="none" stroke="url(#copper)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="500" cy="125" r="35" fill="url(#copper)"/><circle cx="825" cy="315" r="35" fill="url(#copper)"/><circle cx="825" cy="685" r="35" fill="url(#copper)"/><circle cx="500" cy="875" r="35" fill="url(#copper)"/><circle cx="175" cy="685" r="35" fill="url(#copper)"/><circle cx="175" cy="315" r="35" fill="url(#copper)"/>
+      <path d="M637 0C1094 0 1373 287 1373 746C1373 1203 1091 1490 643 1490H111V0ZM419 259V1231H624C920 1231 1063 1059 1063 746C1063 432 922 259 621 259Z" fill="#FFFFFF" transform="translate(265.542,655.000) scale(0.17333984,-0.17333984)"/>
+      <path d="M111 0H413V708C413 807 408 974 404 1132C455 965 505 800 536 708L791 0H1041L1293 708C1325 803 1377 979 1428 1153C1424 989 1418 812 1418 708V0H1719V1490H1270L1027 796C1000 708 953 551 917 423C881 551 834 708 806 796L560 1490H111Z" fill="url(#copper)" transform="translate(466.307,655.000) scale(0.17333984,-0.17333984)"/>
+    </g>
+      <path d="M637 0C1094 0 1373 287 1373 746C1373 1203 1091 1490 643 1490H111V0ZM419 259V1231H624C920 1231 1063 1059 1063 746C1063 432 922 259 621 259Z" fill="#FFFFFF" transform="translate(500.000,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M9 0H341L449 325H1006L1110 0H1451L928 1490H532ZM532 571 583 725C631 877 677 1029 731 1214C784 1029 830 877 876 725L926 571Z" fill="#FFFFFF" transform="translate(628.682,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M111 0H419V691C419 755 418 882 412 1038C496 887 572 758 615 690L1049 0H1374V1490H1067V753C1067 690 1068 567 1072 452C1013 559 949 672 914 728L435 1490H111Z" fill="#FFFFFF" transform="translate(759.255,325.000) scale(0.07568359,-0.07568359)"/>
+      <path d="M111 0H413V708C413 807 408 974 404 1132C455 965 505 800 536 708L791 0H1041L1293 708C1325 803 1377 979 1428 1153C1424 989 1418 812 1418 708V0H1719V1490H1270L1027 796C1000 708 953 551 917 423C881 551 834 708 806 796L560 1490H111Z" fill="url(#copper)" transform="translate(949.646,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M111 0H1180V264H419V624H1123V881H419V1226H1180V1490H111Z" fill="url(#copper)" transform="translate(1108.222,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M111 0H419V521H689C690 521 691 521 692 521L956 0H1286L987 579C1154 656 1253 804 1253 1001C1253 1301 1043 1490 707 1490H111ZM419 768V1234H688C851 1234 952 1143 952 1001C952 859 851 768 689 768Z" fill="url(#copper)" transform="translate(1222.448,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M771 -24C1120 -24 1380 191 1427 523H1117C1079 348 951 248 775 248C521 248 373 441 373 744C373 1049 522 1242 775 1242C952 1242 1081 1141 1116 965H1427C1380 1298 1120 1514 771 1514C361 1514 63 1220 63 744C63 271 362 -24 771 -24Z" fill="url(#copper)" transform="translate(1343.259,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M111 0H1180V264H419V624H1123V881H419V1226H1180V1490H111Z" fill="url(#copper)" transform="translate(1475.800,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M637 0C1094 0 1373 287 1373 746C1373 1203 1091 1490 643 1490H111V0ZM419 259V1231H624C920 1231 1063 1059 1063 746C1063 432 922 259 621 259Z" fill="url(#copper)" transform="translate(1590.026,325.000) scale(0.07568359,-0.07568359)"/>
+<path d="M111 0H1180V264H419V624H1123V881H419V1226H1180V1490H111Z" fill="url(#copper)" transform="translate(1718.708,325.000) scale(0.07568359,-0.07568359)"/>
+    </svg>

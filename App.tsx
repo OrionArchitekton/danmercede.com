@@ -74,8 +74,8 @@ const Navigation = () => {
   return (
     <nav className="fixed w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold tracking-tighter text-white">
-          DAN<span className="text-copper-500">MERCEDE</span>
+        <Link to="/" className="flex items-center" aria-label="Dan Mercede — home">
+          <img src="/dan-mercede-lockup-dark.svg" alt="" width="144" height="36" className="h-9 w-auto" />
         </Link>
 
         {/* Desktop Nav */}
@@ -137,6 +137,7 @@ const Footer = () => (
   <footer className="border-t border-white/5 bg-slate-950 py-12 mt-20">
     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center">
       <div className="mb-8 md:mb-0">
+        <img src="/dm-mark.svg" alt="" aria-hidden="true" className="h-8 w-8 mb-3" />
         <h4 className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</h4>
         <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
@@ -686,7 +687,7 @@ const ReadinessScanCTA = () => (
         href={READINESS_SCAN.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-600 text-white text-sm font-mono rounded transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-mono rounded transition-colors whitespace-nowrap"
       >
         Schedule a Readiness Scan
         <ArrowRight className="w-4 h-4" />
@@ -1254,7 +1255,7 @@ const CaseStudyPage = () => {
           <a
             href={study.filePath}
             download={study.fileName}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-white rounded font-mono text-sm hover:bg-copper-600 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-slate-950 rounded font-mono text-sm hover:bg-copper-400 transition-colors"
           >
             <Download className="w-4 h-4" />
             Download Full Case Study
