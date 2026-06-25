@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, featuredEssays, WORKS_HUB } from './constants';
+import Markdown from './components/Markdown';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, featuredEssays, WORKS_HUB } from './constants';
 
-import { Venture, Resource, CaseStudy, Thought, Work } from './types';
+import { Venture, Resource, CaseStudy, Thought, Work, Guide } from './types';
 import {
   ROUTE_META,
   caseStudyMeta,
   thoughtMeta,
+  guideMeta,
   bodyToParagraphs,
   type RouteMeta,
   SITE_ORIGIN,
@@ -1518,6 +1520,82 @@ const ThoughtDetailPage = () => {
   );
 };
 
+const GuidesPage = () => {
+  usePageMeta();
+  return (
+    <div className="pt-20">
+      <Section>
+        <SectionHeader as="h1" title="Guides" subtitle="Self-Hosting · Systems · Operations" />
+
+        <p className="text-slate-400 text-lg max-w-3xl mb-12">
+          Practical, operator-grade walkthroughs — self-hosting, secure ingress, and running systems on infrastructure you control. Field-tested, not theoretical.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {GUIDES.map((guide: Guide) => (
+            <Link
+              key={guide.slug}
+              to={`/guides/${guide.slug}`}
+              className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
+                <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">{guide.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{guide.lead}</p>
+              <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
+                Read the guide →
+              </span>
+            </Link>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+const GuideDetailPage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const guide = GUIDES.find((g: Guide) => g.slug === slug);
+  usePageMeta(guideMeta(slug));
+
+  if (!guide) {
+    return (
+      <div className="pt-20 min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Guide Not Found</h2>
+          <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-sm">
+            ← Back to Guides
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-20">
+      <Section>
+        <div className="mb-6">
+          <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            ← Guides
+          </Link>
+        </div>
+
+        <article className="max-w-3xl">
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
+            <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+          </div>
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
+          <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
+          <Markdown source={guide.body} />
+        </article>
+      </Section>
+    </div>
+  );
+};
+
 const ConnectPage = () => {
   usePageMeta();
   return (
@@ -1726,6 +1804,8 @@ const App: React.FC = () => {
             <Route path="/thoughts" element={<ThoughtsPage />} />
             <Route path="/thoughts/:slug" element={<ThoughtDetailPage />} />
             <Route path="/works" element={<WorksPage />} />
+            <Route path="/guides" element={<GuidesPage />} />
+            <Route path="/guides/:slug" element={<GuideDetailPage />} />
             <Route path="/connect" element={<ConnectPage />} />
             <Route path="/legal" element={<LegalPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

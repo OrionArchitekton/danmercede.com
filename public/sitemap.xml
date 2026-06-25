@@ -58,6 +58,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.danmercede.com/guides</loc>
+    <lastmod>2026-06-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.danmercede.com/connect</loc>
     <lastmod>2026-06-17</lastmod>
     <changefreq>monthly</changefreq>
