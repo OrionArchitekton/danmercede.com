@@ -95,9 +95,12 @@
       "destination": "https://mcp-context-budget-site.vercel.app/:path*"
     },
     {
+      "source": "/works/mcp-context-budget/",
+      "destination": "https://mcp-context-budget-site.vercel.app/"
+    },
+    {
       "source": "/works/failclosed/",
       "destination": "https://failclosed-site.vercel.app/"
-    },
     {
       "source": "/works/failclosed/:path*",
       "destination": "https://failclosed-site.vercel.app/:path*"
