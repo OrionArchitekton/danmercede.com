@@ -68,6 +68,21 @@
       "source": "/works/mcp-context-budget",
       "destination": "/works/mcp-context-budget/",
       "permanent": true
+    },
+    {
+      "source": "/works/failclosed",
+      "destination": "/works/failclosed/",
+      "permanent": true
+    },
+    {
+      "source": "/works/orion-skills",
+      "destination": "/works/orion-skills/",
+      "permanent": true
+    },
+    {
+      "source": "/works/schemafit",
+      "destination": "/works/schemafit/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -78,6 +93,30 @@
     {
       "source": "/works/mcp-context-budget/:path*",
       "destination": "https://mcp-context-budget-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/failclosed/",
+      "destination": "https://failclosed-site.vercel.app/"
+    },
+    {
+      "source": "/works/failclosed/:path*",
+      "destination": "https://failclosed-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/orion-skills/",
+      "destination": "https://orion-skills-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-skills/:path*",
+      "destination": "https://orion-skills-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/schemafit/",
+      "destination": "https://schemafit-site.vercel.app/"
+    },
+    {
+      "source": "/works/schemafit/:path*",
+      "destination": "https://schemafit-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",
