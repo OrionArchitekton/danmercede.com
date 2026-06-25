@@ -26,7 +26,8 @@ const FRONTMATTER_KEYS = ['title', 'slug', 'date', 'category', 'description', 'l
 // quotes are stripped); the title legitimately contains a colon, so we split on
 // the FIRST colon only.
 function parse(raw, file) {
-  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const clean = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw; // strip a UTF-8 BOM (some Windows editors add one)
+  const m = clean.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!m) throw new Error(`${file}: missing or malformed frontmatter`);
   const [, fm, body] = m;
   const meta = {};
@@ -35,7 +36,11 @@ function parse(raw, file) {
     if (!mm) continue;
     let [, key, value] = mm;
     value = value.trim();
-    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+    // Strip matching surrounding quotes (double or single).
+    if (
+      value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+    ) {
       value = value.slice(1, -1);
     }
     meta[key] = value;

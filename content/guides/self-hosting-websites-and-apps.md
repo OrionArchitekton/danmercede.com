@@ -57,7 +57,7 @@ Visitors take the five-layer public path. You take the mesh. **The two planes me
 
 **Known-good default stack** — keep every example matching this and you avoid the configuration drift that breaks beginner setups:
 
-```
+```text
 Recommended default for this guide
 ──────────────────────────────────
 • cloudflared      → Docker container (same network as Traefik)
@@ -512,7 +512,7 @@ http:
           - "admin:$2y$05$REPLACE_WITH_YOUR_OWN_BCRYPT_HASH"
 ```
 
-Know its limits before you trust it: Basic Auth sends a base64 credential on **every** request, so it is **only safe over HTTPS** (you have that — the browser→Cloudflare and Cloudflare→origin hops are both TLS). It has no logout, no sessions, and usually one shared credential — so **rotate it** and don't put it alone in front of anything sensitive. It's a tidy gate for a staging tool or a webhook receiver, not an identity system.
+Know its limits before you trust it: Basic Auth sends a base64 credential on **every** request, so it is **only safe when every hop carrying it is protected**. On this guide's default tunnel path, the browser-facing hop is HTTPS (Cloudflare's edge) and the final `cloudflared → Traefik` hop is plain HTTP but stays private inside the box's Docker network — never the public wire; if you instead publish the origin directly, require HTTPS end to end (the `websecure` / Full-strict variant). It has no logout, no sessions, and usually one shared credential — so **rotate it** and don't put it alone in front of anything sensitive. It's a tidy gate for a staging tool or a webhook receiver, not an identity system.
 
 **3. Identity at the edge — SSO without writing login code.** When real humans should authenticate with an identity (Google, email OTP, a company SSO), put an **identity proxy in front of the route** so an unauthenticated request never reaches your app. Two flavors:
 

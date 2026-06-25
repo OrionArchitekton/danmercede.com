@@ -43,6 +43,28 @@ function startsSpecial(line: string): boolean {
   );
 }
 
+// Sanitize a URL emitted as an href/src. Allow-list: a URL with an explicit scheme
+// must be http(s) or mailto; a URL with no scheme is relative (path/fragment/query)
+// and safe. This neutralizes javascript:, data:, vbscript:, file:, AND entity-encoded
+// scheme variants. Control chars are stripped first so `java\tscript:` can't slip past.
+// Guide content is operator-authored and trusted, but a renderer that emits URLs from
+// text must fail safe regardless.
+function safeUrl(raw: string): string {
+  const u = raw.trim().replace(/[\x00-\x1F\x7F]+/g, '');
+  // Scheme-relative (//host or \\host) reaches an external origin via an empty
+  // scheme — neutralize (open-redirect / phishing).
+  if (/^[/\\]{2}/.test(u)) return '#';
+  const head = u.split(/[/?#]/, 1)[0]; // the token before the first / ? or #
+  // An entity- or percent-escape in the scheme region can smuggle a scheme past
+  // the literal allow-list (e.g. &#106;avascript:) — neutralize, so safeUrl is
+  // self-sufficient rather than relying on the render layer's escaping.
+  if (/[&%]/.test(head)) return '#';
+  if (head.includes(':')) {
+    return /^(?:https?|mailto):/i.test(u) ? u : '#'; // explicit scheme → only http(s)/mailto
+  }
+  return u; // scheme-less relative URL, safe
+}
+
 // ---- inline ----
 
 function parseInline(text: string, keyPrefix: Key = 'i'): React.ReactNode[] {
@@ -70,7 +92,7 @@ function parseInline(text: string, keyPrefix: Key = 'i'): React.ReactNode[] {
     {
       re: /\[([^\]]+)\]\(([^\s)]+)\)/,
       node: (m, k) => {
-        const href = m[2];
+        const href = safeUrl(m[2]);
         const external = /^https?:\/\//.test(href);
         return (
           <a
@@ -108,7 +130,8 @@ function parseInline(text: string, keyPrefix: Key = 'i'): React.ReactNode[] {
 
 // ---- figures ----
 
-function figure(alt: string, src: string, caption: string | undefined, key: string): React.ReactNode {
+function figure(alt: string, rawSrc: string, caption: string | undefined, key: string): React.ReactNode {
+  const src = safeUrl(rawSrc);
   const responsive = /\.webp$/.test(src);
   const src768 = src.replace(/\.webp$/, '-768w.webp');
   return (
@@ -292,13 +315,16 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
     if (ULI.test(line) || OLI.test(line)) {
       const ordered = OLI.test(line);
       const baseIndent = leadingSpaces(line);
-      const markerWidth = ordered ? 3 : 2;
       const items: string[][] = [];
       while (i < lines.length) {
         const cur = lines[i];
         const mm = ordered ? cur.match(OLI) : cur.match(ULI);
         if (mm && leadingSpaces(cur) === baseIndent) {
-          const itemLines: string[] = [ordered ? mm[3] : mm[2]];
+          const content = ordered ? mm[3] : mm[2];
+          // Per-item marker width (handles "10. ", "1.  " with extra spaces, etc.)
+          // — never a hardcoded 3/2, so multi-digit indices dedent correctly.
+          const markerWidth = cur.length - content.length - baseIndent;
+          const itemLines: string[] = [content];
           i += 1;
           while (i < lines.length) {
             const ln = lines[i];
