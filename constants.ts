@@ -454,6 +454,51 @@ export const WORKS: Work[] = [
     date: '2026-06-21',
     slug: 'failclosed',
   },
+  // --- Applied Agent Projects — hackathon-built agent systems, surfaced as a
+  // distinct /works section (App.tsx WorksPage filters on category). Competition
+  // context lives in each description, not the section heading. ---
+  {
+    title: 'algorithm.reviews',
+    description:
+      'The Agent Trust Layer — a governed review agent that fans out across the live web, decides which sources are admissible (fail-closed), forms a verdict grounded only in admitted evidence, and ships a signed, verifiable review receipt: per-claim confidence, timestamped citations, dissent, and an ECDSA signature anyone can check. Built at the DeveloperWeek New York 2026 Hackathon.',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/algorithm-reviews',
+    link: 'https://algorithm-reviews.vercel.app',
+    license: 'MIT',
+    date: '2026-06-06',
+    slug: 'algorithm-reviews',
+  },
+  {
+    title: 'Proctor',
+    description:
+      "The agent that QAs other agents — regression-tests non-deterministic AI automations by learning each one's behavioral contract, catching when a model or prompt change silently breaks it, self-healing the tests when the change is legitimate, and escalating real regressions to a human. Built for UiPath AgentHack 2026 (Track 3: UiPath Test Cloud).",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/proctor',
+    license: 'MIT',
+    date: '2026-06-05',
+    slug: 'proctor',
+  },
+  {
+    title: 'Impact Lens',
+    description:
+      "Blast-radius and change-impact analysis for code — 'what does changing this break, and what must I re-test?' — built as a GitLab Duo Agent Platform skill and flow over the GitLab Orbit knowledge graph, and published to the GitLab AI Catalog. Built for the GitLab Transcend Hackathon (Showcase Track).",
+    category: 'Agent Project',
+    repo: 'https://gitlab.com/OrionArchitekton/orbit-impact-lens',
+    license: 'MIT',
+    date: '2026-06-23',
+    slug: 'orbit-impact-lens',
+  },
+  {
+    title: 'Quorum',
+    description:
+      "Decision-memory agent for Slack — detects when a thread reaches a decision, drafts a structured Decision Record, waits for human approval, files it to a canonical Decision Log, and answers 'what did we decide about X?' with sourced, permalink-cited replies. Built for the Slack Agent Builder Challenge.",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/quorum-slack-agent',
+    link: 'https://quorum-slack-agent.vercel.app',
+    license: 'MIT',
+    date: '2026-06-06',
+    slug: 'quorum',
+  },
 ];
 
 export { THOUGHTS };
