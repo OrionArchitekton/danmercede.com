@@ -1576,21 +1576,23 @@ const GuideDetailPage = () => {
   return (
     <div className="pt-20">
       <Section>
-        <div className="mb-6">
-          <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
-            ← Guides
-          </Link>
-        </div>
-
-        <article className="max-w-3xl">
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
-            <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-6">
+            <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+              ← Guides
+            </Link>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
-          <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
-          <Markdown source={guide.body} />
-        </article>
+
+          <article>
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
+              <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
+            <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
+            <Markdown source={guide.body} />
+          </article>
+        </div>
       </Section>
     </div>
   );

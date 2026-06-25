@@ -35,6 +35,37 @@ test('Markdown renders core blocks (heading, code, table, list, figure)', () => 
   assert.match(html, /768w/); // 768w variant in the srcset
 });
 
+test('Markdown handles nested blocks, blockquotes, ordered lists, hr, and inline syntax', () => {
+  const html = render(
+    [
+      '> A quoted line with **bold**.',
+      '',
+      '1. First item with a nested code block:',
+      '',
+      '   ```yaml',
+      '   key: value',
+      '   ```',
+      '2. Second item',
+      '',
+      'A [link](https://example.com) plus *italic* and `code`.',
+      '',
+      '---',
+    ].join('\n'),
+  );
+  assert.match(html, /<blockquote/);
+  assert.match(html, /<ol/);
+  assert.match(html, /key: value/); // fenced code nested inside the list item
+  assert.match(html, /<a [^>]*href="https:\/\/example\.com"/);
+  assert.match(html, /<em>italic<\/em>/);
+  assert.match(html, /<hr/);
+});
+
+test('headings get slug ids (anchorable) and bold renders inside paragraphs', () => {
+  const html = render('## Two Planes\n\nThe **two-plane** rule.');
+  assert.match(html, /<h2[^>]*id="two-planes"/);
+  assert.match(html, /<strong[^>]*>two-plane<\/strong>/);
+});
+
 // Regression (Codex P2): a stray pipe-prefixed line that is NOT a table must not
 // hang the parser — `i` must always advance. renderToStaticMarkup returning at all
 // proves there is no infinite loop; we also confirm surrounding prose still renders.
