@@ -8,6 +8,14 @@ import type { Thought } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
+    title: "Verify the Verifier",
+    preview: "A verification agent is still a single source: the two-tier draft-then-skeptic pattern inverts the moment the skeptic introduces its own error, because the architecture has pre-committed to trusting the second voice.",
+    date: "2026-06-24",
+    category: "Architecture",
+    slug: "2026-06-24-verify-the-verifier",
+    body: "A verification agent is still a single source. The two-tier pattern — generate cheap, then run an adversarial skeptic that checks each claim against live state — earns its keep when the skeptic catches the draft's errors. It inverts the moment the skeptic introduces its own. The asymmetry that makes the pattern work, *assume the draft is wrong*, is the same one that makes a wrong correction dangerous: the architecture has pre-committed to trusting the second voice, and nothing downstream is positioned to doubt it. The second pass *was* the doubt.\n\nThe tell is cheap to check and easy to skip. A confident \"CONFIRMED — corrected\" that flips a premise the draft had right is not a resolution; it is a flag. Read the skeptic's cited evidence: does it name the artifact under test, or a sibling that resembles it? Mismatched-but-confident is the signature of a backside error one layer up.\n\nA correction earns its way into the output the way authority does — on proof, not standing trust. Promote it on a citation that names the right thing, on agreement across the fan-out, or on one direct probe you ran yourself. A verdict from an unverified verifier is theater.",
+  },
+  {
     title: "The Gate Is the Product",
     preview: "Agent generation is not the constraint — a fleet produces more than a human can review. The merge-authority gate, plus the work of converging what was generated, is the constraint. So governance ships shadow-first, and authority is delivered on demand and never left at rest.",
     date: "2026-06-16",
