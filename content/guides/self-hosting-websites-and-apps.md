@@ -480,23 +480,6 @@ Two questions decide it every time:
 1. **Who's knocking** — a human in a browser, a machine/script, or just you-the-operator?
 2. **What's behind the door** — a public app, an internal dashboard, or a programmatic API?
 
-```
-WHO / WHAT                          →  RIGHT LOCK                        →  WHERE IT LIVES
-──────────────────────────────────────────────────────────────────────────────────────────
-Only you (dashboards, metrics,      →  Network is the FIRST gate         →  Private plane
-  databases, SSH)                      (mesh + ACL; add app auth if         (Tailscale + ipAllowList)
-                                       destructive/multi-user)
-Humans who should "sign in"         →  Identity proxy / SSO at the edge  →  Public plane,
-  (operator console, team app)         (Cloudflare Access or self-hosted   in FRONT of the app
-                                        forward-auth)
-A quick gate on one small tool      →  Reverse-proxy Basic Auth          →  Public plane,
-  (low-stakes, already behind TLS)     (Traefik middleware + htpasswd)     at the proxy
-Machines / scripts / webhooks       →  Bearer / service tokens,          →  At the app, or a
-  (APIs, CI, integrations)             deny-by-default                     token-checking middleware
-A real app with user accounts       →  App-layer login                   →  Inside the app
-  (sessions, roles)                    (sessions / JWT / OIDC)             (ideally behind an edge gate too)
-```
-
 You'll usually run **several of these at once** — that's correct, not over-engineering. The goal isn't to pick one lock; it's to put each one on the right door.
 
 ![Authentication comparison for self-hosted apps showing Tailscale ACLs and bind policy for operator-only tools, Cloudflare Access for human browser login, Basic Auth for small public tools, service tokens for machine callers, and app-layer login for user accounts.](/assets/guides/self-hosting/authentication-lock-comparison.webp "Match the lock to the caller: human, machine, operator, or app user.")

@@ -180,6 +180,15 @@
       ]
     },
     {
+      "source": "/assets/guides/(.*)\\.(webp|png|jpe?g|avif|gif)$",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)\\.(js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|webp|avif|gif|ico|map)$",
       "headers": [
         {

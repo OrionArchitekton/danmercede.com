@@ -335,8 +335,12 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
       continue;
     }
 
-    // Paragraph
-    const para: string[] = [];
+    // Paragraph — consume the current line UNCONDITIONALLY so `i` always advances.
+    // A stray pipe-prefixed line the table branch rejected (no separator row) is
+    // `startsSpecial`, so without seeding the first line the loop body never runs,
+    // nothing is consumed, and rendering would spin forever (Codex P2).
+    const para: string[] = [lines[i].trim()];
+    i += 1;
     while (i < lines.length && lines[i].trim() !== '' && !startsSpecial(lines[i])) {
       para.push(lines[i].trim());
       i += 1;
