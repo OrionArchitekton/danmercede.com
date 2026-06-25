@@ -66,6 +66,36 @@ test('headings get slug ids (anchorable) and bold renders inside paragraphs', ()
   assert.match(html, /<strong[^>]*>two-plane<\/strong>/);
 });
 
+// Security (Gemini HIGH): link hrefs must neutralize javascript:/data: schemes,
+// while ordinary http/relative URLs (incl. hyphens) survive intact.
+test('link hrefs allow-list http(s)/mailto/relative and neutralize unsafe schemes', () => {
+  const html = render(
+    '[a](javascript:alert(1)) [b](/guides/self-hosting-websites-and-apps) [c](https://example.com/x) [d](data:text/html;base64,x)',
+  );
+  assert.doesNotMatch(html, /href="javascript:/i); // script scheme neutralized
+  assert.doesNotMatch(html, /href="data:/i); // data: scheme neutralized
+  assert.match(html, /href="\/guides\/self-hosting-websites-and-apps"/); // relative + hyphens preserved
+  assert.match(html, /href="https:\/\/example\.com\/x"/); // external http(s) preserved
+});
+
+// Defense-in-depth (adversarial verify): entity-encoded schemes and
+// scheme-relative URLs are neutralized by safeUrl itself, not just the render layer.
+test('safeUrl neutralizes entity-encoded schemes and scheme-relative URLs', () => {
+  const html = render('[a](&#106;avascript:x) and [b](//evil.example.com) and [c](/safe/path)');
+  assert.match(html, /href="#"/); // both unsafe links → #
+  assert.doesNotMatch(html, /evil\.example/); // scheme-relative host never emitted as href
+  assert.match(html, /href="\/safe\/path"/); // safe relative preserved
+});
+
+// Sourcery bug_risk: multi-digit list indices must not mangle nested content
+// (marker width is derived per item, not hardcoded to 3).
+test('ordered lists with multi-digit indices keep nested content intact', () => {
+  const html = render(['9. Nine', '10. Ten with nested code:', '', '    ```bash', '    echo ten', '    ```', '11. Eleven'].join('\n'));
+  assert.match(html, /<ol/);
+  assert.match(html, /echo ten/); // nested fence under the 2-digit item rendered
+  assert.match(html, /Eleven/);
+});
+
 // Regression (Codex P2): a stray pipe-prefixed line that is NOT a table must not
 // hang the parser — `i` must always advance. renderToStaticMarkup returning at all
 // proves there is no infinite loop; we also confirm surrounding prose still renders.

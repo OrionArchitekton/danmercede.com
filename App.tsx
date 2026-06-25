@@ -1558,7 +1558,9 @@ const GuidesPage = () => {
 const GuideDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const guide = GUIDES.find((g: Guide) => g.slug === slug);
-  usePageMeta(guideMeta(slug));
+  // Unknown /guides/<slug> is thin "not found" content — noindex it (soft-404),
+  // matching the catch-all 404 policy.
+  usePageMeta(guideMeta(slug), { noindex: !guide });
 
   if (!guide) {
     return (

@@ -394,12 +394,20 @@ export function guideBodyToParagraphs(body: string): string[] {
       flush();
       continue;
     } // drop horizontal rules
+    // Each structural element (heading, blockquote, list item) starts its own
+    // paragraph, matching how the visible renderer splits blocks even without a
+    // blank line between them — keeps the crawl body and rendered body in parity.
+    const isHeading = /^#{1,6}\s+/.test(line);
+    const isQuote = /^\s*>/.test(line);
+    const isList = /^\s*[-*]\s+/.test(line) || /^\s*\d+\.\s+/.test(line);
+    if (isHeading || isQuote || isList) flush();
     const stripped = line
       .replace(/^#{1,6}\s+/, '') // heading marker
       .replace(/^\s*>\s?/, '') // blockquote marker
       .replace(/^\s*[-*]\s+/, '') // unordered marker
       .replace(/^\s*\d+\.\s+/, ''); // ordered marker
     buf.push(stripped);
+    if (isHeading) flush(); // a heading stands alone as its own paragraph
   }
   flush();
   return paras;
