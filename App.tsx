@@ -1291,6 +1291,7 @@ const WorkCard = ({ work }: { work: Work }) => (
         href={work.link || work.repo}
         target="_blank"
         rel="noopener noreferrer"
+        aria-label={`${work.link && work.link !== work.repo ? 'View project' : 'Repository'}: ${work.title}`}
         className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
       >
         {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
@@ -1300,6 +1301,7 @@ const WorkCard = ({ work }: { work: Work }) => (
           href={work.gist}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={`Code sample for ${work.title}`}
           className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
         >
           Sample <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
