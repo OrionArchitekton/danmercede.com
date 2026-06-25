@@ -53,43 +53,6 @@ Here's the whole architecture in one diagram:
 
 ![Two-plane self-hosting architecture showing public visitors routed through Cloudflare edge, Cloudflare Tunnel, Traefik, and app containers, while operators reach SSH, dashboards, and databases through a private Tailscale mesh.](/assets/guides/self-hosting/two-plane-architecture.webp "Public users enter through Cloudflare and Traefik; operators enter through the private Tailscale mesh.")
 
-```
-                         PUBLIC INGRESS PLANE
-                         (how the world reaches your apps)
-
-   Visitor's browser
-        │
-        ▼
-   ┌──────────────┐   proxied DNS record (orange-cloud)
-   │  Cloudflare  │   public TLS, WAF, CDN, DDoS, optional identity gate
-   │     edge     │
-   └──────┬───────┘
-          │  pick ONE per hostname:
-          │   • Cloudflare Tunnel (outbound dial — ZERO inbound ports)
-          │   • Published :443 + Origin Cert (Full strict)
-          ▼
-   ┌──────────────┐
-   │   Traefik    │   one container, binds :80 + :443
-   │ reverse proxy│   routes by Host/path to the right backend
-   └──────┬───────┘
-          │  http://service-name:port  (Docker network, NOT localhost)
-          ▼
-   ┌──────┬──────┬──────┐
-   │ app1 │ app2 │ app3 │   your containers
-   └──────┴──────┴──────┘
-          ▲
-          │  ────────────── deliberate meet point ──────────────
-          │  one dashboard MAY get a mesh-only, IP-allowlisted route
-          │
-   ┌──────┴───────┐
-   │  Tailscale   │        PRIVATE ADMIN PLANE
-   │  mesh (VPN)  │        (how YOU reach everything else)
-   └──────┬───────┘
-          ▲
-          │  SSH · dashboards · metrics · databases · secrets
-   You (operator laptop, on the same mesh)
-```
-
 Visitors take the five-layer public path. You take the mesh. **The two planes meet only through explicitly declared routes — a public route for a public app, or a mesh-only route for an admin tool. No service gets both by accident.**
 
 **Known-good default stack** — keep every example matching this and you avoid the configuration drift that breaks beginner setups:
