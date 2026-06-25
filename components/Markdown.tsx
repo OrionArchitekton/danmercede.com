@@ -112,11 +112,18 @@ function figure(alt: string, src: string, caption: string | undefined, key: stri
   const responsive = /\.webp$/.test(src);
   const src768 = src.replace(/\.webp$/, '-768w.webp');
   return (
-    <figure key={key} className="my-8">
+    // Dense diagrams break out wider than the max-w-3xl prose column on large
+    // screens (the article is centered, so the negative margin is symmetric and
+    // stays inside the max-w-7xl section). `sizes` then selects the 1536w asset on
+    // desktop instead of leaving it unused — the readability fix for dense diagrams.
+    <figure key={key} className="my-8 lg:-mx-20 lg:w-[calc(100%+10rem)]">
       <img
         src={src}
         {...(responsive
-          ? { srcSet: `${src768} 768w, ${src} 1536w`, sizes: '(min-width: 768px) 768px, 100vw' }
+          ? {
+              srcSet: `${src768} 768w, ${src} 1536w`,
+              sizes: '(min-width: 1024px) 928px, (min-width: 768px) 768px, 100vw',
+            }
           : {})}
         alt={alt}
         loading="lazy"
