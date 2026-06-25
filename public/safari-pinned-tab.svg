@@ -4,7 +4,8 @@
     
     
       
-      <polygon points="500,125 825,315 825,685 500,875 175,685 175,315" fill="none" stroke="#000000" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- hexagon ring as a FILLED annulus (evenodd) — Safari mask-icons ignore stroke on fill=none, so the ring must be a filled shape -->
+      <path fill-rule="evenodd" fill="#000000" d="M500 125 L825 315 L825 685 L500 875 L175 685 L175 315 Z M500 153 L801 329 L801 671 L500 847 L199 671 L199 329 Z"/>
       <circle cx="500" cy="125" r="35" fill="#000000"/><circle cx="825" cy="315" r="35" fill="#000000"/><circle cx="825" cy="685" r="35" fill="#000000"/><circle cx="500" cy="875" r="35" fill="#000000"/><circle cx="175" cy="685" r="35" fill="#000000"/><circle cx="175" cy="315" r="35" fill="#000000"/>
       <path d="M637 0C1094 0 1373 287 1373 746C1373 1203 1091 1490 643 1490H111V0ZM419 259V1231H624C920 1231 1063 1059 1063 746C1063 432 922 259 621 259Z" fill="#000000" transform="translate(265.542,655.000) scale(0.17333984,-0.17333984)"/>
       <path d="M111 0H413V708C413 807 408 974 404 1132C455 965 505 800 536 708L791 0H1041L1293 708C1325 803 1377 979 1428 1153C1424 989 1418 812 1418 708V0H1719V1490H1270L1027 796C1000 708 953 551 917 423C881 551 834 708 806 796L560 1490H111Z" fill="#000000" transform="translate(466.307,655.000) scale(0.17333984,-0.17333984)"/>
