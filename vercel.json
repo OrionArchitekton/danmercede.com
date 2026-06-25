@@ -63,9 +63,18 @@
       "source": "/readiness-scan/",
       "destination": "https://www.orionintelligenceagency.com/readiness-scan",
       "permanent": true
+    },
+    {
+      "source": "/works/mcp-context-budget",
+      "destination": "/works/mcp-context-budget/",
+      "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/mcp-context-budget/:path*",
+      "destination": "https://mcp-context-budget-site.vercel.app/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
