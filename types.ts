@@ -38,6 +38,16 @@ export interface Thought {
   body: string;
 }
 
+export interface Guide {
+  title: string;
+  slug: string;          // /guides/<slug> routing + sitemap parity
+  date: string;          // YYYY-MM-DD (publish date; drives sitemap lastmod)
+  category: string;      // surface label, e.g. "Self-Hosting"
+  description: string;   // meta description (head + JSON-LD)
+  lead: string;          // positioning line rendered under the H1
+  body: string;          // full markdown body (rendered by the in-house Markdown renderer)
+}
+
 export interface Work {
   title: string;
   description: string;

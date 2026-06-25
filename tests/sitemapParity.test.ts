@@ -9,6 +9,8 @@ import {
   caseStudyPaths,
   thoughtPaths,
   renderThoughtSitemapEntries,
+  guidePaths,
+  renderGuideSitemapEntries,
 } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,5 +59,22 @@ test('renderThoughtSitemapEntries covers exactly the published THOUGHTS corpus (
     { missing, extra },
     { missing: [], extra: [] },
     'generated thought sitemap entries drifted from thoughtPaths()',
+  );
+});
+
+// Same self-syncing guard for the GUIDES corpus: the build-time generator must
+// cover EXACTLY the published guide paths, so a new guide is sitemap-covered with
+// zero hand-maintenance.
+test('renderGuideSitemapEntries covers exactly the published GUIDES corpus (self-syncing)', () => {
+  const xml = renderGuideSitemapEntries();
+  const locs = new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => normalize(m[1].trim())));
+  const expected = guidePaths().map(toLoc);
+  assert.ok(expected.length > 0, 'expected at least one published guide');
+  const missing = expected.filter((u) => !locs.has(u));
+  const extra = [...locs].filter((u) => !expected.includes(u));
+  assert.deepEqual(
+    { missing, extra },
+    { missing: [], extra: [] },
+    'generated guide sitemap entries drifted from guidePaths()',
   );
 });

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Pillar, Venture, Belief, Resource, CaseStudy, Work } from './types';
 import { THOUGHTS } from './constants.generated';
+import { GUIDES } from './constants.guides.generated';
 
 export const NAV_ITEMS = [
   { label: 'Home', path: '/' },
@@ -18,6 +19,7 @@ export const NAV_ITEMS = [
   { label: 'Thoughts', path: '/thoughts' },
   { label: 'Proof', path: '/proof' },
   { label: 'Works', path: '/works' },
+  { label: 'Guides', path: '/guides' },
   { label: 'Connect', path: '/connect' },
 ];
 
@@ -502,6 +504,7 @@ export const WORKS: Work[] = [
 ];
 
 export { THOUGHTS };
+export { GUIDES };
 
 // --- /works dev-hub data (PR2) ---------------------------------------------
 // FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a

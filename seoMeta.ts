@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, featuredEssays, WORKS_HUB } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, featuredEssays, WORKS_HUB } from './constants';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -168,6 +168,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       links: worksBodyLinks(),
     },
   },
+  '/guides': {
+    title: 'Guides — Self-Hosting & Systems | Dan Mercede',
+    description:
+      'Practical, operator-grade guides on self-hosting, reverse proxies, secure ingress, and running governed systems on infrastructure you control.',
+    schemaType: 'Article',
+    body: {
+      h1: 'Guides',
+      lead: 'Practical, operator-grade walkthroughs.',
+      paragraphs: [
+        'Hands-on guides for self-hosting websites and apps, secure ingress, and running systems on infrastructure you control.',
+      ],
+    },
+  },
   '/connect': {
     title: 'Connect — Initiate Protocol | Dan Mercede',
     description:
@@ -308,6 +321,110 @@ export function renderThoughtSitemapEntries(): string {
   if (blocks.length === 0) return '';
   return (
     '  <!-- Thought corpus (per-thought routes; lastmod = each essay publish date, R2; generated at build from THOUGHTS) -->\n' +
+    blocks.join('\n')
+  );
+}
+
+// Flatten a guide's markdown body into clean crawlable prose paragraphs for the
+// answer-engine body-bake (W1). Unlike a thought (plain prose), a guide body
+// carries fenced code, tables, and image figures — none of which belong in the
+// hidden text block — so those are dropped and inline syntax is stripped to text.
+function guideInlineToText(s: string): string {
+  return s
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\s+/g, ' ');
+}
+
+export function guideBodyToParagraphs(body: string): string[] {
+  const lines = body.replace(/\r\n/g, '\n').split('\n');
+  const paras: string[] = [];
+  let buf: string[] = [];
+  let inFence = false;
+  const flush = () => {
+    if (buf.length) {
+      const text = guideInlineToText(buf.join(' ')).trim();
+      if (text) paras.push(text);
+    }
+    buf = [];
+  };
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+      flush();
+      continue;
+    }
+    if (inFence) continue; // drop fenced code
+    if (line.trim() === '') {
+      flush();
+      continue;
+    }
+    if (/^!\[.*\]\(.*\)\s*$/.test(line)) {
+      flush();
+      continue;
+    } // drop image figures
+    if (line.trim().startsWith('|')) continue; // drop table rows
+    if (/^\s*---+\s*$/.test(line)) {
+      flush();
+      continue;
+    } // drop horizontal rules
+    const stripped = line
+      .replace(/^#{1,6}\s+/, '') // heading marker
+      .replace(/^\s*>\s?/, '') // blockquote marker
+      .replace(/^\s*[-*]\s+/, '') // unordered marker
+      .replace(/^\s*\d+\.\s+/, ''); // ordered marker
+    buf.push(stripped);
+  }
+  flush();
+  return paras;
+}
+
+// Dynamic per-guide meta (mirrors thoughtMeta). The baked body carries the full
+// guide prose (every paragraph), so no-JS answer engines read the whole guide.
+// JSON-LD is an Article authored/published by the canonical #person.
+export function guideMeta(slug: string | undefined): RouteMeta {
+  const guide = GUIDES.find((g) => g.slug === slug);
+  if (!guide) {
+    return { title: 'Guide Not Found | Dan Mercede' };
+  }
+  const paragraphs = guideBodyToParagraphs(guide.body);
+  return {
+    title: `${guide.title} — Guide | Dan Mercede`,
+    description: guide.description,
+    schemaType: 'Article',
+    body: {
+      h1: guide.title,
+      lead: guide.lead,
+      paragraphs: paragraphs.length > 0 ? paragraphs : [guide.lead],
+    },
+  };
+}
+
+// All per-guide route paths, derived from the committed GUIDES corpus — so a new
+// guide is prerendered + sitemap-covered automatically with no hand-maintained
+// slug list (mirrors thoughtPaths).
+export function guidePaths(): string[] {
+  return GUIDES.filter((g) => g.slug).map((g) => `/guides/${g.slug}`);
+}
+
+// Per-guide <url> sitemap blocks, generated at build time (mirrors
+// renderThoughtSitemapEntries). lastmod = each guide's own publish date.
+export function renderGuideSitemapEntries(): string {
+  const blocks = GUIDES.filter((g) => g.slug).map((g) =>
+    [
+      '  <url>',
+      `    <loc>${SITE_ORIGIN}/guides/${g.slug}</loc>`,
+      `    <lastmod>${g.date}</lastmod>`,
+      '    <changefreq>monthly</changefreq>',
+      '    <priority>0.7</priority>',
+      '  </url>',
+    ].join('\n'),
+  );
+  if (blocks.length === 0) return '';
+  return (
+    '  <!-- Guides corpus (per-guide routes; generated at build from GUIDES) -->\n' +
     blocks.join('\n')
   );
 }
@@ -537,6 +654,9 @@ function renderBreadcrumb(path: string, leafName: string): Record<string, unknow
   // Per-thought detail pages sit under the /thoughts index: Home > Thoughts > Title.
   if (path.startsWith('/thoughts/')) {
     items.push({ name: 'Thoughts', url: new URL('/thoughts', SITE_ORIGIN).toString() });
+  }
+  if (path.startsWith('/guides/')) {
+    items.push({ name: 'Guides', url: new URL('/guides', SITE_ORIGIN).toString() });
   }
   if (path !== '/') {
     items.push({ name: leafName, url: new URL(path, SITE_ORIGIN).toString() });

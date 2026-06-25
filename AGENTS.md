@@ -39,6 +39,31 @@ These two surfaces have separate, non-overlapping jobs — keep them that way.
   `featuredEssays()`, so the visible and crawler renders cannot drift. This is
   prerender fallback, not cloaking.
 
+## Guides surface (`/guides`)
+
+A third content surface for **long-form technical guides** (code/diagram-heavy
+tutorials), dev-lane — distinct from `/thoughts` (terse substrate doctrine) and
+`/works` (link-out index). STATIC + in-repo, **NOT** substrate-sourced.
+
+- **Source of truth:** `content/guides/<slug>.md` (frontmatter: `title`, `slug`,
+  `date`, `category`, `description`, `lead`, then the markdown body).
+- **Compile:** `npm run compile:guides` (`scripts/compileGuides.mjs`) regenerates
+  the COMMITTED `constants.guides.generated.ts` (`GUIDES: Guide[]`, body embedded as
+  a JSON-safe string so backticks/`${}` survive). **Edit the `.md`, then regenerate
+  and commit** — `tests/guidesBundle.test.ts` fails CI if the committed bundle is
+  stale relative to its `.md` source.
+- **Render:** `components/Markdown.tsx` — a dep-free Markdown renderer (no markdown
+  library, consistent with the lean / externalized-React build). `GuideDetailPage`
+  renders the body; `seoMeta.guideBodyToParagraphs` bakes a clean-prose crawl body
+  (code/tables/figures dropped) for no-JS answer engines.
+- **Routes:** `/guides` (index, a static `ROUTE_META` route) + `/guides/:slug`
+  (per-guide, derived from `GUIDES` via `guidePaths()`/`guideMeta()`); baked by
+  `injectRouteMeta.ts` with `Article` JSON-LD + sitemap entries (mirrors `thoughts`).
+- **Figures:** responsive WebP (1536w + 768w) under `public/assets/guides/<topic>/`,
+  embedded as `![alt](src "caption")`; re-optimize via `npm run optimize:images`.
+- Guides are PUBLIC: teach generalized patterns only, never estate-specific
+  hostnames, IPs, tunnel/account IDs, secret names, or node names.
+
 ## Substrate-Consumer Contract
 
 This repo consumes substrate canonicals via `scripts/compileContent.ts`. The

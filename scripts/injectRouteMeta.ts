@@ -25,6 +25,9 @@ import {
   thoughtMeta,
   thoughtPaths,
   renderThoughtSitemapEntries,
+  guideMeta,
+  guidePaths,
+  renderGuideSitemapEntries,
   renderSeoBlock,
   injectSeoBlock,
   renderBodyBlock,
@@ -70,6 +73,12 @@ async function main() {
     const slug = tPath.split('/').pop();
     routes.push({ path: tPath, meta: thoughtMeta(slug) });
   }
+  // Dynamic per-guide routes, derived from the committed GUIDES corpus. Each bakes
+  // the full guide prose (figures/code dropped) and an Article JSON-LD node.
+  for (const gPath of guidePaths()) {
+    const slug = gPath.split('/').pop();
+    routes.push({ path: gPath, meta: guideMeta(slug) });
+  }
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -112,10 +121,12 @@ async function main() {
     throw new Error('build/sitemap.xml is missing </urlset> — cannot inject thought entries.');
   }
   const thoughtEntries = renderThoughtSitemapEntries();
-  if (thoughtEntries) {
+  const guideEntries = renderGuideSitemapEntries();
+  const extraEntries = [thoughtEntries, guideEntries].filter(Boolean).join('\n');
+  if (extraEntries) {
     await fs.writeFile(
       sitemapPath,
-      sitemapXml.replace(closeTag, `${thoughtEntries}\n${closeTag}`),
+      sitemapXml.replace(closeTag, `${extraEntries}\n${closeTag}`),
       'utf8',
     );
   }
@@ -123,8 +134,8 @@ async function main() {
   console.log(
     `[injectRouteMeta] wrote ${written} per-route static HTML files ` +
       `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ` +
-      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts) ` +
-      `+ injected ${thoughtPaths().length} thought entries into build/sitemap.xml`,
+      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts + ${guidePaths().length} guides) ` +
+      `+ injected ${thoughtPaths().length} thought + ${guidePaths().length} guide entries into build/sitemap.xml`,
   );
 }
 
