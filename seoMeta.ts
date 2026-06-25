@@ -240,6 +240,19 @@ export function caseStudyPaths(): string[] {
   return CASE_STUDIES.filter((cs) => cs.slug).map((cs) => `/case-studies/${cs.slug}`);
 }
 
+// The OSS microsites served under /works/<slug>/ (the hub Vercel-rewrites those paths
+// to each microsite's own deployment). They are real, indexable pages on this origin —
+// derived from WORKS cards whose link is a same-origin /works/ path — so the committed
+// sitemap must list them. They are deliberately NOT in ROUTE_META: injectRouteMeta must
+// not emit a physical build/works/<slug>/index.html, which Vercel filesystem precedence
+// would serve INSTEAD of the rewrite proxy (shadowing the cutover).
+export function worksMicrositePaths(): string[] {
+  const prefix = `${SITE_ORIGIN}/works/`;
+  return WORKS.map((w) => w.link)
+    .filter((l): l is string => !!l && l.startsWith(prefix))
+    .map((l) => new URL(l).pathname);
+}
+
 // Split a substrate essay body into crawlable paragraphs. The body is stored
 // as a single newline-escaped string (compileContent's generateOutput) with
 // blank lines separating paragraphs; split on one-or-more blank lines and drop

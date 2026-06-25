@@ -7,6 +7,7 @@ import {
   SITE_ORIGIN,
   ROUTE_META,
   caseStudyPaths,
+  worksMicrositePaths,
   thoughtPaths,
   renderThoughtSitemapEntries,
 } from '../seoMeta';
@@ -33,6 +34,7 @@ test('committed public/sitemap.xml exactly covers ROUTE_META ∪ case-study path
   const expected = new Set([
     ...Object.keys(ROUTE_META).map(toLoc),
     ...caseStudyPaths().map(toLoc),
+    ...worksMicrositePaths().map(toLoc),
   ]);
   const missing = [...expected].filter((u) => !locs.has(u));
   const extra = [...locs].filter((u) => !expected.has(u));
