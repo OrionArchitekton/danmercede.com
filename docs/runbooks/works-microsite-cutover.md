@@ -30,11 +30,19 @@ Authentication for that project's production, or use a different public target.
 ## The three merge steps (ORDER IS LOAD-BEARING — gap-free only in this order)
 
 ### Step 1 — Hub rewrite PR (this repo)
-`vercel.json`: prepend, **before** the SPA catch-all `/(.*) → /index.html`:
+`vercel.json`: prepend **TWO** rewrites, **before** the SPA catch-all `/(.*) → /index.html`:
 ```json
+{ "source": "/works/<slug>/",       "destination": "https://<repo>-site.vercel.app/" },
 { "source": "/works/<slug>/:path*", "destination": "https://<repo>-site.vercel.app/:path*" }
 ```
 plus a no-slash normalizer redirect `/works/<slug>` → `/works/<slug>/`.
+
+**CRITICAL — the bare-path rewrite is REQUIRED (Vercel `:path*` gap).** `/works/<slug>/:path*` does
+NOT match the bare `/works/<slug>/` (empty `:path*` after the trailing slash) — that request falls
+through to the SPA catch-all and serves the HUB homepage. The explicit `/works/<slug>/` rewrite (no
+`:path*`) handles the index; the `:path*` rule handles every sub-path/asset. (Live-verified: with
+only the `:path*` rule, sub-paths like `/works/<slug>/index.html` and `/og-card.png` proxy correctly
+but `/works/<slug>/` returns the hub homepage.)
 
 **CRITICAL — the rewrite STRIPS the `/works/<slug>` prefix** (target is `.vercel.app/:path*`, NOT
 `.vercel.app/works/<slug>/:path*`). Vite's `base` only prefixes the *reference URLs* in the built

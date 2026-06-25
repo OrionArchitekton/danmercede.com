@@ -72,6 +72,10 @@
   ],
   "rewrites": [
     {
+      "source": "/works/mcp-context-budget/",
+      "destination": "https://mcp-context-budget-site.vercel.app/"
+    },
+    {
       "source": "/works/mcp-context-budget/:path*",
       "destination": "https://mcp-context-budget-site.vercel.app/:path*"
     },
