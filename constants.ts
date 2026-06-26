@@ -382,6 +382,17 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'agent-demo-video',
+    description:
+      'A headless pipeline that turns a Markdown DEMO_SCRIPT and a running web app into a finished, narrated, captioned MP4. Audio-first: narration is synthesised first and its per-character timing paces both the screen recording and the captions, so audio, video, and captions stay in sync with zero drift. Runs keyless with FAKE_TTS to iterate before spending any API quota.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/agent-demo-video',
+    link: 'https://www.danmercede.com/works/agent-demo-video/',
+    license: 'MIT',
+    date: '2026-06-26',
+    slug: 'agent-demo-video',
+  },
+  {
     title: 'orion-skills',
     description:
       'An open collection of first-party Claude Code skills — structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs — extracted from production operator workflows.',
