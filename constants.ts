@@ -155,7 +155,7 @@ export const READINESS_SCAN = {
     "Enforcement checklist",
     "30/60/90 hardening roadmap",
   ],
-  href: "https://www.orionintelligenceagency.com/readiness-scan",
+  href: "https://www.orionintelligenceagency.com/readiness-scan?utm_source=danmercede.com&utm_medium=hub_cta&utm_campaign=readiness_scan",
 };
 
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
