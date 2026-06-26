@@ -85,7 +85,7 @@ Content highlights:
 
 - **Thoughts** — a dated writing feed (posts in `constants.ts`).
 - **Ecosystem** — ventures Dan is involved in, including links out to Orion Intelligence Agency and other sites.
-- **Proof** — downloadable PDFs, DOCX, and PPTX (executive deck, speaking one-sheet, case studies, blueprints). Some are gated; some are open. Source files live in `public/assets/`.
+- **Proof** — openly downloadable PDFs, DOCX, and PPTX (executive deck, speaking one-sheet, case studies). All proof assets are open; there is no capture gate. Source files live in `public/assets/`.
 - **Calls to action** — e.g. "Book a Runtime Governance Readiness Scan," linking to orionintelligenceagency.com.
 
 This is a marketing, portfolio, and lead-generation site. Contact runs through a static `mailto:` link; there is no form handler or backend.
