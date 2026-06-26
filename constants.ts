@@ -259,21 +259,6 @@ export function getImageMeta(srcOrFilename: string): ImageMeta {
 export const RESOURCES: Resource[] = [
   // L1 — Authority Gate
   {
-    title: "Governance Readiness Evidence Pack",
-    description: "47 audit-ready evidence items mapping to deterministic enforcement points. Proves authority verification, attestation coverage, behavioral containment, and substrate isolation — structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.",
-    category: "lead-magnet",
-    fileName: "Governance_Readiness_Evidence_Pack.docx",
-    filePath: "/assets/Governance_Readiness_Evidence_Pack.docx",
-    enforcementLayers: [1, 2, 3, 4],
-    enforcementLayer: 1,
-    riskDomain: "Regulatory exposure — SOC 2 AI / ISO 42001 / EU AI Act control failure from ungoverned execution paths",
-    gated: true,
-    enforcementPoint: "Authority verification before state mutation",
-    artifactType: "evidence-pack",
-    fileType: "docx",
-    fileSize: "29 KB",
-  },
-  {
     title: "What We Deliver",
     description: "Engagement deliverable map linking control-plane gap analysis, failure-mode heatmaps, and evidence checklists to enforcement layers. Risk-bounded pricing tiers anchored to audit defensibility outcomes.",
     category: "sales-collateral",
@@ -289,21 +274,6 @@ export const RESOURCES: Resource[] = [
     fileSize: "4 KB",
   },
   // L2 — Immutable Receipts
-  {
-    title: "Control-Plane Blueprint",
-    description: "Component-level architecture of the four-layer enforcement cascade. Details intent boundary evaluation, cryptographic attestation pipelines, drift detection thresholds, and substrate isolation mechanics. The architectural proof behind immutable receipts.",
-    category: "lead-magnet",
-    fileName: "Control_Plane_Blueprint.docx",
-    filePath: "/assets/Control_Plane_Blueprint.docx",
-    enforcementLayers: [1, 2, 3, 4],
-    enforcementLayer: 2,
-    riskDomain: "Irreversible state change — SOC 2 CC6.1 / ISO 42001 A.6.2 mutations without cryptographic attestation",
-    gated: true,
-    enforcementPoint: "Cryptographic attestation before mutation commit",
-    artifactType: "blueprint",
-    fileType: "docx",
-    fileSize: "23 KB",
-  },
   {
     title: "Executive Deck",
     description: "10-slide enforcement stack walkthrough with gate pipeline flow, ROI proof metrics, and engagement model. Maps cost per successful task, escalation rate reduction, and cycle-time compression to the four-layer cascade.",
