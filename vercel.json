@@ -83,6 +83,11 @@
       "source": "/works/schemafit",
       "destination": "/works/schemafit/",
       "permanent": true
+    },
+    {
+      "source": "/works/agent-demo-video",
+      "destination": "/works/agent-demo-video/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -117,6 +122,14 @@
     {
       "source": "/works/schemafit/:path*",
       "destination": "https://schemafit-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/agent-demo-video/",
+      "destination": "https://agent-demo-video-site.vercel.app/"
+    },
+    {
+      "source": "/works/agent-demo-video/:path*",
+      "destination": "https://agent-demo-video-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",
