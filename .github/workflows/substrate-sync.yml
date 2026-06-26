@@ -82,6 +82,11 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
+          # Use a fine-grained PAT (NOT the default GITHUB_TOKEN) so the opened PR
+          # triggers the required Actions checks (build / gitleaks /
+          # required-checks-fail-closed). A GITHUB_TOKEN-opened PR leaves those in
+          # `action_required` and blocks the merge until a manual close+reopen.
+          token: ${{ secrets.SUBSTRATE_SYNC_PR_TOKEN }}
           branch: codex/substrate-sync
           commit-message: 'sync: refresh constants.generated.ts from substrate'
           title: 'sync: refresh constants.generated.ts from substrate'
