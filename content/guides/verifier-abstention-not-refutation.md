@@ -1,10 +1,10 @@
 ---
-title: "When Your Verifier Goes Quiet: Why a Crashed Reviewer Is Not a Refutation"
+title: "Self-Correcting Agents: Learning the Loop the Hard Way"
 slug: verifier-abstention-not-refutation
 date: 2026-06-27
 category: Agent Engineering
-description: "The most dangerous failure mode in self-checking agent loops isn't a wrong answer — it's a verifier that crashed and got read as a 'no.' Here's how to design a gate that tells 'refuted by evidence' apart from 'never actually ran,' and how to recover a run that already lied to you."
-lead: "A self-correcting agent loop is only as honest as its verifier. The moment a crashed, rate-limited, or timed-out check gets counted as a refutation, your loop will confidently throw away true results — and tell you it was being rigorous."
+description: "In self-correcting agent loops, a crashed verifier gets read as a refutation — and the loop quietly throws away true results. The three-state gate design and recovery that prevent it."
+lead: "A crashed verifier isn't a refutation. The hard-won lessons of building self-correcting agent loops that fail honestly — and recover."
 ---
 
 
