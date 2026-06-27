@@ -106,9 +106,9 @@ Three rules implement it.
 for each claim:
     valid   = votes that actually ran and parsed
     refuted = valid votes that say "refuted"
-    if len(valid) <  QUORUM:           -> ABSTAINED   (not adjudicated)
-    elif refuted  >= REFUTE_THRESHOLD: -> REFUTED     (evidence says no)
-    else:                              -> CONFIRMED    (keep)
+    if len(valid) < QUORUM:                -> ABSTAINED   (not adjudicated)
+    elif len(refuted) >= REFUTE_THRESHOLD: -> REFUTED     (evidence says no)
+    else:                                  -> CONFIRMED    (keep)
 ```
 
 *For the 3-vote panel from §2, `QUORUM = 2` and `REFUTE_THRESHOLD = 2` — the very same thresholds as the broken gate. Nothing about the numbers changed; only the **order** of the checks and the **keying on valid-vote count** did.*
