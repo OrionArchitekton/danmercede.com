@@ -412,8 +412,11 @@ test('generateOutput: emits valid TS with header + import + array', () => {
   ];
   const out = generateOutput(entries);
   assert.match(out, /GENERATED FILE/);
-  assert.match(out, /import type \{ Thought \} from '\.\/types';/);
+  assert.match(out, /import type \{ Thought, Diagram \} from '\.\/types';/);
   assert.match(out, /export const THOUGHTS: Thought\[\] = \[/);
+  // The bundle now folds a DIAGRAMS array into the SAME verified file (empty
+  // when no diagrams passed) — substrate-verify covers it, no separate file.
+  assert.match(out, /export const DIAGRAMS: Diagram\[\] = \[/);
   assert.match(out, /title: "Title 1"/);
   assert.match(out, /preview: "Preview 1"/);
   assert.match(out, /date: "2026-05-20"/);

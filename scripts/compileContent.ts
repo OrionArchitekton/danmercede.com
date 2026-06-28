@@ -492,6 +492,7 @@ export function mapSubstrateToDiagram(
 
 export interface ReadResult {
   entries: ThoughtEntry[];
+  diagrams: DiagramEntry[];
   diagnostics: SubstrateDiagnostic[];
 }
 
@@ -509,7 +510,7 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
   const canonicalDir = path.join(substratePath, 'publishing', 'canonical');
   if (!fs.existsSync(canonicalDir)) {
     console.log(`   ℹ️  substrate canonical dir not found at ${canonicalDir}; skipping`);
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
   let stat;
   try {
@@ -520,11 +521,11 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     // target canonicals are intact, so we must not proceed to write a possibly
     // truncated bundle.
     diagnostics.push({ file: canonicalDir, severity: 'fatal', reason: `stat failed: ${String(e)}` });
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
   if (!stat.isDirectory()) {
     console.log(`   ℹ️  substrate canonical path is not a directory: ${canonicalDir}; skipping`);
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
 
   let files: string[];
@@ -533,10 +534,11 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
   } catch (e) {
     console.log(`   ⚠️  substrate canonical dir unreadable: ${canonicalDir} (${e})`);
     diagnostics.push({ file: canonicalDir, severity: 'fatal', reason: `readdir failed: ${String(e)}` });
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
 
   const entries: ThoughtEntry[] = [];
+  const diagrams: DiagramEntry[] = [];
   for (const file of files) {
     const filePath = path.join(canonicalDir, file);
     let raw: string;
@@ -563,11 +565,20 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     // danmercede.online's `const body = parsed.content.trim()` (R1), then de-link
     // substrate `[[wiki-links]]` so they never bake as literal tokens on .com.
     const body = delinkWikiLinks(parsed.content.trim());
-    const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, body, file, diagnostics);
-    if (entry) entries.push(entry);
+    const data = parsed.data as Record<string, unknown>;
+    // Dispatch by type: a diagram canonical maps to a DiagramEntry (figure +
+    // alt/caption/asset_path); everything else goes through the essay mapper
+    // (which skips unaccepted types). A single canonical is one OR the other.
+    if (data['type'] === DIAGRAM_TYPE) {
+      const diagram = mapSubstrateToDiagram(data, body, file, diagnostics);
+      if (diagram) diagrams.push(diagram);
+    } else {
+      const entry = mapSubstrateToEntry(data, body, file, diagnostics);
+      if (entry) entries.push(entry);
+    }
   }
 
-  return { entries, diagnostics };
+  return { entries, diagrams, diagnostics };
 }
 
 export function readSubstrateThoughts(substratePath: string): ThoughtEntry[] {
@@ -609,7 +620,16 @@ export function sortByIsoDateDesc(entries: ThoughtEntry[]): ThoughtEntry[] {
   });
 }
 
-export function generateOutput(entries: ThoughtEntry[]): string {
+// Derive the .com public image src for a diagram from its slug + the substrate
+// asset extension, e.g. publishing/assets/<slug>/diagram.jpg → /assets/diagrams/<slug>.jpg.
+// The binary itself is copied to public/assets/diagrams/<slug>.<ext> by the
+// asset-copy step; this is the served path baked into the page.
+export function diagramPublicSrc(entry: DiagramEntry): string {
+  const ext = path.extname(entry.assetPath) || '.png';
+  return `/assets/diagrams/${entry.slug}${ext}`;
+}
+
+export function generateOutput(entries: ThoughtEntry[], diagrams: DiagramEntry[] = []): string {
   const lines: string[] = [];
   lines.push('// GENERATED FILE — do not edit by hand.');
   lines.push('// Source: dan-mercede-substrate/publishing/canonical/.');
@@ -617,7 +637,7 @@ export function generateOutput(entries: ThoughtEntry[]): string {
   lines.push(`// with surface_targets including "${THIS_SURFACE}" are present.`);
   lines.push('// See AGENTS.md for the substrate-consumer contract.');
   lines.push('');
-  lines.push("import type { Thought } from './types';");
+  lines.push("import type { Thought, Diagram } from './types';");
   lines.push('');
   lines.push('export const THOUGHTS: Thought[] = [');
   for (const e of entries) {
@@ -632,6 +652,22 @@ export function generateOutput(entries: ThoughtEntry[]): string {
     // (seoMeta thoughtMeta) split on the blank-line boundary to rebuild
     // paragraphs for the baked body block.
     lines.push(`    body: ${JSON.stringify(e.body)},`);
+    lines.push('  },');
+  }
+  lines.push('];');
+  lines.push('');
+  // DIAGRAMS folds into the SAME (trusted-lane-verified) bundle as THOUGHTS — a
+  // separate generated file would be unverified by substrate-verify (injection
+  // hole). Always emitted (possibly empty) so consumers can import it.
+  lines.push('export const DIAGRAMS: Diagram[] = [');
+  for (const d of diagrams) {
+    lines.push('  {');
+    lines.push(`    title: ${JSON.stringify(d.title)},`);
+    lines.push(`    slug: ${JSON.stringify(d.slug)},`);
+    lines.push(`    date: ${JSON.stringify(d.date)},`);
+    lines.push(`    alt: ${JSON.stringify(d.alt)},`);
+    lines.push(`    caption: ${JSON.stringify(d.caption)},`);
+    lines.push(`    src: ${JSON.stringify(diagramPublicSrc(d))},`);
     lines.push('  },');
   }
   lines.push('];');

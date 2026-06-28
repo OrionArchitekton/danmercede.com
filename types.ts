@@ -48,6 +48,15 @@ export interface Guide {
   body: string;          // full markdown body (rendered by the in-house Markdown renderer)
 }
 
+export interface Diagram {
+  title: string;
+  slug: string;          // /diagrams/<slug> routing + sitemap parity
+  date: string;          // YYYY-MM-DD (publish date; drives sitemap lastmod)
+  alt: string;           // substrate alt_text — baked <img alt> + ImageObject.description + crawl body
+  caption: string;       // substrate caption — visible <figcaption> + meta description
+  src: string;           // public asset on .com: /assets/diagrams/<slug>.<ext>
+}
+
 export interface Work {
   title: string;
   description: string;
