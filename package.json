@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "optimize:images": "node scripts/optimizeImages.mjs public",
     "compile:guides": "node scripts/compileGuides.mjs",
-    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts tests/worksJsonLd.test.ts tests/contentBoundary.test.ts tests/worksHub.test.ts tests/guidesBundle.test.ts tests/markdown.test.ts tests/diagramCompile.test.ts tests/diagramSeo.test.ts"
+    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts tests/worksJsonLd.test.ts tests/contentBoundary.test.ts tests/worksHub.test.ts tests/guidesBundle.test.ts tests/markdown.test.ts tests/diagramCompile.test.ts tests/diagramSeo.test.ts tests/diagramInject.test.ts"
   },
   "dependencies": {
     "d3": "^7.9.0",
