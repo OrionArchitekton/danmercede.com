@@ -303,12 +303,22 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
   return { isoDate: parsed.toISOString(), displayDate: PT_DATE_FORMATTER.format(parsed) };
 }
 
+// A slug becomes BOTH a filesystem path segment (diagrams: public/assets/diagrams/<slug>.<ext>)
+// AND an UNESCAPED sitemap <loc> token (thoughts/guides/diagrams: <loc>.../<family>/<slug></loc>),
+// so it must be charset-safe: lowercase kebab only. Gating it at the mapper (ported from
+// danmercede.online's isSafeSlug) closes a write-side path traversal (a "../.." slug escaping
+// public/) and an XML-injection vector in the <loc>, on every content family that maps a slug.
+const SAFE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export function isSafeSlug(slug: unknown): slug is string {
+  return typeof slug === 'string' && SAFE_SLUG_PATTERN.test(slug);
+}
+
 /**
  * Map one substrate canonical frontmatter blob to a `ThoughtEntry`, or null if
  * it must be skipped. Skips are classified into:
  *   - 'skip' (intentional filter: wrong surface/status/type)
  *   - 'fatal' (matched target but is structurally corrupt: missing required
- *     field, invalid date)
+ *     field, invalid date, unsafe slug)
  *
  * The caller (`readSubstrateThoughts`) collects diagnostics so `--strict` can
  * fail-loud on 'fatal' diagnostics while still permitting normal 'skip's.
@@ -367,6 +377,14 @@ export function mapSubstrateToEntry(
   if (missing.length > 0) {
     console.log(`   ⚠️  substrate canonical skipped (missing required: ${missing.join(', ')}): ${filename}`);
     pushDiag('fatal', `missing required fields: ${missing.join(', ')}`);
+    return null;
+  }
+
+  // The slug is an unescaped sitemap <loc> token — reject metachar/traversal slugs
+  // as FATAL corruption (it matched target, so it was supposed to publish).
+  if (!isSafeSlug(slug)) {
+    console.log(`   ⚠️  substrate canonical skipped (unsafe slug "${String(slug)}"): ${filename}`);
+    pushDiag('fatal', `unsafe slug "${String(slug)}" (must match ${SAFE_SLUG_PATTERN})`);
     return null;
   }
 
@@ -470,6 +488,15 @@ export function mapSubstrateToDiagram(
   if (missing.length > 0) {
     console.log(`   ⚠️  substrate diagram skipped (missing required: ${missing.join(', ')}): ${filename}`);
     pushDiag('fatal', `missing required fields: ${missing.join(', ')}`);
+    return null;
+  }
+
+  // The slug becomes the copied asset's destination filename AND an unescaped sitemap
+  // <loc> token — reject metachar/traversal slugs as FATAL corruption (closes the
+  // write-side path traversal: a "../.." slug would escape public/assets/diagrams/).
+  if (!isSafeSlug(slug)) {
+    console.log(`   ⚠️  substrate diagram skipped (unsafe slug "${String(slug)}"): ${filename}`);
+    pushDiag('fatal', `unsafe slug "${String(slug)}" (must match ${SAFE_SLUG_PATTERN})`);
     return null;
   }
 
@@ -656,25 +683,33 @@ export function copyDiagramAsset(
   slug: string,
   substratePath: string | undefined | null,
   projectRoot: string,
-  file: string
+  file: string,
+  diagnostics?: SubstrateDiagnostic[]
 ): string | null {
-  if (typeof assetPath !== 'string' || !assetPath.trim()) {
-    console.log(`   ⚠️  substrate diagram skipped (missing asset_path): ${file}`);
+  // A diagram reaching copyDiagramAsset was already ADMITTED by mapSubstrateToDiagram —
+  // it WAS supposed to publish. Dropping it here (unsafe/missing/uncopyable binary) is
+  // corruption, not an intentional skip: raise a FATAL so --strict refuses to write a
+  // partial (e.g. 20-of-21) bundle. The diagnostics array is optional so direct test
+  // callers can probe the null-return without a diagnostics sink.
+  const drop = (reason: string): null => {
+    console.log(`   ⚠️  substrate diagram skipped (${reason}): ${file}`);
+    if (diagnostics) diagnostics.push({ file, severity: 'fatal', reason });
     return null;
+  };
+
+  if (typeof assetPath !== 'string' || !assetPath.trim()) {
+    return drop('missing asset_path');
   }
   if (!substratePath) {
-    console.log(`   ⚠️  substrate diagram skipped (no substrate root for asset copy): ${file}`);
-    return null;
+    return drop('no substrate root for asset copy');
   }
   if (!isSafeRelativePath(assetPath)) {
-    console.log(`   ⚠️  substrate diagram skipped (unsafe asset_path "${assetPath}"): ${file}`);
-    return null;
+    return drop(`unsafe asset_path "${assetPath}"`);
   }
   const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
   const ext = path.extname(safeAssetPath).toLowerCase();
   if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
-    console.log(`   ⚠️  substrate diagram skipped (unsupported asset extension "${ext}"): ${file}`);
-    return null;
+    return drop(`unsupported asset extension "${ext}"`);
   }
   const substrateRoot = path.resolve(substratePath);
   const source = path.resolve(substrateRoot, safeAssetPath);
@@ -682,22 +717,27 @@ export function copyDiagramAsset(
   // stays within the substrate root (defends against normalize edge cases).
   const relativeSource = path.relative(substrateRoot, source);
   if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
-    console.log(`   ⚠️  substrate diagram skipped (asset_path escapes substrate root): ${file}`);
-    return null;
+    return drop('asset_path escapes substrate root');
+  }
+  const publicDir = path.join(projectRoot, 'public', 'assets', 'diagrams');
+  const publicName = `${slug}${ext}`;
+  // Defense-in-depth (the slug is gated upstream by isSafeSlug, but never trust one
+  // gate for a filesystem write): confirm <slug><ext> is a single in-dir filename that
+  // cannot climb out of public/assets/diagrams/ before writing anything.
+  const dest = path.join(publicDir, publicName);
+  const relativeDest = path.relative(publicDir, dest);
+  if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
+    return drop(`destination "${publicName}" escapes public/assets/diagrams/`);
   }
   try {
     if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
-      console.log(`   ⚠️  substrate diagram skipped (asset missing at ${safeAssetPath}): ${file}`);
-      return null;
+      return drop(`asset missing at ${safeAssetPath}`);
     }
-    const publicDir = path.join(projectRoot, 'public', 'assets', 'diagrams');
     fs.mkdirSync(publicDir, { recursive: true });
-    const publicName = `${slug}${ext}`;
-    fs.copyFileSync(source, path.join(publicDir, publicName));
+    fs.copyFileSync(source, dest);
     return `/assets/diagrams/${publicName}`;
   } catch (e) {
-    console.log(`   ⚠️  substrate diagram skipped (failed to copy asset): ${file} (${e})`);
-    return null;
+    return drop(`failed to copy asset (${e})`);
   }
 }
 
@@ -880,7 +920,7 @@ export function main(): void {
     // asset is missing / unsafe / uncopyable, so the bundle never carries a
     // dangling image src (mirrors danmercede.online's copy-then-keep behavior).
     diagrams = sortByIsoDateDesc(dedupBySlug(result.diagrams, result.diagnostics)).filter(
-      (d) => copyDiagramAsset(d.assetPath, d.slug, substratePath, root, d.slug) !== null,
+      (d) => copyDiagramAsset(d.assetPath, d.slug, substratePath, root, d.slug, result.diagnostics) !== null,
     );
     diagnostics = result.diagnostics;
   }

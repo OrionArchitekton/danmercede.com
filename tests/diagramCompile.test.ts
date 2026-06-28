@@ -20,6 +20,7 @@ import {
   isSafeRelativePath,
   copyDiagramAsset,
   type DiagramEntry,
+  type SubstrateDiagnostic,
 } from '../scripts/compileContent.js';
 import { DIAGRAMS } from '../constants.js';
 
@@ -85,6 +86,38 @@ test('mapSubstrateToDiagram admits a danmercede.com-targeted type:diagram canoni
 test('mapSubstrateToDiagram skips a diagram NOT targeting danmercede.com', () => {
   const onlineOnly = { ...diagramData, surface_targets: ['danmercede.online'] };
   assert.equal(mapSubstrateToDiagram(onlineOnly, '', 'fixture.md'), null);
+});
+
+// Review BLOCKING (write-side path traversal + XML <loc> injection): the slug becomes
+// BOTH the copied asset's destination filename (public/assets/diagrams/<slug>.<ext>) and
+// an UNESCAPED sitemap <loc> token. A slug like "../../evil-in-public" with a valid
+// in-tree asset_path would write the binary OUTSIDE public/assets/diagrams/. An admitted
+// (surface+status+type+fields-ok) diagram with an unsafe slug is FATAL corruption — it
+// WAS supposed to publish — so --strict must refuse a partial bundle.
+test('mapSubstrateToDiagram rejects a path-traversal slug as FATAL', () => {
+  const diagnostics: SubstrateDiagnostic[] = [];
+  const hostile = { ...diagramData, slug: '../../evil-in-public' };
+  const entry = mapSubstrateToDiagram(hostile, '', 'fixture.md', diagnostics);
+  assert.equal(entry, null, 'a traversal slug must be rejected');
+  assert.ok(
+    diagnostics.some((d) => d.severity === 'fatal' && /slug/i.test(d.reason)),
+    'must push a FATAL slug diagnostic so --strict refuses a partial bundle',
+  );
+});
+
+test('mapSubstrateToDiagram rejects slugs with unsafe characters; admits a clean kebab slug', () => {
+  for (const bad of ['a/b', 'a..b', 'a b', 'Abc', 'a_b', '-leading', 'trailing-', '/abs']) {
+    assert.equal(
+      mapSubstrateToDiagram({ ...diagramData, slug: bad }, '', 'f.md'),
+      null,
+      `unsafe slug "${bad}" must be rejected`,
+    );
+  }
+  // The real date-prefixed kebab slug must STILL be admitted (no regression).
+  assert.ok(
+    mapSubstrateToDiagram(diagramData, '', 'f.md'),
+    'a clean date-prefixed kebab slug must still be admitted',
+  );
 });
 
 // S1b: the reader must collect diagram canonicals into a `diagrams[]` alongside
@@ -189,6 +222,51 @@ test('copyDiagramAsset copies an in-tree asset and refuses traversal', () => {
 
   // Traversal must be refused (null), nothing copied.
   assert.equal(copyDiagramAsset('../../../etc/passwd', slug, substrate, projectRoot, 'x.md'), null);
+});
+
+// Review WARNING (fail-open / auditability, all 3 reviewers): an ADMITTED diagram that
+// reaches copyDiagramAsset WAS supposed to publish. If its binary is missing / unsupported-
+// ext / uncopyable, main() drops it via .filter(... !== null). Without a FATAL diagnostic
+// that drop is invisible to --strict, so a 20-of-21 partial bundle ships green. copyDiagramAsset
+// must push a fatal (when given the diagnostics array) so --strict fails loud at the regen.
+test('copyDiagramAsset pushes a FATAL diagnostic when an admitted diagram binary is missing', () => {
+  const substrate = mkTempDir('sub-missing-');
+  const projectRoot = mkTempDir('proj-missing-');
+  const slug = '2026-03-24-monitoring-vs-enforcement-architecture';
+  const diagnostics: SubstrateDiagnostic[] = [];
+  // asset_path is safe + allowlisted ext, but the binary does not exist on disk.
+  const result = copyDiagramAsset(
+    `publishing/assets/${slug}/diagram.jpg`,
+    slug,
+    substrate,
+    projectRoot,
+    'x.md',
+    diagnostics,
+  );
+  assert.equal(result, null, 'a missing binary yields null (the diagram is dropped)');
+  assert.ok(
+    diagnostics.some((d) => d.severity === 'fatal'),
+    'dropping an ADMITTED diagram must raise a FATAL (no silent partial-strip under --strict)',
+  );
+});
+
+// Review BLOCKING defense-in-depth: even if the mapper slug gate is bypassed, the COPY
+// layer must not let a traversal slug write outside public/assets/diagrams/.
+test('copyDiagramAsset defense-in-depth: a traversal slug cannot escape public/assets/diagrams/', () => {
+  const substrate = mkTempDir('sub-dest-');
+  const projectRoot = mkTempDir('proj-dest-');
+  const slug = '../../evil-in-public';
+  const assetRel = 'publishing/assets/x/diagram.svg';
+  const srcPath = path.join(substrate, assetRel);
+  fs.mkdirSync(path.dirname(srcPath), { recursive: true });
+  fs.writeFileSync(srcPath, '<svg/>');
+  const result = copyDiagramAsset(assetRel, slug, substrate, projectRoot, 'x.md');
+  assert.equal(result, null, 'a traversal slug must be refused at the copy layer too');
+  assert.equal(
+    fs.existsSync(path.join(projectRoot, 'public', 'evil-in-public.svg')),
+    false,
+    'nothing may be written outside public/assets/diagrams/',
+  );
 });
 
 // S1b: constants.ts must export DIAGRAMS as an array even when the committed
