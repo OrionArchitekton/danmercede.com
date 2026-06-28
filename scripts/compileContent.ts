@@ -388,6 +388,108 @@ export function mapSubstrateToEntry(
   };
 }
 
+// Substrate `type: "diagram"` canonicals (PR #14) are admitted to danmercede.com
+// as a distinct content type. Unlike a Thought (prose body), a diagram carries
+// alt_text/caption + an asset_path to the rendered image; the .com page is a
+// figure with an ImageObject JSON-LD node (S1c). Decision #1: admission is by
+// `surface_targets` including danmercede.com (no allowlist — the substrate
+// canonical declares the .com target directly).
+const DIAGRAM_TYPE = 'diagram';
+
+export interface DiagramEntry {
+  title: string;
+  slug: string;
+  // PT-local display day (YYYY-MM-DD), same handling as ThoughtEntry.date.
+  date: string;
+  isoDate: string;
+  // From substrate `alt_text` — the crawlable image description (also the baked
+  // <img alt> and the ImageObject.description).
+  alt: string;
+  // From substrate `caption` — the visible <figcaption> + meta description.
+  caption: string;
+  // From substrate `asset_path` (substrate-root-relative), e.g.
+  // publishing/assets/<slug>/diagram.jpg. The image binary is copied into the
+  // hub's public/assets/diagrams/ at compile time (S1b); the page src derives
+  // from the slug + extension.
+  assetPath: string;
+}
+
+/**
+ * Map one substrate `type: diagram` canonical to a DiagramEntry, or null to skip.
+ * Mirrors mapSubstrateToEntry's gate order (surface → status → type → required
+ * fields → date) and its skip/fatal diagnostic model: a canonical that matches
+ * surface+status+type but is missing alt_text/caption/asset_path or has an
+ * invalid date is FATAL (it WAS supposed to publish), so --strict refuses to
+ * write a partial bundle. Required fields beyond the essay set: alt_text,
+ * caption, asset_path.
+ */
+export function mapSubstrateToDiagram(
+  data: Record<string, unknown>,
+  body: string,
+  filename: string,
+  diagnostics?: SubstrateDiagnostic[]
+): DiagramEntry | null {
+  const pushDiag = (severity: SubstrateDiagnostic['severity'], reason: string): void => {
+    if (diagnostics) diagnostics.push({ file: filename, severity, reason });
+  };
+
+  const surfaceTargets = data['surface_targets'];
+  const surfaceTargeted =
+    Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
+  if (!surfaceTargeted) {
+    console.log(`   ℹ️  substrate diagram skipped (surface_targets): ${filename}`);
+    pushDiag('skip', 'surface_targets does not include danmercede.com');
+    return null;
+  }
+
+  if (data['status'] !== 'canonical') {
+    pushDiag('skip', `status="${String(data['status'])}"`);
+    return null;
+  }
+
+  if (data['type'] !== DIAGRAM_TYPE) {
+    pushDiag('skip', `type "${String(data['type'])}" is not diagram`);
+    return null;
+  }
+
+  // Matched surface/status/type — it WAS supposed to publish. Any further
+  // failure is fatal corruption under --strict.
+  const slug = data['slug'];
+  const title = data['title'];
+  const dateRaw = data['date'];
+  const alt = data['alt_text'];
+  const caption = data['caption'];
+  const assetPath = data['asset_path'];
+  const missing: string[] = [];
+  if (typeof slug !== 'string' || !slug.trim()) missing.push('slug');
+  if (typeof title !== 'string' || !title.trim()) missing.push('title');
+  if (!(dateRaw instanceof Date) && (typeof dateRaw !== 'string' || !dateRaw.trim())) missing.push('date');
+  if (typeof alt !== 'string' || !alt.trim()) missing.push('alt_text');
+  if (typeof caption !== 'string' || !caption.trim()) missing.push('caption');
+  if (typeof assetPath !== 'string' || !assetPath.trim()) missing.push('asset_path');
+  if (missing.length > 0) {
+    console.log(`   ⚠️  substrate diagram skipped (missing required: ${missing.join(', ')}): ${filename}`);
+    pushDiag('fatal', `missing required fields: ${missing.join(', ')}`);
+    return null;
+  }
+
+  const dateResult = validateDate(dateRaw);
+  if (!dateResult) {
+    pushDiag('fatal', `invalid date "${String(dateRaw)}"`);
+    return null;
+  }
+
+  return {
+    title: title as string,
+    slug: slug as string,
+    date: dateResult.displayDate,
+    isoDate: dateResult.isoDate,
+    alt: alt as string,
+    caption: caption as string,
+    assetPath: assetPath as string,
+  };
+}
+
 export interface ReadResult {
   entries: ThoughtEntry[];
   diagnostics: SubstrateDiagnostic[];
