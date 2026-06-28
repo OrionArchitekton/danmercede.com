@@ -16,8 +16,22 @@ import {
   mapSubstrateToDiagram,
   readSubstrateWithDiagnostics,
   generateOutput,
+  decideOutput,
+  isSafeRelativePath,
+  copyDiagramAsset,
   type DiagramEntry,
 } from '../scripts/compileContent.js';
+import { DIAGRAMS } from '../constants.js';
+
+const sampleDiagram: DiagramEntry = {
+  title: 'Monitoring vs Enforcement Architecture',
+  slug: '2026-03-24-monitoring-vs-enforcement-architecture',
+  date: '2026-03-24',
+  isoDate: '2026-03-24T15:00:00.000Z',
+  alt: 'Architecture A vs B.',
+  caption: 'The architecture divide, stated plainly.',
+  assetPath: 'publishing/assets/2026-03-24-monitoring-vs-enforcement-architecture/diagram.jpg',
+};
 
 function mkTempDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -110,4 +124,76 @@ test('generateOutput emits a DIAGRAMS array with a public src derived from slug+
   assert.match(out, /slug: "2026-03-24-monitoring-vs-enforcement-architecture"/);
   assert.match(out, /src: "\/assets\/diagrams\/2026-03-24-monitoring-vs-enforcement-architecture\.jpg"/);
   assert.match(out, /caption: "The architecture divide, stated plainly\."/);
+});
+
+// S1b: a substrate with diagrams but ZERO essays must still WRITE the bundle —
+// the "0 matches" skip must count entries + diagrams, else a diagram-only refresh
+// would fail-open-skip and never publish diagrams.
+test('decideOutput writes when only diagrams match (0 essays)', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/x',
+    entries: [],
+    diagrams: [sampleDiagram],
+    diagnostics: [],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'write');
+  if (decision.action === 'write') {
+    assert.match(decision.content, /export const DIAGRAMS: Diagram\[\] = \[\s*\{/);
+  }
+});
+
+test('decideOutput skips when neither essays nor diagrams match', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/x',
+    entries: [],
+    diagrams: [],
+    diagnostics: [],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'skip');
+});
+
+// S1b: the diagram binary lives in substrate (publishing/assets/<slug>/diagram.<ext>)
+// and must be copied into the hub's public/assets/diagrams/ to be served. asset_path
+// is operator-authored, but a path-traversal guard is mandatory (security checklist).
+test('isSafeRelativePath rejects traversal/absolute/empty, accepts in-tree', () => {
+  assert.equal(isSafeRelativePath('publishing/assets/2026-03-24-x/diagram.jpg'), true);
+  assert.equal(isSafeRelativePath('../../etc/passwd'), false);
+  assert.equal(isSafeRelativePath('a/../../b'), false);
+  assert.equal(isSafeRelativePath('/etc/passwd'), false);
+  assert.equal(isSafeRelativePath('C:/Windows/x'), false);
+  assert.equal(isSafeRelativePath(''), false);
+});
+
+test('copyDiagramAsset copies an in-tree asset and refuses traversal', () => {
+  const substrate = mkTempDir('sub-asset-');
+  const projectRoot = mkTempDir('proj-');
+  const slug = '2026-03-24-monitoring-vs-enforcement-architecture';
+  const assetRel = `publishing/assets/${slug}/diagram.jpg`;
+  const srcPath = path.join(substrate, assetRel);
+  fs.mkdirSync(path.dirname(srcPath), { recursive: true });
+  fs.writeFileSync(srcPath, 'JPEGDATA');
+
+  const okSrc = copyDiagramAsset(assetRel, slug, substrate, projectRoot, 'x.md');
+  assert.equal(okSrc, `/assets/diagrams/${slug}.jpg`);
+  assert.equal(
+    fs.existsSync(path.join(projectRoot, 'public', 'assets', 'diagrams', `${slug}.jpg`)),
+    true,
+    'binary copied into public/assets/diagrams/',
+  );
+
+  // Traversal must be refused (null), nothing copied.
+  assert.equal(copyDiagramAsset('../../../etc/passwd', slug, substrate, projectRoot, 'x.md'), null);
+});
+
+// S1b: constants.ts must export DIAGRAMS as an array even when the committed
+// generated bundle has no DIAGRAMS export yet (defensive default — the hub builds
+// with zero diagrams until the substrate-sync regen adds them). No crash, no fail-open.
+test('constants.ts exports DIAGRAMS as an array (defensive [] when bundle lacks it)', () => {
+  assert.ok(Array.isArray(DIAGRAMS), 'DIAGRAMS must be an array');
 });

@@ -594,11 +594,11 @@ export function readSubstrateThoughts(substratePath: string): ThoughtEntry[] {
  * refuses to write a bundle that drops one. The non-diagnostics overload
  * preserves the prior "last wins" behavior for the legacy test path.
  */
-export function dedupBySlug(
-  entries: ThoughtEntry[],
+export function dedupBySlug<T extends { slug: string }>(
+  entries: T[],
   diagnostics?: SubstrateDiagnostic[]
-): ThoughtEntry[] {
-  const bySlug = new Map<string, ThoughtEntry>();
+): T[] {
+  const bySlug = new Map<string, T>();
   for (const entry of entries) {
     if (bySlug.has(entry.slug)) {
       const msg = `duplicate slug "${entry.slug}" among admitted canonicals — nondeterministic data loss`;
@@ -612,7 +612,7 @@ export function dedupBySlug(
   return Array.from(bySlug.values());
 }
 
-export function sortByIsoDateDesc(entries: ThoughtEntry[]): ThoughtEntry[] {
+export function sortByIsoDateDesc<T extends { isoDate: string; slug: string }>(entries: T[]): T[] {
   return entries.slice().sort((a, b) => {
     const diff = new Date(b.isoDate).getTime() - new Date(a.isoDate).getTime();
     if (diff !== 0) return diff;
@@ -620,12 +620,93 @@ export function sortByIsoDateDesc(entries: ThoughtEntry[]): ThoughtEntry[] {
   });
 }
 
+// Substrate diagram binaries live at <substrate>/publishing/assets/<slug>/diagram.<ext>;
+// they must be copied into the hub's public/assets/diagrams/<slug>.<ext> to be served
+// (Vercel serves the committed public/). `asset_path` is operator-authored but a
+// path-traversal guard is mandatory: refuse absolute paths, Windows drive-letter
+// paths, and any `..` segment, so a malformed/hostile asset_path can never read
+// outside the substrate root. Ported from danmercede.online for cross-surface parity.
+function normalizeSafeRelativePath(value: string): string | null {
+  const normalizedInput = value.trim().replace(/\\/g, '/');
+  if (!normalizedInput || path.posix.isAbsolute(normalizedInput) || /^[A-Za-z]:\//.test(normalizedInput)) {
+    return null;
+  }
+  if (normalizedInput.split('/').some((part) => part === '..' || part === '')) {
+    return null;
+  }
+  const normalized = path.posix.normalize(normalizedInput);
+  if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
+    return null;
+  }
+  return normalized;
+}
+
+export function isSafeRelativePath(value: string): boolean {
+  return typeof value === 'string' && normalizeSafeRelativePath(value) !== null;
+}
+
+const ALLOWED_DIAGRAM_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.svg']);
+
+// Copy a diagram's substrate binary into <projectRoot>/public/assets/diagrams/<slug><ext>,
+// returning the served path (/assets/diagrams/<slug><ext>) or null if asset_path is
+// missing / unsafe / unsupported-ext / escapes-root / uncopyable. main() DROPS any
+// diagram returning null, so the bundle never carries a dangling image src.
+export function copyDiagramAsset(
+  assetPath: unknown,
+  slug: string,
+  substratePath: string | undefined | null,
+  projectRoot: string,
+  file: string
+): string | null {
+  if (typeof assetPath !== 'string' || !assetPath.trim()) {
+    console.log(`   ⚠️  substrate diagram skipped (missing asset_path): ${file}`);
+    return null;
+  }
+  if (!substratePath) {
+    console.log(`   ⚠️  substrate diagram skipped (no substrate root for asset copy): ${file}`);
+    return null;
+  }
+  if (!isSafeRelativePath(assetPath)) {
+    console.log(`   ⚠️  substrate diagram skipped (unsafe asset_path "${assetPath}"): ${file}`);
+    return null;
+  }
+  const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+  const ext = path.extname(safeAssetPath).toLowerCase();
+  if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+    console.log(`   ⚠️  substrate diagram skipped (unsupported asset extension "${ext}"): ${file}`);
+    return null;
+  }
+  const substrateRoot = path.resolve(substratePath);
+  const source = path.resolve(substrateRoot, safeAssetPath);
+  // Belt-and-suspenders: even after the segment guard, confirm the resolved source
+  // stays within the substrate root (defends against normalize edge cases).
+  const relativeSource = path.relative(substrateRoot, source);
+  if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
+    console.log(`   ⚠️  substrate diagram skipped (asset_path escapes substrate root): ${file}`);
+    return null;
+  }
+  try {
+    if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+      console.log(`   ⚠️  substrate diagram skipped (asset missing at ${safeAssetPath}): ${file}`);
+      return null;
+    }
+    const publicDir = path.join(projectRoot, 'public', 'assets', 'diagrams');
+    fs.mkdirSync(publicDir, { recursive: true });
+    const publicName = `${slug}${ext}`;
+    fs.copyFileSync(source, path.join(publicDir, publicName));
+    return `/assets/diagrams/${publicName}`;
+  } catch (e) {
+    console.log(`   ⚠️  substrate diagram skipped (failed to copy asset): ${file} (${e})`);
+    return null;
+  }
+}
+
 // Derive the .com public image src for a diagram from its slug + the substrate
-// asset extension, e.g. publishing/assets/<slug>/diagram.jpg → /assets/diagrams/<slug>.jpg.
-// The binary itself is copied to public/assets/diagrams/<slug>.<ext> by the
-// asset-copy step; this is the served path baked into the page.
+// asset extension (lowercased to match copyDiagramAsset's publicName), e.g.
+// publishing/assets/<slug>/diagram.JPG → /assets/diagrams/<slug>.jpg. Kept in
+// lockstep with copyDiagramAsset so the baked src always resolves to the copied file.
 export function diagramPublicSrc(entry: DiagramEntry): string {
-  const ext = path.extname(entry.assetPath) || '.png';
+  const ext = (path.extname(entry.assetPath) || '.png').toLowerCase();
   return `/assets/diagrams/${entry.slug}${ext}`;
 }
 
@@ -720,13 +801,16 @@ export interface DecideOutputArgs {
   substrateReachable: boolean;
   substratePath: string | null;
   entries: ThoughtEntry[];
+  // Optional with a [] default in decideOutput: a caller that omits diagrams
+  // gets the prior entries-only behavior (fail-safe — absent means no diagrams).
+  diagrams?: DiagramEntry[];
   diagnostics: SubstrateDiagnostic[];
   strict: boolean;
   requireMatches: boolean;
 }
 
 export function decideOutput(args: DecideOutputArgs): OutputDecision {
-  const { substrateReachable, entries, diagnostics, strict, requireMatches } = args;
+  const { substrateReachable, entries, diagrams = [], diagnostics, strict, requireMatches } = args;
   if (!substrateReachable) {
     const reason = 'substrate root unreachable (SUBSTRATE_PATH unset and sibling ../dan-mercede-substrate not found)';
     return strict ? { action: 'fail', reason } : { action: 'skip', reason };
@@ -737,11 +821,15 @@ export function decideOutput(args: DecideOutputArgs): OutputDecision {
     const reason = `substrate contains ${fatal.length} fatal corruption(s): ${summary}`;
     return strict ? { action: 'fail', reason } : { action: 'skip', reason };
   }
-  if (entries.length === 0) {
-    const reason = `substrate yielded 0 canonicals matching surface_targets="${THIS_SURFACE}"`;
+  if (entries.length === 0 && diagrams.length === 0) {
+    const reason = `substrate yielded 0 canonicals (thought or diagram) matching surface_targets="${THIS_SURFACE}"`;
     return requireMatches ? { action: 'fail', reason } : { action: 'skip', reason };
   }
-  return { action: 'write', content: generateOutput(entries), entryCount: entries.length };
+  return {
+    action: 'write',
+    content: generateOutput(entries, diagrams),
+    entryCount: entries.length + diagrams.length,
+  };
 }
 
 export function main(): void {
@@ -780,14 +868,20 @@ export function main(): void {
   console.log(`\n🛠  danmercede.com substrate compile (mode: ${modeLabel})`);
 
   let entries: ThoughtEntry[] = [];
+  let diagrams: DiagramEntry[] = [];
   let diagnostics: SubstrateDiagnostic[] = [];
   if (substratePath) {
     console.log(`   ℹ️  substrate root: ${substratePath}`);
     const result = readSubstrateWithDiagnostics(substratePath);
     // Plumb diagnostics into dedup so duplicate slugs among admitted
     // canonicals raise a fatal diagnostic (caught by decideOutput below).
-    const deduped = dedupBySlug(result.entries, result.diagnostics);
-    entries = sortByIsoDateDesc(deduped);
+    entries = sortByIsoDateDesc(dedupBySlug(result.entries, result.diagnostics));
+    // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
+    // asset is missing / unsafe / uncopyable, so the bundle never carries a
+    // dangling image src (mirrors danmercede.online's copy-then-keep behavior).
+    diagrams = sortByIsoDateDesc(dedupBySlug(result.diagrams, result.diagnostics)).filter(
+      (d) => copyDiagramAsset(d.assetPath, d.slug, substratePath, root, d.slug) !== null,
+    );
     diagnostics = result.diagnostics;
   }
 
@@ -795,6 +889,7 @@ export function main(): void {
     substrateReachable: substratePath !== null,
     substratePath,
     entries,
+    diagrams,
     diagnostics,
     strict,
     requireMatches,
