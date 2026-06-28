@@ -437,6 +437,17 @@ export const WORKS: Work[] = [
     date: '2026-06-21',
     slug: 'failclosed',
   },
+  {
+    title: 'localfiscal',
+    description:
+      'Local-first private receipt + invoice + ledger intelligence for solopreneurs and small businesses. Ingest receipts locally (heuristic + optional Ollama vision), maintain a private sqlite ledger, generate clean invoice PDFs, produce P&L and category reports, export CSV/OFX for accountants. One-command Docker. Everything stays on your machine.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/localfiscal',
+    link: 'https://www.danmercede.com/works/localfiscal/',
+    license: 'MIT',
+    date: '2026-06-28',
+    slug: 'localfiscal',
+  },
   // --- Applied Agent Projects — hackathon-built agent systems, surfaced as a
   // distinct /works section (App.tsx WorksPage filters on category). Competition
   // context lives in each description, not the section heading. ---
