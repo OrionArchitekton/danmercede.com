@@ -1,4 +1,5 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, featuredEssays, WORKS_HUB } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
+import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -66,7 +67,13 @@ export interface RouteMeta {
   // per-route content node (only the homepage entity graph + a BreadcrumbList).
   // CollectionPage drives the /works surface: a portfolio collection whose items
   // are SoftwareSourceCode nodes, all backref-ing the canonical #person.
-  schemaType?: 'Article' | 'ProfilePage' | 'CollectionPage';
+  // ImageObject drives the /diagrams/<slug> surface: a figure whose author/
+  // publisher backref the canonical #person.
+  schemaType?: 'Article' | 'ProfilePage' | 'CollectionPage' | 'ImageObject';
+  // Diagram-route fields consumed by the ImageObject JSON-LD branch: the absolute
+  // image contentUrl and the alt text (rendered as the ImageObject.description).
+  diagramSrc?: string;
+  diagramAlt?: string;
 }
 
 // Build the /works crawlable link set: the featured-essay deep-links (in lockstep
@@ -178,6 +185,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       lead: 'Practical, operator-grade walkthroughs.',
       paragraphs: [
         'Hands-on guides for self-hosting websites and apps, secure ingress, and running systems on infrastructure you control.',
+      ],
+    },
+  },
+  '/diagrams': {
+    title: 'Diagrams — Systems & Architecture | Dan Mercede',
+    description:
+      'Architecture and agentic-systems diagrams: two-plane governance, request lifecycle, runtime enforcement, and the patterns behind governed AI operating systems.',
+    schemaType: 'Article',
+    body: {
+      h1: 'Diagrams',
+      lead: 'Architecture and agentic-systems diagrams.',
+      paragraphs: [
+        'Visual explainers for governed AI architecture — two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.',
       ],
     },
   },
@@ -461,6 +481,62 @@ export function renderGuideSitemapEntries(): string {
   );
 }
 
+// Dynamic per-diagram meta (mirrors guideMeta). schemaType ImageObject; the body
+// bakes the caption (lead) + the alt text (paragraph) as crawlable prose so no-JS
+// answer engines read the figure's meaning. Corpus is injectable for testing —
+// the in-repo DIAGRAMS is empty until the substrate-sync regen.
+export function diagramMeta(slug: string | undefined, corpus: Diagram[] = DIAGRAMS): RouteMeta {
+  const diagram = corpus.find((d) => d.slug === slug);
+  if (!diagram) {
+    return { title: 'Diagram Not Found | Dan Mercede' };
+  }
+  return {
+    title: `${diagram.title} — Diagram | Dan Mercede`,
+    description: diagram.caption,
+    schemaType: 'ImageObject',
+    diagramSrc: new URL(diagram.src, SITE_ORIGIN).toString(),
+    diagramAlt: diagram.alt,
+    body: {
+      h1: diagram.title,
+      lead: diagram.caption,
+      paragraphs: [diagram.alt],
+    },
+  };
+}
+
+// All per-diagram route paths, derived from the DIAGRAMS corpus (mirrors
+// guidePaths/thoughtPaths). Corpus injectable for testing.
+export function diagramPaths(corpus: Diagram[] = DIAGRAMS): string[] {
+  return corpus.filter((d) => d.slug).map((d) => `/diagrams/${d.slug}`);
+}
+
+// Per-diagram <url> sitemap blocks WITH a Google image-sitemap <image:image>
+// child (image:loc = absolute diagram src, image:caption). Generated at build
+// (mirrors renderGuideSitemapEntries); lastmod = the diagram's own date. The
+// <urlset> must declare xmlns:image for these children to validate (injectRouteMeta
+// adds it to the committed sitemap).
+export function renderDiagramSitemapEntries(corpus: Diagram[] = DIAGRAMS): string {
+  const blocks = corpus.filter((d) => d.slug).map((d) =>
+    [
+      '  <url>',
+      `    <loc>${SITE_ORIGIN}/diagrams/${d.slug}</loc>`,
+      `    <lastmod>${d.date}</lastmod>`,
+      '    <changefreq>monthly</changefreq>',
+      '    <priority>0.6</priority>',
+      '    <image:image>',
+      `      <image:loc>${escapeText(SITE_ORIGIN + d.src)}</image:loc>`,
+      `      <image:caption>${escapeText(d.caption)}</image:caption>`,
+      '    </image:image>',
+      '  </url>',
+    ].join('\n'),
+  );
+  if (blocks.length === 0) return '';
+  return (
+    '  <!-- Diagram corpus (per-diagram routes + image-sitemap; generated at build from DIAGRAMS) -->\n' +
+    blocks.join('\n')
+  );
+}
+
 export function resolveMeta(m: RouteMeta) {
   return {
     title: m.title || DEFAULT_TITLE,
@@ -660,6 +736,23 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
         ...(w.date ? { datePublished: w.date } : {}),
       })),
     });
+  } else if (m.schemaType === 'ImageObject') {
+    // /diagrams/<slug>: the figure as an ImageObject; author/publisher backref the
+    // canonical #person (NO second Person node — identityCanonical.test.ts). NB:
+    // extending RouteMeta.schemaType WITHOUT this branch would emit only a
+    // BreadcrumbList (silent no-op) — both edits are required.
+    graph.push({
+      '@type': 'ImageObject',
+      '@id': `${canonical}#image`,
+      name: breadcrumbLabel(r.title),
+      caption: r.description,
+      description: m.diagramAlt ?? r.description,
+      contentUrl: m.diagramSrc ?? canonical,
+      url: canonical,
+      author: { '@id': PERSON_ID },
+      publisher: { '@id': PERSON_ID },
+      isPartOf: { '@id': WEBSITE_ID },
+    });
   }
 
   graph.push(renderBreadcrumb(path, breadcrumbLabel(r.title)));
@@ -689,6 +782,9 @@ function renderBreadcrumb(path: string, leafName: string): Record<string, unknow
   }
   if (path.startsWith('/guides/')) {
     items.push({ name: 'Guides', url: new URL('/guides', SITE_ORIGIN).toString() });
+  }
+  if (path.startsWith('/diagrams/')) {
+    items.push({ name: 'Diagrams', url: new URL('/diagrams', SITE_ORIGIN).toString() });
   }
   if (path !== '/') {
     items.push({ name: leafName, url: new URL(path, SITE_ORIGIN).toString() });
