@@ -88,6 +88,11 @@
       "source": "/works/agent-demo-video",
       "destination": "/works/agent-demo-video/",
       "permanent": true
+    },
+    {
+      "source": "/works/localfiscal",
+      "destination": "/works/localfiscal/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -130,6 +135,14 @@
     {
       "source": "/works/agent-demo-video/:path*",
       "destination": "https://agent-demo-video-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/localfiscal/",
+      "destination": "https://localfiscal-site.vercel.app/"
+    },
+    {
+      "source": "/works/localfiscal/:path*",
+      "destination": "https://localfiscal-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",
