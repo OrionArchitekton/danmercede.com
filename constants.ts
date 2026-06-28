@@ -418,7 +418,7 @@ export const WORKS: Work[] = [
   {
     title: 'schemafit',
     description:
-      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini, Mistral, Cohere) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone.',
+      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini, Mistral, Cohere) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone. v0.5 adds automatic rule-pack drift detection — an opt-in live-verify run that rejects a schema the static pack passed flags the pack as lagging the provider’s docs.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/schemafit',
     link: 'https://www.danmercede.com/works/schemafit/',
