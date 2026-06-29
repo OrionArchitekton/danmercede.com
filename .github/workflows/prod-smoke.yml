@@ -18,6 +18,13 @@ name: Prod Smoke (served-output, creds-free)
 # dict/list, and a conservative minimum stripped visible-text length (a hollow
 # shell floor). python3 is preinstalled on ubuntu-latest; no pip installs.
 #
+# Self-canonical assertion (analytics/observability arc): a react-router SPA
+# returns HTTP 200 for unknown routes (the soft-404 trap) while self-canonicaling
+# to root, so 200 + content never proves a page is really live. This job also
+# asserts each monitored URL's served <link rel=canonical> resolves to the
+# requested URL (trailing-slash/case tolerant) — catching a soft-404 or a
+# wrong-canonical regression the depth checks alone would pass.
+#
 # Creds-free by construction: pure curl + python3 stdlib against the public
 # origin, NO secrets, NO checkout of the private substrate. `permissions:
 # contents: read` is the only scope it needs.
@@ -78,6 +85,7 @@ jobs:
                   self._cur_h1 = []
                   self._cur_p = []
                   self.text_parts = []
+                  self.canonical = None
               def handle_starttag(self, tag, attrs):
                   a = dict(attrs)
                   if tag in ("script", "style", "noscript", "template"):
@@ -89,9 +97,20 @@ jobs:
                       self.h1_depth += 1; self._cur_h1 = []
                   if tag == "p":
                       self.p_depth += 1; self._cur_p = []
+                  if tag == "link":
+                      rel = (a.get("rel") or "").strip().lower()
+                      href = (a.get("href") or "").strip()
+                      # First rel=canonical wins (single-canonical head-hygiene
+                      # contract). Routed here from handle_startendtag too, since
+                      # the served canonical is a self-closing void <link .../>.
+                      if rel == "canonical" and href and self.canonical is None:
+                          self.canonical = href
               def handle_startendtag(self, tag, attrs):
-                  # self-closing (e.g. <p/>) — no inner text, ignore for capture
-                  pass
+                  # self-closing tags carry no inner text. The void <link> is the
+                  # exception: the served canonical is written as <link .../>, so
+                  # route it through handle_starttag so it is still captured.
+                  if tag == "link":
+                      self.handle_starttag(tag, attrs)
               def handle_endtag(self, tag):
                   if tag in ("script", "style", "noscript", "template"):
                       if self.skip > 0: self.skip -= 1
@@ -148,7 +167,8 @@ jobs:
               text_len = len(text)
 
               print(f"smoke: {url} -> h1_nonempty={len(h1_nonempty)} "
-                    f"p_nonempty={len(p_nonempty)} valid_jsonld={valid_ld} text_len={text_len}")
+                    f"p_nonempty={len(p_nonempty)} valid_jsonld={valid_ld} text_len={text_len} "
+                    f"canonical={pr.canonical}")
 
               if len(h1_nonempty) < 1:
                   print(f"R5 FAIL: {url} — NO <h1> with non-empty text "
@@ -167,11 +187,24 @@ jobs:
                         f"{MIN_TEXT_LEN} (hollow shell served to crawlers)")
                   failed = True
 
+              # Self-canonical must resolve to the requested URL. A 200 alone does
+              # not prove a page is live (soft-404 serves the SPA shell at 200 and
+              # self-canonicals to root). Trailing-slash + case tolerant.
+              def _norm(u):
+                  return (u or "").strip().rstrip("/").lower()
+              if not pr.canonical:
+                  print(f"R5 FAIL: {url} — no <link rel=canonical> in served HTML")
+                  failed = True
+              elif _norm(pr.canonical) != _norm(url):
+                  print(f"R5 FAIL: {url} — self-canonical '{pr.canonical}' does not "
+                        f"resolve to the requested URL (soft-404 / wrong-canonical)")
+                  failed = True
+
               if not failed:
-                  print(f"smoke OK: {url} carries non-empty h1 + prose + valid JSON-LD + real body.")
+                  print(f"smoke OK: {url} carries non-empty h1 + prose + valid JSON-LD + real body + self-canonical.")
 
           if failed:
-              print("R5 FAIL: one or more smoked URLs served a thin/degraded/structurally-broken page.")
+              print("R5 FAIL: one or more smoked URLs served a thin/degraded/structurally-broken/wrong-canonical page.")
               sys.exit(1)
-          print("R5 OK: all smoked URLs serve a non-empty, structured, deep, crawlable page.")
+          print("R5 OK: all smoked URLs serve a non-empty, structured, deep, crawlable, self-canonical page.")
           PY

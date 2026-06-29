@@ -77,6 +77,43 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-05-20-pre-execution-authority-gates',
 ];
 
+// Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
+// HUB_ESSAY_ALLOWLIST. The substrate's type:diagram canonicals are immutable and
+// target only danmercede.online; substrate doctrine forbids re-tagging their
+// surface_targets (promote.py has no retarget mode, hand-edits are prohibited), so
+// the hub admits them to /diagrams BY SLUG here. This overrides ONLY the
+// surface_targets gate; status / type / required-field / slug-safety / date gates
+// still apply. The 21 existing diagram canonicals (all .online-only, immutable) are
+// admitted here by slug. This is the ADMISSION PR (PR-com-2): the bundle is NOT
+// regenerated in this PR (substrate-verify runs the BASE compiler, whose allowlist is
+// still empty → 0 diagrams = committed bundle → verify passes). After merge, the
+// substrate-sync workflow runs THIS armed compiler → regenerates constants.generated.ts
+// with the 21 diagrams + copies binaries, co-shipped with the .online rel=canonical
+// demote (closing the competing-canonical window).
+export const HUB_DIAGRAM_ALLOWLIST: readonly string[] = [
+  '2026-02-17-audit-logs-vs-immutable-receipts',
+  '2026-02-20-anatomy-of-non-repudiation',
+  '2026-02-24-authority-decay-over-a-session',
+  '2026-02-27-monitor-after-vs-constrain-before',
+  '2026-03-03-the-rpc-stub-airlock',
+  '2026-03-06-the-substrate-walls',
+  '2026-03-10-advisory-vs-deterministic-boundary',
+  '2026-03-13-the-gated-execution-pipeline',
+  '2026-03-17-runtime-governance-control-plane',
+  '2026-03-20-governance-converts-risk-into-economics',
+  '2026-03-24-monitoring-vs-enforcement-architecture',
+  '2026-03-27-from-policy-to-runtime-proof',
+  '2026-03-31-the-physics-of-ai-isolation',
+  '2026-04-03-governance-is-not-hope',
+  '2026-04-07-the-equation-of-liability',
+  '2026-04-10-the-fallacy-of-monitoring',
+  '2026-04-14-the-enterprise-ai-market-divide',
+  '2026-04-17-translating-reasonable-care-into-code',
+  '2026-04-21-the-map-is-not-the-territory',
+  '2026-04-24-the-missing-execution-boundary',
+  '2026-06-16-fail-closed-merge-admission',
+];
+
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
 // back to DEFAULT_CATEGORY. Extend cautiously when new layers are minted in
 // substrate; an unexpected new layer landing as "Doctrine" is the safer default
@@ -303,12 +340,22 @@ function validateDate(date: unknown): { isoDate: string; displayDate: string } |
   return { isoDate: parsed.toISOString(), displayDate: PT_DATE_FORMATTER.format(parsed) };
 }
 
+// A slug becomes BOTH a filesystem path segment (diagrams: public/assets/diagrams/<slug>.<ext>)
+// AND an UNESCAPED sitemap <loc> token (thoughts/guides/diagrams: <loc>.../<family>/<slug></loc>),
+// so it must be charset-safe: lowercase kebab only. Gating it at the mapper (ported from
+// danmercede.online's isSafeSlug) closes a write-side path traversal (a "../.." slug escaping
+// public/) and an XML-injection vector in the <loc>, on every content family that maps a slug.
+const SAFE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export function isSafeSlug(slug: unknown): slug is string {
+  return typeof slug === 'string' && SAFE_SLUG_PATTERN.test(slug);
+}
+
 /**
  * Map one substrate canonical frontmatter blob to a `ThoughtEntry`, or null if
  * it must be skipped. Skips are classified into:
  *   - 'skip' (intentional filter: wrong surface/status/type)
  *   - 'fatal' (matched target but is structurally corrupt: missing required
- *     field, invalid date)
+ *     field, invalid date, unsafe slug)
  *
  * The caller (`readSubstrateThoughts`) collects diagnostics so `--strict` can
  * fail-loud on 'fatal' diagnostics while still permitting normal 'skip's.
@@ -370,6 +417,14 @@ export function mapSubstrateToEntry(
     return null;
   }
 
+  // The slug is an unescaped sitemap <loc> token — reject metachar/traversal slugs
+  // as FATAL corruption (it matched target, so it was supposed to publish).
+  if (!isSafeSlug(slug)) {
+    console.log(`   ⚠️  substrate canonical skipped (unsafe slug "${String(slug)}"): ${filename}`);
+    pushDiag('fatal', `unsafe slug "${String(slug)}" (must match ${SAFE_SLUG_PATTERN})`);
+    return null;
+  }
+
   const dateResult = validateDate(dateRaw);
   if (!dateResult) {
     console.log(`   ⚠️  substrate canonical skipped (invalid date "${String(dateRaw)}"): ${filename}`);
@@ -388,8 +443,131 @@ export function mapSubstrateToEntry(
   };
 }
 
+// Substrate `type: "diagram"` canonicals (PR #14) are admitted to danmercede.com
+// as a distinct content type. Unlike a Thought (prose body), a diagram carries
+// alt_text/caption + an asset_path to the rendered image; the .com page is a
+// figure with an ImageObject JSON-LD node (S1c). Decision #1: admission is by
+// `surface_targets` including danmercede.com (no allowlist — the substrate
+// canonical declares the .com target directly).
+const DIAGRAM_TYPE = 'diagram';
+
+export interface DiagramEntry {
+  title: string;
+  slug: string;
+  // PT-local display day (YYYY-MM-DD), same handling as ThoughtEntry.date.
+  date: string;
+  isoDate: string;
+  // From substrate `alt_text` — the crawlable image description (also the baked
+  // <img alt> and the ImageObject.description).
+  alt: string;
+  // From substrate `caption` — the visible <figcaption> + meta description.
+  caption: string;
+  // From substrate `asset_path` (substrate-root-relative), e.g.
+  // publishing/assets/<slug>/diagram.jpg. The image binary is copied into the
+  // hub's public/assets/diagrams/ at compile time (S1b); the page src derives
+  // from the slug + extension.
+  assetPath: string;
+}
+
+/**
+ * Map one substrate `type: diagram` canonical to a DiagramEntry, or null to skip.
+ * Mirrors mapSubstrateToEntry's gate order (surface → status → type → required
+ * fields → date) and its skip/fatal diagnostic model: a canonical that matches
+ * surface+status+type but is missing alt_text/caption/asset_path or has an
+ * invalid date is FATAL (it WAS supposed to publish), so --strict refuses to
+ * write a partial bundle. Required fields beyond the essay set: alt_text,
+ * caption, asset_path.
+ */
+export function mapSubstrateToDiagram(
+  data: Record<string, unknown>,
+  body: string,
+  filename: string,
+  diagnostics?: SubstrateDiagnostic[],
+  allowlist: readonly string[] = HUB_DIAGRAM_ALLOWLIST
+): DiagramEntry | null {
+  const pushDiag = (severity: SubstrateDiagnostic['severity'], reason: string): void => {
+    if (diagnostics) diagnostics.push({ file: filename, severity, reason });
+  };
+
+  // Admission gate (mirrors mapSubstrateToEntry): a diagram is admitted to the hub
+  // if its substrate surface_targets include danmercede.com OR its slug is in the
+  // HUB_DIAGRAM_ALLOWLIST (the immutable .online-only diagram canonicals are admitted
+  // by slug — substrate re-tagging is forbidden). The allowlist overrides ONLY this
+  // gate; all subsequent gates still apply.
+  const surfaceTargets = data['surface_targets'];
+  const surfaceTargeted =
+    Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
+  const slugRaw = data['slug'];
+  const allowlisted = typeof slugRaw === 'string' && allowlist.includes(slugRaw);
+  if (!surfaceTargeted && !allowlisted) {
+    console.log(`   ℹ️  substrate diagram skipped (surface_targets): ${filename}`);
+    pushDiag('skip', 'surface_targets does not include danmercede.com');
+    return null;
+  }
+  if (allowlisted && !surfaceTargeted) {
+    console.log(`   ✅ substrate diagram admitted via HUB_DIAGRAM_ALLOWLIST: ${filename}`);
+  }
+
+  if (data['status'] !== 'canonical') {
+    pushDiag('skip', `status="${String(data['status'])}"`);
+    return null;
+  }
+
+  if (data['type'] !== DIAGRAM_TYPE) {
+    pushDiag('skip', `type "${String(data['type'])}" is not diagram`);
+    return null;
+  }
+
+  // Matched surface/status/type — it WAS supposed to publish. Any further
+  // failure is fatal corruption under --strict.
+  const slug = data['slug'];
+  const title = data['title'];
+  const dateRaw = data['date'];
+  const alt = data['alt_text'];
+  const caption = data['caption'];
+  const assetPath = data['asset_path'];
+  const missing: string[] = [];
+  if (typeof slug !== 'string' || !slug.trim()) missing.push('slug');
+  if (typeof title !== 'string' || !title.trim()) missing.push('title');
+  if (!(dateRaw instanceof Date) && (typeof dateRaw !== 'string' || !dateRaw.trim())) missing.push('date');
+  if (typeof alt !== 'string' || !alt.trim()) missing.push('alt_text');
+  if (typeof caption !== 'string' || !caption.trim()) missing.push('caption');
+  if (typeof assetPath !== 'string' || !assetPath.trim()) missing.push('asset_path');
+  if (missing.length > 0) {
+    console.log(`   ⚠️  substrate diagram skipped (missing required: ${missing.join(', ')}): ${filename}`);
+    pushDiag('fatal', `missing required fields: ${missing.join(', ')}`);
+    return null;
+  }
+
+  // The slug becomes the copied asset's destination filename AND an unescaped sitemap
+  // <loc> token — reject metachar/traversal slugs as FATAL corruption (closes the
+  // write-side path traversal: a "../.." slug would escape public/assets/diagrams/).
+  if (!isSafeSlug(slug)) {
+    console.log(`   ⚠️  substrate diagram skipped (unsafe slug "${String(slug)}"): ${filename}`);
+    pushDiag('fatal', `unsafe slug "${String(slug)}" (must match ${SAFE_SLUG_PATTERN})`);
+    return null;
+  }
+
+  const dateResult = validateDate(dateRaw);
+  if (!dateResult) {
+    pushDiag('fatal', `invalid date "${String(dateRaw)}"`);
+    return null;
+  }
+
+  return {
+    title: title as string,
+    slug: slug as string,
+    date: dateResult.displayDate,
+    isoDate: dateResult.isoDate,
+    alt: alt as string,
+    caption: caption as string,
+    assetPath: assetPath as string,
+  };
+}
+
 export interface ReadResult {
   entries: ThoughtEntry[];
+  diagrams: DiagramEntry[];
   diagnostics: SubstrateDiagnostic[];
 }
 
@@ -407,7 +585,7 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
   const canonicalDir = path.join(substratePath, 'publishing', 'canonical');
   if (!fs.existsSync(canonicalDir)) {
     console.log(`   ℹ️  substrate canonical dir not found at ${canonicalDir}; skipping`);
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
   let stat;
   try {
@@ -418,11 +596,11 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     // target canonicals are intact, so we must not proceed to write a possibly
     // truncated bundle.
     diagnostics.push({ file: canonicalDir, severity: 'fatal', reason: `stat failed: ${String(e)}` });
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
   if (!stat.isDirectory()) {
     console.log(`   ℹ️  substrate canonical path is not a directory: ${canonicalDir}; skipping`);
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
 
   let files: string[];
@@ -431,10 +609,11 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
   } catch (e) {
     console.log(`   ⚠️  substrate canonical dir unreadable: ${canonicalDir} (${e})`);
     diagnostics.push({ file: canonicalDir, severity: 'fatal', reason: `readdir failed: ${String(e)}` });
-    return { entries: [], diagnostics };
+    return { entries: [], diagrams: [], diagnostics };
   }
 
   const entries: ThoughtEntry[] = [];
+  const diagrams: DiagramEntry[] = [];
   for (const file of files) {
     const filePath = path.join(canonicalDir, file);
     let raw: string;
@@ -461,11 +640,20 @@ export function readSubstrateWithDiagnostics(substratePath: string): ReadResult 
     // danmercede.online's `const body = parsed.content.trim()` (R1), then de-link
     // substrate `[[wiki-links]]` so they never bake as literal tokens on .com.
     const body = delinkWikiLinks(parsed.content.trim());
-    const entry = mapSubstrateToEntry(parsed.data as Record<string, unknown>, body, file, diagnostics);
-    if (entry) entries.push(entry);
+    const data = parsed.data as Record<string, unknown>;
+    // Dispatch by type: a diagram canonical maps to a DiagramEntry (figure +
+    // alt/caption/asset_path); everything else goes through the essay mapper
+    // (which skips unaccepted types). A single canonical is one OR the other.
+    if (data['type'] === DIAGRAM_TYPE) {
+      const diagram = mapSubstrateToDiagram(data, body, file, diagnostics);
+      if (diagram) diagrams.push(diagram);
+    } else {
+      const entry = mapSubstrateToEntry(data, body, file, diagnostics);
+      if (entry) entries.push(entry);
+    }
   }
 
-  return { entries, diagnostics };
+  return { entries, diagrams, diagnostics };
 }
 
 export function readSubstrateThoughts(substratePath: string): ThoughtEntry[] {
@@ -481,11 +669,11 @@ export function readSubstrateThoughts(substratePath: string): ThoughtEntry[] {
  * refuses to write a bundle that drops one. The non-diagnostics overload
  * preserves the prior "last wins" behavior for the legacy test path.
  */
-export function dedupBySlug(
-  entries: ThoughtEntry[],
+export function dedupBySlug<T extends { slug: string }>(
+  entries: T[],
   diagnostics?: SubstrateDiagnostic[]
-): ThoughtEntry[] {
-  const bySlug = new Map<string, ThoughtEntry>();
+): T[] {
+  const bySlug = new Map<string, T>();
   for (const entry of entries) {
     if (bySlug.has(entry.slug)) {
       const msg = `duplicate slug "${entry.slug}" among admitted canonicals — nondeterministic data loss`;
@@ -499,7 +687,7 @@ export function dedupBySlug(
   return Array.from(bySlug.values());
 }
 
-export function sortByIsoDateDesc(entries: ThoughtEntry[]): ThoughtEntry[] {
+export function sortByIsoDateDesc<T extends { isoDate: string; slug: string }>(entries: T[]): T[] {
   return entries.slice().sort((a, b) => {
     const diff = new Date(b.isoDate).getTime() - new Date(a.isoDate).getTime();
     if (diff !== 0) return diff;
@@ -507,7 +695,110 @@ export function sortByIsoDateDesc(entries: ThoughtEntry[]): ThoughtEntry[] {
   });
 }
 
-export function generateOutput(entries: ThoughtEntry[]): string {
+// Substrate diagram binaries live at <substrate>/publishing/assets/<slug>/diagram.<ext>;
+// they must be copied into the hub's public/assets/diagrams/<slug>.<ext> to be served
+// (Vercel serves the committed public/). `asset_path` is operator-authored but a
+// path-traversal guard is mandatory: refuse absolute paths, Windows drive-letter
+// paths, and any `..` segment, so a malformed/hostile asset_path can never read
+// outside the substrate root. Ported from danmercede.online for cross-surface parity.
+function normalizeSafeRelativePath(value: string): string | null {
+  const normalizedInput = value.trim().replace(/\\/g, '/');
+  if (!normalizedInput || path.posix.isAbsolute(normalizedInput) || /^[A-Za-z]:\//.test(normalizedInput)) {
+    return null;
+  }
+  if (normalizedInput.split('/').some((part) => part === '..' || part === '')) {
+    return null;
+  }
+  const normalized = path.posix.normalize(normalizedInput);
+  if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
+    return null;
+  }
+  return normalized;
+}
+
+export function isSafeRelativePath(value: string): boolean {
+  return typeof value === 'string' && normalizeSafeRelativePath(value) !== null;
+}
+
+const ALLOWED_DIAGRAM_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.svg']);
+
+// Copy a diagram's substrate binary into <projectRoot>/public/assets/diagrams/<slug><ext>,
+// returning the served path (/assets/diagrams/<slug><ext>) or null if asset_path is
+// missing / unsafe / unsupported-ext / escapes-root / uncopyable. main() DROPS any
+// diagram returning null, so the bundle never carries a dangling image src.
+export function copyDiagramAsset(
+  assetPath: unknown,
+  slug: string,
+  substratePath: string | undefined | null,
+  projectRoot: string,
+  file: string,
+  diagnostics?: SubstrateDiagnostic[]
+): string | null {
+  // A diagram reaching copyDiagramAsset was already ADMITTED by mapSubstrateToDiagram —
+  // it WAS supposed to publish. Dropping it here (unsafe/missing/uncopyable binary) is
+  // corruption, not an intentional skip: raise a FATAL so --strict refuses to write a
+  // partial (e.g. 20-of-21) bundle. The diagnostics array is optional so direct test
+  // callers can probe the null-return without a diagnostics sink.
+  const drop = (reason: string): null => {
+    console.log(`   ⚠️  substrate diagram skipped (${reason}): ${file}`);
+    if (diagnostics) diagnostics.push({ file, severity: 'fatal', reason });
+    return null;
+  };
+
+  if (typeof assetPath !== 'string' || !assetPath.trim()) {
+    return drop('missing asset_path');
+  }
+  if (!substratePath) {
+    return drop('no substrate root for asset copy');
+  }
+  if (!isSafeRelativePath(assetPath)) {
+    return drop(`unsafe asset_path "${assetPath}"`);
+  }
+  const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+  const ext = path.extname(safeAssetPath).toLowerCase();
+  if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+    return drop(`unsupported asset extension "${ext}"`);
+  }
+  const substrateRoot = path.resolve(substratePath);
+  const source = path.resolve(substrateRoot, safeAssetPath);
+  // Belt-and-suspenders: even after the segment guard, confirm the resolved source
+  // stays within the substrate root (defends against normalize edge cases).
+  const relativeSource = path.relative(substrateRoot, source);
+  if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
+    return drop('asset_path escapes substrate root');
+  }
+  const publicDir = path.join(projectRoot, 'public', 'assets', 'diagrams');
+  const publicName = `${slug}${ext}`;
+  // Defense-in-depth (the slug is gated upstream by isSafeSlug, but never trust one
+  // gate for a filesystem write): confirm <slug><ext> is a single in-dir filename that
+  // cannot climb out of public/assets/diagrams/ before writing anything.
+  const dest = path.join(publicDir, publicName);
+  const relativeDest = path.relative(publicDir, dest);
+  if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
+    return drop(`destination "${publicName}" escapes public/assets/diagrams/`);
+  }
+  try {
+    if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+      return drop(`asset missing at ${safeAssetPath}`);
+    }
+    fs.mkdirSync(publicDir, { recursive: true });
+    fs.copyFileSync(source, dest);
+    return `/assets/diagrams/${publicName}`;
+  } catch (e) {
+    return drop(`failed to copy asset (${e})`);
+  }
+}
+
+// Derive the .com public image src for a diagram from its slug + the substrate
+// asset extension (lowercased to match copyDiagramAsset's publicName), e.g.
+// publishing/assets/<slug>/diagram.JPG → /assets/diagrams/<slug>.jpg. Kept in
+// lockstep with copyDiagramAsset so the baked src always resolves to the copied file.
+export function diagramPublicSrc(entry: DiagramEntry): string {
+  const ext = (path.extname(entry.assetPath) || '.png').toLowerCase();
+  return `/assets/diagrams/${entry.slug}${ext}`;
+}
+
+export function generateOutput(entries: ThoughtEntry[], diagrams: DiagramEntry[] = []): string {
   const lines: string[] = [];
   lines.push('// GENERATED FILE — do not edit by hand.');
   lines.push('// Source: dan-mercede-substrate/publishing/canonical/.');
@@ -515,7 +806,7 @@ export function generateOutput(entries: ThoughtEntry[]): string {
   lines.push(`// with surface_targets including "${THIS_SURFACE}" are present.`);
   lines.push('// See AGENTS.md for the substrate-consumer contract.');
   lines.push('');
-  lines.push("import type { Thought } from './types';");
+  lines.push("import type { Thought, Diagram } from './types';");
   lines.push('');
   lines.push('export const THOUGHTS: Thought[] = [');
   for (const e of entries) {
@@ -530,6 +821,22 @@ export function generateOutput(entries: ThoughtEntry[]): string {
     // (seoMeta thoughtMeta) split on the blank-line boundary to rebuild
     // paragraphs for the baked body block.
     lines.push(`    body: ${JSON.stringify(e.body)},`);
+    lines.push('  },');
+  }
+  lines.push('];');
+  lines.push('');
+  // DIAGRAMS folds into the SAME (trusted-lane-verified) bundle as THOUGHTS — a
+  // separate generated file would be unverified by substrate-verify (injection
+  // hole). Always emitted (possibly empty) so consumers can import it.
+  lines.push('export const DIAGRAMS: Diagram[] = [');
+  for (const d of diagrams) {
+    lines.push('  {');
+    lines.push(`    title: ${JSON.stringify(d.title)},`);
+    lines.push(`    slug: ${JSON.stringify(d.slug)},`);
+    lines.push(`    date: ${JSON.stringify(d.date)},`);
+    lines.push(`    alt: ${JSON.stringify(d.alt)},`);
+    lines.push(`    caption: ${JSON.stringify(d.caption)},`);
+    lines.push(`    src: ${JSON.stringify(diagramPublicSrc(d))},`);
     lines.push('  },');
   }
   lines.push('];');
@@ -582,13 +889,16 @@ export interface DecideOutputArgs {
   substrateReachable: boolean;
   substratePath: string | null;
   entries: ThoughtEntry[];
+  // Optional with a [] default in decideOutput: a caller that omits diagrams
+  // gets the prior entries-only behavior (fail-safe — absent means no diagrams).
+  diagrams?: DiagramEntry[];
   diagnostics: SubstrateDiagnostic[];
   strict: boolean;
   requireMatches: boolean;
 }
 
 export function decideOutput(args: DecideOutputArgs): OutputDecision {
-  const { substrateReachable, entries, diagnostics, strict, requireMatches } = args;
+  const { substrateReachable, entries, diagrams = [], diagnostics, strict, requireMatches } = args;
   if (!substrateReachable) {
     const reason = 'substrate root unreachable (SUBSTRATE_PATH unset and sibling ../dan-mercede-substrate not found)';
     return strict ? { action: 'fail', reason } : { action: 'skip', reason };
@@ -599,11 +909,25 @@ export function decideOutput(args: DecideOutputArgs): OutputDecision {
     const reason = `substrate contains ${fatal.length} fatal corruption(s): ${summary}`;
     return strict ? { action: 'fail', reason } : { action: 'skip', reason };
   }
+  // A non-empty THOUGHTS corpus is a hard precondition for this site: ROUTE_META['/works']
+  // evaluates featuredEssays() at module load, which fail-louds when the featured slugs are
+  // absent from THOUGHTS. So a 0-essay compile must NEVER write — it would emit THOUGHTS:[]
+  // and crash the build — even when diagrams matched. Essays are always present in a real
+  // substrate read; 0 essays is a fault state, so skip-preserve (keep the committed bundle,
+  // which has the thoughts) or fail under --require-matches. Diagrams never publish without
+  // essays (the real regen compiles both together → entries >= 1 → writes both arrays).
   if (entries.length === 0) {
-    const reason = `substrate yielded 0 canonicals matching surface_targets="${THIS_SURFACE}"`;
+    const reason =
+      diagrams.length > 0
+        ? `substrate yielded ${diagrams.length} diagram(s) but 0 thought canonicals matching surface_targets="${THIS_SURFACE}" — refusing to write a THOUGHTS:[] bundle (would break /works featuredEssays)`
+        : `substrate yielded 0 canonicals (thought or diagram) matching surface_targets="${THIS_SURFACE}"`;
     return requireMatches ? { action: 'fail', reason } : { action: 'skip', reason };
   }
-  return { action: 'write', content: generateOutput(entries), entryCount: entries.length };
+  return {
+    action: 'write',
+    content: generateOutput(entries, diagrams),
+    entryCount: entries.length + diagrams.length,
+  };
 }
 
 export function main(): void {
@@ -642,14 +966,20 @@ export function main(): void {
   console.log(`\n🛠  danmercede.com substrate compile (mode: ${modeLabel})`);
 
   let entries: ThoughtEntry[] = [];
+  let diagrams: DiagramEntry[] = [];
   let diagnostics: SubstrateDiagnostic[] = [];
   if (substratePath) {
     console.log(`   ℹ️  substrate root: ${substratePath}`);
     const result = readSubstrateWithDiagnostics(substratePath);
     // Plumb diagnostics into dedup so duplicate slugs among admitted
     // canonicals raise a fatal diagnostic (caught by decideOutput below).
-    const deduped = dedupBySlug(result.entries, result.diagnostics);
-    entries = sortByIsoDateDesc(deduped);
+    entries = sortByIsoDateDesc(dedupBySlug(result.entries, result.diagnostics));
+    // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
+    // asset is missing / unsafe / uncopyable, so the bundle never carries a
+    // dangling image src (mirrors danmercede.online's copy-then-keep behavior).
+    diagrams = sortByIsoDateDesc(dedupBySlug(result.diagrams, result.diagnostics)).filter(
+      (d) => copyDiagramAsset(d.assetPath, d.slug, substratePath, root, d.slug, result.diagnostics) !== null,
+    );
     diagnostics = result.diagnostics;
   }
 
@@ -657,6 +987,7 @@ export function main(): void {
     substrateReachable: substratePath !== null,
     substratePath,
     entries,
+    diagrams,
     diagnostics,
     strict,
     requireMatches,

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!--
     lastmod policy (W9): these dates reflect REAL content change, never an
     every-build auto-bump (inflated lastmod erodes crawler trust). Update a
@@ -60,6 +61,17 @@
   <url>
     <loc>https://www.danmercede.com/guides</loc>
     <lastmod>2026-06-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!--
+    /diagrams INDEX: restored in the admission regen now that the diagram corpus is live.
+    The build-generated per-diagram <url> + <image:image> entries (renderDiagramSitemapEntries,
+    using xmlns:image above) are injected into build/sitemap.xml at build time, not committed here.
+  -->
+  <url>
+    <loc>https://www.danmercede.com/diagrams</loc>
+    <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

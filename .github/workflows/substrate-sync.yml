@@ -66,12 +66,18 @@ jobs:
       - name: Diff against committed bundle
         id: diff
         run: |
-          if git diff --quiet -- constants.generated.ts; then
+          # Drift = any change to the generated bundle OR the copied diagram binaries.
+          # Use `git status --porcelain` (not `git diff`) so UNTRACKED new diagram assets
+          # are detected too: the diagram-aware compiler copies each admitted image into
+          # public/assets/diagrams/ (a dir absent until the first diagram sync) and points
+          # DIAGRAMS[].src at it, so an asset change must open a PR — else the deployed
+          # /diagrams/<slug> page <img> and the sitemap <image:loc> 404.
+          if [ -z "$(git status --porcelain -- constants.generated.ts public/assets/diagrams)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No drift detected; constants.generated.ts already matches substrate."
+            echo "::notice::No drift detected; constants.generated.ts + diagram assets already match substrate."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Drift detected; opening review PR."
+            echo "::notice::Drift detected (bundle and/or diagram assets); opening review PR."
           fi
 
       - name: Remove vendored substrate before PR
@@ -100,8 +106,16 @@ jobs:
             If this PR keeps reappearing with the same diff, investigate whether `surface_targets` on the source canonical(s) is intended.
 
             🤖 Opened by `.github/workflows/substrate-sync.yml`
+          # Stage the generated bundle AND the copied diagram binaries together, so a
+          # diagram sync PR is self-consistent (DIAGRAMS[].src ↔ a committed file). Staging
+          # the directory captures new/changed/removed assets. Without this the PR would
+          # ship DIAGRAMS entries whose images are missing → 404 on deploy.
+          # NOTE: public/assets/diagrams/.gitkeep keeps this dir tracked so `git add` here
+          # does not fail with "pathspec did not match" in a 0-diagram regen (where the
+          # compiler copies no binaries). Do not remove that .gitkeep.
           add-paths: |
             constants.generated.ts
+            public/assets/diagrams
           labels: |
             substrate-sync
           delete-branch: true

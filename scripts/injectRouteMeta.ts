@@ -18,6 +18,7 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   ROUTE_META,
   caseStudyMeta,
@@ -28,6 +29,9 @@ import {
   guideMeta,
   guidePaths,
   renderGuideSitemapEntries,
+  diagramMeta,
+  diagramPaths,
+  renderDiagramSitemapEntries,
   renderSeoBlock,
   injectSeoBlock,
   renderBodyBlock,
@@ -40,8 +44,62 @@ import {
   JSONLD_BLOCK_END,
   type RouteMeta,
 } from '../seoMeta';
+import { DIAGRAMS } from '../constants';
+import type { Diagram } from '../types';
 
 const BUILD_DIR = path.resolve(process.cwd(), 'build');
+
+// The full per-route bake set: static (ROUTE_META, minus the homepage which IS
+// build/index.html) + dynamic case-study / thought / guide / diagram routes, each
+// derived from committed content so a content refresh needs no slug-list edit.
+// The diagram corpus is injectable (mirrors the S1c seoMeta helpers) because the
+// in-repo DIAGRAMS is empty until the substrate-sync regen — injection lets a test
+// prove the diagram wiring with a synthetic corpus. Works microsites are deliberately
+// EXCLUDED: they are Vercel-rewrite proxies and a physical build/works/<slug>/index.html
+// would shadow the rewrite (seoMeta.ts:282).
+export function collectRoutes(diagrams: Diagram[] = DIAGRAMS): Array<{ path: string; meta: RouteMeta }> {
+  const routes: Array<{ path: string; meta: RouteMeta }> = [];
+  // Static routes, excluding the homepage (build/index.html is already the homepage).
+  for (const [routePath, meta] of Object.entries(ROUTE_META)) {
+    if (routePath === '/') continue;
+    routes.push({ path: routePath, meta });
+  }
+  // Dynamic case-study routes, derived from committed content.
+  for (const csPath of caseStudyPaths()) {
+    routes.push({ path: csPath, meta: caseStudyMeta(csPath.split('/').pop()) });
+  }
+  // Dynamic per-thought routes — each bakes the full essay body + an Article JSON-LD node.
+  for (const tPath of thoughtPaths()) {
+    routes.push({ path: tPath, meta: thoughtMeta(tPath.split('/').pop()) });
+  }
+  // Dynamic per-guide routes — each bakes the full guide prose + an Article JSON-LD node.
+  for (const gPath of guidePaths()) {
+    routes.push({ path: gPath, meta: guideMeta(gPath.split('/').pop()) });
+  }
+  // Dynamic per-diagram routes — each bakes the caption + alt prose (crawlable) and an
+  // ImageObject JSON-LD node backref-ing the canonical #person. Pass the SAME corpus to
+  // diagramPaths + diagramMeta so an injected test corpus resolves on lookup.
+  for (const dPath of diagramPaths(diagrams)) {
+    routes.push({ path: dPath, meta: diagramMeta(dPath.split('/').pop(), diagrams) });
+  }
+  return routes;
+}
+
+// The build-generated sitemap entries appended to the committed public/sitemap.xml
+// (which carries only static + case-study routes). Thought / guide / diagram corpora
+// are emitted here so a substrate-sync — which only commits constants.generated.ts —
+// stays in lockstep with ZERO sitemap hand-maintenance. Empty corpora contribute
+// nothing (the render* fns return '' and .filter(Boolean) drops them) so no orphan
+// <image:image> child is ever written. Diagram corpus injectable (see collectRoutes).
+export function buildSitemapExtraEntries(diagrams: Diagram[] = DIAGRAMS): string {
+  return [
+    renderThoughtSitemapEntries(),
+    renderGuideSitemapEntries(),
+    renderDiagramSitemapEntries(diagrams),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
 
 async function main() {
   const indexPath = path.join(BUILD_DIR, 'index.html');
@@ -56,29 +114,7 @@ async function main() {
     }
   }
 
-  const routes: Array<{ path: string; meta: RouteMeta }> = [];
-  // Static routes, excluding the homepage (build/index.html is already the homepage).
-  for (const [routePath, meta] of Object.entries(ROUTE_META)) {
-    if (routePath === '/') continue;
-    routes.push({ path: routePath, meta });
-  }
-  // Dynamic case-study routes, derived from committed content.
-  for (const csPath of caseStudyPaths()) {
-    const slug = csPath.split('/').pop();
-    routes.push({ path: csPath, meta: caseStudyMeta(slug) });
-  }
-  // Dynamic per-thought routes, derived from the committed THOUGHTS corpus (R2).
-  // Each bakes the full essay body (R1) and an Article JSON-LD node.
-  for (const tPath of thoughtPaths()) {
-    const slug = tPath.split('/').pop();
-    routes.push({ path: tPath, meta: thoughtMeta(slug) });
-  }
-  // Dynamic per-guide routes, derived from the committed GUIDES corpus. Each bakes
-  // the full guide prose (figures/code dropped) and an Article JSON-LD node.
-  for (const gPath of guidePaths()) {
-    const slug = gPath.split('/').pop();
-    routes.push({ path: gPath, meta: guideMeta(slug) });
-  }
+  const routes = collectRoutes();
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -120,9 +156,7 @@ async function main() {
   if (!sitemapXml.includes(closeTag)) {
     throw new Error('build/sitemap.xml is missing </urlset> — cannot inject thought entries.');
   }
-  const thoughtEntries = renderThoughtSitemapEntries();
-  const guideEntries = renderGuideSitemapEntries();
-  const extraEntries = [thoughtEntries, guideEntries].filter(Boolean).join('\n');
+  const extraEntries = buildSitemapExtraEntries();
   if (extraEntries) {
     await fs.writeFile(
       sitemapPath,
@@ -134,12 +168,20 @@ async function main() {
   console.log(
     `[injectRouteMeta] wrote ${written} per-route static HTML files ` +
       `(${routes.length} routes: ${Object.keys(ROUTE_META).length - 1} static + ` +
-      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts + ${guidePaths().length} guides) ` +
-      `+ injected ${thoughtPaths().length} thought + ${guidePaths().length} guide entries into build/sitemap.xml`,
+      `${caseStudyPaths().length} case studies + ${thoughtPaths().length} thoughts + ` +
+      `${guidePaths().length} guides + ${diagramPaths().length} diagrams) ` +
+      `+ injected ${thoughtPaths().length} thought + ${guidePaths().length} guide + ` +
+      `${diagramPaths().length} diagram entries into build/sitemap.xml`,
   );
 }
 
-main().catch((err) => {
-  console.error('[injectRouteMeta] FAILED:', err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// Entry-guard: run the injector ONLY when invoked as the CLI (npm run build →
+// `tsx scripts/injectRouteMeta.ts`), not when imported by a test. This is what
+// makes collectRoutes / buildSitemapExtraEntries unit-testable — importing the
+// module no longer fires the build-time bake (which would fail with no build/ dir).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error('[injectRouteMeta] FAILED:', err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

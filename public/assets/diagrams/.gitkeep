@@ -1,0 +1,4 @@
+# Keeps public/assets/diagrams/ tracked so the substrate-sync workflow's
+# `add-paths: public/assets/diagrams` (git add) succeeds even in a 0-diagram
+# regen (where the diagram-aware compiler copies no binaries here). The 21
+# diagram binaries land alongside this file at the content regen.
