@@ -8,6 +8,14 @@ import type { Thought, Diagram } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
+    title: "The Alibi of a Green Gate",
+    preview: "A control is what it does to the live target, not what it is declared to be; armed, configured, and exit-0 is an alibi for action, not proof of it.",
+    date: "2026-06-29",
+    category: "Architecture",
+    slug: "2026-06-29-the-alibi-of-a-green-gate",
+    body: "A control is what it does to the live target, not what it is declared to be. We build the gate, the reaper, the required check, the backup. We arm it, it runs, it exits zero, the dashboard is green. Then the leak it was meant to kill is still leaking, the bad merge it was meant to refuse already landed, the stale image it was meant to replace is still serving months-old code. Present, configured, armed, inert. None of those four facts is the one that matters.\n\nThe failure has one shape, and it is structural. The control's selection model, its liveness model, or its notion of \"done\" does not match the world it governs, so it sweeps an empty set, or whitelists by naming the bad states it knows and silently passing the ones it does not, or inspects the merged PR instead of the running artifact. Nothing throws. A no-op and a success produce the identical green. The green proves the control ran; it says nothing about whether it bit.\n\nThat is the whole trap: \"armed and error-free\" reads exactly like \"remediating,\" and the reading is free while the proof costs a probe. So pay for the probe. The question is never \"did it run.\" It is \"did anything in the live world change because it fired\": did the leak shrink, did the merge get refused, did the served bytes turn over. A control that cannot point at an effect on its target has not earned the word \"working.\" Trust the effect, never the exit code. A green gate over an inert control is theater. Prove it bit.",
+  },
+  {
     title: "Verify the Verifier",
     preview: "A verification agent is still a single source: the two-tier draft-then-skeptic pattern inverts the moment the skeptic introduces its own error, because the architecture has pre-committed to trusting the second voice.",
     date: "2026-06-24",
