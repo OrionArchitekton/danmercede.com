@@ -1,6 +1,6 @@
 # Spec — Diagram content type: .com canonical route family + cross-surface POSSE
 
-Status: DRAFT for review · Date: 2026-06-28 · Arc: 3 repos (dan-mercede-substrate, danmercede-com, danmercede-online)
+Status: DRAFT for review · Date: 2026-06-28 · Arc: 2 repos (danmercede-com, danmercede-online) — substrate untouched, see REFINEMENT 3
 Companion build scope: `diagram-feed-canonical-and-plan.md`. Locked decisions below are settled — assert, don't re-litigate.
 
 ## Purpose
@@ -9,7 +9,7 @@ Give the personal brand a **diagram content type** whose **SEO canonical lives o
 
 ## Locked decisions
 
-1. **Admission:** a diagram is admitted to the .com hub by declaring `danmercede.com` in its substrate canonical's `surface_targets` (the durable, semantically-correct record). The 21 existing canonicals get `danmercede.com` added; this re-SHAs them → a `substrate.lock.toml` re-pin in the same change.
+1. **Admission:** a diagram is admitted to the .com hub by SLUG via the `.com`-side `HUB_DIAGRAM_ALLOWLIST` (mirrors the existing `HUB_ESSAY_ALLOWLIST`), which overrides only the `surface_targets` gate. **ZERO substrate edits.** (Superseded 2026-06-28 — see REFINEMENT 3: the original "add `danmercede.com` to the 21 canonicals' `surface_targets`" is infeasible because substrate canonicals are immutable — `tools/promote.py` has no retarget mode and hand-edits are forbidden by `VAULT_SCHEMA.md`. The allowlist is the doctrine-compliant equivalent and needs no `substrate.lock.toml` re-pin.)
 2. **Route shape:** a `/diagrams` index page + a `/diagrams/<slug>/` detail page per diagram (mirrors `/thoughts` + `/guides`).
 3. **Slug:** the existing date-prefixed substrate slug (1:1 map across surfaces).
 4. **Structured data:** the detail page's primary entity is an `ImageObject`; `author`/`publisher` reference the single hub `#person` by `@id` (no second Person node).
@@ -39,8 +39,8 @@ Given a diagram that now has a hub canonical, when the .online site builds, then
 *Acceptance:* the .online per-slug spec/test asserts diagram-type pages canonical to .com (the prior "every entry self-canonical" invariant is updated for the carve-out); essays unaffected.
 
 **S4 — All 21 published diagrams consolidate onto the hub.**
-Given the 21 existing diagram canonicals, when admission is applied, then each has `danmercede.com` in `surface_targets`, the substrate lock is re-pinned to the new SHAs, and all 21 bake on .com at their real backdated dates with the S1 guarantees.
-*Acceptance:* substrate `validate` + lane `check_substrate_lock` pass; 21 hub pages exist; no slug collides with a reserved path / `/thoughts` slug / `/works` microsite rewrite.
+Given the 21 existing diagram canonicals, when their slugs are added to `HUB_DIAGRAM_ALLOWLIST` (zero substrate edits) and the bundle is regenerated, then all 21 bake on .com at their real backdated dates with the S1 guarantees.
+*Acceptance:* the substrate is untouched (no `validate`/`check_substrate_lock` change needed); 21 hub pages exist; no slug collides with a reserved path / `/thoughts` slug / `/works` microsite rewrite.
 
 **S5 — Diagram assets stay within the hub image budget.**
 Given the diagram binaries copied into the hub, when the image-budget check runs, then it passes (assets optimized), with no legibility regression.
@@ -64,9 +64,9 @@ Given a curated, redaction-cleared net-new diagram, when it is authored into sub
 
 ## Rollout / sequencing / risk
 
-- **Sequencing:** substrate admission + lock re-pin (PR A) → hub route family + bake 21 (PR B) **co-shipped with** the .online demote (PR C) to close the competing-canonical window. Net-new drip (S6) follows after the route family is live.
-- **Fail-closed gates that must stay green:** `sitemapParity`, `identityCanonical`, `imageBudget`; substrate `validate`; lane `check_substrate_lock`. Vercel prebuild deploy-truth — verify the committed bundle == live before declaring done.
-- **Risks:** competing canonicals if .online demote lags .com (mitigate: co-ship); substrate seal churn (mitigate: lock re-pin in the same change); large assets tripping imageBudget (mitigate: optimize); slug shadowing (mitigate: verify slugs vs reserved/thought/works paths before baking).
+- **Sequencing (2-repo, revised per REFINEMENT 3):** PR-com-1 (hub compiler + route family + EMPTY allowlist; admits 0 → bundle unchanged → substrate-verify green) → admission PR (populate `HUB_DIAGRAM_ALLOWLIST` with the 21 slugs; the `substrate-sync` regen produces the 21-diagram bundle) **co-shipped with** the .online demote to close the competing-canonical window. Net-new drip (S6) follows. The substrate is never edited; there is no PR-sub and no lock re-pin.
+- **Fail-closed gates that must stay green:** `sitemapParity`, `identityCanonical`, `imageBudget`; `.com` `substrate-verify`. Vercel prebuild deploy-truth — verify the committed bundle == live before declaring done. (Substrate `validate` / lane `check_substrate_lock` are NOT touched — zero substrate churn.)
+- **Risks:** competing canonicals if .online demote lags .com (mitigate: co-ship the demote with the admission/regen PR); large assets tripping imageBudget (mitigate: optimize, relevant once binaries are copied at regen); slug shadowing (mitigate: verify slugs vs reserved/thought/works paths before populating the allowlist).
 
 ---
 
@@ -76,15 +76,17 @@ Recon against the live repos confirmed the premise and forced two refinements to
 
 **Verified substrate state (dan-mercede-substrate `main`):**
 - 21 `type: diagram` canonicals EXIST on `main/publishing/canonical/` (PR #14, merged 2026-06-18, not reverted). They use JSON-quoted-key frontmatter (`"type": "diagram"`) — a naive `grep 'type:'` false-negatives ([[feedback_frontmatter_quoted_key_breaks_naive_grep]]).
-- Each carries: `slug`, `title`, `date` (ISO-8601 w/ offset), `type: diagram`, `surface_targets: ["danmercede.online"]` (← decision #1 adds `"danmercede.com"`), `layer`, `tags`, `alt_text`, `caption`, `asset_path` (`publishing/assets/<slug>/diagram.{jpg,svg,png}`), `lineage_sources` (+sha256), `wiki_refs`, `status: canonical`, `gate_report`.
+- Each carries: `slug`, `title`, `date` (ISO-8601 w/ offset), `type: diagram`, `surface_targets: ["danmercede.online"]` (stays as-is — admission is now `.com`-side by slug, REFINEMENT 3), `layer`, `tags`, `alt_text`, `caption`, `asset_path` (`publishing/assets/<slug>/diagram.{jpg,svg,png}`), `lineage_sources` (+sha256), `wiki_refs`, `status: canonical`, `gate_report`.
 - The `.online` feed is LIVE (42 diagram refs baked in its `constants.generated.ts`; 21 binaries in `public/assets/diagrams/`).
 
 **REFINEMENT 1 — fold diagrams into the VERIFIED `constants.generated.ts`, NOT a separate `constants.diagrams.generated.ts`.** The `substrate-verify` trusted lane (pull_request_target, base-compiler, byte-compares `constants.generated.ts`) is the security anchor of the substrate-consumer contract. A separate generated file would be UNVERIFIED → a PR could hand-inject baked content (the exact hole substrate-verify closes). So `compileContent.ts` admits `type: diagram` and emits a `DIAGRAMS` array INTO the same verified bundle. (Supersedes the build-scope's "separate file" suggestion.)
 
-**REFINEMENT 2 — compiler-change/bundle-regen sequencing (AGENTS.md "Compiler-change caveat").** `substrate-verify` runs the BASE compiler; a PR that changes the compiler's output shape AND regenerates the bundle fails verification. Doctrine-compliant sequence:
-1. **PR-com-1 (compiler):** teach `.com` the diagram type (compileContent admit + `DiagramEntry` + seoMeta diagram fns + injectRouteMeta loop + `/diagrams` routes + tests), bundle UNCHANGED (the 21 canonicals don't yet target `.com`, so base + new compiler both emit thoughts-only). substrate-verify green.
-2. **PR-sub (substrate):** `surface_targets += "danmercede.com"` on the 21 diagram canonicals + `substrate.lock.toml` re-pin.
-3. **bundle regen:** the `substrate-sync` workflow runs the NOW-merged diagram-aware compiler → regenerates `constants.generated.ts` with the 21 diagrams → review PR → merge. (Co-ship the `.online` demote, PR-online, in this window to close the competing-canonical gap.)
+**REFINEMENT 2 — compiler-change/bundle-regen sequencing (AGENTS.md "Compiler-change caveat").** `substrate-verify` runs the BASE compiler; a PR that changes the compiler's output shape AND regenerates the bundle fails verification. Doctrine-compliant sequence (admission path revised by REFINEMENT 3):
+1. **PR-com-1 (compiler):** teach `.com` the diagram type (compileContent admit + `DiagramEntry` + seoMeta diagram fns + injectRouteMeta loop + `/diagrams` routes + an EMPTY `HUB_DIAGRAM_ALLOWLIST` + tests), bundle UNCHANGED (allowlist empty ⇒ 0 diagrams admitted; base + new compiler both emit thoughts-only). substrate-verify green. ← this PR (#62).
+2. **admission PR (`.com`):** populate `HUB_DIAGRAM_ALLOWLIST` with the 21 diagram slugs (zero substrate edits).
+3. **bundle regen:** the `substrate-sync` workflow runs the NOW-merged diagram-aware compiler against the UNCHANGED substrate → admits the 21 allowlisted diagrams → regenerates `constants.generated.ts` with the 21 diagrams + copies the binaries → review PR → merge. (Co-ship the `.online` demote in this window to close the competing-canonical gap. Steps 2+3 can be one PR.)
+
+**REFINEMENT 3 — admission is `.com`-side allowlist, NOT a substrate `surface_targets` edit (2026-06-28, doctrine conflict resolved with Dan).** The original decision #1 ("add `danmercede.com` to the 21 canonicals' `surface_targets`") is INFEASIBLE: substrate canonicals are immutable (`VAULT_SCHEMA.md` "Canonical Immutability"; `tools/promote.py` has no retarget mode — only supersession; hand-edits forbidden). Re-promoting 21 new canonicals would change every slug and supersede the `.online`-live originals (destructive). Resolution (Dan-ratified): admit by slug via `HUB_DIAGRAM_ALLOWLIST`, exactly mirroring the existing `HUB_ESSAY_ALLOWLIST` (which already admits 6 `.com` essays whose substrate `surface_targets` lack `.com`). Consequences: the arc drops from 3 repos to **2** (substrate untouched — no PR-sub, no `substrate.lock.toml` re-pin); `.com` owns the full admission record (an allowlist file) instead of the substrate frontmatter.
 
 **S1 micro-slice decomposition (one RED→GREEN each):** S1a compiler admits `type: diagram` → `DiagramEntry` (asset-copy + path-traversal guard); S1b `DIAGRAMS` into the verified bundle + `Diagram` type + constants re-export; S1c seoMeta `diagramMeta`/`diagramPaths`/`renderDiagramSitemapEntries`(+`<image:image>`)/`ImageObject` JSON-LD/breadcrumb; S1d injectRouteMeta diagram loop (bakes `build/diagrams/<slug>/index.html`); S1e `App.tsx` `/diagrams` index + detail routes (hydration parity).
 

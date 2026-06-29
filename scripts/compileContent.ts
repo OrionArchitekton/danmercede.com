@@ -77,6 +77,18 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-05-20-pre-execution-authority-gates',
 ];
 
+// Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
+// HUB_ESSAY_ALLOWLIST. The substrate's type:diagram canonicals are immutable and
+// target only danmercede.online; substrate doctrine forbids re-tagging their
+// surface_targets (promote.py has no retarget mode, hand-edits are prohibited), so
+// the hub admits them to /diagrams BY SLUG here. This overrides ONLY the
+// surface_targets gate; status / type / required-field / slug-safety / date gates
+// still apply. SHIPS EMPTY in PR-com-1 (admits 0 diagrams → committed
+// constants.generated.ts stays byte-unchanged → substrate-verify passes). The
+// admission PR populates the 21 diagram slugs and co-ships the substrate-sync regen
+// + the danmercede.online rel=canonical demote (closing the competing-canonical window).
+export const HUB_DIAGRAM_ALLOWLIST: readonly string[] = [];
+
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
 // back to DEFAULT_CATEGORY. Extend cautiously when new layers are minted in
 // substrate; an unexpected new layer landing as "Doctrine" is the safer default
@@ -445,19 +457,30 @@ export function mapSubstrateToDiagram(
   data: Record<string, unknown>,
   body: string,
   filename: string,
-  diagnostics?: SubstrateDiagnostic[]
+  diagnostics?: SubstrateDiagnostic[],
+  allowlist: readonly string[] = HUB_DIAGRAM_ALLOWLIST
 ): DiagramEntry | null {
   const pushDiag = (severity: SubstrateDiagnostic['severity'], reason: string): void => {
     if (diagnostics) diagnostics.push({ file: filename, severity, reason });
   };
 
+  // Admission gate (mirrors mapSubstrateToEntry): a diagram is admitted to the hub
+  // if its substrate surface_targets include danmercede.com OR its slug is in the
+  // HUB_DIAGRAM_ALLOWLIST (the immutable .online-only diagram canonicals are admitted
+  // by slug — substrate re-tagging is forbidden). The allowlist overrides ONLY this
+  // gate; all subsequent gates still apply.
   const surfaceTargets = data['surface_targets'];
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
-  if (!surfaceTargeted) {
+  const slugRaw = data['slug'];
+  const allowlisted = typeof slugRaw === 'string' && allowlist.includes(slugRaw);
+  if (!surfaceTargeted && !allowlisted) {
     console.log(`   ℹ️  substrate diagram skipped (surface_targets): ${filename}`);
     pushDiag('skip', 'surface_targets does not include danmercede.com');
     return null;
+  }
+  if (allowlisted && !surfaceTargeted) {
+    console.log(`   ✅ substrate diagram admitted via HUB_DIAGRAM_ALLOWLIST: ${filename}`);
   }
 
   if (data['status'] !== 'canonical') {

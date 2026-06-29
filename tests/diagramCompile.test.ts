@@ -19,6 +19,7 @@ import {
   decideOutput,
   isSafeRelativePath,
   copyDiagramAsset,
+  HUB_DIAGRAM_ALLOWLIST,
   type DiagramEntry,
   type SubstrateDiagnostic,
 } from '../scripts/compileContent.js';
@@ -86,6 +87,25 @@ test('mapSubstrateToDiagram admits a danmercede.com-targeted type:diagram canoni
 test('mapSubstrateToDiagram skips a diagram NOT targeting danmercede.com', () => {
   const onlineOnly = { ...diagramData, surface_targets: ['danmercede.online'] };
   assert.equal(mapSubstrateToDiagram(onlineOnly, '', 'fixture.md'), null);
+});
+
+// HUB_DIAGRAM_ALLOWLIST (mirrors HUB_ESSAY_ALLOWLIST): the substrate diagram canonicals
+// are IMMUTABLE and target only danmercede.online (frontmatter re-tagging is forbidden by
+// substrate doctrine — promote.py has no retarget mode). The hub admits them by SLUG via a
+// .com-side allowlist that overrides ONLY the surface_targets gate. Injectable so the
+// mechanism is provable while the shipped constant stays empty (admits 0 in PR-com-1).
+test('mapSubstrateToDiagram admits a NON-.com-targeted diagram whose slug is in the allowlist', () => {
+  const onlineOnly = { ...diagramData, surface_targets: ['danmercede.online'] };
+  // With the default (empty) allowlist it is NOT admitted (bundle stays unchanged in PR-com-1).
+  assert.equal(mapSubstrateToDiagram(onlineOnly, '', 'f.md'), null);
+  // With its slug allowlisted, it IS admitted despite surface_targets lacking danmercede.com.
+  const entry = mapSubstrateToDiagram(onlineOnly, '', 'f.md', undefined, [diagramData.slug as string]);
+  assert.ok(entry, 'an allowlisted diagram must be admitted even without .com in surface_targets');
+  assert.equal(entry!.slug, diagramData.slug);
+});
+
+test('HUB_DIAGRAM_ALLOWLIST ships EMPTY (PR-com-1 admits 0 diagrams; the admission PR populates it)', () => {
+  assert.deepEqual([...HUB_DIAGRAM_ALLOWLIST], [], 'must ship empty so the substrate-verify bundle stays unchanged');
 });
 
 // Review BLOCKING (write-side path traversal + XML <loc> injection): the slug becomes
