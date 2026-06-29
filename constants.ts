@@ -26,6 +26,7 @@ export const NAV_ITEMS = [
   { label: 'Proof', path: '/proof' },
   { label: 'Works', path: '/works' },
   { label: 'Guides', path: '/guides' },
+  { label: 'Diagrams', path: '/diagrams' },
   { label: 'Connect', path: '/connect' },
 ];
 

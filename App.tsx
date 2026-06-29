@@ -1610,7 +1610,7 @@ const DiagramsPage = () => {
         <SectionHeader as="h1" title="Diagrams" subtitle="Systems · Architecture · Agentic Patterns" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Visual explainers for governed AI architecture — two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.
+          Visual explainers for governed AI architecture: monitoring versus enforcement, non-repudiation, authority decay, the liability equation, and the systems patterns behind the doctrine.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
