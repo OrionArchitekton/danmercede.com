@@ -110,6 +110,9 @@ jobs:
           # diagram sync PR is self-consistent (DIAGRAMS[].src ↔ a committed file). Staging
           # the directory captures new/changed/removed assets. Without this the PR would
           # ship DIAGRAMS entries whose images are missing → 404 on deploy.
+          # NOTE: public/assets/diagrams/.gitkeep keeps this dir tracked so `git add` here
+          # does not fail with "pathspec did not match" in a 0-diagram regen (where the
+          # compiler copies no binaries). Do not remove that .gitkeep.
           add-paths: |
             constants.generated.ts
             public/assets/diagrams
