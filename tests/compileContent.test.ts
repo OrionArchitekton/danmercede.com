@@ -215,6 +215,27 @@ test('mapSubstrateToEntry: filters non-canonical status', () => {
   );
 });
 
+// Sibling of the diagram slug gate (review BLOCKING): an essay slug also flows
+// UNESCAPED into the sitemap <loc> (renderThoughtSitemapEntries), so a slug carrying
+// XML metacharacters / path traversal is an injection vector. A canonical that matched
+// surface+status+type WAS supposed to publish, so an unsafe slug is FATAL corruption
+// (--strict must refuse a partial bundle), not a silent skip. All real kebab slugs pass.
+test('mapSubstrateToEntry: rejects an unsafe (traversal/metachar) slug as FATAL', () => {
+  for (const bad of ['../../evil', 'a/b', 'a b', 'Abc', 'a_b']) {
+    assert.equal(
+      mapSubstrateToEntry(validFrontmatter({ slug: bad }), '', 'test.md'),
+      null,
+      `unsafe essay slug "${bad}" must be rejected`,
+    );
+  }
+  const diagnostics: SubstrateDiagnostic[] = [];
+  mapSubstrateToEntry(validFrontmatter({ slug: '../../evil' }), '', 'test.md', diagnostics);
+  assert.ok(
+    diagnostics.some((d) => d.severity === 'fatal' && /slug/i.test(d.reason)),
+    'an admitted-but-unsafe-slug essay must push a FATAL diagnostic',
+  );
+});
+
 test('mapSubstrateToEntry: filters unaccepted type (status-update)', () => {
   assert.equal(
     mapSubstrateToEntry(validFrontmatter({ type: 'status-update' }), '', 'test.md'),
@@ -412,8 +433,11 @@ test('generateOutput: emits valid TS with header + import + array', () => {
   ];
   const out = generateOutput(entries);
   assert.match(out, /GENERATED FILE/);
-  assert.match(out, /import type \{ Thought \} from '\.\/types';/);
+  assert.match(out, /import type \{ Thought, Diagram \} from '\.\/types';/);
   assert.match(out, /export const THOUGHTS: Thought\[\] = \[/);
+  // The bundle now folds a DIAGRAMS array into the SAME verified file (empty
+  // when no diagrams passed) — substrate-verify covers it, no separate file.
+  assert.match(out, /export const DIAGRAMS: Diagram\[\] = \[/);
   assert.match(out, /title: "Title 1"/);
   assert.match(out, /preview: "Preview 1"/);
   assert.match(out, /date: "2026-05-20"/);

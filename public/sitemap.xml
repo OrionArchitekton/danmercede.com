@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!--
     lastmod policy (W9): these dates reflect REAL content change, never an
     every-build auto-bump (inflated lastmod erodes crawler trust). Update a
@@ -63,6 +64,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!--
+    /diagrams is intentionally NOT listed yet: the diagram corpus (HUB_DIAGRAM_ALLOWLIST)
+    is empty in PR-com-1, so advertising an empty index page would be thin/churning. The
+    admission PR adds this <loc> back alongside the build-generated per-diagram <image:image>
+    entries (xmlns:image above is retained for those). See seoMeta.ts ROUTE_META note.
+  -->
   <url>
     <loc>https://www.danmercede.com/connect</loc>
     <lastmod>2026-06-17</lastmod>
