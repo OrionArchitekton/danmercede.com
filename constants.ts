@@ -8,8 +8,14 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Diagram } from './types';
 import { THOUGHTS } from './constants.generated';
+// Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
+// generated bundle does not yet export it — a NAMED import would hard-fail at
+// module load. DIAGRAMS enters the bundle via the substrate-sync regen after the
+// diagram canonicals add danmercede.com to surface_targets; until then the hub
+// builds cleanly with zero diagrams. (compiler-change / bundle-regen sequencing.)
+import * as generatedBundle from './constants.generated';
 import { GUIDES } from './constants.guides.generated';
 
 export const NAV_ITEMS = [
@@ -497,6 +503,9 @@ export const WORKS: Work[] = [
 
 export { THOUGHTS };
 export { GUIDES };
+// Defensive: resolves to the generated DIAGRAMS array once present, else [].
+export const DIAGRAMS: Diagram[] =
+  (generatedBundle as { DIAGRAMS?: Diagram[] }).DIAGRAMS ?? [];
 
 // --- /works dev-hub data (PR2) ---------------------------------------------
 // FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a
