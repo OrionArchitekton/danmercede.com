@@ -107,13 +107,16 @@ test('mapSubstrateToDiagram admits a NON-.com-targeted diagram whose slug is in 
   assert.equal(entry!.slug, diagramData.slug);
 });
 
-test('HUB_DIAGRAM_ALLOWLIST is armed with the 21 diagram slugs (admission PR) and every entry is slug-safe + unique', () => {
-  assert.equal(HUB_DIAGRAM_ALLOWLIST.length, 21, 'all 21 existing diagram canonicals are admitted');
+test('HUB_DIAGRAM_ALLOWLIST is armed with 23 diagram slugs (21 cutover + net-new drip) and every entry is slug-safe + unique', () => {
+  assert.equal(HUB_DIAGRAM_ALLOWLIST.length, 23, '21 cutover diagrams + 2 net-new drip canonicals are admitted');
   const SAFE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
   for (const slug of HUB_DIAGRAM_ALLOWLIST) {
     assert.match(slug, SAFE, `allowlisted slug "${slug}" must be charset-safe (filesystem segment + sitemap <loc> token)`);
   }
   assert.equal(new Set(HUB_DIAGRAM_ALLOWLIST).size, HUB_DIAGRAM_ALLOWLIST.length, 'no duplicate slugs');
+  // net-new drip 1 (2026-06-29) must stay admitted
+  assert.ok(HUB_DIAGRAM_ALLOWLIST.includes('2026-06-29-the-two-plane-architecture'));
+  assert.ok(HUB_DIAGRAM_ALLOWLIST.includes('2026-06-29-runtime-governance-how-it-works'));
 });
 
 // Review BLOCKING (write-side path traversal + XML <loc> injection): the slug becomes

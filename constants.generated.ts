@@ -219,6 +219,22 @@ export const THOUGHTS: Thought[] = [
 
 export const DIAGRAMS: Diagram[] = [
   {
+    title: "Runtime Governance: How It Works",
+    slug: "2026-06-29-runtime-governance-how-it-works",
+    date: "2026-06-29",
+    alt: "Runtime governance, step by step. A request arrives; rich telemetry is collected in real time (source IP and ASN, host and path, user and token, TLS, geo and device, historical signals); runtime policies evaluate identity and access, posture and risk, context and behavior, and business rules in milliseconds; a decision is made to allow, challenge, restrict, or block; Traefik enforces it instantly via routes, middleware, and dynamic config; and outcomes are logged so policies adapt over time. Allow proceeds to the service, challenge requires step-up verification, restrict applies rate limits or read-only or masked scope, and block returns a 403, 429, or custom page. Decide at runtime, not at deploy time: least privilege always, verify explicitly, observe everything, secure by default. Under five milliseconds per decision, over one hundred thousand decisions per second, zero downtime.",
+    caption: "Continuously evaluate, decide, and enforce at runtime, without slowing down your apps.",
+    src: "/assets/diagrams/2026-06-29-runtime-governance-how-it-works.png",
+  },
+  {
+    title: "The Two-Plane Architecture",
+    slug: "2026-06-29-the-two-plane-architecture",
+    date: "2026-06-29",
+    alt: "The two-plane architecture. A public ingress plane carries the world to your apps: the visitor's browser reaches the Cloudflare edge (DNS, TLS, WAF, CDN, DDoS, optional Access), then one path per hostname (a Cloudflare tunnel dialing outbound, or a published 443 with an origin cert) to a single Traefik reverse proxy that binds 80 and 443 and routes by host and path over a private Docker network to your app containers, reached by service name rather than localhost. A separate private admin plane carries the operator to everything else over a Tailscale mesh VPN: SSH, dashboards, metrics, databases, secrets stores, and internal tools. The two planes join only at a deliberate meet point where at most one service at a time is exposed via an IP allowlist, never by accident.",
+    caption: "One box, one reverse proxy, zero public inbound ports: a private mesh for everything else.",
+    src: "/assets/diagrams/2026-06-29-the-two-plane-architecture.png",
+  },
+  {
     title: "Fail-Closed Merge Admission",
     slug: "2026-06-16-fail-closed-merge-admission",
     date: "2026-06-16",
