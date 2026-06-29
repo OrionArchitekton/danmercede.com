@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { resolveGaConfig, type GaRuntimeConfig } from '../analytics/gaConfig';
+import { resolveGaConfig, createGtag, type GaRuntimeConfig } from '../analytics/gaConfig';
 
 // Resolved once from the build-time env. Null => GA is a no-op everywhere (dev,
 // preview, or any deploy without VITE_GA_MEASUREMENT_ID). See analytics/gaConfig.
@@ -25,10 +25,9 @@ function ensureGtagLoaded(cfg: GaRuntimeConfig): void {
   if (gtagLoaded || typeof window === 'undefined') return;
   gtagLoaded = true;
 
-  window.dataLayer = window.dataLayer || [];
-  const gtag: (...args: unknown[]) => void = (...args) => {
-    window.dataLayer!.push(args);
-  };
+  // Canonical arguments-form stub: gtag.js ignores array-form dataLayer entries,
+  // so commands must be pushed as `arguments` objects (see createGtag).
+  const gtag = createGtag(window);
   window.gtag = gtag;
 
   gtag('consent', 'default', cfg.consentDefaults);
