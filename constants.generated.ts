@@ -4,7 +4,7 @@
 // with surface_targets including "danmercede.com" are present.
 // See AGENTS.md for the substrate-consumer contract.
 
-import type { Thought } from './types';
+import type { Thought, Diagram } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
@@ -215,4 +215,7 @@ export const THOUGHTS: Thought[] = [
     slug: "2026-01-13-capability-removal-vs-capability-restriction",
     body: "If intelligence can route itself to a capability, governance is already compromised — restriction by policy only describes what the agent should not do. The Gated Substrate layer removes the capability at the execution environment instead, so the question of compliance never arises.\n\nThe difference is physical, not procedural. As long as the substrate exposes a route to forbidden capability, policy remains advisory and depends on the agent's cooperation. Runtime governance requires substrate-level removal: the agent cannot invoke the capability at all, because the path to it does not exist.",
   },
+];
+
+export const DIAGRAMS: Diagram[] = [
 ];
