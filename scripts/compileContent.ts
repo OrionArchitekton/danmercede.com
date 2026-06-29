@@ -83,11 +83,36 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
 // surface_targets (promote.py has no retarget mode, hand-edits are prohibited), so
 // the hub admits them to /diagrams BY SLUG here. This overrides ONLY the
 // surface_targets gate; status / type / required-field / slug-safety / date gates
-// still apply. SHIPS EMPTY in PR-com-1 (admits 0 diagrams → committed
-// constants.generated.ts stays byte-unchanged → substrate-verify passes). The
-// admission PR populates the 21 diagram slugs and co-ships the substrate-sync regen
-// + the danmercede.online rel=canonical demote (closing the competing-canonical window).
-export const HUB_DIAGRAM_ALLOWLIST: readonly string[] = [];
+// still apply. The 21 existing diagram canonicals (all .online-only, immutable) are
+// admitted here by slug. This is the ADMISSION PR (PR-com-2): the bundle is NOT
+// regenerated in this PR (substrate-verify runs the BASE compiler, whose allowlist is
+// still empty → 0 diagrams = committed bundle → verify passes). After merge, the
+// substrate-sync workflow runs THIS armed compiler → regenerates constants.generated.ts
+// with the 21 diagrams + copies binaries, co-shipped with the .online rel=canonical
+// demote (closing the competing-canonical window).
+export const HUB_DIAGRAM_ALLOWLIST: readonly string[] = [
+  '2026-02-17-audit-logs-vs-immutable-receipts',
+  '2026-02-20-anatomy-of-non-repudiation',
+  '2026-02-24-authority-decay-over-a-session',
+  '2026-02-27-monitor-after-vs-constrain-before',
+  '2026-03-03-the-rpc-stub-airlock',
+  '2026-03-06-the-substrate-walls',
+  '2026-03-10-advisory-vs-deterministic-boundary',
+  '2026-03-13-the-gated-execution-pipeline',
+  '2026-03-17-runtime-governance-control-plane',
+  '2026-03-20-governance-converts-risk-into-economics',
+  '2026-03-24-monitoring-vs-enforcement-architecture',
+  '2026-03-27-from-policy-to-runtime-proof',
+  '2026-03-31-the-physics-of-ai-isolation',
+  '2026-04-03-governance-is-not-hope',
+  '2026-04-07-the-equation-of-liability',
+  '2026-04-10-the-fallacy-of-monitoring',
+  '2026-04-14-the-enterprise-ai-market-divide',
+  '2026-04-17-translating-reasonable-care-into-code',
+  '2026-04-21-the-map-is-not-the-territory',
+  '2026-04-24-the-missing-execution-boundary',
+  '2026-06-16-fail-closed-merge-admission',
+];
 
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
 // back to DEFAULT_CATEGORY. Extend cautiously when new layers are minted in
