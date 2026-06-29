@@ -4,24 +4,22 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_OG_IMAGE_PATH } from '../seoMeta';
+// Per-type byte budgets (KB) live in a shared module so the diagram optimizer
+// (scripts/optimizeDiagrams.mjs) targets EXACTLY what this gate enforces — they can
+// never drift. Set with headroom above the current committed maxima (png ~2.47MB,
+// webp ~1.1MB, og/jpg ~118KB, signature SVG ~4.2MB). The point: a future commit that
+// re-introduces an unoptimized multi-MB original fails CI here. Since these brand repos
+// deploy on merge, this is the only automated guard against image re-bloat. Fix a
+// failure by re-optimizing in place: `npm i -D sharp && npm run optimize:images -- --apply`
+// (diagrams: `npm run optimize:diagrams -- --apply`).
+import { IMAGE_BUDGET_KB } from '../scripts/imageBudgets.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(root, 'public');
 const HOMEPAGE_HERO_IMAGE_PATH = '/dan-mercede-founder-headshot-hero.webp';
 const HOMEPAGE_HERO_BUDGET_KB = 700;
 
-// Per-type byte budgets (KB), set with headroom above the current committed maxima
-// (png ~2.47MB, webp ~1.1MB, og/jpg ~118KB, signature SVG ~4.2MB). The point: a future
-// commit that re-introduces an unoptimized multi-MB original fails CI here. Since these
-// brand repos deploy on merge, this is the only automated guard against image re-bloat.
-// Fix a failure by re-optimizing in place: `npm i -D sharp && npm run optimize:images -- --apply`.
-const BUDGET_KB: Record<string, number> = {
-  '.jpg': 250,
-  '.jpeg': 250,
-  '.png': 2800,
-  '.webp': 1300,
-  '.svg': 5000,
-};
+const BUDGET_KB: Record<string, number> = IMAGE_BUDGET_KB;
 
 function walk(dir: string): string[] {
   const out: string[] = [];

@@ -63,6 +63,28 @@ jobs:
         #   matches and the committed seed is intentional.
         run: npm run compile -- --strict --require-matches
 
+      # Diagram binaries land VERBATIM from substrate (compileContent.ts copyDiagramAsset);
+      # the full-resolution originals exceed the per-type image budget that CI enforces
+      # (tests/imageBudget.test.ts — jpg<=250KB). Re-encode them to budget HERE, after the
+      # copy and before the drift diff, so the opened sync PR carries within-budget assets and
+      # passes the build job's `npm test`. Without this the weekly sync PR fails imageBudget and
+      # can never merge. sharp is installed on demand (deliberately NOT a package.json
+      # dependency — heavy native binaries, no site runtime/CI need) and PINNED so the encode is
+      # deterministic: the same originals always yield the same bytes, so a sync with no real
+      # substrate change re-derives byte-identical assets and opens no spurious diff (a fixpoint).
+      # The optimizer exits non-zero if any over-budget diagram cannot be fit, failing the job
+      # loud rather than opening a PR that ships an oversized asset.
+      # --ignore-scripts: this job checks out the private substrate and the main checkout
+      # persists a contents:write GITHUB_TOKEN in .git/config, so no dependency lifecycle
+      # script should run here. sharp >=0.33 ships its native binary as a prebuilt optional
+      # dependency (@img/sharp-linux-x64) and loads it at runtime WITHOUT an install script,
+      # so --ignore-scripts is safe on the linux-x64 runner. --no-save keeps the manifest and
+      # lockfile clean (sharp is deliberately not a site dependency).
+      - name: Optimize diagram assets to image budget
+        run: |
+          npm i -D sharp@0.34.4 --no-save --ignore-scripts --no-audit --no-fund
+          node scripts/optimizeDiagrams.mjs --apply
+
       - name: Diff against committed bundle
         id: diff
         run: |
