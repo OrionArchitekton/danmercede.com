@@ -50,3 +50,17 @@ export function resolveGaConfig(
     },
   };
 }
+
+// Canonical gtag stub. gtag.js processes ONLY `arguments` objects pushed to
+// window.dataLayer; an Array (the rest-params `(...args) => push(args)` form) is
+// silently IGNORED, so no consent/config/event command is ever applied and ZERO
+// hits are sent. This factory returns the exact stub Google ships and is unit-
+// tested against the array-form regression. Pass the global (window) as target.
+export function createGtag(target: { dataLayer?: unknown[] }): (...args: unknown[]) => void {
+  target.dataLayer = target.dataLayer || [];
+  // eslint-disable-next-line prefer-rest-params
+  const gtag = function gtag() {
+    target.dataLayer!.push(arguments);
+  } as (...args: unknown[]) => void;
+  return gtag;
+}
