@@ -57,9 +57,12 @@ const DIAGRAM_MD = `---
 `;
 
 // Shape mirrors a real substrate diagram canonical (JSON-quoted frontmatter on
-// main), with danmercede.com added to surface_targets (decision #1).
+// main). Uses a SYNTHETIC slug (not one of the 21 real, now-allowlisted slugs) so the
+// surface_targets-vs-allowlist gate tests below stay valid: a synthetic slug is NOT in
+// the production HUB_DIAGRAM_ALLOWLIST, so "skipped unless .com-targeted or injected-
+// allowlisted" assertions hold independent of which real slugs are armed.
 const diagramData: Record<string, unknown> = {
-  slug: '2026-03-24-monitoring-vs-enforcement-architecture',
+  slug: '2099-12-31-fixture-monitoring-vs-enforcement',
   title: 'Monitoring vs Enforcement Architecture',
   date: '2026-03-24T08:00:00-07:00',
   type: 'diagram',
@@ -69,7 +72,7 @@ const diagramData: Record<string, unknown> = {
     'Architecture A records events after mutation; Architecture B evaluates intent before mutation.',
   caption: 'The architecture divide, stated plainly.',
   asset_path:
-    'publishing/assets/2026-03-24-monitoring-vs-enforcement-architecture/diagram.jpg',
+    'publishing/assets/2099-12-31-fixture-monitoring-vs-enforcement/diagram.jpg',
   status: 'canonical',
 };
 
@@ -104,8 +107,13 @@ test('mapSubstrateToDiagram admits a NON-.com-targeted diagram whose slug is in 
   assert.equal(entry!.slug, diagramData.slug);
 });
 
-test('HUB_DIAGRAM_ALLOWLIST ships EMPTY (PR-com-1 admits 0 diagrams; the admission PR populates it)', () => {
-  assert.deepEqual([...HUB_DIAGRAM_ALLOWLIST], [], 'must ship empty so the substrate-verify bundle stays unchanged');
+test('HUB_DIAGRAM_ALLOWLIST is armed with the 21 diagram slugs (admission PR) and every entry is slug-safe + unique', () => {
+  assert.equal(HUB_DIAGRAM_ALLOWLIST.length, 21, 'all 21 existing diagram canonicals are admitted');
+  const SAFE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  for (const slug of HUB_DIAGRAM_ALLOWLIST) {
+    assert.match(slug, SAFE, `allowlisted slug "${slug}" must be charset-safe (filesystem segment + sitemap <loc> token)`);
+  }
+  assert.equal(new Set(HUB_DIAGRAM_ALLOWLIST).size, HUB_DIAGRAM_ALLOWLIST.length, 'no duplicate slugs');
 });
 
 // Review BLOCKING (write-side path traversal + XML <loc> injection): the slug becomes
