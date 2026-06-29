@@ -112,6 +112,8 @@ export const HUB_DIAGRAM_ALLOWLIST: readonly string[] = [
   '2026-04-21-the-map-is-not-the-territory',
   '2026-04-24-the-missing-execution-boundary',
   '2026-06-16-fail-closed-merge-admission',
+  '2026-06-29-the-two-plane-architecture',
+  '2026-06-29-runtime-governance-how-it-works',
 ];
 
 // Substrate `layer` → Thought `category` display label. Unmapped layers fall
