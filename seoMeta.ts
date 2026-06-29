@@ -188,19 +188,13 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       ],
     },
   },
-  '/diagrams': {
-    title: 'Diagrams — Systems & Architecture | Dan Mercede',
-    description:
-      'Architecture and agentic-systems diagrams: two-plane governance, request lifecycle, runtime enforcement, and the patterns behind governed AI operating systems.',
-    schemaType: 'Article',
-    body: {
-      h1: 'Diagrams',
-      lead: 'Architecture and agentic-systems diagrams.',
-      paragraphs: [
-        'Visual explainers for governed AI architecture — two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.',
-      ],
-    },
-  },
+  // NOTE: the '/diagrams' INDEX route is intentionally NOT in ROUTE_META (nor the
+  // committed sitemap) in PR-com-1: HUB_DIAGRAM_ALLOWLIST ships empty, so the index
+  // would be a thin, sitemap-advertised, indexable page promising diagrams but linking
+  // to none — SEO/canonical churn for a corpus that is not live yet (pre-PR review
+  // finding). The admission PR (which populates the allowlist + regenerates DIAGRAMS)
+  // ADDS this entry back so /diagrams goes live, baked + sitemapped, WITH content. The
+  // App.tsx /diagrams route + DiagramsPage already exist (undiscoverable until then).
   '/connect': {
     title: 'Connect — Initiate Protocol | Dan Mercede',
     description:
