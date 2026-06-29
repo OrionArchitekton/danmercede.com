@@ -179,14 +179,46 @@ test('generateOutput emits a DIAGRAMS array with a public src derived from slug+
   assert.match(out, /caption: "The architecture divide, stated plainly\."/);
 });
 
-// S1b: a substrate with diagrams but ZERO essays must still WRITE the bundle —
-// the "0 matches" skip must count entries + diagrams, else a diagram-only refresh
-// would fail-open-skip and never publish diagrams.
-test('decideOutput writes when only diagrams match (0 essays)', () => {
+// Review finding [1] (P2): a 0-essay compile must NOT write a THOUGHTS:[] bundle even
+// when diagrams match. ROUTE_META['/works'] evaluates featuredEssays() at module load,
+// which fail-louds when the featured slugs are absent from THOUGHTS — so a THOUGHTS:[]
+// bundle crashes the build. This site ALWAYS has essays, so 0 essays is a fault state;
+// skip-preserve (keep the committed bundle, which has the thoughts) is the safe behavior.
+// (Supersedes the original S1b "write when only diagrams match" — that green-locked a
+// build-crashing path. The real diagram regen compiles essays + diagrams together, so
+// entries >= 1 and the bundle still writes.)
+test('decideOutput SKIPS (preserves thoughts) when 0 essays match, even if diagrams match', () => {
   const decision = decideOutput({
     substrateReachable: true,
     substratePath: '/x',
     entries: [],
+    diagrams: [sampleDiagram],
+    diagnostics: [],
+    strict: false,
+    requireMatches: false,
+  });
+  assert.equal(decision.action, 'skip');
+});
+
+test('decideOutput FAILS under --require-matches when 0 essays match (diagrams-only is a fault for this site)', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/x',
+    entries: [],
+    diagrams: [sampleDiagram],
+    diagnostics: [],
+    strict: false,
+    requireMatches: true,
+  });
+  assert.equal(decision.action, 'fail');
+});
+
+// A normal compile (essays present, with or without diagrams) still WRITES both arrays.
+test('decideOutput writes the bundle when essays match (diagrams fold into the same write)', () => {
+  const decision = decideOutput({
+    substrateReachable: true,
+    substratePath: '/x',
+    entries: [{ title: 'T', preview: 'p', date: '2026-01-01', category: 'Doctrine', slug: '2026-01-01-t', body: 'b', isoDate: '2026-01-01T00:00:00.000Z' }],
     diagrams: [sampleDiagram],
     diagnostics: [],
     strict: false,

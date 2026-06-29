@@ -884,8 +884,18 @@ export function decideOutput(args: DecideOutputArgs): OutputDecision {
     const reason = `substrate contains ${fatal.length} fatal corruption(s): ${summary}`;
     return strict ? { action: 'fail', reason } : { action: 'skip', reason };
   }
-  if (entries.length === 0 && diagrams.length === 0) {
-    const reason = `substrate yielded 0 canonicals (thought or diagram) matching surface_targets="${THIS_SURFACE}"`;
+  // A non-empty THOUGHTS corpus is a hard precondition for this site: ROUTE_META['/works']
+  // evaluates featuredEssays() at module load, which fail-louds when the featured slugs are
+  // absent from THOUGHTS. So a 0-essay compile must NEVER write — it would emit THOUGHTS:[]
+  // and crash the build — even when diagrams matched. Essays are always present in a real
+  // substrate read; 0 essays is a fault state, so skip-preserve (keep the committed bundle,
+  // which has the thoughts) or fail under --require-matches. Diagrams never publish without
+  // essays (the real regen compiles both together → entries >= 1 → writes both arrays).
+  if (entries.length === 0) {
+    const reason =
+      diagrams.length > 0
+        ? `substrate yielded ${diagrams.length} diagram(s) but 0 thought canonicals matching surface_targets="${THIS_SURFACE}" — refusing to write a THOUGHTS:[] bundle (would break /works featuredEssays)`
+        : `substrate yielded 0 canonicals (thought or diagram) matching surface_targets="${THIS_SURFACE}"`;
     return requireMatches ? { action: 'fail', reason } : { action: 'skip', reason };
   }
   return {

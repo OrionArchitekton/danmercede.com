@@ -14,8 +14,14 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { collectRoutes, buildSitemapExtraEntries } from '../scripts/injectRouteMeta';
+import { DIAGRAMS } from '../constants';
 import type { Diagram } from '../types';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const d: Diagram = {
   title: 'Monitoring vs Enforcement Architecture',
@@ -62,4 +68,19 @@ test('buildSitemapExtraEntries with an empty diagram corpus emits NO diagram ent
   const xml = buildSitemapExtraEntries([]);
   assert.doesNotMatch(xml, /\/diagrams\//, 'no diagram <loc> when the corpus is empty');
   assert.doesNotMatch(xml, /<image:image>/, 'no orphan image-sitemap child when the corpus is empty');
+});
+
+// Review finding [2]/[7] (high) defense-in-depth: every committed DIAGRAMS[].src must
+// resolve to a real file under public/ — else the baked /diagrams/<slug> page <img> and
+// the sitemap <image:loc> 404. The substrate-sync regen copies the binaries; this guard
+// makes a regen PR that ships DIAGRAMS entries WITHOUT staging public/assets/diagrams/**
+// fail CI loudly (not deploy a 404). Vacuous (passes) while DIAGRAMS is empty in PR-com-1.
+test('every committed DIAGRAMS[].src resolves to a committed file under public/', () => {
+  for (const d of DIAGRAMS) {
+    const rel = d.src.replace(/^\/+/, '');
+    assert.ok(
+      existsSync(path.join(repoRoot, 'public', rel)),
+      `DIAGRAMS src ${d.src} has no committed file at public/${rel} — the substrate-sync regen PR must stage public/assets/diagrams/** alongside constants.generated.ts`,
+    );
+  }
 });
