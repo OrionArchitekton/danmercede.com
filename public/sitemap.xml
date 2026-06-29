@@ -65,11 +65,16 @@
     <priority>0.8</priority>
   </url>
   <!--
-    /diagrams is intentionally NOT listed yet: the diagram corpus (HUB_DIAGRAM_ALLOWLIST)
-    is empty in PR-com-1, so advertising an empty index page would be thin/churning. The
-    admission PR adds this <loc> back alongside the build-generated per-diagram <image:image>
-    entries (xmlns:image above is retained for those). See seoMeta.ts ROUTE_META note.
+    /diagrams INDEX: restored in the admission regen now that the diagram corpus is live.
+    The build-generated per-diagram <url> + <image:image> entries (renderDiagramSitemapEntries,
+    using xmlns:image above) are injected into build/sitemap.xml at build time, not committed here.
   -->
+  <url>
+    <loc>https://www.danmercede.com/diagrams</loc>
+    <lastmod>2026-06-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
   <url>
     <loc>https://www.danmercede.com/connect</loc>
     <lastmod>2026-06-17</lastmod>
