@@ -20,7 +20,8 @@ SEO head and `injectRouteMeta` prerender are untouched, and no measurement ID is
   `send_page_view:false` — SPA route changes fire `page_view` manually off `useLocation`.
 - **Vercel Web Analytics + Speed Insights** (privacy-friendly, cookieless) via the official
   React components for the traffic cross-check and the Core Web Vitals (LCP/CLS/INP) feed that
-  directly informs SEO ranking. Both auto-no-op off Vercel production.
+  directly informs SEO ranking. Gated on the same production-only `VITE_GA_MEASUREMENT_ID`
+  switch as GA4, so they mount nothing on dev/preview — no preview telemetry.
 - **Google Search Console**: verified by **DNS TXT (domain property)** — correct for a
   no-JS-verifiable SPA — then the existing `sitemap.xml` is submitted. No code; runbook-driven.
 - **Synthetic observability**: extend the existing daily `prod-smoke` monitor to assert each
@@ -48,8 +49,9 @@ GA enable/no-op decision cannot drift from what is tested.
    `page_view` fires on **initial load and on each in-app route change** (no double-count).
 3. `resolveGaConfig` returns `null` for undefined/empty/whitespace/malformed ids and a correct
    config object only for a well-formed GA4 id (`G-` + alphanumerics).
-4. Vercel Web Analytics and Speed Insights are mounted once at the app root and are no-ops in
-   non-production.
+4. ALL instrumentation (GA4 + Vercel Web Analytics + Speed Insights) is gated on
+   `VITE_GA_MEASUREMENT_ID`: dev and preview deploys mount nothing and emit nothing (no preview
+   telemetry); production mounts all three once.
 5. `public/llms.txt` exists, begins with `# Dan Mercede`, advertises the canonical origin, and
    points at the `/thoughts`, `/guides`, and `/works` surfaces.
 6. The daily synthetic monitor fails if any monitored URL serves a self-canonical that does not

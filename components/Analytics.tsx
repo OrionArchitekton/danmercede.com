@@ -50,24 +50,37 @@ const GoogleAnalytics = () => {
   useEffect(() => {
     if (!gaConfig) return;
     ensureGtagLoaded(gaConfig);
-    window.gtag?.('event', 'page_view', {
-      page_path: `${pathname}${search}`,
-      page_location: window.location.href,
-      page_title: document.title,
+    // Defer the send one frame: this <Analytics> effect runs BEFORE the routed
+    // page's usePageMeta effect in the same commit (it is a sibling mounted
+    // earlier in the tree), so document.title still holds the PREVIOUS route's
+    // title here. requestAnimationFrame fires after the commit's effects flush,
+    // once usePageMeta has set the new title — so page_path and page_title agree.
+    const raf = requestAnimationFrame(() => {
+      window.gtag?.('event', 'page_view', {
+        page_path: `${pathname}${search}`,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
     });
+    return () => cancelAnimationFrame(raf);
   }, [pathname, search]);
 
   return null;
 };
 
-// Single mount point for all site instrumentation. GA4 is env-gated (above); the
-// Vercel widgets are cookieless and auto-no-op when not on Vercel production.
-const Analytics = () => (
-  <>
-    <GoogleAnalytics />
-    <VercelAnalytics />
-    <SpeedInsights />
-  </>
-);
+// Single mount point for all site instrumentation. ALL of it — GA4 and the Vercel
+// widgets — is gated on the production-only VITE_GA_MEASUREMENT_ID switch (via
+// gaConfig), so dev and preview deploys mount nothing and emit nothing. The
+// Vercel widgets are otherwise cookieless and per-environment.
+const Analytics = () => {
+  if (!gaConfig) return null;
+  return (
+    <>
+      <GoogleAnalytics />
+      <VercelAnalytics />
+      <SpeedInsights />
+    </>
+  );
+};
 
 export default Analytics;

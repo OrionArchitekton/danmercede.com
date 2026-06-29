@@ -35,9 +35,12 @@ turn it on. DNS for both danmercede domains is on **Cloudflare**.
 1. analytics.google.com → Admin → Create Property (or reuse one) → add a **Web**
    data stream for `https://www.danmercede.com`.
 2. Copy the **Measurement ID** (`G-XXXXXXXXXX`).
-3. In the stream, leave **Enhanced measurement** on; our code sets
-   `send_page_view:false` and fires `page_view` per route itself, so navigations
-   are counted exactly once (no double-count).
+3. In the stream's **Enhanced measurement** settings, **turn OFF "Page changes based
+   on browser history events"** (Page views → the gear/settings). The app sends
+   `page_view` per route itself (`send_page_view:false` only suppresses the initial
+   one); leaving the history-events option on would make GA4 ALSO fire a page_view on
+   every SPA navigation → **double-counted** route metrics. Keep the other Enhanced
+   measurement signals (scrolls, outbound clicks, site search, etc.) ON.
 
 ## Step 2 — Wire the ID into Vercel (operator, Vercel dashboard)
 1. Vercel → project **`danmercede-com`** → Settings → Environment Variables.
@@ -46,8 +49,8 @@ turn it on. DNS for both danmercede domains is on **Cloudflare**.
    the component no-ops without the var).
    - The `VITE_` prefix is **required** — Vite only exposes prefixed vars to client code.
 3. Settings → **Analytics** → enable **Web Analytics**; Settings → **Speed Insights** → enable.
-   (The `@vercel/analytics` + `@vercel/speed-insights` components are already mounted;
-   they auto-no-op until enabled and off non-production.)
+   (Both components are gated on `VITE_GA_MEASUREMENT_ID` in code — they mount only once the
+   Production var is set, so dev/preview send nothing. Enabling here turns on the dashboards.)
 4. **Redeploy Production** (env vars apply on next build).
 
 ## Step 3 — Google Search Console (operator) — likely already verified
