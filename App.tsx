@@ -1552,6 +1552,13 @@ const GuidesPage = () => {
             </Link>
           ))}
         </div>
+
+        <div className="mt-12 pt-8 border-t border-white/5">
+          <p className="text-slate-400 text-sm mb-3">Prefer the picture? The same systems, as visual explainers.</p>
+          <Link to="/diagrams" className="inline-flex items-center text-copper-500/80 font-mono text-xs uppercase tracking-widest hover:text-copper-400">
+            See the architecture diagrams →
+          </Link>
+        </div>
       </Section>
     </div>
   );
