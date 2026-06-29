@@ -13,6 +13,11 @@ dist-ssr
 build
 *.local
 
+# Local env files (secrets live in Vercel, not the repo); .env.example is committed
+.env
+.env.*
+!.env.example
+
 # CI-vendored substrate clone (substrate-sync workflow + ci.yml fail-open checkout)
 vendor/
 

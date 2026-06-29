@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate,
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
+import Analytics from './components/Analytics';
 import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, featuredEssays, WORKS_HUB } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide } from './types';
@@ -1779,6 +1780,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
+      <Analytics />
       <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-white overflow-hidden">
         <ConstellationBackground />
         <a
