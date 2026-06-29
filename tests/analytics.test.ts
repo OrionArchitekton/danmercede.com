@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveGaConfig } from '../analytics/gaConfig';
+import { resolveGaConfig, createGtag } from '../analytics/gaConfig';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(path.join(root, rel), 'utf8');
@@ -51,4 +51,37 @@ test('public/llms.txt exists, identifies Dan, and points at the canonical origin
   for (const surface of ['/thoughts', '/guides', '/works']) {
     assert.ok(txt.includes(surface), `must point at the ${surface} surface`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// gtag stub — gtag.js processes ONLY `arguments` objects pushed to dataLayer.
+// The array-form stub shipped first and silently sent ZERO hits (verified live:
+// no /g/collect beacon, consent stuck at implicit). This locks the regression.
+// ---------------------------------------------------------------------------
+
+test('createGtag pushes arguments objects (NOT arrays) so gtag.js applies commands', () => {
+  const w: { dataLayer?: unknown[] } = {};
+  const gtag = createGtag(w);
+  gtag('consent', 'default', { analytics_storage: 'granted' });
+  gtag('config', 'G-TEST123', { send_page_view: false });
+
+  assert.equal(w.dataLayer!.length, 2, 'each call pushes one dataLayer entry');
+  const first = w.dataLayer![0] as IArguments;
+  // The bug: an Array here means gtag.js ignores the command and sends no hits.
+  assert.equal(Array.isArray(first), false, 'must NOT be a plain array (gtag.js ignores arrays)');
+  assert.equal((first as unknown as { length: number }).length, 3, 'arguments preserves all args');
+  assert.equal((first as unknown as Record<number, unknown>)[0], 'consent');
+  assert.equal(
+    (first as unknown as Record<number, { analytics_storage: string }>)[2].analytics_storage,
+    'granted',
+  );
+});
+
+test('createGtag initializes window.dataLayer and reuses an existing one', () => {
+  const existing = [{ existing: true }] as unknown[];
+  const pre = { dataLayer: existing };
+  const gtag = createGtag(pre);
+  gtag('js', 'x');
+  assert.equal(pre.dataLayer, existing, 'must preserve the existing dataLayer instance');
+  assert.equal(pre.dataLayer.length, 2, 'preserves a pre-existing dataLayer');
 });
