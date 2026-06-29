@@ -78,8 +78,10 @@ test('createGtag pushes arguments objects (NOT arrays) so gtag.js applies comman
 });
 
 test('createGtag initializes window.dataLayer and reuses an existing one', () => {
-  const pre = { dataLayer: [{ existing: true }] as unknown[] };
+  const existing = [{ existing: true }] as unknown[];
+  const pre = { dataLayer: existing };
   const gtag = createGtag(pre);
   gtag('js', 'x');
+  assert.equal(pre.dataLayer, existing, 'must preserve the existing dataLayer instance');
   assert.equal(pre.dataLayer.length, 2, 'preserves a pre-existing dataLayer');
 });
