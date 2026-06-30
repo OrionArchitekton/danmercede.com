@@ -13,7 +13,7 @@ export const DEFAULT_OG_IMAGE_PATH = '/dan-mercede-og-card.jpg';
 export const DEFAULT_META_DESCRIPTION =
   'Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms.';
 export const DEFAULT_TITLE =
-  'Dan Mercede — AI Systems Architect of the Governed AI Operating System';
+  'Dan Mercede: AI Systems Architect of the Governed AI Operating System';
 
 // HTML comment anchors delimiting the swappable SEO block in index.html.
 // Verified to survive `vite build` (Vite preserves HTML comments).
@@ -22,7 +22,7 @@ export const SEO_BLOCK_END = '<!--/SEO_BLOCK-->';
 
 // Anchors delimiting the crawlable body block injected INTO <body>. The SPA
 // hydrates over `#root`; this static block is a sibling so it is visible to
-// raw-HTML crawlers (ChatGPT/Perplexity/Claude — none execute JS) and replaced
+// raw-HTML crawlers (ChatGPT/Perplexity/Claude, none execute JS) and replaced
 // by React on hydration (it lives outside #root and is removed at runtime).
 export const BODY_BLOCK_START = '<!--BODY_BLOCK-->';
 export const BODY_BLOCK_END = '<!--/BODY_BLOCK-->';
@@ -51,7 +51,7 @@ export interface RouteBody {
   paragraphs: string[];
   // Crawlable links baked into the prerender block (W1 deep-link bake). Used by
   // /works to concentrate crawl authority on the flagship essays + outbound rail.
-  // Mirrors the visible React render (prerender parity) — NOT crawler-only content.
+  // Mirrors the visible React render (prerender parity), NOT crawler-only content.
   links?: { href: string; text: string }[];
 }
 
@@ -78,7 +78,7 @@ export interface RouteMeta {
 
 // Build the /works crawlable link set: the featured-essay deep-links (in lockstep
 // with featuredEssays() so the baked block can't drift from the visible render),
-// the bare full-archive link, then the outbound rail. Evaluated at module load —
+// the bare full-archive link, then the outbound rail. Evaluated at module load , 
 // featuredEssays() throws here if a featured slug is unresolved, failing the build
 // loud (the desired fail-closed behavior). Used only by ROUTE_META['/works'].body.
 function worksBodyLinks(): { href: string; text: string }[] {
@@ -98,7 +98,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     schemaType: 'ProfilePage',
     body: {
       h1: 'Dan Mercede',
-      lead: "Enterprise AI doesn't fail on capability — it fails at runtime.",
+      lead: "Enterprise AI doesn't fail on capability. It fails at runtime.",
       paragraphs: [
         'I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.',
         "If governance isn't enforced at runtime, it isn't governance.",
@@ -107,7 +107,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/about': {
-    title: 'About — Dan Mercede',
+    title: 'About: Dan Mercede',
     description:
       'Systems architect and founder building governed AI operating systems with deterministic enforcement at runtime.',
     schemaType: 'ProfilePage',
@@ -115,17 +115,17 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       h1: 'The Throughline',
       lead: 'From operations to architecture, the mission has remained constant: governance over chaos.',
       paragraphs: [
-        'I build governed AI operating systems — systems that remember, decide, execute, and remain auditable under real conditions.',
+        'I build governed AI operating systems, systems that remember, decide, execute, and remain auditable under real conditions.',
         "I don't believe in disruption for its own sake. I believe in systems that endure. My background isn't a straight line, but a thematic progression from managing complex human workflows to building the digital substrates that automate them.",
       ],
     },
   },
   '/ecosystem': {
-    title: 'Ecosystem — Orion Ventures | Dan Mercede',
+    title: 'Ecosystem: Orion Ventures | Dan Mercede',
     schemaType: 'ProfilePage',
     body: {
       h1: 'Ecosystem',
-      lead: 'Orion Ventures — independent entities under one governance framework.',
+      lead: 'Orion Ventures, independent entities under one governance framework.',
       paragraphs: [
         'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligence, governing how AI systems remember, decide, execute, and are audited over time.',
         'Orion Apex Capital originates, owns, and governs the ecosystem; Orion Intelligence Agency, ReplyBy, Apex Trading Systems, and Path of Life Hub deploy, validate, or operate under the Cosmocrat governance model.',
@@ -133,7 +133,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/proof': {
-    title: 'Proof — Runtime Governance Enforcement Artifacts | Dan Mercede',
+    title: 'Proof: Runtime Governance Enforcement Artifacts | Dan Mercede',
     description:
       'Downloadable enforcement artifacts mapped to the four-layer runtime governance stack: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate.',
     schemaType: 'Article',
@@ -142,12 +142,12 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       lead: 'Enforcement Artifacts.',
       paragraphs: [
         'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
-        'Downloadable enforcement artifacts map to the four-layer runtime governance stack — Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate — structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
+        'Downloadable enforcement artifacts map to the four-layer runtime governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
       ],
     },
   },
   '/thoughts': {
-    title: 'Thought Direction — Doctrine + Architecture | Dan Mercede',
+    title: 'Thought Direction: Doctrine + Architecture | Dan Mercede',
     description:
       'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
     schemaType: 'Article',
@@ -160,7 +160,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/works': {
-    title: 'Works — Build, Selected Essays & Signal | Dan Mercede',
+    title: 'Works: Build, Selected Essays & Signal | Dan Mercede',
     description:
       'Open-source tooling and field-tested patterns from shipping governed agentic systems in production, with selected essays on the doctrine behind the build.',
     schemaType: 'CollectionPage',
@@ -168,7 +168,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       h1: 'Works',
       lead: 'Open-source tooling and field-tested patterns from shipping governed agentic systems in production.',
       paragraphs: [
-        'Build — open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
+        'Build, open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
         'Selected essays point to the doctrine behind the build; the full archive lives at /thoughts.',
         WORKS_HUB.availability,
       ],
@@ -176,7 +176,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/guides': {
-    title: 'Guides — Self-Hosting & Systems | Dan Mercede',
+    title: 'Guides: Self-Hosting & Systems | Dan Mercede',
     description:
       'Practical, operator-grade guides on self-hosting, reverse proxies, secure ingress, and running governed systems on infrastructure you control.',
     schemaType: 'Article',
@@ -193,7 +193,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   // regen now that DIAGRAMS is populated, so the index goes live baked + sitemapped WITH
   // content. Mirrors the /thoughts + /guides index entries (schemaType Article).
   '/diagrams': {
-    title: 'Diagrams — Systems & Architecture | Dan Mercede',
+    title: 'Diagrams: Systems & Architecture | Dan Mercede',
     description:
       'Architecture and agentic-systems diagrams: two-plane governance, request lifecycle, runtime enforcement, and the patterns behind governed AI operating systems.',
     schemaType: 'Article',
@@ -201,12 +201,12 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       h1: 'Diagrams',
       lead: 'Architecture and agentic-systems diagrams.',
       paragraphs: [
-        'Visual explainers for governed AI architecture — two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.',
+        'Visual explainers for governed AI architecture, two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.',
       ],
     },
   },
   '/connect': {
-    title: 'Connect — Initiate Protocol | Dan Mercede',
+    title: 'Connect: Initiate Protocol | Dan Mercede',
     description:
       'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.',
     body: {
@@ -220,33 +220,33 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/legal': {
     title: 'Legal Notice | Dan Mercede',
     description:
-      'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.',
+      'Terms and conditions for danmercede.com, intellectual property, limitation of liability, and usage terms.',
     body: {
       h1: 'Legal Notice',
       paragraphs: [
-        'Terms and conditions for danmercede.com — intellectual property, limitation of liability, and usage terms.',
+        'Terms and conditions for danmercede.com, intellectual property, limitation of liability, and usage terms.',
       ],
     },
   },
   '/privacy': {
-    title: 'Privacy Policy — Data Governance | Dan Mercede',
+    title: 'Privacy Policy: Data Governance | Dan Mercede',
     description:
-      'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.',
+      'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
     body: {
       h1: 'Privacy Policy',
       paragraphs: [
-        'Privacy policy for danmercede.com — data collection, cookies, and tracking practices.',
+        'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
       ],
     },
   },
   '/imprint': {
-    title: 'Imprint — Entity Details | Dan Mercede',
+    title: 'Imprint: Entity Details | Dan Mercede',
     description:
-      'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.',
+      'Imprint and entity information for danmercede.com, operating entity, responsible person, jurisdiction.',
     body: {
       h1: 'Imprint',
       paragraphs: [
-        'Imprint and entity information for danmercede.com — operating entity, responsible person, jurisdiction.',
+        'Imprint and entity information for danmercede.com, operating entity, responsible person, jurisdiction.',
       ],
     },
   },
@@ -260,7 +260,7 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     return { title: 'Case Study Not Found | Dan Mercede' };
   }
   return {
-    title: `${study.title} — Case Study | Dan Mercede`,
+    title: `${study.title}: Case Study | Dan Mercede`,
     description: study.description,
     schemaType: 'Article',
     body: {
@@ -271,15 +271,15 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
   };
 }
 
-// All case-study route paths, derived from committed content — so a new case
+// All case-study route paths, derived from committed content, so a new case
 // study is prerendered automatically with no hand-maintained slug list.
 export function caseStudyPaths(): string[] {
   return CASE_STUDIES.filter((cs) => cs.slug).map((cs) => `/case-studies/${cs.slug}`);
 }
 
 // The OSS microsites served under /works/<slug>/ (the hub Vercel-rewrites those paths
-// to each microsite's own deployment). They are real, indexable pages on this origin —
-// derived from WORKS cards whose link is a same-origin /works/ path — so the committed
+// to each microsite's own deployment). They are real, indexable pages on this origin , 
+// derived from WORKS cards whose link is a same-origin /works/ path, so the committed
 // sitemap must list them. They are deliberately NOT in ROUTE_META: injectRouteMeta must
 // not emit a physical build/works/<slug>/index.html, which Vercel filesystem precedence
 // would serve INSTEAD of the rewrite proxy (shadowing the cutover).
@@ -315,7 +315,7 @@ export function bodyToParagraphs(body: string): string[] {
 // Dynamic per-thought meta (round-2 R1/R2). The title FORMAT lives here only so
 // the runtime (ThoughtDetailPage) and the prerender injector emit identical
 // strings. The baked body carries the FULL essay (every paragraph of the
-// substrate canonical), not just the preview — that is the corpus bake. JSON-LD
+// substrate canonical), not just the preview, that is the corpus bake. JSON-LD
 // is an Article authored/published by the canonical #person (never a competing
 // Person node, never FAQPage).
 export function thoughtMeta(slug: string | undefined): RouteMeta {
@@ -325,8 +325,8 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
   }
   const paragraphs = bodyToParagraphs(thought.body);
   return {
-    title: `${thought.title} — Thought | Dan Mercede`,
-    // The preview (substrate `claim`) is the thesis — the ideal meta description.
+    title: `${thought.title}: Thought | Dan Mercede`,
+    // The preview (substrate `claim`) is the thesis, the ideal meta description.
     description: thought.preview,
     schemaType: 'Article',
     body: {
@@ -340,7 +340,7 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
   };
 }
 
-// All per-thought route paths, derived from the committed THOUGHTS corpus — so
+// All per-thought route paths, derived from the committed THOUGHTS corpus, so
 // a newly-compiled canonical is prerendered + sitemap-covered automatically
 // with no hand-maintained slug list. Closes the round-1 gap where the corpus
 // was outside both the route set AND the sitemap.
@@ -353,8 +353,8 @@ export function thoughtPaths(): string[] {
 // only the static + case-study routes; the thought entries are derived from the
 // THOUGHTS corpus here so a substrate-sync that adds/removes a thought stays in
 // lockstep with ZERO hand-maintenance (substrate-sync only commits
-// constants.generated.ts — it must not need to also edit the sitemap). lastmod =
-// each essay's own publish date (never a build-time bump — W9 lastmod policy).
+// constants.generated.ts, it must not need to also edit the sitemap). lastmod =
+// each essay's own publish date (never a build-time bump, W9 lastmod policy).
 export function renderThoughtSitemapEntries(): string {
   const blocks = THOUGHTS.filter((t) => t.slug).map((t) =>
     [
@@ -375,8 +375,8 @@ export function renderThoughtSitemapEntries(): string {
 
 // Flatten a guide's markdown body into clean crawlable prose paragraphs for the
 // answer-engine body-bake (W1). Unlike a thought (plain prose), a guide body
-// carries fenced code, tables, and image figures — none of which belong in the
-// hidden text block — so those are dropped and inline syntax is stripped to text.
+// carries fenced code, tables, and image figures, none of which belong in the
+// hidden text block, so those are dropped and inline syntax is stripped to text.
 function guideInlineToText(s: string): string {
   return s
     .replace(/`([^`]+)`/g, '$1')
@@ -420,7 +420,7 @@ export function guideBodyToParagraphs(body: string): string[] {
     } // drop horizontal rules
     // Each structural element (heading, blockquote, list item) starts its own
     // paragraph, matching how the visible renderer splits blocks even without a
-    // blank line between them — keeps the crawl body and rendered body in parity.
+    // blank line between them, keeps the crawl body and rendered body in parity.
     const isHeading = /^#{1,6}\s+/.test(line);
     const isQuote = /^\s*>/.test(line);
     const isList = /^\s*[-*]\s+/.test(line) || /^\s*\d+\.\s+/.test(line);
@@ -447,7 +447,7 @@ export function guideMeta(slug: string | undefined): RouteMeta {
   }
   const paragraphs = guideBodyToParagraphs(guide.body);
   return {
-    title: `${guide.title} — Guide | Dan Mercede`,
+    title: `${guide.title}: Guide | Dan Mercede`,
     description: guide.description,
     schemaType: 'Article',
     body: {
@@ -458,7 +458,7 @@ export function guideMeta(slug: string | undefined): RouteMeta {
   };
 }
 
-// All per-guide route paths, derived from the committed GUIDES corpus — so a new
+// All per-guide route paths, derived from the committed GUIDES corpus, so a new
 // guide is prerendered + sitemap-covered automatically with no hand-maintained
 // slug list (mirrors thoughtPaths).
 export function guidePaths(): string[] {
@@ -487,7 +487,7 @@ export function renderGuideSitemapEntries(): string {
 
 // Dynamic per-diagram meta (mirrors guideMeta). schemaType ImageObject; the body
 // bakes the caption (lead) + the alt text (paragraph) as crawlable prose so no-JS
-// answer engines read the figure's meaning. Corpus is injectable for testing —
+// answer engines read the figure's meaning. Corpus is injectable for testing , 
 // the in-repo DIAGRAMS is empty until the substrate-sync regen.
 export function diagramMeta(slug: string | undefined, corpus: Diagram[] = DIAGRAMS): RouteMeta {
   const diagram = corpus.find((d) => d.slug === slug);
@@ -495,7 +495,7 @@ export function diagramMeta(slug: string | undefined, corpus: Diagram[] = DIAGRA
     return { title: 'Diagram Not Found | Dan Mercede' };
   }
   return {
-    title: `${diagram.title} — Diagram | Dan Mercede`,
+    title: `${diagram.title}: Diagram | Dan Mercede`,
     description: diagram.caption,
     schemaType: 'ImageObject',
     diagramSrc: new URL(diagram.src, SITE_ORIGIN).toString(),
@@ -558,7 +558,7 @@ function escapeAttr(s: string): string {
 }
 
 // Render the static <head> SEO tag block for a route. Deterministic; never
-// executes React or touches a DOM — safe in a Node build even though React is
+// executes React or touches a DOM, safe in a Node build even though React is
 // externalized via the esm.sh importmap.
 export function renderSeoBlock(path: string, m: RouteMeta): string {
   const r = resolveMeta(m);
@@ -568,7 +568,7 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
   const d = escapeAttr(r.description);
   const alt = escapeAttr(OG_IMAGE_ALT);
   return [
-    // Preload the LCP hero — HOMEPAGE ONLY. The hero <img> renders only on
+    // Preload the LCP hero, HOMEPAGE ONLY. The hero <img> renders only on
     // HomePage, so preloading it on other routes downloads the hero asset they never use.
     ...(path === '/'
       ? [`  <link rel="preload" as="image" href="/dan-mercede-founder-headshot-hero.webp" fetchpriority="high" />`]
@@ -638,7 +638,7 @@ function escapeText(s: string | null | undefined): string {
 // <h1> + <p> set wrapped in a hidden-but-crawlable container. The block lives
 // OUTSIDE #root, so React's render into #root never collides with it; we also
 // remove it on hydration (see index.tsx) to avoid duplicate content for users.
-// Deterministic, browserless, no React — safe in the Node build.
+// Deterministic, browserless, no React, safe in the Node build.
 export function renderBodyBlock(path: string, m: RouteMeta): string {
   const r = resolveMeta(m);
   // Fallback body when a route omits `body`: title + description. resolveMeta
@@ -685,7 +685,7 @@ function escapeJsonForHtml(json: string): string {
 // Render the per-route JSON-LD block (W4): an Article or ProfilePage content
 // node plus a BreadcrumbList, both linked to the canonical homepage entity
 // graph (#person / #website) so answer engines resolve one Dan Mercede entity.
-// FAQPage is intentionally NOT emitted — its rich result was deprecated 2026.
+// FAQPage is intentionally NOT emitted, its rich result was deprecated 2026.
 export function renderRouteJsonLd(path: string, m: RouteMeta): string {
   const r = resolveMeta(m);
   const canonical = new URL(path, SITE_ORIGIN).toString();
@@ -716,7 +716,7 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
   } else if (m.schemaType === 'CollectionPage') {
     // /works: a portfolio CollectionPage whose mainEntity is the canonical
     // #person and whose hasPart lists SoftwareSourceCode works. Every node
-    // backrefs #person by @id (creator) — NO second Person is introduced, so
+    // backrefs #person by @id (creator), NO second Person is introduced, so
     // the single-Person identity invariant (tests/identityCanonical.test.ts)
     // holds. NB: extending RouteMeta.schemaType WITHOUT this branch would emit
     // only a BreadcrumbList (silent no-op); both edits are required.
@@ -742,9 +742,9 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
     });
   } else if (m.schemaType === 'ImageObject') {
     // /diagrams/<slug>: the figure as an ImageObject; author/publisher backref the
-    // canonical #person (NO second Person node — identityCanonical.test.ts). NB:
+    // canonical #person (NO second Person node, identityCanonical.test.ts). NB:
     // extending RouteMeta.schemaType WITHOUT this branch would emit only a
-    // BreadcrumbList (silent no-op) — both edits are required.
+    // BreadcrumbList (silent no-op), both edits are required.
     graph.push({
       '@type': 'ImageObject',
       '@id': `${canonical}#image`,
@@ -765,10 +765,10 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
   return `  <script type="application/ld+json">\n${escapeJsonForHtml(JSON.stringify(doc, null, 2))}\n  </script>`;
 }
 
-// Concise breadcrumb leaf: strip the trailing brand suffix (" — Dan Mercede" /
+// Concise breadcrumb leaf: strip the trailing brand suffix (", Dan Mercede" /
 // " | Dan Mercede") so the crumb is the page label, not the full SEO <title>.
 function breadcrumbLabel(title: string): string {
-  return title.replace(/\s*[—|]\s*Dan Mercede\s*$/, '').trim();
+  return title.replace(/\s*[, |]\s*Dan Mercede\s*$/, '').trim();
 }
 
 // BreadcrumbList from the homepage down to the current route. Single-segment

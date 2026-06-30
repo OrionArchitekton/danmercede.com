@@ -37,7 +37,7 @@ test('collectRoutes includes a /diagrams/<slug> ImageObject route for each diagr
   const diag = routes.find((r) => r.path === `/diagrams/${d.slug}`);
   assert.ok(diag, 'the diagram route must be in the injector bake set');
   assert.equal(diag!.meta.schemaType, 'ImageObject');
-  assert.match(diag!.meta.title, /Monitoring vs Enforcement Architecture — Diagram \| Dan Mercede/);
+  assert.match(diag!.meta.title, /Monitoring vs Enforcement Architecture: Diagram \| Dan Mercede/);
 });
 
 test('collectRoutes still bakes static + thought + guide routes (no regression), never the homepage, never works microsites', () => {
