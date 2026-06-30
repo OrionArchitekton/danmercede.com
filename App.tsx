@@ -78,7 +78,7 @@ const Navigation = () => {
   return (
     <nav className="fixed w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link to="/" className="flex items-center" aria-label="Dan Mercede — home">
+        <Link to="/" className="flex items-center" aria-label="Dan Mercede, home">
           <img src="/dan-mercede-lockup-dark.svg" alt="" width="144" height="36" className="h-9 w-auto" />
         </Link>
 
@@ -199,7 +199,7 @@ const HomePage = () => {
               <img
                 src="/dan-mercede-founder-headshot-hero.webp"
                 alt={getImageMeta("/dan-mercede-founder-headshot-hero.webp").alt}
-                title="Dan Mercede — Founder of Cosmocrat"
+                title="Dan Mercede, Founder of Cosmocrat"
                 width="1200"
                 height="1500"
                 fetchPriority="high"
@@ -320,7 +320,7 @@ const AboutPage = () => {
               From operations to architecture, the mission has remained constant: <span className="text-copper-400">Governance over chaos.</span>
             </p>
             <p className="text-lg text-white/90 font-normal mb-8 leading-relaxed">
-              I build governed AI operating systems — systems that remember, decide, execute, and remain auditable under real conditions.
+              I build governed AI operating systems, systems that remember, decide, execute, and remain auditable under real conditions.
             </p>
             <p className="mb-6">
               I don't believe in disruption for its own sake. I believe in systems that endure. My background isn't a straight line, but a thematic progression from managing complex human workflows to building the digital substrates that automate them.
@@ -359,7 +359,7 @@ const AboutPage = () => {
             <img
               src="/dan-mercede-founder-working-portrait.png"
               alt={getImageMeta("/dan-mercede-founder-working-portrait.png").alt}
-              title="Dan Mercede — Founder of Cosmocrat"
+              title="Dan Mercede, Founder of Cosmocrat"
               width="1200"
               height="1500"
               className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 contrast-125"
@@ -418,7 +418,7 @@ const EcosystemPage = () => {
         <div className="lg:col-span-8">
           <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             {venture.name}
-            <span className="text-slate-400 font-light">—</span>
+            <span className="text-slate-400 font-light">·</span>
             <span className="text-copper-400 font-light">{venture.role}</span>
           </h3>
           <div className="space-y-6">
@@ -706,7 +706,7 @@ const RunnableProofCallout = () => (
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
           <Layers className="w-3 h-3" />
-          L1 — Authority Gate
+          L1: Authority Gate
         </span>
         <span className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-emerald-500">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -715,7 +715,7 @@ const RunnableProofCallout = () => (
       </div>
 
       <h3 className="text-xl md:text-2xl font-bold text-white mb-3">
-        failclosed — the Authority Gate, made runnable
+        failclosed: the Authority Gate, made runnable
       </h3>
       <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
         failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
@@ -762,7 +762,7 @@ const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
       <div className="flex items-start justify-between mb-3">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
           <Layers className="w-3 h-3" />
-          L{resource.enforcementLayer} — {LAYER_NAMES[resource.enforcementLayer]}
+          L{resource.enforcementLayer}: {LAYER_NAMES[resource.enforcementLayer]}
         </span>
         <span className="text-xs font-mono text-slate-400">
           {ARTIFACT_LABELS[resource.artifactType] || resource.artifactType}
@@ -988,12 +988,12 @@ const ResourcesPage = () => {
       <Section>
         <SectionHeader as="h1" title="Proof" subtitle="Enforcement Artifacts" />
 
-        {/* Signature Diagram — Runtime Execution Control Plane Architecture */}
+        {/* Signature Diagram, Runtime Execution Control Plane Architecture */}
         <div id="control-plane" className="mb-16">
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-6">
             <img
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
-              alt="Runtime Execution Control Plane Architecture — four-layer deterministic enforcement cascade: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
+              alt="Runtime Execution Control Plane Architecture, four-layer deterministic enforcement cascade: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
               className="w-full h-auto"
               loading="eager"
             />
@@ -1032,7 +1032,7 @@ const ResourcesPage = () => {
           </div>
         </div>
 
-        {/* Layer 1 — Authority Gate */}
+        {/* Layer 1, Authority Gate */}
         {(() => {
           const l1Resources = RESOURCES.filter(r => r.enforcementLayer === 1);
           return l1Resources.length > 0 ? (
@@ -1052,21 +1052,21 @@ const ResourcesPage = () => {
           ) : null;
         })()}
 
-        {/* Runnable Proof — failclosed (Authority Gate, made runnable) */}
+        {/* Runnable Proof, failclosed (Authority Gate, made runnable) */}
         <RunnableProofCallout />
 
-        {/* Diagram — Gated Execution Pipeline (between L1 and L2) */}
+        {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement Architecture</span>
             <h2 className="text-2xl font-bold text-white mb-1">Deterministic Gate Cascade</h2>
-            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE — enforcement evaluated at every boundary.</p>
+            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: enforcement evaluated at every boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">Every state mutation traverses three deterministic gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
-              alt="Gated Execution Pipeline — deterministic gate cascade: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
+              alt="Gated Execution Pipeline, deterministic gate cascade: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
               className="w-full h-auto"
               loading="lazy"
             />
@@ -1080,7 +1080,7 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Layers 2-4 — Vertical Enforcement-Layer Sections */}
+        {/* Layers 2-4, Vertical Enforcement-Layer Sections */}
         {([2, 3, 4] as const).map(layer => {
           const layerResources = RESOURCES.filter(r => r.enforcementLayer === layer);
           if (layerResources.length === 0) return null;
@@ -1101,7 +1101,7 @@ const ResourcesPage = () => {
           );
         })}
 
-        {/* Diagram — Governance Economics Scorecard (above Case Studies) */}
+        {/* Diagram, Governance Economics Scorecard (above Case Studies) */}
         <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics</span>
@@ -1112,7 +1112,7 @@ const ResourcesPage = () => {
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
-              alt="Governance Economics Scorecard — ROI framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
+              alt="Governance Economics Scorecard, ROI framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
               className="w-full h-auto"
               loading="lazy"
             />
@@ -1123,7 +1123,7 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Enforcement in Production — Case Studies */}
+        {/* Enforcement in Production, Case Studies */}
         {CASE_STUDIES.length > 0 && (
           <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
@@ -1330,8 +1330,8 @@ const WorksPage = () => {
           Open-source tooling and field-tested patterns from shipping governed agentic systems in production.
         </p>
 
-        {/* Build — open source & tooling */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build — Open Source &amp; Tooling</h2>
+        {/* Build, open source & tooling */}
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build: Open Source &amp; Tooling</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Newest shipped work first. Source array stays append-on-ship (see
               docs/runbooks/works-update-on-ship.md); display sorts by date desc. */}
@@ -1343,9 +1343,9 @@ const WorksPage = () => {
             ))}
         </div>
 
-        {/* Build — applied agent projects (hackathon-built agent systems;
+        {/* Build, applied agent projects (hackathon-built agent systems;
             competition context lives in each card's description, not the heading). */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6 mt-16">Build — Applied Agent Projects</h2>
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6 mt-16">Build: Applied Agent Projects</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...WORKS]
             .filter((w) => w.category === 'Agent Project')
@@ -1355,7 +1355,7 @@ const WorksPage = () => {
             ))}
         </div>
 
-        {/* Selected essays — a CAPPED pointer into /thoughts (no bodies, no filter) */}
+        {/* Selected essays, a CAPPED pointer into /thoughts (no bodies, no filter) */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Selected Essays</h2>
         <ul className="space-y-3 max-w-3xl">
           {featured.map((essay) => (
@@ -1376,7 +1376,7 @@ const WorksPage = () => {
           </Link>
         </div>
 
-        {/* Signal — outbound rail */}
+        {/* Signal, outbound rail */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Signal</h2>
         <div className="flex flex-wrap gap-6 max-w-3xl">
           <a href={WORKS_HUB.signalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
@@ -1387,7 +1387,7 @@ const WorksPage = () => {
           </a>
         </div>
 
-        {/* CTA — one action: availability → connect */}
+        {/* CTA, one action: availability → connect */}
         <div className="mt-20 border-l-2 border-copper-500 pl-6 max-w-2xl">
           <p className="text-xl text-white mb-6">{WORKS_HUB.availability}</p>
           <div className="flex flex-wrap items-center gap-4">
@@ -1414,7 +1414,7 @@ const ThoughtsPage = () => {
         <SectionHeader as="h1" title="Thought Direction" subtitle="Doctrine + Architecture" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes — only enforcement mechanics and architectural proof.
+          Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes, only enforcement mechanics and architectural proof.
         </p>
 
         {/* Category filter */}
@@ -1530,7 +1530,7 @@ const GuidesPage = () => {
         <SectionHeader as="h1" title="Guides" subtitle="Self-Hosting · Systems · Operations" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Practical, operator-grade walkthroughs — self-hosting, secure ingress, and running systems on infrastructure you control. Field-tested, not theoretical.
+          Practical, operator-grade walkthroughs, self-hosting, secure ingress, and running systems on infrastructure you control. Field-tested, not theoretical.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1567,7 +1567,7 @@ const GuidesPage = () => {
 const GuideDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const guide = GUIDES.find((g: Guide) => g.slug === slug);
-  // Unknown /guides/<slug> is thin "not found" content — noindex it (soft-404),
+  // Unknown /guides/<slug> is thin "not found" content, noindex it (soft-404),
   // matching the catch-all 404 policy.
   usePageMeta(guideMeta(slug), { noindex: !guide });
 
@@ -1654,7 +1654,7 @@ const DiagramsPage = () => {
 const DiagramDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const diagram = DIAGRAMS.find((d: Diagram) => d.slug === slug);
-  // Unknown /diagrams/<slug> is thin "not found" content — noindex it (soft-404),
+  // Unknown /diagrams/<slug> is thin "not found" content, noindex it (soft-404),
   // matching the catch-all 404 + GuideDetailPage policy.
   usePageMeta(diagramMeta(slug), { noindex: !diagram });
 
@@ -1849,7 +1849,7 @@ const ImprintPage = () => {
 const NotFoundPage = () => {
   usePageMeta(
     {
-      title: 'Page Not Found — Dan Mercede',
+      title: 'Page Not Found: Dan Mercede',
       description: 'The page you requested does not exist. Return to danmercede.com.',
     },
     { noindex: true },

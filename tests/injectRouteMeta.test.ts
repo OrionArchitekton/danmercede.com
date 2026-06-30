@@ -14,11 +14,11 @@ import {
 
 test('renderSeoBlock sets per-route title, canonical, og:url, twitter', () => {
   const block = renderSeoBlock('/about', ROUTE_META['/about']);
-  assert.match(block, /<title>About — Dan Mercede<\/title>/);
+  assert.match(block, /<title>About: Dan Mercede<\/title>/);
   assert.match(block, /<link rel="canonical" href="https:\/\/www\.danmercede\.com\/about" \/>/);
-  assert.match(block, /og:title" content="About — Dan Mercede"/);
+  assert.match(block, /og:title" content="About: Dan Mercede"/);
   assert.match(block, /og:url" content="https:\/\/www\.danmercede\.com\/about"/);
-  assert.match(block, /twitter:title" content="About — Dan Mercede"/);
+  assert.match(block, /twitter:title" content="About: Dan Mercede"/);
 });
 
 test('renderSeoBlock falls back to the default description when a route omits one', () => {
@@ -47,7 +47,7 @@ test('injectSeoBlock throws when markers are missing (build-time safety)', () =>
 test('caseStudyMeta: known slug yields a Case Study title; unknown yields the not-found fallback', () => {
   const knownSlug = caseStudyPaths()[0].split('/').pop()!; // real slug from committed content
   const known = caseStudyMeta(knownSlug);
-  assert.match(known.title, / — Case Study \| Dan Mercede$/);
+  assert.match(known.title, /: Case Study \| Dan Mercede$/);
   assert.ok(known.description && known.description.length > 0);
   assert.equal(caseStudyMeta('definitely-not-a-real-slug').title, 'Case Study Not Found | Dan Mercede');
 });

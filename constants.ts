@@ -11,7 +11,7 @@ import {
 import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Diagram } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
-// generated bundle does not yet export it — a NAMED import would hard-fail at
+// generated bundle does not yet export it, a NAMED import would hard-fail at
 // module load. DIAGRAMS enters the bundle via the substrate-sync regen after the
 // diagram canonicals add danmercede.com to surface_targets; until then the hub
 // builds cleanly with zero diagrams. (compiler-change / bundle-regen sequencing.)
@@ -32,7 +32,7 @@ export const NAV_ITEMS = [
 
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
-  positioning: "Enterprise AI doesn't fail on capability — it fails at runtime.",
+  positioning: "Enterprise AI doesn't fail on capability. It fails at runtime.",
   philosophy: "I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.",
   wedge: "If governance isn't enforced at runtime, it isn't governance.",
 };
@@ -40,7 +40,7 @@ export const HERO_CONTENT = {
 export const PILLARS: Pillar[] = [
   { title: "Human-Owned Intelligence", icon: Cpu, description: "AI aligned with operator intent, control, and accountability." },
   { title: "Governance & Accountability", icon: ShieldCheck, description: "Traceability, auditability, and policy enforcement by default." },
-  { title: "Execution Over Hype", icon: Zap, description: "Production systems with measurable outcomes — not experiments." },
+  { title: "Execution Over Hype", icon: Zap, description: "Production systems with measurable outcomes: not experiments." },
   { title: "Systems That Scale", icon: Network, description: "Architectures designed to compound, degrade safely, and endure." },
 ];
 
@@ -53,7 +53,7 @@ export const BUILD_AREAS = [
   {
     label: "Agency",
     icon: Briefcase,
-    description: "Enterprise AI reliability engineering — hardening workflows, enforcing constraints, and shipping governance-ready systems."
+    description: "Enterprise AI reliability engineering, hardening workflows, enforcing constraints, and shipping governance-ready systems."
   },
   {
     label: "Capital",
@@ -264,7 +264,7 @@ export function getImageMeta(srcOrFilename: string): ImageMeta {
 }
 
 export const RESOURCES: Resource[] = [
-  // L1 — Authority Gate
+  // L1: Authority Gate
   {
     title: "What We Deliver",
     description: "Engagement deliverable map linking control-plane gap analysis, failure-mode heatmaps, and evidence checklists to enforcement layers. Risk-bounded pricing tiers anchored to audit defensibility outcomes.",
@@ -273,14 +273,14 @@ export const RESOURCES: Resource[] = [
     filePath: "/assets/What_We_Deliver.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 1,
-    riskDomain: "Deployment friction — no structured path from SOC 2 / ISO 42001 gap identification to deterministic enforcement",
+    riskDomain: "Deployment friction, no structured path from SOC 2 / ISO 42001 gap identification to deterministic enforcement",
     gated: false,
     enforcementPoint: "Pre-execution authority gate evaluation",
     artifactType: "one-sheet",
     fileType: "pdf",
     fileSize: "4 KB",
   },
-  // L2 — Immutable Receipts
+  // L2: Immutable Receipts
   {
     title: "Executive Deck",
     description: "10-slide enforcement stack walkthrough with gate pipeline flow, ROI proof metrics, and engagement model. Maps cost per successful task, escalation rate reduction, and cycle-time compression to the four-layer cascade.",
@@ -289,14 +289,14 @@ export const RESOURCES: Resource[] = [
     filePath: "/assets/Executive_Deck.pptx",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 2,
-    riskDomain: "Financial impact — SOC 2 CC7.2 uncontrolled execution without attestation trail",
+    riskDomain: "Financial impact, SOC 2 CC7.2 uncontrolled execution without attestation trail",
     gated: false,
     enforcementPoint: "Append-only receipt ledger for mutation non-repudiation",
     artifactType: "deck",
     fileType: "pptx",
     fileSize: "236 KB",
   },
-  // L3 — Drift Guard
+  // L3: Drift Guard
   {
     title: "Case Study Template",
     description: "Structured engagement template mapping findings to enforcement stack layers. Captures enforcement points deployed, behavioral drift metrics, containment thresholds, and quantified risk reduction tied to operational blast radius.",
@@ -305,14 +305,14 @@ export const RESOURCES: Resource[] = [
     filePath: "/assets/Case_Study_Template.docx",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 3,
-    riskDomain: "Operational blast radius — ISO 42001 A.8.4 compounded deviation from unconstrained autonomous behavior",
+    riskDomain: "Operational blast radius, ISO 42001 A.8.4 compounded deviation from unconstrained autonomous behavior",
     gated: false,
-    enforcementPoint: "Behavioral containment across time — authority decay enforcement",
+    enforcementPoint: "Behavioral containment across time, authority decay enforcement",
     artifactType: "template",
     fileType: "docx",
     fileSize: "13 KB",
   },
-  // L4 — Gated Substrate
+  // L4: Gated Substrate
   {
     title: "Speaking One-Sheet",
     description: "Credential and topic mapping for CIO, CTO, CISO audiences. Talk tracks anchored to enforcement stack layers, substrate isolation mechanics, and quantified enterprise risk reduction. Architectural authority positioning.",
@@ -321,9 +321,9 @@ export const RESOURCES: Resource[] = [
     filePath: "/assets/Speaking_One_Sheet.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 4,
-    riskDomain: "Escalation rate — EU AI Act Article 14 / NIST AI RMF intelligence routing itself without substrate containment",
+    riskDomain: "Escalation rate, EU AI Act Article 14 / NIST AI RMF intelligence routing itself without substrate containment",
     gated: false,
-    enforcementPoint: "Physical isolation at execution substrate — capability removal over restriction",
+    enforcementPoint: "Physical isolation at execution substrate, capability removal over restriction",
     artifactType: "one-sheet",
     fileType: "pdf",
     fileSize: "4 KB",
@@ -384,7 +384,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
 ];
 
-// Curated Works / Open-Source surface (W1: static, like VENTURES/CASE_STUDIES —
+// Curated Works / Open-Source surface (W1: static, like VENTURES/CASE_STUDIES , 
 // not substrate-sourced). Append a new entry here whenever a public work ships
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
@@ -402,7 +402,7 @@ export const WORKS: Work[] = [
   {
     title: 'orion-skills',
     description:
-      'An open collection of first-party Claude Code skills — structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs — extracted from production operator workflows.',
+      'An open collection of first-party Claude Code skills, structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs, extracted from production operator workflows.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/orion-skills',
     link: 'https://www.danmercede.com/works/orion-skills/',
@@ -414,7 +414,7 @@ export const WORKS: Work[] = [
   {
     title: 'mcp-context-budget',
     description:
-      'A local-first CLI that keeps your MCP tool surface from eating the agent context budget — it scans tool schemas and response fixtures for token bloat, selects the smallest relevant tool set for a given task, emits a budget lockfile, and fails CI when a config regresses. Self-contained: no external services, runs from a fresh clone against fixture data.',
+      'A local-first CLI that keeps your MCP tool surface from eating the agent context budget, it scans tool schemas and response fixtures for token bloat, selects the smallest relevant tool set for a given task, emits a budget lockfile, and fails CI when a config regresses. Self-contained: no external services, runs from a fresh clone against fixture data.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/mcp-context-budget',
     link: 'https://www.danmercede.com/works/mcp-context-budget/',
@@ -425,7 +425,7 @@ export const WORKS: Work[] = [
   {
     title: 'schemafit',
     description:
-      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini, Mistral, Cohere) and fails CI before the schema 400s in production — naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone. v0.5 adds automatic rule-pack drift detection — an opt-in live-verify run that rejects a schema the static pack passed flags the pack as lagging the provider’s docs.',
+      'A local-first CLI that lints a JSON Schema, structured-output spec, or tool definition against the constraint surface of each major LLM provider (OpenAI, Anthropic, Gemini, Mistral, Cohere) and fails CI before the schema 400s in production, naming the exact JSON-Pointer path, the violated keyword, and the reason, plus a repair pass that emits a provider-valid variant. Static and offline: no API calls, runs from a fresh clone. v0.5 adds automatic rule-pack drift detection, an opt-in live-verify run that rejects a schema the static pack passed flags the pack as lagging the provider’s docs.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/schemafit',
     link: 'https://www.danmercede.com/works/schemafit/',
@@ -436,7 +436,7 @@ export const WORKS: Work[] = [
   {
     title: 'failclosed',
     description:
-      'Fail-closed merge admission control for agent-written code — runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory. Enforcement precedes the merge decision; the reviewer is a configurable command seam. Python 3.9+, self-contained.',
+      'Fail-closed merge admission control for agent-written code, runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory. Enforcement precedes the merge decision; the reviewer is a configurable command seam. Python 3.9+, self-contained.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/failclosed',
     link: 'https://www.danmercede.com/works/failclosed/',
@@ -455,13 +455,13 @@ export const WORKS: Work[] = [
     date: '2026-06-28',
     slug: 'localfiscal',
   },
-  // --- Applied Agent Projects — hackathon-built agent systems, surfaced as a
+  // --- Applied Agent Projects, hackathon-built agent systems, surfaced as a
   // distinct /works section (App.tsx WorksPage filters on category). Competition
   // context lives in each description, not the section heading. ---
   {
     title: 'algorithm.reviews',
     description:
-      'The Agent Trust Layer — a governed review agent that fans out across the live web, decides which sources are admissible (fail-closed), forms a verdict grounded only in admitted evidence, and ships a signed, verifiable review receipt: per-claim confidence, timestamped citations, dissent, and an ECDSA signature anyone can check. Built at the DeveloperWeek New York 2026 Hackathon.',
+      'The Agent Trust Layer, a governed review agent that fans out across the live web, decides which sources are admissible (fail-closed), forms a verdict grounded only in admitted evidence, and ships a signed, verifiable review receipt: per-claim confidence, timestamped citations, dissent, and an ECDSA signature anyone can check. Built at the DeveloperWeek New York 2026 Hackathon.',
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/algorithm-reviews',
     link: 'https://algorithm-reviews.vercel.app',
@@ -472,7 +472,7 @@ export const WORKS: Work[] = [
   {
     title: 'Proctor',
     description:
-      "The agent that QAs other agents — regression-tests non-deterministic AI automations by learning each one's behavioral contract, catching when a model or prompt change silently breaks it, self-healing the tests when the change is legitimate, and escalating real regressions to a human. Built for UiPath AgentHack 2026 (Track 3: UiPath Test Cloud).",
+      "The agent that QAs other agents, regression-tests non-deterministic AI automations by learning each one's behavioral contract, catching when a model or prompt change silently breaks it, self-healing the tests when the change is legitimate, and escalating real regressions to a human. Built for UiPath AgentHack 2026 (Track 3: UiPath Test Cloud).",
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/proctor',
     license: 'MIT',
@@ -482,7 +482,7 @@ export const WORKS: Work[] = [
   {
     title: 'Impact Lens',
     description:
-      "Blast-radius and change-impact analysis for code — 'what does changing this break, and what must I re-test?' — built as a GitLab Duo Agent Platform skill and flow over the GitLab Orbit knowledge graph, and published to the GitLab AI Catalog. Built for the GitLab Transcend Hackathon (Showcase Track).",
+      "Blast-radius and change-impact analysis for code, 'what does changing this break, and what must I re-test?', built as a GitLab Duo Agent Platform skill and flow over the GitLab Orbit knowledge graph, and published to the GitLab AI Catalog. Built for the GitLab Transcend Hackathon (Showcase Track).",
     category: 'Agent Project',
     repo: 'https://gitlab.com/OrionArchitekton/orbit-impact-lens',
     license: 'MIT',
@@ -492,7 +492,7 @@ export const WORKS: Work[] = [
   {
     title: 'Quorum',
     description:
-      "Decision-memory agent for Slack — detects when a thread reaches a decision, drafts a structured Decision Record, waits for human approval, files it to a canonical Decision Log, and answers 'what did we decide about X?' with sourced, permalink-cited replies. Built for the Slack Agent Builder Challenge.",
+      "Decision-memory agent for Slack, detects when a thread reaches a decision, drafts a structured Decision Record, waits for human approval, files it to a canonical Decision Log, and answers 'what did we decide about X?' with sourced, permalink-cited replies. Built for the Slack Agent Builder Challenge.",
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/quorum-slack-agent',
     link: 'https://quorum-slack-agent.vercel.app',
@@ -510,7 +510,7 @@ export const DIAGRAMS: Diagram[] =
 
 // --- /works dev-hub data (PR2) ---------------------------------------------
 // FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a
-// CAPPED pointer into /thoughts. The cap (3-5) is load-bearing — it keeps /works
+// CAPPED pointer into /thoughts. The cap (3-5) is load-bearing, it keeps /works
 // from drifting into a second /thoughts. Enforced by tests/worksHub.test.ts.
 export const FEATURED_ESSAY_SLUGS: readonly string[] = [
   '2026-06-08-authority-gate-made-runnable',
@@ -533,7 +533,7 @@ export function featuredEssays(
     const t = bySlug.get(slug);
     if (!t) {
       throw new Error(
-        `featuredEssays: slug "${slug}" is not in THOUGHTS — fix FEATURED_ESSAY_SLUGS or publish the essay.`,
+        `featuredEssays: slug "${slug}" is not in THOUGHTS, fix FEATURED_ESSAY_SLUGS or publish the essay.`,
       );
     }
     return { slug: t.slug, title: t.title };
