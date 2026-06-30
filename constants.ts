@@ -500,6 +500,17 @@ export const WORKS: Work[] = [
     date: '2026-06-06',
     slug: 'quorum',
   },
+  {
+    title: 'Plainspeak',
+    description:
+      'AI that reads the fine print, paste any dense document (a lease, a medical letter, terms of service) and get it back in plain words, the clauses that affect you ranked by severity, and the exact questions to ask before you sign. A single structured Claude call with a strict JSON contract, a not-legal-advice guardrail, and a defensive parser that keeps the UI clean. Built for the FutureAI Global Hackathon 2026.',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/plainspeak',
+    link: 'https://plainspeak-nine.vercel.app',
+    license: 'MIT',
+    date: '2026-06-30',
+    slug: 'plainspeak',
+  },
 ];
 
 export { THOUGHTS };
