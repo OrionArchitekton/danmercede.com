@@ -15,6 +15,7 @@ import {
   resolveSubstratePath,
   deriveCategoryFromLayer,
   delinkWikiLinks,
+  normalizeDashes,
   mapSubstrateToEntry,
   readSubstrateThoughts,
   readSubstrateWithDiagnostics,
@@ -1020,6 +1021,23 @@ test('delinkWikiLinks rewrites [[target]] and [[target|display]], preserving cod
   // inline + fenced code preserved verbatim (a Bash `[[ ]]` is not wiki markup)
   assert.equal(delinkWikiLinks('run `if [[ $x ]]; then` ok'), 'run `if [[ $x ]]; then` ok');
   assert.equal(delinkWikiLinks('```\n[[ 1, 2 ]]\n```'), '```\n[[ 1, 2 ]]\n```');
+});
+
+test('normalizeDashes replaces long dashes (brand ban) at the publish boundary', () => {
+  // Spaced em/en/bar dash -> comma (the parenthetical/appositive prose default).
+  assert.equal(normalizeDashes('a thing — and another'), 'a thing, and another');
+  assert.equal(normalizeDashes('a thing – and another'), 'a thing, and another');
+  assert.equal(normalizeDashes('a thing ― and another'), 'a thing, and another');
+  // Unspaced em dash between words -> comma.
+  assert.equal(normalizeDashes('governance—physics'), 'governance, physics');
+  // A dash between digits is a numeric range -> hyphen, not a comma.
+  assert.equal(normalizeDashes('the 2015–2020 window'), 'the 2015-2020 window');
+  // Plain prose with no long dash is unchanged (idempotent).
+  assert.equal(normalizeDashes('already clean, nothing to do'), 'already clean, nothing to do');
+  // Code spans are preserved verbatim: a CLI flag inside `...` keeps its hyphen run,
+  // and an em dash inside a fenced block is NOT normalized (verbatim example).
+  assert.equal(normalizeDashes('run `docker up --force-recreate` now'), 'run `docker up --force-recreate` now');
+  assert.equal(normalizeDashes('```\n# step one — step two\n```'), '```\n# step one — step two\n```');
 });
 
 test('no published THOUGHTS body carries a residual [[ wiki-link outside code (leak guard)', () => {
