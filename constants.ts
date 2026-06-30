@@ -507,6 +507,7 @@ export const WORKS: Work[] = [
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/plainspeak',
     link: 'https://plainspeak-nine.vercel.app',
+    video: 'https://youtu.be/EbHJ4gQpNS8',
     license: 'MIT',
     date: '2026-06-30',
     slug: 'plainspeak',

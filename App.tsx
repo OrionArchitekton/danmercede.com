@@ -1311,6 +1311,17 @@ const WorkCard = ({ work }: { work: Work }) => (
           Sample <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
         </a>
       )}
+      {work.video && (
+        <a
+          href={work.video}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Demo video for ${work.title}`}
+          className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
+        >
+          Watch demo <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+        </a>
+      )}
       {work.license && (
         <span className="text-xs font-mono text-slate-500 uppercase tracking-wider ml-auto">{work.license}</span>
       )}
