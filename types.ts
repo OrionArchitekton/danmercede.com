@@ -64,6 +64,7 @@ export interface Work {
   repo: string;            // codeRepository URL (GitHub) — drives the JSON-LD codeRepository
   link?: string;           // primary external link (defaults to repo if absent)
   gist?: string;           // optional supporting gist URL surfaced as a sample
+  video?: string;          // optional demo video URL (e.g. YouTube)
   license?: string;        // e.g. "MIT"
   date?: string;           // YYYY-MM-DD (shipped/published)
   slug: string;
