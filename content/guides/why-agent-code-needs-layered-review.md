@@ -67,8 +67,10 @@ The fix is to stop treating the needles as an ordered list and redact them **lon
 
 ```bash
 # sort the needles by length, descending, then redact each literally
-readarray -t needles < <(printf '%s\n' "${needles[@]}" | awk '{print length"\t"$0}' | sort -rn | cut -f2-)
-for n in "${needles[@]}"; do s="${s//"${n}"/<redacted>}"; done
+if [ ${#needles[@]} -gt 0 ]; then
+  readarray -t needles < <(printf '%s\n' "${needles[@]}" | awk '{print length"\t"$0}' | sort -rn | cut -f2-)
+  for n in "${needles[@]}"; do s="${s//"${n}"/<redacted>}"; done
+fi
 ```
 
 Longest-first closes the substring case, where one secret sits wholly inside another. It does not close the rarer case of two distinct secrets that overlap in the log line, a suffix of one equal to a prefix of another; random credentials almost never do this, but if yours can, redact in a single combined pass instead of a loop. State the bound; do not sell the fix as total.
