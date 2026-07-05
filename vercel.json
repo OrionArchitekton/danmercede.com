@@ -166,7 +166,7 @@
       ]
     },
     {
-      "source": "/([^/]+)\\.(webp|png|jpe?g|avif|gif)$",
+      "source": "/([^/]+)\\.(webp|png|jpe?g|avif|gif)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -227,7 +227,7 @@
       ]
     },
     {
-      "source": "/assets/(.*)\\.(js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|webp|avif|gif|ico|map)$",
+      "source": "/assets/(.*)\\.(js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|webp|avif|gif|ico|map)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -236,7 +236,7 @@
       ]
     },
     {
-      "source": "/assets/guides/(.*)\\.(webp|png|jpe?g|avif|gif)$",
+      "source": "/assets/guides/(.*)\\.(webp|png|jpe?g|avif|gif)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -245,7 +245,7 @@
       ]
     },
     {
-      "source": "/assets/(.*)\\.(pdf|docx|pptx|xlsx|doc|ppt|csv|zip)$",
+      "source": "/assets/(.*)\\.(pdf|docx|pptx|xlsx|doc|ppt|csv|zip)",
       "headers": [
         {
           "key": "Cache-Control",
