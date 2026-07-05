@@ -176,15 +176,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/guides': {
-    title: 'Guides: Self-Hosting & Systems | Dan Mercede',
+    title: 'Guides: Agent Engineering & Governed Systems | Dan Mercede',
     description:
-      'Practical, operator-grade guides on self-hosting, reverse proxies, secure ingress, and running governed systems on infrastructure you control.',
+      'Operator-grade guides on building and running governed agentic systems: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
     body: {
       h1: 'Guides',
       lead: 'Practical, operator-grade walkthroughs.',
       paragraphs: [
-        'Hands-on guides for self-hosting websites and apps, secure ingress, and running systems on infrastructure you control.',
+        'Hands-on guides for building and running governed agentic systems, plus self-hosting and secure ingress on infrastructure you control.',
       ],
     },
   },
