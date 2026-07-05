@@ -1538,10 +1538,10 @@ const GuidesPage = () => {
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader as="h1" title="Guides" subtitle="Self-Hosting · Systems · Operations" />
+        <SectionHeader as="h1" title="Guides" subtitle="Agent Engineering · Governed Systems · Operations" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Practical, operator-grade walkthroughs, self-hosting, secure ingress, and running systems on infrastructure you control. Field-tested, not theoretical.
+          Operator-grade walkthroughs for building and running governed agentic systems: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
