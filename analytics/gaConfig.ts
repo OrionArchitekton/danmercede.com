@@ -70,9 +70,9 @@ export function createGtag(target: { dataLayer?: unknown[] }): (...args: unknown
 // call sites can wire it unconditionally. Pass the global (window) as target so
 // the call is unit-testable without a real browser.
 export function trackEvent(
-  target: { gtag?: (...args: unknown[]) => void },
+  target: { gtag?: (...args: unknown[]) => void } | null | undefined,
   event: string,
   params?: Record<string, unknown>,
 ): void {
-  target.gtag?.('event', event, params ?? {});
+  target?.gtag?.('event', event, params ?? {});
 }

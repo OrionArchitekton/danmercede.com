@@ -105,12 +105,15 @@ test('trackEvent defaults params to an empty object', () => {
   assert.deepEqual(calls, [['event', 'connect_click', {}]]);
 });
 
-test('trackEvent is a no-op when gtag is absent (dev/preview/unconfigured)', () => {
+test('trackEvent is a no-op when gtag is absent or the target is null/undefined', () => {
   assert.doesNotThrow(() => trackEvent({}, 'generate_lead', { method: 'email' }));
+  assert.doesNotThrow(() => trackEvent(null, 'generate_lead', { method: 'email' }));
+  assert.doesNotThrow(() => trackEvent(undefined, 'connect_click'));
 });
 
 test('the /connect page wires the lead conversion events (regression guard)', () => {
   const app = read('App.tsx');
-  assert.match(app, /trackEvent\(window, 'generate_lead'/, 'email link must fire generate_lead');
-  assert.match(app, /trackEvent\(window, 'connect_click'/, 'linkedin link must fire connect_click');
+  // Tolerant of quote style + spacing so a Prettier/ESLint reformat cannot false-fail.
+  assert.match(app, /trackEvent\(\s*window\s*,\s*['"]generate_lead['"]/, 'email link must fire generate_lead');
+  assert.match(app, /trackEvent\(\s*window\s*,\s*['"]connect_click['"]/, 'linkedin link must fire connect_click');
 });

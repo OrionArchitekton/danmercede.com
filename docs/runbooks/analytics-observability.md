@@ -1,10 +1,11 @@
 ---
-verified: 2026-06-28
+verified: 2026-07-03
 review_after: 2026-09-28
-topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, danmercede.com]
+topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, key-events, danmercede.com]
 references:
   - components/Analytics.tsx
   - analytics/gaConfig.ts
+  - App.tsx
   - .env.example
   - public/llms.txt
   - .github/workflows/prod-smoke.yml
@@ -67,6 +68,20 @@ turn it on. DNS for both danmercede domains is on **Cloudflare**.
 5. Confirm **Settings → Ownership** lists your verification and that Coverage/Pages
    shows the baked routes being read.
 
+## Step 4 — Conversion events / Key events (operator, GA4 UI)
+
+The `/connect` page fires two conversion events via `trackEvent`
+(`analytics/gaConfig.ts`, wired in `App.tsx`): **`generate_lead`** on the email
+("Direct Contact") click and **`connect_click`** (`method: linkedin`) on the LinkedIn
+click. They are collected automatically once GA is live, but GA4 does **not** count
+them as conversions until they are marked as **Key events**. This is a console-only
+step: the site's GA connection is read-only, so it cannot be done via API.
+
+1. GA4 → Admin → **Key events** → **New key event** → enter `generate_lead`
+   (optionally add `connect_click` to also count LinkedIn clicks).
+2. Alternatively, once an event has fired at least once, toggle **mark as key event**
+   from **Admin → Events**.
+
 ---
 
 ## Validation (do all — surface checks hide blocking defects)
@@ -77,6 +92,9 @@ turn it on. DNS for both danmercede domains is on **Cloudflare**.
   per route** (not one). This is the end-to-end ALLOW proof, not just "script present".
 - **Consent posture:** in DevTools console, `window.dataLayer` includes a
   `['consent','default',{analytics_storage:'granted', ad_storage:'denied', ...}]` entry.
+- **Conversion proof:** on Production, open `/connect` and click the Email link, then
+  GA4 → Realtime → Event count shows `generate_lead`. After it is marked a Key event
+  (Step 4), it appears under Reports → Engagement → Conversions within ~24h.
 - **Vercel:** project → Analytics + Speed Insights tabs show data within ~30 min of traffic.
 - **Synthetic monitor:** Actions → **Prod Smoke** → Run workflow → green, with
   `canonical=<self>` logged per URL. (It now fails on a soft-404/wrong-canonical.)
