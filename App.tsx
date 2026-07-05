@@ -4,6 +4,7 @@ import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDow
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
+import { trackEvent } from './analytics/gaConfig';
 import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -1746,7 +1747,7 @@ const ConnectPage = () => {
 
         <div className="bg-slate-900/50 p-8 border border-white/5">
           <div className="space-y-6">
-            <a href="mailto:contact@danmercede.com" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
+            <a href="mailto:contact@danmercede.com" onClick={() => trackEvent(window, 'generate_lead', { method: 'email' })} className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
               <Mail className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
               <div>
                 <span className="block text-xs text-slate-400 uppercase tracking-wider">Email</span>
@@ -1754,7 +1755,7 @@ const ConnectPage = () => {
               </div>
             </a>
 
-            <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
+            <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(window, 'connect_click', { method: 'linkedin' })} className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
               <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
               <div>
                 <span className="block text-xs text-slate-400 uppercase tracking-wider">Social</span>
