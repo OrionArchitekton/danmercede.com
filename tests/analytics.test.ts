@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveGaConfig, createGtag } from '../analytics/gaConfig';
+import { resolveGaConfig, createGtag, trackEvent } from '../analytics/gaConfig';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(path.join(root, rel), 'utf8');
@@ -84,4 +84,33 @@ test('createGtag initializes window.dataLayer and reuses an existing one', () =>
   gtag('js', 'x');
   assert.equal(pre.dataLayer, existing, 'must preserve the existing dataLayer instance');
   assert.equal(pre.dataLayer.length, 2, 'preserves a pre-existing dataLayer');
+});
+
+// ---------------------------------------------------------------------------
+// trackEvent — the single event seam behind the /connect conversion links.
+// Must forward to gtag as an 'event' command and be a NO-OP without gtag, so it
+// is safe to wire unconditionally (dev/preview/unconfigured emit nothing).
+// ---------------------------------------------------------------------------
+
+test('trackEvent forwards to gtag as an event command with params', () => {
+  const calls: unknown[][] = [];
+  const target = { gtag: (...args: unknown[]) => { calls.push(args); } };
+  trackEvent(target, 'generate_lead', { method: 'email' });
+  assert.deepEqual(calls, [['event', 'generate_lead', { method: 'email' }]]);
+});
+
+test('trackEvent defaults params to an empty object', () => {
+  const calls: unknown[][] = [];
+  trackEvent({ gtag: (...a: unknown[]) => { calls.push(a); } }, 'connect_click');
+  assert.deepEqual(calls, [['event', 'connect_click', {}]]);
+});
+
+test('trackEvent is a no-op when gtag is absent (dev/preview/unconfigured)', () => {
+  assert.doesNotThrow(() => trackEvent({}, 'generate_lead', { method: 'email' }));
+});
+
+test('the /connect page wires the lead conversion events (regression guard)', () => {
+  const app = read('App.tsx');
+  assert.match(app, /trackEvent\(window, 'generate_lead'/, 'email link must fire generate_lead');
+  assert.match(app, /trackEvent\(window, 'connect_click'/, 'linkedin link must fire connect_click');
 });
