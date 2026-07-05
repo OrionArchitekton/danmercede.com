@@ -14,9 +14,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(__filename), '..');
@@ -65,6 +65,7 @@ test('guides images rule exists, is day-cached, and orders after the bundle rule
   const guidesIdx = headers.findIndex((r) => r.source.startsWith('/assets/guides/(.*)'));
   const bundleIdx = headers.findIndex((r) => r.source.startsWith('/assets/(.*)\\.(js|css'));
   assert.ok(guidesIdx >= 0, 'missing the guides images rule');
+  assert.ok(bundleIdx >= 0, 'missing the /assets bundle Cache-Control rule');
   assert.equal(
     cacheControlOf(headers[guidesIdx]),
     'public, max-age=86400, stale-while-revalidate=604800'
