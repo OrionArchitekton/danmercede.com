@@ -88,3 +88,31 @@ jobs:
             exit 1
           fi
           echo "R9 OK: all asserted built pages carry a non-empty crawlable body."
+
+  # A2 — passage-extractability linter as a first-class fail-closed REQUIRED
+  # check. It emits a check-run NAMED `extractability`, which
+  # required-checks-fail-closed.yml lists in BASE_REQUIRED_CHECKS so a red
+  # linter blocks merge. The linter also runs inside `build` (via `npm test`);
+  # this dedicated job gives it its own required-check status so the fail-closed
+  # gate is a real mirror, not a transitive accident of the aggregate suite.
+  # Same untrusted-lane least-privilege token as `build` (contents: read only).
+  extractability:
+    name: extractability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run extractability linter
+        run: npm run test:extractability
