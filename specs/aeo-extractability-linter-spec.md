@@ -42,8 +42,13 @@ or heading phrasing.
 - An `H1 → H3` skip and a two-`H1` document FAIL `heading-hierarchy`; a clean `H1→H2→H3` PASSES.
 - Adding a FAQPage node does not change the verdict; a question-phrased `H2` scores identically
   to a statement `H2`.
-- Every `ROUTE_META` baked body is extractability-clean (the gate binds to **real emitter
-  output**, not fixtures only).
+- Every **published route** baked body is extractability-clean — the binding iterates
+  `collectRoutes()` (the build's own prerender enumerator: static `ROUTE_META` **plus** the
+  generated case-study / thought / guide / diagram detail pages), so the gate binds to the
+  **full real published corpus**, not fixtures and not only the static routes.
+- Robustness: HTML comments are stripped before analysis (a commented-out heading cannot be
+  miscounted) and decimal/hex HTML entities are treated as separators (a nbsp-joined run
+  counts as its real words, not one token).
 - The linter is a fail-closed REQUIRED check: the **three mirrors move in lockstep** — the
   `package.json` `test`/`test:extractability` surface, the ci.yml `extractability` job, and
   `required-checks-fail-closed.yml` `BASE_REQUIRED_CHECKS` — locked by

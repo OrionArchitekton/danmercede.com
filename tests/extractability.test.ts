@@ -6,7 +6,8 @@ import {
   MAX_ANSWER_TOKENS,
   MIN_JS_OFF_RATIO,
 } from '../extractability';
-import { ROUTE_META, renderBodyBlock } from '../seoMeta';
+import { renderBodyBlock } from '../seoMeta';
+import { collectRoutes } from '../scripts/injectRouteMeta';
 
 // ---------------------------------------------------------------------------
 // A2 — passage-extractability linter (answer-engine / AEO surface).
@@ -160,14 +161,46 @@ test('query-phrased vs statement H2 score identically (query-phrasing stays advi
   );
 });
 
+// -- robustness: HTML comments + numeric entities (review hardening) ---------
+
+test('commented-out headings are ignored (HTML comments stripped before analysis)', () => {
+  // A commented-out <h1>/<h2> must not be counted by the regex heading pass,
+  // or a disabled/legacy heading left in a comment would break the hierarchy.
+  const html = `<!doctype html><html><body><div id="prerender-content">
+    <!-- <h1>ghost heading</h1> -->
+    <h1>Real Title</h1><p>Lead answer.</p>
+    <!-- <h2>ghost</h2> -->
+  </div><div id="root"></div></body></html>`;
+  const r = lintExtractability(html);
+  const h = r.findings.find((f) => f.check === 'heading-hierarchy');
+  assert.equal(h!.ok, true, `a commented-out <h1> must not count as a second H1: ${h!.detail}`);
+  assert.equal(r.ok, true);
+});
+
+test('numeric HTML entities are treated as separators (token budget counts real words)', () => {
+  // 300 words joined by non-breaking-space entities: without numeric-entity
+  // handling they collapse to a single token and slip under the answer budget.
+  const lead = Array.from({ length: 300 }, (_, i) => `w${i}`).join('&#160;');
+  const html = `<!doctype html><html><body><div id="prerender-content">
+    <h1>Title</h1><p>${lead}</p></div><div id="root"></div></body></html>`;
+  const tb = lintExtractability(html).findings.find((f) => f.check === 'token-budget');
+  assert.equal(tb!.ok, false, 'a 300-word nbsp-joined lead must exceed the budget (entities are separators)');
+});
+
 // -- real-content binding: the gate has a LIVE subject, not a fixture no-op ---
 
-test('every ROUTE_META baked body is extractability-clean (binds the gate to real emitter output)', () => {
-  for (const [route, meta] of Object.entries(ROUTE_META)) {
-    const body = renderBodyBlock(route, meta);
+test('every PUBLISHED route baked body is extractability-clean (binds the gate to the FULL prerender set, not just static routes)', () => {
+  // collectRoutes() is the same enumerator the build prerenders with: static
+  // ROUTE_META + generated case-study / thought / guide / diagram detail pages.
+  // Binding here (not just ROUTE_META) makes the gate cover the real published
+  // corpus — the bulk of the site's answer-engine surface.
+  const routes = collectRoutes();
+  assert.ok(routes.length > 12, 'collectRoutes must include static + generated detail routes, not just the ~12 static ones');
+  for (const { path, meta } of routes) {
+    const body = renderBodyBlock(path, meta);
     const html = `<!doctype html><html><body>${body}<div id="root"></div></body></html>`;
     const r = lintExtractability(html);
-    assert.equal(r.ok, true, `${route} baked body must be extractability-clean: ${JSON.stringify(r.findings.filter((f) => !f.ok))}`);
+    assert.equal(r.ok, true, `${path} baked body must be extractability-clean: ${JSON.stringify(r.findings.filter((f) => !f.ok))}`);
   }
 });
 

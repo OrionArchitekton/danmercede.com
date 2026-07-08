@@ -54,18 +54,31 @@ function countWords(text: string): number {
   return t ? t.split(/\s+/).length : 0;
 }
 
-/** Drop <script>/<style> blocks; their content is never crawlable prose. */
+/**
+ * Drop content that is never crawlable prose: <script>/<style> blocks AND HTML
+ * comments. Comments are stripped BEFORE any heading/text pass so a commented-
+ * out (disabled/legacy) heading or paragraph can never be counted — the regex
+ * passes would otherwise match markup inside `<!-- ... -->`. Non-greedy so each
+ * comment (incl. the hub's `<!--BODY_BLOCK-->` markers) is removed individually
+ * without swallowing the real content that sits between paired markers.
+ */
 function stripCode(html: string): string {
   return html
+    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ');
 }
 
-/** Collapse markup + entities to plain text. */
+/**
+ * Collapse markup + HTML entities to plain text. Named (`&amp;`), decimal
+ * (`&#160;`), and hex (`&#x27;`) entities are all reduced to a separator so a
+ * nbsp-joined run counts as its real words, not one giant token, and no literal
+ * entity leaks into the token/length measures.
+ */
 function toText(html: string): string {
   return html
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
