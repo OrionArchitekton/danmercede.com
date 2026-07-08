@@ -87,7 +87,7 @@ If you take one architecture from this, take this shape, which I settled on afte
 
 The three paths compared, so the choice is legible:
 
-| | Router proxy | Headless CLI (recommended) | Native per-subagent |
+| Feature | Router proxy | Headless CLI (recommended) | Native per-subagent |
 |---|---|---|---|
 | Keeps Claude orchestrating | Only if you patch aliases | Yes, cleanly | Yes |
 | Routes subagents to other providers | Yes, but Claude-unaware | Yes, per call, model named | No, Anthropic aliases only |
