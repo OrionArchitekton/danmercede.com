@@ -89,6 +89,8 @@ Two portable lessons fall out. First, **never hardcode credential-shaped fixture
 
 Across the arc, four layers caught five distinct defects with no overlap in the catches (the merge gate alone surfaced two, the credential-shaped fixtures and the transitive block), because each layer senses a different modality. Live recon senses runtime state. The pre-PR fleet senses the diff with fresh adversarial priors. The post-push pass senses by an independent model that runs the code. The CI gate senses policy and scanner state. Independent modalities have independent blind spots, which is the only reason stacking them pays off.
 
+![The independent review stack: four orthogonal review layers for agent-written code, shown as a pipeline. Live environment recon senses runtime state; a pre-PR multi-model fleet senses adversarial logic; post-push functional execution senses by running the code; and the CI merge gate senses policy and scanner state. Each layer catches a defect the others miss.](/assets/guides/layered-review/independent-review-stack.webp "Four review layers, each sensing a different modality. Stacking identical reviewers shares blind spots; independent ones do not.")
+
 | Review layer | Sensing modality | The defect it caught |
 |---|---|---|
 | Live recon | runtime state on the real host | wrong container selected, false CRITICAL nightly |

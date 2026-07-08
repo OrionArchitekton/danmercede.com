@@ -24,6 +24,8 @@ The waste compounds three ways. **Context flood:** a large docs page is roughly 
 
 Context rot is the quiet one. Even on a large context window, recall degrades as the window fills. A page of HTML you never needed is not free just because it fit.
 
+![The cost of lazy web access versus a hardened stack. On the left, an agent's context window overloaded with raw HTML noise (ads and trackers, navigation menus, script tags, CSS, boilerplate) wasting about 82 percent of tokens, plus context rot and parallel-search rate limits. On the right, a three-part hardened stack: self-hosted search that aggregates engines without per-query fees, extract-first fetching that converts a URL to clean markdown before it reaches the model, and a summarizing subagent that passes back only distilled facts.](/assets/guides/web-access/efficient-web-access.webp "Raw HTML can burn 80 percent of an agent's context. Self-hosted search, extract-first fetching, and a summarizing subagent keep only the signal.")
+
 ## What are the three axes of agent web access?
 
 Web access is not one capability, it is three, and they want different tools. **Search** (find the URLs), **fetch** (read a page without drowning in it), and **browser automation** (click, fill, scroll a live app). In a 2026-07 review of the field, the cheapest resilient answer differed per axis: self-hosted for search and fetch, local-and-free for the browser.
