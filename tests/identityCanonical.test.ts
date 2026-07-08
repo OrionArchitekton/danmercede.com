@@ -66,7 +66,7 @@ test('PERSON_ID / WEBSITE_ID are anchored to the canonical www host', () => {
   assert.equal(SITE_ORIGIN, 'https://www.danmercede.com');
 });
 
-test('canonical Person.sameAs covers all four spokes plus GitHub', () => {
+test('canonical Person.sameAs covers all four spokes plus GitHub and the live dev.to syndication spoke', () => {
   const person = allNodes().find((n) => n['@type'] === 'Person');
   assert.ok(person, 'Person node must be declared');
   const sameAs = ((person.sameAs as string[]) || []).map((u) => u.replace(/\/+$/, ''));
@@ -76,6 +76,14 @@ test('canonical Person.sameAs covers all four spokes plus GitHub', () => {
     'https://www.danielmercede.info',
     'https://www.danmercede.online',
     'https://github.com/OrionArchitekton',
+    // A4 — the dev.to author profile we actually publish to via /syndicate
+    // (live: dev.to user 3923648 "Dan Mercede", github OrionArchitekton). Locking
+    // it here keeps the Person emitter and this contract in lockstep so the live
+    // syndication spoke cannot silently drop out of the canonical identity graph.
+    // Hashnode is DEFERRED (built but Pro-gated, not live-publishing per
+    // /syndicate); Wikipedia/Wikidata/Crunchbase are REJECTED (notability
+    // mismatch — a thin self-authored entity backfires).
+    'https://dev.to/danmercede',
   ];
   for (const r of required) {
     assert.ok(sameAs.includes(r), `Person.sameAs must include ${r}`);

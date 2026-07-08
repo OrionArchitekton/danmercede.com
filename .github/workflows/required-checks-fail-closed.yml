@@ -23,7 +23,11 @@ permissions:
   actions: read
 
 env:
-  BASE_REQUIRED_CHECKS: "build,gitleaks"
+  # extractability = the A2 passage-extractability linter (ci.yml `extractability`
+  # job). Adding it here makes the fail-closed gate WAIT on that check-run, so a
+  # red linter blocks merge. Kept in lockstep with the ci.yml job name and the
+  # package.json test surface via tests/requiredChecksWorkflow.test.ts.
+  BASE_REQUIRED_CHECKS: "build,gitleaks,extractability"
   TIMEOUT_MINUTES: "15"
   POLL_INTERVAL_SECONDS: "30"
 
