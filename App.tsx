@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import {
@@ -1413,62 +1413,77 @@ const WorksPage = () => {
 
 const ThoughtsPage = () => {
   usePageMeta();
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const categories = ['all', ...Array.from(new Set(THOUGHTS.map((t: Thought) => t.category)))];
-
-  const filtered = activeCategory === 'all'
-    ? THOUGHTS
-    : THOUGHTS.filter((t: Thought) => t.category === activeCategory);
+  // Lane-grouped operating-journal view. Lanes are a hub-side curation orthogonal
+  // to the substrate `category` badge (kept on each card). The default lane catches
+  // every essay not claimed by another lane, so no post is ever dropped.
+  const claimed = new Set(
+    THOUGHT_LANES.flatMap((lane) => (lane.isDefault ? [] : [...(lane.slugs ?? [])])),
+  );
 
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader as="h1" title="Thought Direction" subtitle="Doctrine + Architecture" />
+        <SectionHeader as="h1" title="Thought Direction" subtitle="Notes from the operating layer" />
 
-        <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes, only enforcement mechanics and architectural proof.
+        <p className="text-slate-400 text-lg max-w-3xl mb-4">
+          Essays on governed AI, workflow ownership, operator-led automation, and execution discipline, plus the failure modes that show up when systems meet reality. Same voice as always: enforcement mechanics and architectural proof, not hot takes.
+        </p>
+        <p className="text-slate-400 text-sm max-w-3xl mb-12">
+          Looking for AI strategy or implementation help?{' '}
+          <a href={READINESS_SCAN.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline">
+            Work with OIA on one workflow.
+          </a>
         </p>
 
-        {/* Category filter */}
-        <div className="flex flex-wrap gap-3 mb-12">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded text-sm font-mono uppercase tracking-widest transition-all ${
-                activeCategory === cat
-                  ? 'bg-copper-500/20 text-copper-400 border border-copper-500/40'
-                  : 'bg-slate-900/40 text-slate-400 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
-              }`}
-            >
-              {cat === 'all' ? 'All' : cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Thoughts grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((thought: Thought, idx: number) => (
-            <Link
-              key={idx}
-              to={`/thoughts/${thought.slug}`}
-              className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-                  {thought.category}
-                </span>
-                <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+        {/* Lane-grouped essays */}
+        <div className="space-y-16">
+          {THOUGHT_LANES.map((lane) => {
+            const essays = lane.isDefault
+              ? THOUGHTS.filter((t: Thought) => !claimed.has(t.slug))
+              : THOUGHTS.filter((t: Thought) => (lane.slugs ?? []).includes(t.slug));
+            return (
+              <div key={lane.name}>
+                <div className="mb-6 border-l-2 border-copper-500/40 pl-4">
+                  <h2 className="text-2xl font-bold text-white">{lane.name}</h2>
+                  <p className="text-slate-400 text-sm mt-1">{lane.blurb}</p>
+                </div>
+                {essays.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {essays.map((thought: Thought, idx: number) => (
+                      <Link
+                        key={idx}
+                        to={`/thoughts/${thought.slug}`}
+                        className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
+                            {thought.category}
+                          </span>
+                          <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
+                          {thought.title}
+                        </h3>
+                        <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
+                        <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
+                          Read &rarr;
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm italic">
+                    {lane.emptyNote}{' '}
+                    {lane.externalHref && (
+                      <a href={lane.externalHref} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline not-italic">
+                        Visit danmercede.online
+                      </a>
+                    )}
+                  </p>
+                )}
               </div>
-              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
-                {thought.title}
-              </h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
-              <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
-                Read →
-              </span>
-            </Link>
-          ))}
+            );
+          })}
         </div>
 
         {/* Doctrine anchor */}

@@ -165,6 +165,62 @@ export const READINESS_SCAN = {
   href: "https://www.orionintelligenceagency.com/readiness-scan?utm_source=danmercede.com&utm_medium=hub_cta&utm_campaign=readiness_scan",
 };
 
+// Hub-side /thoughts lane grouping (the authority-router 'operating journal' view).
+// Lanes are a HAND-AUTHORED curation, ORTHOGONAL to the substrate-derived `category`
+// badge (which stays on each card). It touches neither the substrate nor the
+// generated bundle. Curated lanes list explicit slugs; the default lane (Governed AI)
+// catches every essay not claimed by another lane, so no post is ever dropped. Two
+// lanes ship EMPTY by design: Workflow Ownership fills later via the /thoughts
+// authoring rail; Public Signals routes to danmercede.online.
+export interface ThoughtLane {
+  name: string;
+  blurb: string;
+  slugs?: readonly string[];
+  isDefault?: boolean;
+  emptyNote?: string;
+  externalHref?: string;
+}
+export const THOUGHT_LANES: readonly ThoughtLane[] = [
+  {
+    name: 'Operator Notes',
+    blurb: 'Lived execution, business lessons, and the work patterns behind the systems.',
+    slugs: [
+      '2026-07-03-architecture-fit-is-not-business-justification',
+      '2026-06-29-the-alibi-of-a-green-gate',
+      '2026-06-24-verify-the-verifier-v2',
+      '2026-05-12-posted-is-not-published',
+      '2026-05-05-gated-substrate-is-a-pinned-sha',
+      '2026-04-28-content-has-a-substrate-too',
+      '2026-03-10-extraction-without-a-frozen-contract',
+    ],
+  },
+  {
+    name: 'Governed AI',
+    blurb: 'Fail-closed systems, receipts, authority, and the controls that make AI trustworthy.',
+    isDefault: true,
+  },
+  {
+    name: 'Workflow Ownership',
+    blurb: 'Turning AI from experiments into workflows a team owns, the bridge into hands-on work.',
+    slugs: [],
+    emptyNote: 'New essays are landing here. In the meantime, work with OIA on one workflow.',
+  },
+  {
+    name: 'Public Signals',
+    blurb: 'Shorter working notes and market observations, posted as they happen.',
+    slugs: [],
+    emptyNote: 'Raw signals live on danmercede.online.',
+    externalHref: 'https://danmercede.online',
+  },
+  {
+    name: 'Archive',
+    blurb: 'Older pieces that still matter but are not the current front door.',
+    slugs: [
+      '2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability',
+    ],
+  },
+];
+
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
 
 export const TARGET_AUDIENCE = [

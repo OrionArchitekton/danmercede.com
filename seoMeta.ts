@@ -147,15 +147,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/thoughts': {
-    title: 'Thought Direction: Doctrine + Architecture | Dan Mercede',
+    title: 'Thoughts: Notes from the Operating Layer | Dan Mercede',
     description:
-      'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
+      'Essays on governed AI, workflow ownership, operator-led automation, and the failure modes that show up when systems meet reality.',
     schemaType: 'Article',
     body: {
       h1: 'Thought Direction',
-      lead: 'Doctrine and architecture.',
+      lead: 'Notes from the operating layer.',
       paragraphs: [
-        'Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale.',
+        'Essays on governed AI, workflow ownership, operator-led automation, and execution discipline, plus the failure modes that show up when systems meet reality.',
       ],
     },
   },
