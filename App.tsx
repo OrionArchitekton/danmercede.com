@@ -168,7 +168,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Runtime Governance Architect</span>
+                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Operator and Systems Builder</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
@@ -221,7 +221,7 @@ const HomePage = () => {
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
             <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
-              If governance isn't enforced at runtime, it isn't governance.
+              The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px flex-grow bg-white/5"></div>
           </div>
@@ -282,12 +282,12 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to own one workflow?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Runtime Governance Readiness Scan
+            Work with OIA on one workflow
           </h3>
           <p className="text-slate-400 mb-8 max-w-xl mx-auto">
-            A focused assessment that maps your control-plane gaps, identifies failure modes, and delivers a 30/60/90 hardening roadmap.
+            A focused engagement with Orion Intelligence Agency that scopes one workflow, maps its failure modes, and delivers a 30/60/90 plan to a system your team owns.
           </p>
           <a
             href={READINESS_SCAN.href}
