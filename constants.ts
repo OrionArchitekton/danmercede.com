@@ -48,7 +48,7 @@ export const BUILD_AREAS = [
   {
     label: "Platform",
     icon: Globe,
-    description: "Governed AI Operating System design: control planes and execution frameworks that unify memory, decisioning, and oversight."
+    description: "Governed AI Operating System design: control planes and execution frameworks that unify memory, decision-making, and oversight."
   },
   {
     label: "Agency",
@@ -95,7 +95,7 @@ export const VENTURES: Venture[] = [
   {
     name: "Orion Intelligence Agency",
     role: "SMB AI Strategy & Consulting",
-    description: "Orion Intelligence Agency helps small and mid sized operators turn one high-friction workflow into an AI-assisted system the team can run: strategy, leadership facilitation, engineering, and agents.",
+    description: "Orion Intelligence Agency helps small and mid-sized operators turn one high-friction workflow into an AI-assisted system the team can run: strategy, leadership facilitation, engineering, and agents.",
     ecosystemRole: "Orion Intelligence Agency (OIA) is the SMB AI strategy consulting arm. Four offering lines: AI Strategy, AI Leadership and Facilitation, AI Engineering, and AI Agents. Builds and deploys, not just advises.",
     systemRelationship: "OIA is the commercial delivery lane for operators who need one workflow shipped, adopted, and owned. Cosmocrat remains the Governed AI Operating System product when a control-plane substrate is the right fit.",
     operatingConstraints: "SMB-focused. One workflow first. Blueprint before build. Transparent scoping on a Readiness Scan call. No public package price list.",
