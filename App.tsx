@@ -1300,12 +1300,14 @@ const CaseStudyPage = () => {
             <Download className="w-4 h-4" />
             Download Full Case Study
           </a>
-          <Link
-            to="/connect"
+          <a
+            href={READINESS_SCAN.href}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 border border-copper-500/30 text-copper-500 rounded font-mono text-sm hover:bg-copper-500/10 transition-colors"
           >
             {READINESS_SCAN.cta}
-          </Link>
+          </a>
         </div>
       </Section>
     </div>
@@ -1805,7 +1807,7 @@ const ConnectPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-8">
           <p className="text-xl text-white">
-            I engage with builders, operators, and enterprise teams looking to implement governed intelligence systems.
+            I engage with builders, operators, and practice owners turning one high-friction workflow into an AI-assisted system their team can own.
           </p>
 
           <div className="space-y-4">
