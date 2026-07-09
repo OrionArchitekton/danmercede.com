@@ -19,8 +19,13 @@ Repo identity:
 
 These two surfaces have separate, non-overlapping jobs — keep them that way.
 
-- **`/thoughts` = the writing.** The full essay corpus — every `/thoughts/<slug>`
-  page plus the index with its category filter. Substrate-sourced (`THOUGHTS`).
+- **`/thoughts` = the writing.** The full essay corpus (every `/thoughts/<slug>`
+  page), presented as a lane-grouped operating journal (`THOUGHT_LANES`, a hub-side
+  curation orthogonal to the substrate category badge). The substrate **category
+  filter is preserved**: the default `All lanes` view shows the lane grouping, and
+  selecting a category (Architecture / Enforcement / Doctrine) switches to a flat
+  filtered grid. A subtle routing line points strategy/implementation visitors to OIA
+  (it routes, it does not sell). Substrate-sourced (`THOUGHTS`).
   This is the sole home of the essays; `/works` must never re-create the library.
 - **`/works` = the building.** Open-source artifacts (`WORKS`) plus a **hard-capped
   (3–5) curated pointer** to flagship essays — `FEATURED_ESSAY_SLUGS` resolved by

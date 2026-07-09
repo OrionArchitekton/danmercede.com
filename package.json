@@ -12,7 +12,7 @@
     "optimize:images": "node scripts/optimizeImages.mjs public",
     "optimize:diagrams": "node scripts/optimizeDiagrams.mjs",
     "compile:guides": "node scripts/compileGuides.mjs",
-    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/vercelHeaders.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts tests/worksJsonLd.test.ts tests/contentBoundary.test.ts tests/worksHub.test.ts tests/guidesBundle.test.ts tests/markdown.test.ts tests/diagramCompile.test.ts tests/diagramSeo.test.ts tests/diagramInject.test.ts tests/routeCoverage.test.ts tests/analytics.test.ts tests/optimizeDiagrams.test.ts tests/requiredChecksWorkflow.test.ts tests/extractability.test.ts",
+    "test": "tsx --test tests/compileContent.test.ts tests/vercelGuard.test.ts tests/vercelHeaders.test.ts tests/injectRouteMeta.test.ts tests/imageBudget.test.ts tests/sitemapParity.test.ts tests/bodyBake.test.ts tests/headHygiene.test.ts tests/identityCanonical.test.ts tests/worksJsonLd.test.ts tests/contentBoundary.test.ts tests/worksHub.test.ts tests/guidesBundle.test.ts tests/markdown.test.ts tests/diagramCompile.test.ts tests/diagramSeo.test.ts tests/diagramInject.test.ts tests/routeCoverage.test.ts tests/analytics.test.ts tests/optimizeDiagrams.test.ts tests/requiredChecksWorkflow.test.ts tests/extractability.test.ts tests/intentRoutes.test.ts tests/thoughtLanes.test.ts",
     "test:extractability": "tsx --test tests/extractability.test.ts"
   },
   "dependencies": {
