@@ -102,3 +102,27 @@ test('per-route ProfilePage/Article nodes reference the canonical #person, never
   // Still exactly one Person across the whole document.
   assert.equal(nodes.filter((n) => n['@type'] === 'Person').length, 1);
 });
+
+test('the Orion Intelligence Agency affiliation carries OIA’s canonical Organization @id so the graphs merge', () => {
+  // F3 — cross-entity graph merge (spoke side, danmercede.com -> OIA).
+  //
+  // OIA emits its own Organization node under a stable @id
+  // (`${SITE_ORIGIN}/#organization` in oia-web/web/lib/structuredData.ts, where
+  // SITE_ORIGIN defaults to https://www.orionintelligenceagency.com). When the
+  // hub Person references OIA by that SAME @id here, an answer engine merges the
+  // two descriptions into one entity instead of treating "Orion Intelligence
+  // Agency" on danmercede.com as a separate, thinner org. A bare name+url
+  // affiliation (no @id) does not merge. Lock the @id so a future edit cannot
+  // silently re-fragment the cluster.
+  const OIA_ORG_ID = 'https://www.orionintelligenceagency.com/#organization';
+  const person = allNodes().find((n) => n['@type'] === 'Person');
+  assert.ok(person, 'Person node must be declared');
+  const affiliations = (person.affiliation as Array<Record<string, unknown>>) || [];
+  const oia = affiliations.find((a) => a.name === 'Orion Intelligence Agency');
+  assert.ok(oia, 'the Person must declare an Orion Intelligence Agency affiliation');
+  assert.equal(
+    oia['@id'],
+    OIA_ORG_ID,
+    `the OIA affiliation @id must equal OIA’s canonical Organization @id (${OIA_ORG_ID})`,
+  );
+});
