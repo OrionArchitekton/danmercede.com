@@ -159,7 +159,10 @@ test('worksFor and every @id-bearing affiliation use the exact Organization @id 
     'Orion Intelligence Agency': 'https://www.orionintelligenceagency.com/#organization',
     'Orion AI Media': null,
     'Apex AI Trading': 'https://apexaitrading.com/#organization',
-    'ReplyChatAI': 'https://www.replychatai.com/#organization',
+    // Estate canon names the venture ReplyBy (constants.ts VENTURES); the live
+    // replychatai.com node lists ReplyBy as alternateName, so the hub asserts
+    // the forward name and keeps the legacy name as the alias.
+    'ReplyBy': 'https://www.replychatai.com/#organization',
     'Cosmocrat': 'https://www.cosmocrat.ai/#organization',
   };
   const person = allNodes().find((n) => n['@type'] === 'Person');
@@ -177,4 +180,10 @@ test('worksFor and every @id-bearing affiliation use the exact Organization @id 
       assert.equal(org['@id'], id, `${name} affiliation @id must equal its live-emitted Organization @id`);
     }
   }
+  const replyBy = affiliations.find((a) => a.name === 'ReplyBy');
+  assert.equal(
+    replyBy?.alternateName,
+    'ReplyChatAI',
+    'ReplyBy must keep the legacy ReplyChatAI name as alternateName until the rename fully lands',
+  );
 });
