@@ -145,3 +145,45 @@ test('the Orion Intelligence Agency affiliation carries OIA’s canonical Organi
     `the OIA affiliation @id must equal OIA’s canonical Organization @id (${OIA_ORG_ID})`,
   );
 });
+
+test('worksFor and every @id-bearing affiliation use the exact Organization @id its site live-emits', () => {
+  // Spoke-cluster completion (follow-up to the OIA merge above): each org site
+  // that emits its own Organization node gets referenced here by that EXACT
+  // live-emitted @id so the graphs merge. Values verified against live JSON-LD
+  // 2026-07-09; note Apex AI Trading emits a NON-www @id. Orion AI Media emits
+  // no Organization @id, so its affiliation deliberately stays a bare name+url
+  // reference (a dangling @id is worse than none).
+  const OAC_ORG_ID = 'https://www.orionapexcapital.com/#organization';
+  const EXPECTED: Record<string, string | null> = {
+    'Orion Apex Capital': OAC_ORG_ID,
+    'Orion Intelligence Agency': 'https://www.orionintelligenceagency.com/#organization',
+    'Orion AI Media': null,
+    'Apex AI Trading': 'https://apexaitrading.com/#organization',
+    // Estate canon names the venture ReplyBy (constants.ts VENTURES); the live
+    // replychatai.com node lists ReplyBy as alternateName, so the hub asserts
+    // the forward name and keeps the legacy name as the alias.
+    'ReplyBy': 'https://www.replychatai.com/#organization',
+    'Cosmocrat': 'https://www.cosmocrat.ai/#organization',
+  };
+  const person = allNodes().find((n) => n['@type'] === 'Person');
+  assert.ok(person, 'Person node must be declared');
+  const worksFor = person.worksFor as Record<string, unknown> | undefined;
+  assert.equal(worksFor?.['@id'], OAC_ORG_ID, 'worksFor must carry the OAC hub Organization @id');
+  const affiliations = (person.affiliation as Array<Record<string, unknown>>) || [];
+  assert.equal(affiliations.length, Object.keys(EXPECTED).length, 'affiliation set drifted from the locked table');
+  for (const [name, id] of Object.entries(EXPECTED)) {
+    const org = affiliations.find((a) => a.name === name);
+    assert.ok(org, `the Person must declare a ${name} affiliation`);
+    if (id === null) {
+      assert.equal(org['@id'], undefined, `${name} must stay @id-free until its site emits an Organization @id`);
+    } else {
+      assert.equal(org['@id'], id, `${name} affiliation @id must equal its live-emitted Organization @id`);
+    }
+  }
+  const replyBy = affiliations.find((a) => a.name === 'ReplyBy');
+  assert.equal(
+    replyBy?.alternateName,
+    'ReplyChatAI',
+    'ReplyBy must keep the legacy ReplyChatAI name as alternateName until the rename fully lands',
+  );
+});
