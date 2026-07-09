@@ -1,0 +1,37 @@
+# WebSub freshness push (specs/hub-feed-spec.md scenario 4): after a merge to
+# main deploys (Vercel builds on push), tell the hub the feeds changed so
+# subscribers (Feedly-class readers) get pushed instead of waiting on a poll.
+# Creds-free by construction: pure curl against public origins, NO secrets, no
+# third-party actions. Non-blocking: a ping failure is a WARNING, never a gate.
+name: WebSub Ping
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deployment
+        run: |
+          echo "Waiting 150 seconds for the Vercel production deploy..."
+          sleep 150
+
+      - name: Ping WebSub hub for both feeds
+        run: |
+          for FEED in "https://www.danmercede.com/feed.xml" "https://www.danmercede.com/atom.xml"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://pubsubhubbub.appspot.com/" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              --data-urlencode "hub.mode=publish" \
+              --data-urlencode "hub.url=${FEED}") || STATUS="000"
+            if [ "$STATUS" = "204" ]; then
+              echo "WebSub ping accepted for ${FEED}"
+            else
+              echo "::warning::WebSub ping for ${FEED} returned HTTP ${STATUS}"
+            fi
+          done
