@@ -11,9 +11,9 @@ export const SITE_ORIGIN = 'https://www.danmercede.com';
 // static-vs-runtime og:image mismatch onto one asset.
 export const DEFAULT_OG_IMAGE_PATH = '/dan-mercede-og-card.jpg';
 export const DEFAULT_META_DESCRIPTION =
-  'Dan Mercede is a systems architect and founder focused on building governed AI operating systems, enterprise AI reliability infrastructure, and human-owned intelligence platforms.';
+  'Dan Mercede is an operator and systems builder who helps teams turn AI from experiments into owned, governed workflows they can actually run. Governance and reliability are proof depth, not the pitch.';
 export const DEFAULT_TITLE =
-  'Dan Mercede: AI Systems Architect of the Governed AI Operating System';
+  'Dan Mercede: Operator, Systems Builder, and Governed AI Architect';
 
 // HTML comment anchors delimiting the swappable SEO block in index.html.
 // Verified to survive `vite build` (Vite preserves HTML comments).
@@ -98,10 +98,10 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     schemaType: 'ProfilePage',
     body: {
       h1: 'Dan Mercede',
-      lead: "Enterprise AI doesn't fail on capability. It fails at runtime.",
+      lead: 'AI systems fail when nobody owns the workflow.',
       paragraphs: [
-        'I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.',
-        "If governance isn't enforced at runtime, it isn't governance.",
+        "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
+        'Governance is how those systems stay trustworthy: fail-closed enforcement, clear authority, and audit-grade receipts. It is proof depth, not the pitch.',
         'Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.',
       ],
     },

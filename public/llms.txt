@@ -1,17 +1,18 @@
 # Dan Mercede
 
-> Dan Mercede is a systems architect and founder building governed AI operating
-> systems — runtime-enforced control planes that fail closed, enforce authority,
-> and generate audit-grade receipts. Canonical hub: https://www.danmercede.com/
+> Dan Mercede is an operator and systems builder. He helps teams turn AI from
+> experiments into owned, governed workflows they can actually run, with
+> fail-closed enforcement and audit-grade receipts kept as proof depth, not the
+> pitch. Canonical hub: https://www.danmercede.com/
 
 ## About
-- [Dan Mercede — home](https://www.danmercede.com/): Positioning, philosophy, and the runtime-governance thesis.
+- [Dan Mercede, home](https://www.danmercede.com/): Positioning, philosophy, and turning AI from experiments into owned, governed workflows.
 - [The Throughline (About)](https://www.danmercede.com/about): Background, beliefs, and the operations-to-architecture arc.
 - [Ecosystem](https://www.danmercede.com/ecosystem): The Orion entity stack (Cosmocrat, Orion Intelligence Agency, and supporting ventures) under one governance framework.
 - [Proof](https://www.danmercede.com/proof): Enforcement artifacts and production case studies mapped to the four-layer control plane.
 
 ## Thoughts
-- [Doctrine essays](https://www.danmercede.com/thoughts): Long-form essays on runtime governance, fail-closed enforcement, and governed AI operating systems. Each essay has its own indexable URL at /thoughts/<slug>.
+- [Thoughts](https://www.danmercede.com/thoughts): Essays on governed AI, workflow ownership, operator-led automation, and the failure modes that show up when systems meet reality. Each essay has its own indexable URL at /thoughts/<slug>.
 
 ## Guides
 - [Technical guides](https://www.danmercede.com/guides): Hands-on, reproducible engineering guides. Each guide lives at /guides/<slug> and is the canonical source for any syndicated copy.

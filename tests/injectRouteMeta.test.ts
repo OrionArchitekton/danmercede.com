@@ -23,7 +23,7 @@ test('renderSeoBlock sets per-route title, canonical, og:url, twitter', () => {
 
 test('renderSeoBlock falls back to the default description when a route omits one', () => {
   const block = renderSeoBlock('/ecosystem', ROUTE_META['/ecosystem']);
-  assert.match(block, /governed AI operating systems, enterprise AI reliability/);
+  assert.match(block, /owned, governed workflows they can actually run/);
 });
 
 test('renderSeoBlock escapes special characters in titles/descriptions', () => {
