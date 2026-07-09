@@ -109,14 +109,14 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/about': {
     title: 'About: Dan Mercede',
     description:
-      'Systems architect and founder building governed AI operating systems with deterministic enforcement at runtime.',
+      'Operator and systems builder helping teams turn AI from experiments into owned workflows. Governance as proof depth, not the pitch.',
     schemaType: 'ProfilePage',
     body: {
       h1: 'The Throughline',
-      lead: 'From operations to architecture, the mission has remained constant: governance over chaos.',
+      lead: 'From operations to architecture: build systems operators can own and run.',
       paragraphs: [
-        'I build governed AI operating systems, systems that remember, decide, execute, and remain auditable under real conditions.',
-        "I don't believe in disruption for its own sake. I believe in systems that endure. My background isn't a straight line, but a thematic progression from managing complex human workflows to building the digital substrates that automate them.",
+        'I help teams turn AI from experiments into owned workflows. Strategy and facilitation first. Build when the path is clear. Hand off ownership so day two is real.',
+        'Governance and reliability are how the work holds under pressure. They are proof depth, not the front-door pitch. My path runs from complex human operations to the digital systems that automate them.',
       ],
     },
   },
@@ -125,10 +125,10 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     schemaType: 'ProfilePage',
     body: {
       h1: 'Ecosystem',
-      lead: 'Orion Ventures, independent entities under one governance framework.',
+      lead: 'Orion Ventures: independent entities under shared ownership architecture.',
       paragraphs: [
         'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligence, governing how AI systems remember, decide, execute, and are audited over time.',
-        'Orion Apex Capital originates, owns, and governs the ecosystem; Orion Intelligence Agency, ReplyBy, Apex Trading Systems, and Path of Life Hub deploy, validate, or operate under the Cosmocrat governance model.',
+        'Orion Apex Capital originates, owns, and governs the ecosystem. Orion Intelligence Agency is the SMB AI strategy consulting arm that builds and deploys with operators. ReplyBy, Apex Trading Systems, and Path of Life Hub operate as domain applications under the same ownership architecture.',
       ],
     },
   },
@@ -176,15 +176,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/guides': {
-    title: 'Guides: Agent Engineering & Governed Systems | Dan Mercede',
+    title: 'Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede',
     description:
-      'Operator-grade guides on building and running governed agentic systems: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
+      'Operator-grade guides on building and running agentic systems you own: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
     body: {
       h1: 'Guides',
       lead: 'Practical, operator-grade walkthroughs.',
       paragraphs: [
-        'Hands-on guides for building and running governed agentic systems, plus self-hosting and secure ingress on infrastructure you control.',
+        'Hands-on guides for building and running agentic systems with clear ownership, plus self-hosting and secure ingress on infrastructure you control.',
       ],
     },
   },
@@ -195,25 +195,25 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/diagrams': {
     title: 'Diagrams: Systems & Architecture | Dan Mercede',
     description:
-      'Architecture and agentic-systems diagrams: two-plane governance, request lifecycle, runtime enforcement, and the patterns behind governed AI operating systems.',
+      'Architecture and systems diagrams for operator-led AI, workflow ownership, and the patterns that keep reliability intact under load.',
     schemaType: 'Article',
     body: {
       h1: 'Diagrams',
       lead: 'Architecture and agentic-systems diagrams.',
       paragraphs: [
-        'Visual explainers for governed AI architecture, two-plane topology, request lifecycle, runtime enforcement, and the systems patterns behind the doctrine.',
+        'Visual explainers for operator-led AI architecture, two-plane topology, request lifecycle, and the systems patterns that keep ownership and reliability intact under load.',
       ],
     },
   },
   '/connect': {
     title: 'Connect: Initiate Protocol | Dan Mercede',
     description:
-      'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.',
+      'Engage with Dan Mercede on operator-led AI systems, workflow ownership, and SMB AI strategy consulting through OIA.',
     body: {
       h1: 'Connect',
       lead: 'Initiate protocol.',
       paragraphs: [
-        'Engage with Dan Mercede on governed AI architecture, runtime enforcement, and enterprise reliability engineering.',
+        'Engage with Dan Mercede on operator-led AI systems, one-workflow ownership, and SMB AI strategy consulting through Orion Intelligence Agency.',
       ],
     },
   },

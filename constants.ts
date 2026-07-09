@@ -48,12 +48,12 @@ export const BUILD_AREAS = [
   {
     label: "Platform",
     icon: Globe,
-    description: "Governed AI Operating System design, control planes, and execution frameworks that unify memory, decisioning, and oversight."
+    description: "Governed AI Operating System design: control planes and execution frameworks that unify memory, decisioning, and oversight."
   },
   {
     label: "Agency",
     icon: Briefcase,
-    description: "Enterprise AI reliability engineering, hardening workflows, enforcing constraints, and shipping governance-ready systems."
+    description: "SMB AI strategy and consulting: one workflow from strategy to a system your team owns. Builds, not just advises."
   },
   {
     label: "Capital",
@@ -94,12 +94,12 @@ export const VENTURES: Venture[] = [
   },
   {
     name: "Orion Intelligence Agency",
-    role: "Enterprise AI Reliability Engineering",
-    description: "Orion Intelligence Agency hardens and deploys governed AI systems in production environments, focusing on reliability, auditability, and execution under risk.",
-    ecosystemRole: "Orion Intelligence Agency (OIA) applies and hardens governed AI systems in production environments where reliability, compliance, and auditability are required.",
-    systemRelationship: "OIA deploys and validates Cosmocrat inside real enterprise workflows, translating the operating system into measurable outcomes without compromising governance.",
-    operatingConstraints: "Enterprise-only. Execution-first. No experimentation in production. Designed for risk, security, and compliance teams.",
-    status: "ENTERPRISE EXECUTION",
+    role: "SMB AI Strategy & Consulting",
+    description: "Orion Intelligence Agency helps small and mid sized operators turn one high-friction workflow into an AI-assisted system the team can run: strategy, leadership facilitation, engineering, and agents.",
+    ecosystemRole: "Orion Intelligence Agency (OIA) is the SMB AI strategy consulting arm. Four offering lines: AI Strategy, AI Leadership and Facilitation, AI Engineering, and AI Agents. Builds and deploys, not just advises.",
+    systemRelationship: "OIA is the commercial delivery lane for operators who need one workflow shipped, adopted, and owned. Cosmocrat remains the Governed AI Operating System product when a control-plane substrate is the right fit.",
+    operatingConstraints: "SMB-focused. One workflow first. Blueprint before build. Transparent scoping on a Readiness Scan call. No public package price list.",
+    status: "SMB CONSULTING · LIVE",
     logo: "/oia-shield-only-dark.png",
     slug: "orion-intelligence",
     link: "https://www.orionintelligenceagency.com"
@@ -262,7 +262,7 @@ export const INTENT_ROUTES = [
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
 
 export const TARGET_AUDIENCE = [
-  "Builders", "Operators", "Investors", "Enterprise Teams"
+  "Builders", "Operators", "Investors", "Practice Owners"
 ];
 
 export const FOOTER_DATA = {
