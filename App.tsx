@@ -282,12 +282,12 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to own one workflow?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Runtime Governance Readiness Scan
+            Work with OIA on one workflow
           </h3>
           <p className="text-slate-400 mb-8 max-w-xl mx-auto">
-            A focused assessment that maps your control-plane gaps, identifies failure modes, and delivers a 30/60/90 hardening roadmap.
+            A focused engagement with Orion Intelligence Agency that scopes one workflow, maps its failure modes, and delivers a 30/60/90 plan to a system your team owns.
           </p>
           <a
             href={READINESS_SCAN.href}
