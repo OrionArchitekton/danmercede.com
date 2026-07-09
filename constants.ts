@@ -426,7 +426,7 @@ export const RESOURCES: Resource[] = [
 
 export const CASE_STUDIES: CaseStudy[] = [
   {
-    title: "Runtime Governance in Financial Services",
+    title: "Governed AI in Financial Services",
     slug: "financial-services",
     industry: "Financial Services",
     enforcementLayers: [1, 2],
@@ -452,7 +452,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     ],
   },
   {
-    title: "Runtime Governance in Healthcare",
+    title: "Governed AI in Healthcare",
     slug: "healthcare",
     industry: "Healthcare",
     enforcementLayers: [3, 4],

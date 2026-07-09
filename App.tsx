@@ -1620,7 +1620,7 @@ const GuidesPage = () => {
         <SectionHeader as="h1" title="Guides" subtitle="Agent Engineering · Workflow Ownership · Operations" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Operator-grade walkthroughs for building and running agentic systems you own: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
+          Hands-on walkthroughs for building and running agentic systems you own: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
