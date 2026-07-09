@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import {
@@ -158,6 +158,38 @@ const Footer = () => (
 
 // --- Pages ---
 
+// Homepage intent-router: 4 cards that route each visitor to the surface fitting
+// their intent (authority-router role). SMB card links out to OIA; the rest are
+// in-hub routes. Rendered React-only (never baked into the identity `/` body).
+const IntentRouter = () => (
+  <Section className="pt-10 md:pt-16">
+    <SectionHeader title="Where do you want to go?" subtitle="Find your path" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {INTENT_ROUTES.map((route, idx) => {
+        const cardClass = "flex flex-col items-start p-6 border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-copper-500/30 transition-all group h-full";
+        const inner = (
+          <>
+            <p className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{route.audience}</p>
+            <h3 className="text-white font-semibold mb-2">{route.prompt}</h3>
+            <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-grow">{route.description}</p>
+            <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400 transition-colors">
+              {route.cta}
+              {route.external
+                ? <ExternalLink className="w-4 h-4 ml-2" />
+                : <ArrowRight className="w-4 h-4 ml-2" />}
+            </span>
+          </>
+        );
+        return route.external ? (
+          <a key={idx} href={route.href} target="_blank" rel="noopener noreferrer" className={cardClass}>{inner}</a>
+        ) : (
+          <Link key={idx} to={route.href} className={cardClass}>{inner}</Link>
+        );
+      })}
+    </div>
+  </Section>
+);
+
 const HomePage = () => {
   usePageMeta();
   return (
@@ -168,7 +200,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Runtime Governance Architect</span>
+                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Operator and Systems Builder</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
@@ -221,12 +253,15 @@ const HomePage = () => {
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
             <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
-              If governance isn't enforced at runtime, it isn't governance.
+              The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px flex-grow bg-white/5"></div>
           </div>
         </div>
       </section>
+
+      {/* Intent Router - route visitors by intent (authority-router role) */}
+      <IntentRouter />
 
       {/* Pillars */}
       <Section className="bg-slate-900/20 pt-10 md:pt-16 border-t border-white/5 md:border-t-0">
@@ -282,12 +317,12 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to harden your AI stack?</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to own one workflow?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Runtime Governance Readiness Scan
+            Work with OIA on one workflow
           </h3>
           <p className="text-slate-400 mb-8 max-w-xl mx-auto">
-            A focused assessment that maps your control-plane gaps, identifies failure modes, and delivers a 30/60/90 hardening roadmap.
+            A focused engagement with Orion Intelligence Agency that scopes one workflow, maps its failure modes, and delivers a 30/60/90 plan to a system your team owns.
           </p>
           <a
             href={READINESS_SCAN.href}
@@ -1413,23 +1448,51 @@ const WorksPage = () => {
 
 const ThoughtsPage = () => {
   usePageMeta();
+  // Operating-journal view. Default ('All lanes') is lane-grouped: a hub-side curation
+  // orthogonal to the substrate `category` badge, with a default lane that catches every
+  // unclaimed essay so no post is dropped. The substrate category filter (Architecture /
+  // Enforcement / Doctrine) is PRESERVED: selecting a category switches to a flat
+  // filtered grid (the documented /thoughts index filter).
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const categories = ['all', ...Array.from(new Set(THOUGHTS.map((t: Thought) => t.category)))];
+  const claimed = new Set(
+    THOUGHT_LANES.flatMap((lane) => (lane.isDefault ? [] : [...(lane.slugs ?? [])])),
+  );
 
-  const filtered = activeCategory === 'all'
-    ? THOUGHTS
-    : THOUGHTS.filter((t: Thought) => t.category === activeCategory);
+  const renderCard = (thought: Thought, idx: number) => (
+    <Link
+      key={idx}
+      to={`/thoughts/${thought.slug}`}
+      className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{thought.category}</span>
+        <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+      </div>
+      <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">{thought.title}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
+      <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
+        Read &rarr;
+      </span>
+    </Link>
+  );
 
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader as="h1" title="Thought Direction" subtitle="Doctrine + Architecture" />
+        <SectionHeader as="h1" title="Thought Direction" subtitle="Notes from the operating layer" />
 
-        <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Essays on runtime governance, enforcement architecture, and the structural requirements for governed intelligence at scale. No hot takes, only enforcement mechanics and architectural proof.
+        <p className="text-slate-400 text-lg max-w-3xl mb-4">
+          Essays on governed AI, workflow ownership, operator-led automation, and execution discipline, plus the failure modes that show up when systems meet reality. Same voice as always: enforcement mechanics and architectural proof, not hot takes.
+        </p>
+        <p className="text-slate-400 text-sm max-w-3xl mb-8">
+          Looking for AI strategy or implementation help?{' '}
+          <a href={READINESS_SCAN.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline">
+            Work with OIA on one workflow.
+          </a>
         </p>
 
-        {/* Category filter */}
+        {/* Category filter (substrate taxonomy). 'All lanes' shows the lane-grouped view. */}
         <div className="flex flex-wrap gap-3 mb-12">
           {categories.map((cat) => (
             <button
@@ -1441,35 +1504,48 @@ const ThoughtsPage = () => {
                   : 'bg-slate-900/40 text-slate-400 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
               }`}
             >
-              {cat === 'all' ? 'All' : cat}
+              {cat === 'all' ? 'All lanes' : cat}
             </button>
           ))}
         </div>
 
-        {/* Thoughts grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((thought: Thought, idx: number) => (
-            <Link
-              key={idx}
-              to={`/thoughts/${thought.slug}`}
-              className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-                  {thought.category}
-                </span>
-                <span className="text-xs font-mono text-slate-400">{thought.date}</span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
-                {thought.title}
-              </h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
-              <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
-                Read →
-              </span>
-            </Link>
-          ))}
-        </div>
+        {activeCategory === 'all' ? (
+          /* Lane-grouped essays (default operating-journal view) */
+          <div className="space-y-16">
+            {THOUGHT_LANES.map((lane) => {
+              const essays = lane.isDefault
+                ? THOUGHTS.filter((t: Thought) => !claimed.has(t.slug))
+                : THOUGHTS.filter((t: Thought) => (lane.slugs ?? []).includes(t.slug));
+              return (
+                <div key={lane.name}>
+                  <div className="mb-6 border-l-2 border-copper-500/40 pl-4">
+                    <h2 className="text-2xl font-bold text-white">{lane.name}</h2>
+                    <p className="text-slate-400 text-sm mt-1">{lane.blurb}</p>
+                  </div>
+                  {essays.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {essays.map((thought: Thought, idx: number) => renderCard(thought, idx))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-sm italic">
+                      {lane.emptyNote}{' '}
+                      {lane.externalHref && (
+                        <a href={lane.externalHref} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline not-italic">
+                          Visit danmercede.online
+                        </a>
+                      )}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Flat grid filtered by the substrate category (documented index filter) */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {THOUGHTS.filter((t: Thought) => t.category === activeCategory).map((thought: Thought, idx: number) => renderCard(thought, idx))}
+          </div>
+        )}
 
         {/* Doctrine anchor */}
         <div className="mt-16 border-l-2 border-copper-500/30 pl-6 max-w-2xl">
