@@ -32,9 +32,9 @@ export const NAV_ITEMS = [
 
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
-  positioning: "Enterprise AI doesn't fail on capability. It fails at runtime.",
-  philosophy: "I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.",
-  wedge: "If governance isn't enforced at runtime, it isn't governance.",
+  positioning: "AI systems fail when nobody owns the workflow.",
+  philosophy: "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
+  wedge: "The teams that win with AI own the workflow, not just the model.",
 };
 
 export const PILLARS: Pillar[] = [
@@ -155,12 +155,12 @@ export const VENTURES: Venture[] = [
 ];
 
 export const READINESS_SCAN = {
-  cta: "Book a Runtime Governance Readiness Scan",
+  cta: "Work with OIA on one workflow",
   deliverables: [
-    "Control-plane gap map",
+    "Workflow readiness map",
     "Failure-mode heatmap",
-    "Enforcement checklist",
-    "30/60/90 hardening roadmap",
+    "Ownership and handoff plan",
+    "30/60/90 rollout roadmap",
   ],
   href: "https://www.orionintelligenceagency.com/readiness-scan?utm_source=danmercede.com&utm_medium=hub_cta&utm_campaign=readiness_scan",
 };
@@ -218,6 +218,44 @@ export const THOUGHT_LANES: readonly ThoughtLane[] = [
     slugs: [
       '2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability',
     ],
+  },
+];
+
+// Homepage intent-router: routes each visitor to the surface that fits their
+// intent. danmercede.com is the authority router; OIA is the commercial lane.
+// External SMB card points at the OIA readiness-scan; the rest are in-hub routes.
+export const INTENT_ROUTES = [
+  {
+    audience: 'SMB buyer',
+    prompt: 'Need AI strategy or a workflow built?',
+    description: 'Work with Orion Intelligence Agency on one workflow, from strategy to a system your team owns.',
+    href: READINESS_SCAN.href,
+    cta: 'Go to OIA',
+    external: true,
+  },
+  {
+    audience: 'Technical reader',
+    prompt: 'Here for the engineering?',
+    description: 'Guides, essays, and open-source tools on governed AI and operator-led automation.',
+    href: '/guides',
+    cta: 'Read the guides',
+    external: false,
+  },
+  {
+    audience: 'Reliability and governance',
+    prompt: 'Evaluating governed AI infrastructure?',
+    description: 'The reliability and governance archive: enforcement artifacts and production proof.',
+    href: '/proof',
+    cta: 'See the proof',
+    external: false,
+  },
+  {
+    audience: 'Investor or operator',
+    prompt: 'Exploring the bigger picture?',
+    description: 'The Orion ecosystem and Orion Apex Capital, the entity stack under one governance framework.',
+    href: '/ecosystem',
+    cta: 'View the ecosystem',
+    external: false,
   },
 ];
 
