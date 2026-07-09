@@ -32,9 +32,9 @@ export const NAV_ITEMS = [
 
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
-  positioning: "Enterprise AI doesn't fail on capability. It fails at runtime.",
-  philosophy: "I design Runtime-Enforced Governed AI Operating Systems that fail closed, enforce authority, and generate audit-grade receipts.",
-  wedge: "If governance isn't enforced at runtime, it isn't governance.",
+  positioning: "AI systems fail when nobody owns the workflow.",
+  philosophy: "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
+  wedge: "The teams that win with AI own the workflow, not just the model.",
 };
 
 export const PILLARS: Pillar[] = [
@@ -155,12 +155,12 @@ export const VENTURES: Venture[] = [
 ];
 
 export const READINESS_SCAN = {
-  cta: "Book a Runtime Governance Readiness Scan",
+  cta: "Work with OIA on one workflow",
   deliverables: [
-    "Control-plane gap map",
+    "Workflow readiness map",
     "Failure-mode heatmap",
-    "Enforcement checklist",
-    "30/60/90 hardening roadmap",
+    "Ownership and handoff plan",
+    "30/60/90 rollout roadmap",
   ],
   href: "https://www.orionintelligenceagency.com/readiness-scan?utm_source=danmercede.com&utm_medium=hub_cta&utm_campaign=readiness_scan",
 };
