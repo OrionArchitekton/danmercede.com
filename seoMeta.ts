@@ -101,7 +101,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       lead: 'AI systems fail when nobody owns the workflow.',
       paragraphs: [
         "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
-        'Governance is how those systems stay trustworthy: fail-closed enforcement, clear authority, and audit-grade receipts. It is proof depth, not the pitch.',
+        'The teams that win with AI own the workflow, not just the model.',
         'Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.',
       ],
     },
