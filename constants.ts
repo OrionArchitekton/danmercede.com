@@ -165,6 +165,44 @@ export const READINESS_SCAN = {
   href: "https://www.orionintelligenceagency.com/readiness-scan?utm_source=danmercede.com&utm_medium=hub_cta&utm_campaign=readiness_scan",
 };
 
+// Homepage intent-router: routes each visitor to the surface that fits their
+// intent. danmercede.com is the authority router; OIA is the commercial lane.
+// External SMB card points at the OIA readiness-scan; the rest are in-hub routes.
+export const INTENT_ROUTES = [
+  {
+    audience: 'SMB buyer',
+    prompt: 'Need AI strategy or a workflow built?',
+    description: 'Work with Orion Intelligence Agency on one workflow, from strategy to a system your team owns.',
+    href: READINESS_SCAN.href,
+    cta: 'Go to OIA',
+    external: true,
+  },
+  {
+    audience: 'Technical reader',
+    prompt: 'Here for the engineering?',
+    description: 'Guides, essays, and open-source tools on governed AI and operator-led automation.',
+    href: '/guides',
+    cta: 'Read the guides',
+    external: false,
+  },
+  {
+    audience: 'Reliability and governance',
+    prompt: 'Evaluating governed AI infrastructure?',
+    description: 'The reliability and governance archive: enforcement artifacts and production proof.',
+    href: '/proof',
+    cta: 'See the proof',
+    external: false,
+  },
+  {
+    audience: 'Investor or operator',
+    prompt: 'Exploring the bigger picture?',
+    description: 'The Orion ecosystem and Orion Apex Capital, the entity stack under one governance framework.',
+    href: '/ecosystem',
+    cta: 'View the ecosystem',
+    external: false,
+  },
+];
+
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
 
 export const TARGET_AUDIENCE = [
