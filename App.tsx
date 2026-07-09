@@ -987,7 +987,7 @@ const ResourcesPage = () => {
     <div className="pt-20">
       <LayerJumpBar />
       <Section>
-        <SectionHeader as="h1" title="Proof" subtitle="Enforcement Artifacts" />
+        <SectionHeader as="h1" title="Reliability and Governance Archive" subtitle="Enforcement artifacts and production proof" />
 
         {/* Signature Diagram, Runtime Execution Control Plane Architecture */}
         <div id="control-plane" className="mb-16">
