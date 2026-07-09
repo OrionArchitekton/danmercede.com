@@ -138,8 +138,8 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       'The reliability and governance archive: downloadable enforcement artifacts mapped to the four-layer governance stack (Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate). Proof depth, not the front-door pitch.',
     schemaType: 'Article',
     body: {
-      h1: 'Reliability and Governance Archive',
-      lead: 'Proof depth: enforcement artifacts and production proof.',
+      h1: 'Proof',
+      lead: 'Reliability and governance archive: proof depth, not the pitch.',
       paragraphs: [
         'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
         'Downloadable enforcement artifacts map to the four-layer governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
