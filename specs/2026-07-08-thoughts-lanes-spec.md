@@ -24,6 +24,9 @@ voice or bodies. Every existing post is kept.
   a pointer to work with OIA. It is the bridge into the commercial lane.
 - **Public Signals** ships empty in /thoughts and routes to danmercede.online, where the
   raw shorter working notes live.
+- **The substrate category filter is preserved.** The default `All lanes` view is the
+  lane grouping; selecting a category (Architecture / Enforcement / Doctrine) switches to a
+  flat filtered grid, keeping the documented /thoughts index filter available.
 
 ## Constraints / acceptance criteria
 
