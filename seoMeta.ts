@@ -40,7 +40,7 @@ export const PERSON_ID = `${SITE_ORIGIN}/#person`;
 export const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
 
 const OG_IMAGE_ALT =
-  'Dan Mercede, systems architect and founder of the governed AI operating system';
+  'Dan Mercede, founder, operator, and systems builder';
 
 // Crawlable body copy for a route: one H1 and one or more paragraphs. Sourced
 // from the rendered page copy so the static body and the hydrated body agree.
@@ -178,11 +178,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/guides': {
     title: 'Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede',
     description:
-      'Operator-grade guides on building and running agentic systems you own: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
+      'Field-tested guides on building and running agentic systems you own: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
     body: {
       h1: 'Guides',
-      lead: 'Practical, operator-grade walkthroughs.',
+      lead: 'Practical, field-tested walkthroughs.',
       paragraphs: [
         'Hands-on guides for building and running agentic systems with clear ownership, plus self-hosting and secure ingress on infrastructure you control.',
       ],
