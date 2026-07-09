@@ -60,6 +60,25 @@ test('hub declares exactly one WebSite node and it is the canonical site', () =>
   );
 });
 
+test('the canonical WebSite description carries the operator/workflow positioning, not the retired enterprise framing', () => {
+  // Arc 1 (OIA-SMB reposition) retired the enterprise-runtime-governance lead from the
+  // entity graph. Answer engines classify the site off this #website node, so it must not
+  // silently drift back to the old positioning while the visible copy says otherwise.
+  const website = allNodes().find((n) => n['@type'] === 'WebSite');
+  assert.ok(website, 'WebSite node must be declared');
+  const description = String(website.description || '');
+  assert.doesNotMatch(
+    description,
+    /enterprise AI reliability|runtime governance|enterprise/i,
+    'the WebSite description must not re-advertise the retired enterprise positioning',
+  );
+  assert.match(
+    description,
+    /workflow|operator|SMB/i,
+    'the WebSite description must carry the operator/workflow-ownership positioning',
+  );
+});
+
 test('PERSON_ID / WEBSITE_ID are anchored to the canonical www host', () => {
   assert.equal(PERSON_ID, `${SITE_ORIGIN}/#person`);
   assert.equal(WEBSITE_ID, `${SITE_ORIGIN}/#website`);

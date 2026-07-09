@@ -353,13 +353,13 @@ const AboutPage = () => {
           <SectionHeader as="h1" title="The Throughline" subtitle="Canonical Narrative" />
           <div className="prose prose-invert prose-lg text-slate-400">
             <p className="text-xl text-white font-light mb-4">
-              From operations to architecture, the mission has remained constant: <span className="text-copper-400">Governance over chaos.</span>
+              From operations to architecture: <span className="text-copper-400">build systems operators can own and run.</span>
             </p>
             <p className="text-lg text-white/90 font-normal mb-8 leading-relaxed">
-              I build governed AI operating systems, systems that remember, decide, execute, and remain auditable under real conditions.
+              I help teams turn AI from experiments into owned workflows. Strategy and facilitation first. Build when the path is clear. Hand off ownership so day two is real.
             </p>
             <p className="mb-6">
-              I don't believe in disruption for its own sake. I believe in systems that endure. My background isn't a straight line, but a thematic progression from managing complex human workflows to building the digital substrates that automate them.
+              Governance and reliability are how the work holds under pressure. They are proof depth, not the front-door pitch. My path runs from complex human operations to the digital systems that automate them.
             </p>
             <div className="flex items-center space-x-4 my-12 p-6 border border-copper-500/20 bg-copper-500/5 rounded-sm">
               <Shield className="w-12 h-12 text-copper-500 flex-shrink-0" />
@@ -503,11 +503,11 @@ const EcosystemPage = () => {
 
   return (
     <div className="pt-20">
-      {/* Primary: Runtime Governance Stack */}
+      {/* Primary: Operator Stack */}
       <Section>
-        <SectionHeader as="h1" title="Runtime Governance Stack" subtitle="Core Systems" />
+        <SectionHeader as="h1" title="Operator Stack" subtitle="Core Systems" />
         <p className="text-slate-400 mb-12 max-w-3xl -mt-10">
-          The platform and the implementation arm. Cosmocrat is the Governed AI Operating System. Orion Intelligence Agency deploys and hardens it in production.
+          The platform and the consulting arm. Cosmocrat is the Governed AI Operating System. Orion Intelligence Agency is SMB AI strategy consulting that builds and deploys with operators, not just advises.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
@@ -581,7 +581,7 @@ const EcosystemPage = () => {
       {/* Readiness Scan CTA Band */}
       <div className="border-y border-copper-500/10 bg-slate-900/40 py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Enterprise Entry Point</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">One Workflow Entry</p>
           <a
             href={READINESS_SCAN.href}
             target="_blank"
@@ -678,7 +678,7 @@ const EcosystemPage = () => {
 
       <div className="border-t border-white/5 bg-slate-900/30 py-16 text-center">
         <p className="text-slate-400 font-mono text-xs uppercase tracking-widest max-w-2xl mx-auto px-6">
-          Each entity operates independently under a shared governance framework. The runtime stack (Cosmocrat + OIA) is the enterprise entry point.
+          Each entity operates independently under shared ownership architecture. Cosmocrat is the platform. OIA is the SMB consulting and delivery arm for one-workflow ownership.
         </p>
       </div>
     </div>
@@ -720,8 +720,8 @@ const ReadinessScanCTA = () => (
   <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mt-10">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div>
-        <p className="text-white font-semibold mb-1">Runtime governance starts with visibility.</p>
-        <p className="text-sm text-slate-400">Control-plane gap map. Failure-mode heatmap. 30/60/90 enforcement roadmap.</p>
+        <p className="text-white font-semibold mb-1">Start with one workflow and clear ownership.</p>
+        <p className="text-sm text-slate-400">Workflow readiness map. Failure-mode heatmap. Ownership and handoff plan. 30/60/90 rollout roadmap.</p>
       </div>
       <a
         href={READINESS_SCAN.href}
@@ -729,7 +729,7 @@ const ReadinessScanCTA = () => (
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-mono rounded transition-colors whitespace-nowrap"
       >
-        Schedule a Readiness Scan
+        {READINESS_SCAN.cta}
         <ArrowRight className="w-4 h-4" />
       </a>
     </div>
@@ -783,7 +783,7 @@ const RunnableProofCallout = () => (
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-copper-400 font-mono transition-colors"
         >
-          Schedule a Readiness Scan
+          {READINESS_SCAN.cta}
           <ArrowRight className="w-4 h-4" />
         </a>
       </div>
@@ -1300,12 +1300,14 @@ const CaseStudyPage = () => {
             <Download className="w-4 h-4" />
             Download Full Case Study
           </a>
-          <Link
-            to="/connect"
+          <a
+            href={READINESS_SCAN.href}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 border border-copper-500/30 text-copper-500 rounded font-mono text-sm hover:bg-copper-500/10 transition-colors"
           >
-            Schedule Your Readiness Scan
-          </Link>
+            {READINESS_SCAN.cta}
+          </a>
         </div>
       </Section>
     </div>
@@ -1615,10 +1617,10 @@ const GuidesPage = () => {
   return (
     <div className="pt-20">
       <Section>
-        <SectionHeader as="h1" title="Guides" subtitle="Agent Engineering · Governed Systems · Operations" />
+        <SectionHeader as="h1" title="Guides" subtitle="Agent Engineering · Workflow Ownership · Operations" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Operator-grade walkthroughs for building and running governed agentic systems: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
+          Operator-grade walkthroughs for building and running agentic systems you own: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1805,7 +1807,7 @@ const ConnectPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-8">
           <p className="text-xl text-white">
-            I engage with builders, operators, and enterprise teams looking to implement governed intelligence systems.
+            I engage with builders, operators, and practice owners turning one high-friction workflow into an AI-assisted system their team can own.
           </p>
 
           <div className="space-y-4">
