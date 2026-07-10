@@ -81,3 +81,10 @@ test('no substrate root: body returned verbatim (inbox-only parity)', () => {
   const body = '![x](publishing/assets/test-essay/fig.svg)';
   assert.equal(rewriteEssayBodyAssets(body, 'test-essay', null, project, 'test-essay.md'), body);
 });
+
+test('single-quoted titles are matched and rewritten too (review finding)', () => {
+  const { substrate, project } = makeFixture();
+  const body = "![alt](publishing/assets/test-essay/fig.svg 'Single quoted')";
+  const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md');
+  assert.ok(out.includes("(/assets/thoughts/test-essay/fig.svg 'Single quoted')"));
+});

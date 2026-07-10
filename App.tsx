@@ -14,7 +14,6 @@ import {
   thoughtMeta,
   guideMeta,
   diagramMeta,
-  bodyToParagraphs,
   type RouteMeta,
   SITE_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
@@ -1579,9 +1578,10 @@ const ThoughtDetailPage = () => {
     );
   }
 
-  // The full essay body, split into paragraphs (same split the prerender bake
-  // uses), so the hydrated DOM matches the crawler-facing baked body.
-  const paragraphs = bodyToParagraphs(thought.body);
+  // Full-markdown essay rendering (operator decision 2026-07-10): bodies are
+  // authored markdown (headings, code fences, figures) and previously rendered
+  // as literal text. The bake side mirrors this via the injector's rendered
+  // HTML override, so the crawler-facing body stays content-equivalent.
 
   return (
     <div className="pt-20">
@@ -1601,11 +1601,7 @@ const ThoughtDetailPage = () => {
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">{thought.title}</h1>
           <p className="text-slate-300 text-lg leading-relaxed mb-8 italic">{thought.preview}</p>
-          <div className="space-y-5">
-            {paragraphs.map((para, i) => (
-              <p key={i} className="text-slate-400 leading-relaxed">{para}</p>
-            ))}
-          </div>
+          <Markdown source={thought.body} />
         </article>
       </Section>
     </div>

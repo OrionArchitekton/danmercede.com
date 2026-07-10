@@ -639,7 +639,7 @@ function escapeText(s: string | null | undefined): string {
 // OUTSIDE #root, so React's render into #root never collides with it; we also
 // remove it on hydration (see index.tsx) to avoid duplicate content for users.
 // Deterministic, browserless, no React, safe in the Node build.
-export function renderBodyBlock(path: string, m: RouteMeta): string {
+export function renderBodyBlock(path: string, m: RouteMeta, renderedHtml?: string): string {
   const r = resolveMeta(m);
   // Fallback body when a route omits `body`: title + description. resolveMeta
   // always yields a non-empty description, but guard anyway so a future shape
@@ -652,8 +652,16 @@ export function renderBodyBlock(path: string, m: RouteMeta): string {
   if (b.lead) {
     parts.push(`    <p>${escapeText(b.lead)}</p>`);
   }
-  for (const p of b.paragraphs) {
-    parts.push(`    <p>${escapeText(p)}</p>`);
+  if (renderedHtml) {
+    // Build-generated markup from the site's own Markdown component (the
+    // injector renders essay bodies node-side so the baked body carries real
+    // <h2>/<pre>/<figure> markup instead of escaped literal markdown). Trusted
+    // build output, inserted verbatim; NEVER pass user/runtime input here.
+    parts.push(`    ${renderedHtml}`);
+  } else {
+    for (const p of b.paragraphs) {
+      parts.push(`    <p>${escapeText(p)}</p>`);
+    }
   }
   if (b.links) {
     for (const link of b.links) {

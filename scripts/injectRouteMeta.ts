@@ -44,8 +44,24 @@ import {
   JSONLD_BLOCK_END,
   type RouteMeta,
 } from '../seoMeta';
-import { DIAGRAMS } from '../constants';
+import { DIAGRAMS, THOUGHTS } from '../constants';
 import type { Diagram } from '../types';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import Markdown from '../components/Markdown';
+
+// Essay bodies are authored markdown; the hydrated page renders them with the
+// Markdown component (App.tsx ThoughtDetailPage), so the baked body must carry
+// the SAME rendered markup (real <h2>/<pre>/<figure>), not escaped literal
+// markdown. Node-side render here keeps react-dom/server out of the browser
+// bundle. Returns undefined for non-thought routes (paragraph bake unchanged).
+export function renderedThoughtBody(routePath: string): string | undefined {
+  if (!routePath.startsWith('/thoughts/')) return undefined;
+  const slug = routePath.slice('/thoughts/'.length);
+  const thought = THOUGHTS.find((t) => t.slug === slug);
+  if (!thought || !thought.body) return undefined;
+  return renderToStaticMarkup(React.createElement(Markdown, { source: thought.body }));
+}
 
 const BUILD_DIR = path.resolve(process.cwd(), 'build');
 
@@ -128,12 +144,13 @@ async function main() {
       renderRouteJsonLd(routePath, meta),
       '  ',
     );
-    // 3) crawlable <body> content (h1 + paragraphs) — W1 body-bake
+    // 3) crawlable <body> content — W1 body-bake (thought routes carry the
+    // markdown-rendered body; everything else keeps the h1 + paragraph shape)
     html = injectBlock(
       html,
       BODY_BLOCK_START,
       BODY_BLOCK_END,
-      renderBodyBlock(routePath, meta),
+      renderBodyBlock(routePath, meta, renderedThoughtBody(routePath)),
       '  ',
     );
     const outDir = path.join(BUILD_DIR, routePath.replace(/^\//, ''));

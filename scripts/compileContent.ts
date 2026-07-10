@@ -831,7 +831,7 @@ export function copyDiagramAsset(
 // UNREWRITTEN with a 'skip' diagnostic — the essay still publishes, the feed
 // sanitizer still drops the unresolvable figure, and --strict does not refuse
 // the bundle over an embellishment.
-const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"]+)((?:\s+"[^"]*")?\))/g;
+const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"']+)((?:\s+(?:"[^"]*"|'[^']*'))?\s*\))/g;
 
 export function rewriteEssayBodyAssets(
   body: string,

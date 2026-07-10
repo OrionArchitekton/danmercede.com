@@ -38,6 +38,25 @@ the figures entirely.
 4. **Inbox-only parity.** With no reachable substrate the body is returned
    verbatim (the compiler already skip-preserves the whole bundle then).
 
+## Scope amendments (review-driven, cycle 1)
+
+- **Full-markdown essay rendering (operator decision 2026-07-10).** Review
+  surfaced that essay pages never rendered markdown at all: headings, code
+  fences, and image refs displayed as literal text (hydrated AND baked).
+  `ThoughtDetailPage` now renders bodies with the site's Markdown component
+  (guide parity), and the injector bakes the SAME markup node-side via a
+  rendered-HTML override in `renderBodyBlock` (react-dom/server stays out of
+  the browser bundle).
+- **Two-step landing.** `substrate-verify` compares against the BASE-branch
+  compiler by design, so this PR ships the compiler + renderer only; the
+  regenerated bundle and copied binaries land via the trusted substrate-sync
+  after merge. Until that sync lands, essay figures render as figures with
+  their old (unresolvable) srcs.
+- **Sync staging.** `substrate-sync.yml` drift check and PR staging now
+  include `public/assets/thoughts` (with a `.gitkeep`), so a sync that
+  rewrites an essay figure always commits its binary alongside the URL.
+- **Ref syntax.** Single-quoted image titles are matched and rewritten too.
+
 ## Test seams
 
 `rewriteEssayBodyAssets` exported from `scripts/compileContent.ts`, exercised

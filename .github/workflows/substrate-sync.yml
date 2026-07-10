@@ -94,7 +94,7 @@ jobs:
           # public/assets/diagrams/ (a dir absent until the first diagram sync) and points
           # DIAGRAMS[].src at it, so an asset change must open a PR — else the deployed
           # /diagrams/<slug> page <img> and the sitemap <image:loc> 404.
-          if [ -z "$(git status --porcelain -- constants.generated.ts public/assets/diagrams)" ]; then
+          if [ -z "$(git status --porcelain -- constants.generated.ts public/assets/diagrams public/assets/thoughts)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No drift detected; constants.generated.ts + diagram assets already match substrate."
           else
@@ -138,6 +138,7 @@ jobs:
           add-paths: |
             constants.generated.ts
             public/assets/diagrams
+            public/assets/thoughts
           labels: |
             substrate-sync
           delete-branch: true
