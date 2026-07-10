@@ -606,6 +606,18 @@ export const WORKS: Work[] = [
     date: '2026-06-30',
     slug: 'plainspeak',
   },
+  {
+    title: 'Engram',
+    description:
+      'A memory engine for AI agents: typed memories with LLM-scored importance, recall greedily packed under a hard token budget, Ebbinghaus-style forgetting that retires stale memories without deleting them, and contradiction adjudication that supersedes old facts with an audit pointer. Pure TypeScript engine with 67 unit tests, an MCP server so any agent can adopt it as a memory backend, deployed on Alibaba Cloud Function Compute with Qwen Cloud models end to end. Built for the Qwen Cloud Global AI Hackathon (Track 1: MemoryAgent).',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/engram',
+    link: 'https://engram.orionbot.online',
+    video: 'https://youtu.be/MWBz4cQEByc',
+    license: 'MIT',
+    date: '2026-07-10',
+    slug: 'engram',
+  },
 ];
 
 export { THOUGHTS };
