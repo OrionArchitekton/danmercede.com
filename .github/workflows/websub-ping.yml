@@ -17,10 +17,35 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Vercel deployment
+      - name: Wait for the deploy to change the served feed (bounded)
         run: |
-          echo "Waiting 150 seconds for the Vercel production deploy..."
-          sleep 150
+          FEED="https://www.danmercede.com/feed.xml"
+          # Capture the PRE-deploy baseline with retries: an empty baseline
+          # (timeout/error page) must never be compared against, or the first
+          # successful poll falsely reads as "changed" and pings before the
+          # deploy lands (backported from oia-web #74 review).
+          BEFORE=""
+          for i in 1 2 3 4 5 6; do
+            BEFORE=$(curl -s --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
+            [ -n "$BEFORE" ] && break
+            sleep 15
+          done
+          echo "pre-deploy lastBuildDate: ${BEFORE:-<none>}"
+          if [ -z "$BEFORE" ]; then
+            echo "::warning::could not capture a pre-deploy baseline; falling back to a conservative 300s wait"
+            sleep 300
+            exit 0
+          fi
+          DEADLINE=$(( $(date +%s) + 480 ))
+          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
+            sleep 30
+            NOW=$(curl -s --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
+            if [ -n "$NOW" ] && [ "$NOW" != "$BEFORE" ]; then
+              echo "feed changed: $NOW"
+              exit 0
+            fi
+          done
+          echo "::warning::served feed unchanged after 480s (slow deploy, or a push with no feed delta); pinging anyway"
 
       - name: Ping WebSub hub for both feeds
         run: |
