@@ -93,6 +93,16 @@
       "source": "/works/localfiscal",
       "destination": "/works/localfiscal/",
       "permanent": true
+    },
+    {
+      "source": "/rss.xml",
+      "destination": "/feed.xml",
+      "permanent": true
+    },
+    {
+      "source": "/rss",
+      "destination": "/feed.xml",
+      "permanent": true
     }
   ],
   "rewrites": [

@@ -10,6 +10,11 @@
   <!-- Resource hints: warm the Google Fonts origins (the only third-party the production build fetches; React is bundled by Vite and the esm.sh importmap is inert at runtime). -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Feed autodiscovery: BEFORE the SEO_BLOCK anchor so every injected per-route page inherits it. -->
+  <link rel="alternate" type="application/rss+xml" title="Dan Mercede"
+    href="https://www.danmercede.com/feed.xml" />
+  <link rel="alternate" type="application/atom+xml" title="Dan Mercede"
+    href="https://www.danmercede.com/atom.xml" />
   <!--SEO_BLOCK-->
   <link rel="preload" as="image" href="/dan-mercede-founder-headshot-hero.webp" fetchpriority="high" />
   <title>Dan Mercede: Operator, Systems Builder, and Governed AI Architect</title>
