@@ -121,3 +121,19 @@ test('prune no-ops when the assets dir is absent', () => {
   const { project } = makeFixture();
   assert.deepEqual(pruneUnreferencedThoughtAssets(project, new Set()), []);
 });
+
+test('basename collision: first source wins, later ref stays unrewritten (cycle-3 finding)', () => {
+  const { substrate, project } = makeFixture();
+  const altDir = path.join(substrate, 'publishing', 'assets', 'test-essay', 'alt');
+  fs.mkdirSync(altDir, { recursive: true });
+  fs.writeFileSync(path.join(altDir, 'fig.svg'), '<svg id="other"/>');
+  const diags: SubstrateDiagnostic[] = [];
+  const body =
+    '![a](publishing/assets/test-essay/fig.svg)\n\n![b](publishing/assets/test-essay/alt/fig.svg)';
+  const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md', diags);
+  assert.ok(out.includes('![a](/assets/thoughts/test-essay/fig.svg)'));
+  assert.ok(out.includes('![b](publishing/assets/test-essay/alt/fig.svg)'), 'colliding ref must stay unrewritten');
+  assert.equal(diags.length, 1);
+  assert.match(diags[0].reason, /collision/);
+  assert.equal(fs.readFileSync(path.join(project, 'public', 'assets', 'thoughts', 'test-essay', 'fig.svg'), 'utf8'), '<svg/>', 'first copy must not be overwritten');
+});

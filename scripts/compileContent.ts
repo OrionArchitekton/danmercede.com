@@ -859,6 +859,11 @@ export function rewriteEssayBodyAssets(
   }
 
   const substrateRoot = path.resolve(substratePath);
+  // Basename-collision guard: refs are flattened to basenames under one dir
+  // per essay, so two DIFFERENT sources sharing a basename would silently
+  // overwrite each other and show the wrong image. First source wins; later
+  // colliding refs stay unrewritten with a diagnostic.
+  const destSources = new Map<string, string>();
   return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
     if (!isSafeRelativePath(assetPath)) {
       skip(`unsafe asset path "${assetPath}"`);
@@ -878,6 +883,11 @@ export function rewriteEssayBodyAssets(
     }
     const publicDir = path.join(projectRoot, 'public', 'assets', 'thoughts', slug);
     const publicName = path.basename(safeAssetPath);
+    const priorSource = destSources.get(publicName);
+    if (priorSource && priorSource !== safeAssetPath) {
+      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
+      return whole;
+    }
     const dest = path.join(publicDir, publicName);
     const relativeDest = path.relative(publicDir, dest);
     if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
@@ -891,6 +901,7 @@ export function rewriteEssayBodyAssets(
       }
       fs.mkdirSync(publicDir, { recursive: true });
       fs.copyFileSync(source, dest);
+      destSources.set(publicName, safeAssetPath);
       return `${prefix}/assets/thoughts/${slug}/${publicName}${suffix}`;
     } catch (e) {
       skip(`failed to copy asset (${e})`);
@@ -1116,6 +1127,7 @@ export function main(): void {
   let entries: ThoughtEntry[] = [];
   let diagrams: DiagramEntry[] = [];
   let diagnostics: SubstrateDiagnostic[] = [];
+  const referencedThoughtAssets = new Set<string>();
   if (substratePath) {
     console.log(`   ℹ️  substrate root: ${substratePath}`);
     const result = readSubstrateWithDiagnostics(substratePath);
@@ -1129,17 +1141,14 @@ export function main(): void {
       ...e,
       body: rewriteEssayBodyAssets(e.body, e.slug, substratePath, root, `${e.slug}.md`, result.diagnostics),
     }));
-    // Reconcile the compiler-owned assets dir against what the corpus now
-    // references, so a withdrawn essay/figure actually withdraws its binary.
-    const referencedThoughtAssets = new Set<string>();
+    // Referenced-asset set for the post-decision prune (computed here where
+    // the rewritten bodies are in scope; the DESTRUCTIVE prune itself must
+    // wait for the output decision — a SKIPPED compile preserves the OLD
+    // committed bundle, whose bodies still reference the old binaries).
     for (const e of entries) {
       for (const m of e.body.matchAll(/\/assets\/thoughts\/[^)\s"']+/g)) {
         referencedThoughtAssets.add(m[0]);
       }
-    }
-    const pruned = pruneUnreferencedThoughtAssets(root, referencedThoughtAssets);
-    if (pruned.length > 0) {
-      console.log(`   🧹 pruned ${pruned.length} unreferenced thought asset(s): ${pruned.join(', ')}`);
     }
     // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
     // asset is missing / unsafe / uncopyable, so the bundle never carries a
@@ -1182,6 +1191,12 @@ export function main(): void {
       const outputPath = path.join(root, 'constants.generated.ts');
       fs.writeFileSync(outputPath, decision.content, 'utf-8');
       console.log(`\n📊 wrote ${decision.entryCount} thought(s) to constants.generated.ts`);
+      // Prune ONLY when the fresh bundle is actually written: on skip/fail the
+      // committed bundle survives and its referenced binaries must too.
+      const pruned = pruneUnreferencedThoughtAssets(root, referencedThoughtAssets);
+      if (pruned.length > 0) {
+        console.log(`   🧹 pruned ${pruned.length} unreferenced thought asset(s): ${pruned.join(', ')}`);
+      }
       return;
     }
   }
