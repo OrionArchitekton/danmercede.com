@@ -849,6 +849,15 @@ export function rewriteEssayBodyAssets(
     if (diagnostics) diagnostics.push({ file, severity: 'skip', reason });
   };
 
+  // Never trust one gate for a filesystem write (copyDiagramAsset doctrine):
+  // slugs are isSafeSlug-gated upstream in mapSubstrateToEntry, but this
+  // function is exported and the slug builds publicDir below, so a traversal
+  // slug ("../outside") must be refused HERE too.
+  if (!isSafeSlug(slug)) {
+    skip(`unsafe slug "${String(slug)}"`);
+    return body;
+  }
+
   const substrateRoot = path.resolve(substratePath);
   return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
     if (!isSafeRelativePath(assetPath)) {
@@ -888,6 +897,44 @@ export function rewriteEssayBodyAssets(
       return whole;
     }
   });
+}
+
+/**
+ * Reconcile public/assets/thoughts/ against the CURRENT corpus: delete every
+ * file the freshly-rewritten bodies no longer reference (content withdrawal
+ * must actually withdraw the binary; the sync workflow stages deletions via
+ * `git add` of the whole dir, but only if the compiler removes the files).
+ * The dir is compiler-owned; .gitkeep survives so a 0-asset regen never
+ * un-tracks it. `referenced` holds served srcs (`/assets/thoughts/<slug>/<f>`).
+ */
+export function pruneUnreferencedThoughtAssets(
+  projectRoot: string,
+  referenced: ReadonlySet<string>,
+): string[] {
+  const baseDir = path.join(projectRoot, 'public', 'assets', 'thoughts');
+  if (!fs.existsSync(baseDir)) return [];
+  const pruned: string[] = [];
+  for (const slugDir of fs.readdirSync(baseDir)) {
+    const dirPath = path.join(baseDir, slugDir);
+    if (slugDir === '.gitkeep') continue;
+    if (!fs.statSync(dirPath).isDirectory()) {
+      // Stray file at the top level: not a shape the compiler ever writes.
+      fs.unlinkSync(dirPath);
+      pruned.push(`/assets/thoughts/${slugDir}`);
+      continue;
+    }
+    for (const name of fs.readdirSync(dirPath)) {
+      const served = `/assets/thoughts/${slugDir}/${name}`;
+      if (!referenced.has(served)) {
+        fs.unlinkSync(path.join(dirPath, name));
+        pruned.push(served);
+      }
+    }
+    if (fs.readdirSync(dirPath).length === 0) {
+      fs.rmdirSync(dirPath);
+    }
+  }
+  return pruned;
 }
 
 // Derive the .com public image src for a diagram from its slug + the substrate
@@ -1082,6 +1129,18 @@ export function main(): void {
       ...e,
       body: rewriteEssayBodyAssets(e.body, e.slug, substratePath, root, `${e.slug}.md`, result.diagnostics),
     }));
+    // Reconcile the compiler-owned assets dir against what the corpus now
+    // references, so a withdrawn essay/figure actually withdraws its binary.
+    const referencedThoughtAssets = new Set<string>();
+    for (const e of entries) {
+      for (const m of e.body.matchAll(/\/assets\/thoughts\/[^)\s"']+/g)) {
+        referencedThoughtAssets.add(m[0]);
+      }
+    }
+    const pruned = pruneUnreferencedThoughtAssets(root, referencedThoughtAssets);
+    if (pruned.length > 0) {
+      console.log(`   🧹 pruned ${pruned.length} unreferenced thought asset(s): ${pruned.join(', ')}`);
+    }
     // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
     // asset is missing / unsafe / uncopyable, so the bundle never carries a
     // dangling image src (mirrors danmercede.online's copy-then-keep behavior).

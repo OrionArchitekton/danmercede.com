@@ -88,3 +88,36 @@ test('single-quoted titles are matched and rewritten too (review finding)', () =
   const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md');
   assert.ok(out.includes("(/assets/thoughts/test-essay/fig.svg 'Single quoted')"));
 });
+
+import { pruneUnreferencedThoughtAssets } from '../scripts/compileContent.ts';
+
+test('traversal slug is refused in-function, nothing written (cycle-2 finding)', () => {
+  const { substrate, project } = makeFixture();
+  const diags: SubstrateDiagnostic[] = [];
+  const body = '![x](publishing/assets/test-essay/fig.svg)';
+  const out = rewriteEssayBodyAssets(body, '../outside', substrate, project, 'evil.md', diags);
+  assert.equal(out, body);
+  assert.equal(diags.length, 1);
+  assert.ok(!fs.existsSync(path.join(project, 'public')), 'no write may occur for an unsafe slug');
+});
+
+test('prune removes unreferenced binaries, keeps referenced ones and .gitkeep (cycle-2 finding)', () => {
+  const { project } = makeFixture();
+  const base = path.join(project, 'public', 'assets', 'thoughts');
+  fs.mkdirSync(path.join(base, 'kept-essay'), { recursive: true });
+  fs.mkdirSync(path.join(base, 'withdrawn-essay'), { recursive: true });
+  fs.writeFileSync(path.join(base, '.gitkeep'), '');
+  fs.writeFileSync(path.join(base, 'kept-essay', 'fig.svg'), '<svg/>');
+  fs.writeFileSync(path.join(base, 'kept-essay', 'old.svg'), '<svg/>');
+  fs.writeFileSync(path.join(base, 'withdrawn-essay', 'gone.svg'), '<svg/>');
+  const pruned = pruneUnreferencedThoughtAssets(project, new Set(['/assets/thoughts/kept-essay/fig.svg']));
+  assert.deepEqual(pruned.sort(), ['/assets/thoughts/kept-essay/old.svg', '/assets/thoughts/withdrawn-essay/gone.svg']);
+  assert.ok(fs.existsSync(path.join(base, 'kept-essay', 'fig.svg')));
+  assert.ok(fs.existsSync(path.join(base, '.gitkeep')));
+  assert.ok(!fs.existsSync(path.join(base, 'withdrawn-essay')), 'emptied slug dir is removed');
+});
+
+test('prune no-ops when the assets dir is absent', () => {
+  const { project } = makeFixture();
+  assert.deepEqual(pruneUnreferencedThoughtAssets(project, new Set()), []);
+});

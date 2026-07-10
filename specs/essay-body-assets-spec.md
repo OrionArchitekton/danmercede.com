@@ -65,10 +65,26 @@ with tmp-dir substrate fixtures in `tests/essayBodyAssets.test.ts` (roster:
 
 ## Acceptance criteria
 
-- [ ] Live corpus: zero `publishing/assets` refs remain in
-      `constants.generated.ts`; all rewritten refs resolve to copied files.
-- [ ] Entry count parity with HEAD (no essay lost to the rewrite).
-- [ ] Built essay pages serve working figure srcs; the feed carries the
-      figures (absolutized) instead of dropping them.
-- [ ] Escape/missing/unsupported cases: ref untouched, 'skip' diagnostic,
-      nothing written outside `public/assets/thoughts/<slug>/`.
+Two-stage contract (the substrate-verify gate admits generated-bundle changes
+only via the trusted sync, so this PR cannot carry the regenerated corpus):
+
+**At merge of this PR:**
+- [ ] Essay pages (hydrated AND baked) render full markdown: real headings,
+      code blocks, and figures; zero literal `##` / fenced-code text.
+- [ ] Compiler: rewrite + copy proven on fixtures; traversal slug and escape
+      paths refused in-function; single- and double-quoted titles matched.
+- [ ] `substrate-sync.yml` stages `public/assets/thoughts` (drift + add-paths).
+- [ ] Known transitional state: existing figures render as `<img>` with their
+      old unresolvable srcs until the first sync lands. OPERATOR STEP: dispatch
+      the substrate-sync workflow immediately after merging to keep this
+      window to minutes.
+
+**After the first post-merge substrate-sync:**
+- [ ] Zero `publishing/assets` refs remain in `constants.generated.ts`; every
+      rewritten ref resolves to a committed binary under
+      `public/assets/thoughts/<slug>/`.
+- [ ] Entry count parity (no essay lost to the rewrite).
+- [ ] Live essay pages serve working figures; the feed carries them
+      (absolutized) instead of dropping them.
+- [ ] Withdrawing an essay/figure from the substrate prunes its binary on the
+      next sync (`pruneUnreferencedThoughtAssets`).
