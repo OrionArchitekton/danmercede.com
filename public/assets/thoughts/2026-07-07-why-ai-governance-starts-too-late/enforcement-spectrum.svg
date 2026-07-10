@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 500" role="img" aria-labelledby="d2title d2desc" font-family="Arial, Helvetica, sans-serif">
+  <title id="d2title">The enforcement-location spectrum</title>
+  <desc id="d2desc">Three zones positioned relative to the execution boundary. Advisory controls (policy, evaluations, red-team reports, model cards) sit before deployment and outside the execution path; they shape behavior but cannot stop an action. Runtime enforcement (authority gate, receipts, capability removal) sits at the execution boundary and is the only layer that can halt a mutation. Telemetry (logs, dashboards, alerts and monitors) sits after the mutation and only records what already happened.</desc>
+
+  <rect x="0" y="0" width="1180" height="500" rx="14" fill="#FFFFFF"/>
+
+  <text x="40" y="46" font-size="25" font-weight="700" fill="#0B2545">The enforcement-location spectrum</text>
+  <text x="40" y="74" font-size="15" fill="#5B6675">Most AI controls observe or advise. Only one sits in the execution path and can actually halt a mutation.</text>
+
+  <!-- execution boundary marker -->
+  <line x1="590" y1="112" x2="590" y2="420" stroke="#0B2545" stroke-width="1.6" stroke-dasharray="5 4"/>
+
+  <!-- ZONE A : ADVISORY -->
+  <rect x="40" y="120" width="330" height="276" rx="12" fill="#F7F9FC" stroke="#D4DAE3"/>
+  <text x="62" y="152" font-size="15" font-weight="700" fill="#0B2545" letter-spacing="0.5">ADVISORY</text>
+  <text x="62" y="172" font-size="12.5" fill="#5B6675">before deployment · outside the path</text>
+  <g font-size="13.5" font-weight="600" fill="#16335B">
+    <rect x="62" y="186" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="78" y="210">Policy &amp; responsible-AI principles</text>
+    <rect x="62" y="230" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="78" y="254">Evaluations</text>
+    <rect x="62" y="274" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="78" y="298">Red-team reports</text>
+    <rect x="62" y="318" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="78" y="342">Model cards</text>
+  </g>
+  <text x="62" y="380" font-size="12.5" font-style="italic" fill="#5B6675">Shapes behavior. Cannot stop the action.</text>
+
+  <!-- ZONE B : RUNTIME ENFORCEMENT (highlight, straddles boundary) -->
+  <rect x="430" y="108" width="320" height="300" rx="12" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <rect x="430" y="108" width="320" height="34" rx="12" fill="#0B2545"/>
+  <rect x="430" y="124" width="320" height="18" fill="#0B2545"/>
+  <text x="590" y="131" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">RUNTIME — ENFORCEMENT</text>
+  <text x="590" y="162" font-size="12.5" fill="#B87333" text-anchor="middle" font-weight="700">at the execution boundary</text>
+  <g font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    <rect x="452" y="178" width="276" height="46" rx="8" fill="#0B2545"/><text x="590" y="206">Authority gate</text>
+    <rect x="452" y="234" width="276" height="46" rx="8" fill="#16335B"/><text x="590" y="262">Receipts</text>
+    <rect x="452" y="290" width="276" height="46" rx="8" fill="#16335B"/><text x="590" y="318">Capability removal</text>
+  </g>
+  <text x="590" y="372" font-size="12.5" font-style="italic" fill="#0B2545" text-anchor="middle" font-weight="600">The only layer that can halt a mutation.</text>
+
+  <!-- ZONE C : TELEMETRY -->
+  <rect x="810" y="120" width="330" height="276" rx="12" fill="#F7F9FC" stroke="#D4DAE3"/>
+  <text x="832" y="152" font-size="15" font-weight="700" fill="#0B2545" letter-spacing="0.5">TELEMETRY</text>
+  <text x="832" y="172" font-size="12.5" fill="#5B6675">after the mutation</text>
+  <g font-size="13.5" font-weight="600" fill="#16335B">
+    <rect x="832" y="186" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="848" y="210">Logs</text>
+    <rect x="832" y="230" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="848" y="254">Dashboards</text>
+    <rect x="832" y="274" width="286" height="38" rx="8" fill="#FFFFFF" stroke="#D4DAE3"/><text x="848" y="298">Alerts &amp; monitors</text>
+  </g>
+  <text x="832" y="346" font-size="12.5" font-style="italic" fill="#5B6675">Records what already happened.</text>
+
+  <!-- bottom axis -->
+  <line x1="60" y1="452" x2="1120" y2="452" stroke="#9AA4B2" stroke-width="1.4"/>
+  <path d="M1120,452 l-9,-5 l0,10 z" fill="#9AA4B2"/>
+  <path d="M60,452 l9,-5 l0,10 z" fill="#9AA4B2"/>
+  <circle cx="590" cy="452" r="4" fill="#0B2545"/>
+  <text x="64" y="476" font-size="12.5" fill="#5B6675">earlier · outside the path</text>
+  <text x="590" y="476" font-size="12.5" font-weight="700" fill="#0B2545" text-anchor="middle">EXECUTION BOUNDARY</text>
+  <text x="1116" y="476" font-size="12.5" fill="#5B6675" text-anchor="end">later · after the mutation</text>
+</svg>
