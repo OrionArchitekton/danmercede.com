@@ -78,6 +78,22 @@ test('content is the site-rendered body, sanitized: broken figures dropped, URLs
   assert.ok(rss.includes('<description>Guide summary line.</description>'));
 });
 
+test('responsive .webp figures ship a single absolute src: srcset/sizes stripped', () => {
+  const guideWithWebp: Guide = {
+    ...guide,
+    slug: 'webp-guide',
+    body: '![diagram](/assets/guides/webp-guide/fig.webp "Responsive figure")',
+  };
+  const out = renderRss([], [guideWithWebp]);
+  assert.ok(!/srcset/i.test(out), 'srcset candidates must not ship in feed HTML');
+  assert.ok(!/\bsizes=/i.test(out), 'sizes must not ship in feed HTML');
+  assert.ok(
+    out.includes(escape(`${SITE_ORIGIN}/assets/guides/webp-guide/fig.webp`).replace(/%3A/g, ':').replace(/%2F/g, '/')) ||
+      out.includes(`${SITE_ORIGIN}/assets/guides/webp-guide/fig.webp`),
+    'the webp src itself must be absolute',
+  );
+});
+
 test('sanitizeFeedHtml drops only figures with unresolvable srcs', () => {
   const html =
     '<p>keep</p><figure><img src="publishing/assets/x/y.svg" alt="a"/></figure>' +

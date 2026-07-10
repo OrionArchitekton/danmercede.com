@@ -113,9 +113,11 @@ function rfc822Utc(ms: number): string {
 /**
  * Feed-ready HTML from the site-rendered markup: drop <figure> blocks whose
  * <img> src is neither absolute nor root-relative (the substrate-relative
- * `publishing/assets/...` srcs are SPA soft-404s on the served site), then
- * absolutize remaining root-relative src/href attributes to SITE_ORIGIN so
- * every URL reads standalone in a feed reader.
+ * `publishing/assets/...` srcs are SPA soft-404s on the served site), strip
+ * responsive srcset/sizes attributes (their candidate URLs would resolve
+ * against the feed reader's own context; one absolute src is the portable
+ * shape), then absolutize remaining root-relative src/href attributes to
+ * SITE_ORIGIN so every URL reads standalone in a feed reader.
  */
 export function sanitizeFeedHtml(html: string): string {
   const withoutBrokenFigures = html.replace(
@@ -125,7 +127,11 @@ export function sanitizeFeedHtml(html: string): string {
       return /^(https?:\/\/|\/)/.test(src) ? figure : '';
     },
   );
-  return withoutBrokenFigures.replace(
+  const withoutResponsiveAttrs = withoutBrokenFigures.replace(
+    /\s(?:srcset|sizes)="[^"]*"/gi,
+    '',
+  );
+  return withoutResponsiveAttrs.replace(
     /\b(src|href)="\/(?!\/)/g,
     (_m, attr) => `${attr}="${SITE_ORIGIN}/`,
   );
