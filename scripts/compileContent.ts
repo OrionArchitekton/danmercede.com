@@ -822,6 +822,74 @@ export function copyDiagramAsset(
   }
 }
 
+// Essay in-body image refs are substrate-root-relative
+// (publishing/assets/<essay-slug>/<file>) and soft-404 on the served site.
+// Rewrite each resolvable ref to a served src under
+// public/assets/thoughts/<slug>/ using copyDiagramAsset's guard chain.
+// Unlike a diagram entry (where the image IS the content, so loss is FATAL),
+// an essay is prose first: a missing/unsafe/uncopyable figure leaves the ref
+// UNREWRITTEN with a 'skip' diagnostic — the essay still publishes, the feed
+// sanitizer still drops the unresolvable figure, and --strict does not refuse
+// the bundle over an embellishment.
+const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"]+)((?:\s+"[^"]*")?\))/g;
+
+export function rewriteEssayBodyAssets(
+  body: string,
+  slug: string,
+  substratePath: string | undefined | null,
+  projectRoot: string,
+  file: string,
+  diagnostics?: SubstrateDiagnostic[]
+): string {
+  if (!body || !body.includes('publishing/assets/')) return body;
+  if (!substratePath) return body; // inbox-only compile parity: leave verbatim
+
+  const skip = (reason: string): void => {
+    console.log(`   ℹ️  essay body asset left unrewritten (${reason}): ${file}`);
+    if (diagnostics) diagnostics.push({ file, severity: 'skip', reason });
+  };
+
+  const substrateRoot = path.resolve(substratePath);
+  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
+    if (!isSafeRelativePath(assetPath)) {
+      skip(`unsafe asset path "${assetPath}"`);
+      return whole;
+    }
+    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+    const ext = path.extname(safeAssetPath).toLowerCase();
+    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+      skip(`unsupported asset extension "${ext}"`);
+      return whole;
+    }
+    const source = path.resolve(substrateRoot, safeAssetPath);
+    const relativeSource = path.relative(substrateRoot, source);
+    if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
+      skip('asset path escapes substrate root');
+      return whole;
+    }
+    const publicDir = path.join(projectRoot, 'public', 'assets', 'thoughts', slug);
+    const publicName = path.basename(safeAssetPath);
+    const dest = path.join(publicDir, publicName);
+    const relativeDest = path.relative(publicDir, dest);
+    if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
+      skip(`destination "${publicName}" escapes public/assets/thoughts/${slug}/`);
+      return whole;
+    }
+    try {
+      if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+        skip(`asset missing at ${safeAssetPath}`);
+        return whole;
+      }
+      fs.mkdirSync(publicDir, { recursive: true });
+      fs.copyFileSync(source, dest);
+      return `${prefix}/assets/thoughts/${slug}/${publicName}${suffix}`;
+    } catch (e) {
+      skip(`failed to copy asset (${e})`);
+      return whole;
+    }
+  });
+}
+
 // Derive the .com public image src for a diagram from its slug + the substrate
 // asset extension (lowercased to match copyDiagramAsset's publicName), e.g.
 // publishing/assets/<slug>/diagram.JPG → /assets/diagrams/<slug>.jpg. Kept in
@@ -1007,6 +1075,13 @@ export function main(): void {
     // Plumb diagnostics into dedup so duplicate slugs among admitted
     // canonicals raise a fatal diagnostic (caught by decideOutput below).
     entries = sortByIsoDateDesc(dedupBySlug(result.entries, result.diagnostics));
+    // Rewrite essay in-body image refs (publishing/assets/<slug>/*) to served
+    // srcs, copying each resolvable binary into public/assets/thoughts/<slug>/.
+    // Unrewritable refs stay verbatim with a 'skip' diagnostic (prose first).
+    entries = entries.map((e) => ({
+      ...e,
+      body: rewriteEssayBodyAssets(e.body, e.slug, substratePath, root, `${e.slug}.md`, result.diagnostics),
+    }));
     // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
     // asset is missing / unsafe / uncopyable, so the bundle never carries a
     // dangling image src (mirrors danmercede.online's copy-then-keep behavior).
