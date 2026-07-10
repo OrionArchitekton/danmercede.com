@@ -822,6 +822,132 @@ export function copyDiagramAsset(
   }
 }
 
+// Essay in-body image refs are substrate-root-relative
+// (publishing/assets/<essay-slug>/<file>) and soft-404 on the served site.
+// Rewrite each resolvable ref to a served src under
+// public/assets/thoughts/<slug>/ using copyDiagramAsset's guard chain.
+// Unlike a diagram entry (where the image IS the content, so loss is FATAL),
+// an essay is prose first: a missing/unsafe/uncopyable figure leaves the ref
+// UNREWRITTEN with a 'skip' diagnostic — the essay still publishes, the feed
+// sanitizer still drops the unresolvable figure, and --strict does not refuse
+// the bundle over an embellishment.
+const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"']+)((?:\s+(?:"[^"]*"|'[^']*'))?\s*\))/g;
+
+export function rewriteEssayBodyAssets(
+  body: string,
+  slug: string,
+  substratePath: string | undefined | null,
+  projectRoot: string,
+  file: string,
+  diagnostics?: SubstrateDiagnostic[]
+): string {
+  if (!body || !body.includes('publishing/assets/')) return body;
+  if (!substratePath) return body; // inbox-only compile parity: leave verbatim
+
+  const skip = (reason: string): void => {
+    console.log(`   ℹ️  essay body asset left unrewritten (${reason}): ${file}`);
+    if (diagnostics) diagnostics.push({ file, severity: 'skip', reason });
+  };
+
+  // Never trust one gate for a filesystem write (copyDiagramAsset doctrine):
+  // slugs are isSafeSlug-gated upstream in mapSubstrateToEntry, but this
+  // function is exported and the slug builds publicDir below, so a traversal
+  // slug ("../outside") must be refused HERE too.
+  if (!isSafeSlug(slug)) {
+    skip(`unsafe slug "${String(slug)}"`);
+    return body;
+  }
+
+  const substrateRoot = path.resolve(substratePath);
+  // Basename-collision guard: refs are flattened to basenames under one dir
+  // per essay, so two DIFFERENT sources sharing a basename would silently
+  // overwrite each other and show the wrong image. First source wins; later
+  // colliding refs stay unrewritten with a diagnostic.
+  const destSources = new Map<string, string>();
+  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
+    if (!isSafeRelativePath(assetPath)) {
+      skip(`unsafe asset path "${assetPath}"`);
+      return whole;
+    }
+    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+    const ext = path.extname(safeAssetPath).toLowerCase();
+    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+      skip(`unsupported asset extension "${ext}"`);
+      return whole;
+    }
+    const source = path.resolve(substrateRoot, safeAssetPath);
+    const relativeSource = path.relative(substrateRoot, source);
+    if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
+      skip('asset path escapes substrate root');
+      return whole;
+    }
+    const publicDir = path.join(projectRoot, 'public', 'assets', 'thoughts', slug);
+    const publicName = path.basename(safeAssetPath);
+    const priorSource = destSources.get(publicName);
+    if (priorSource && priorSource !== safeAssetPath) {
+      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
+      return whole;
+    }
+    const dest = path.join(publicDir, publicName);
+    const relativeDest = path.relative(publicDir, dest);
+    if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
+      skip(`destination "${publicName}" escapes public/assets/thoughts/${slug}/`);
+      return whole;
+    }
+    try {
+      if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+        skip(`asset missing at ${safeAssetPath}`);
+        return whole;
+      }
+      fs.mkdirSync(publicDir, { recursive: true });
+      fs.copyFileSync(source, dest);
+      destSources.set(publicName, safeAssetPath);
+      return `${prefix}/assets/thoughts/${slug}/${publicName}${suffix}`;
+    } catch (e) {
+      skip(`failed to copy asset (${e})`);
+      return whole;
+    }
+  });
+}
+
+/**
+ * Reconcile public/assets/thoughts/ against the CURRENT corpus: delete every
+ * file the freshly-rewritten bodies no longer reference (content withdrawal
+ * must actually withdraw the binary; the sync workflow stages deletions via
+ * `git add` of the whole dir, but only if the compiler removes the files).
+ * The dir is compiler-owned; .gitkeep survives so a 0-asset regen never
+ * un-tracks it. `referenced` holds served srcs (`/assets/thoughts/<slug>/<f>`).
+ */
+export function pruneUnreferencedThoughtAssets(
+  projectRoot: string,
+  referenced: ReadonlySet<string>,
+): string[] {
+  const baseDir = path.join(projectRoot, 'public', 'assets', 'thoughts');
+  if (!fs.existsSync(baseDir)) return [];
+  const pruned: string[] = [];
+  for (const slugDir of fs.readdirSync(baseDir)) {
+    const dirPath = path.join(baseDir, slugDir);
+    if (slugDir === '.gitkeep') continue;
+    if (!fs.statSync(dirPath).isDirectory()) {
+      // Stray file at the top level: not a shape the compiler ever writes.
+      fs.unlinkSync(dirPath);
+      pruned.push(`/assets/thoughts/${slugDir}`);
+      continue;
+    }
+    for (const name of fs.readdirSync(dirPath)) {
+      const served = `/assets/thoughts/${slugDir}/${name}`;
+      if (!referenced.has(served)) {
+        fs.unlinkSync(path.join(dirPath, name));
+        pruned.push(served);
+      }
+    }
+    if (fs.readdirSync(dirPath).length === 0) {
+      fs.rmdirSync(dirPath);
+    }
+  }
+  return pruned;
+}
+
 // Derive the .com public image src for a diagram from its slug + the substrate
 // asset extension (lowercased to match copyDiagramAsset's publicName), e.g.
 // publishing/assets/<slug>/diagram.JPG → /assets/diagrams/<slug>.jpg. Kept in
@@ -1001,12 +1127,29 @@ export function main(): void {
   let entries: ThoughtEntry[] = [];
   let diagrams: DiagramEntry[] = [];
   let diagnostics: SubstrateDiagnostic[] = [];
+  const referencedThoughtAssets = new Set<string>();
   if (substratePath) {
     console.log(`   ℹ️  substrate root: ${substratePath}`);
     const result = readSubstrateWithDiagnostics(substratePath);
     // Plumb diagnostics into dedup so duplicate slugs among admitted
     // canonicals raise a fatal diagnostic (caught by decideOutput below).
     entries = sortByIsoDateDesc(dedupBySlug(result.entries, result.diagnostics));
+    // Rewrite essay in-body image refs (publishing/assets/<slug>/*) to served
+    // srcs, copying each resolvable binary into public/assets/thoughts/<slug>/.
+    // Unrewritable refs stay verbatim with a 'skip' diagnostic (prose first).
+    entries = entries.map((e) => ({
+      ...e,
+      body: rewriteEssayBodyAssets(e.body, e.slug, substratePath, root, `${e.slug}.md`, result.diagnostics),
+    }));
+    // Referenced-asset set for the post-decision prune (computed here where
+    // the rewritten bodies are in scope; the DESTRUCTIVE prune itself must
+    // wait for the output decision — a SKIPPED compile preserves the OLD
+    // committed bundle, whose bodies still reference the old binaries).
+    for (const e of entries) {
+      for (const m of e.body.matchAll(/\/assets\/thoughts\/[^)\s"']+/g)) {
+        referencedThoughtAssets.add(m[0]);
+      }
+    }
     // Copy each diagram's binary into public/assets/diagrams/ and DROP any whose
     // asset is missing / unsafe / uncopyable, so the bundle never carries a
     // dangling image src (mirrors danmercede.online's copy-then-keep behavior).
@@ -1048,6 +1191,12 @@ export function main(): void {
       const outputPath = path.join(root, 'constants.generated.ts');
       fs.writeFileSync(outputPath, decision.content, 'utf-8');
       console.log(`\n📊 wrote ${decision.entryCount} thought(s) to constants.generated.ts`);
+      // Prune ONLY when the fresh bundle is actually written: on skip/fail the
+      // committed bundle survives and its referenced binaries must too.
+      const pruned = pruneUnreferencedThoughtAssets(root, referencedThoughtAssets);
+      if (pruned.length > 0) {
+        console.log(`   🧹 pruned ${pruned.length} unreferenced thought asset(s): ${pruned.join(', ')}`);
+      }
       return;
     }
   }
