@@ -1608,41 +1608,217 @@ const ThoughtDetailPage = () => {
   );
 };
 
+const GUIDE_LENSES = [
+  { id: 'all', label: 'All guides', description: 'The complete field library, newest first.', terms: [] },
+  { id: 'agent-systems', label: 'Agent systems', description: 'Models, tools, schemas, context, and orchestration.', terms: ['agent', 'model', 'schema', 'tool', 'context', 'router'] },
+  { id: 'proof-review', label: 'Proof & review', description: 'Verification, layered review, evidence, and honest failure.', terms: ['review', 'verifier', 'proof', 'trust', 'refutation', 'failure'] },
+  { id: 'governed-delivery', label: 'Governed delivery', description: 'Approval boundaries, safe delivery, and owned infrastructure.', terms: ['governed', 'delivery', 'approval', 'infrastructure', 'self-hosting', 'double-send'] },
+] as const;
+
+type GuideLensId = (typeof GUIDE_LENSES)[number]['id'];
+
+const guideSearchText = (guide: Guide) =>
+  [guide.title, guide.category, guide.description, guide.lead].join(' ').toLowerCase();
+
+const guideMatchesLens = (guide: Guide, lensId: GuideLensId) => {
+  const lens = GUIDE_LENSES.find((candidate) => candidate.id === lensId);
+  if (!lens || lens.id === 'all') return true;
+  const corpus = guideSearchText(guide);
+  return lens.terms.some((term) => corpus.includes(term));
+};
+
 const GuidesPage = () => {
   usePageMeta();
+  const [query, setQuery] = useState('');
+  const [activeLens, setActiveLens] = useState<GuideLensId>('all');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+      if (event.key === '/' && !isTyping) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleGuides = GUIDES.filter((guide: Guide) =>
+    (!normalizedQuery || guideSearchText(guide).includes(normalizedQuery)) &&
+    guideMatchesLens(guide, activeLens),
+  );
+  const featuredGuides = GUIDES.slice(0, 3);
+  const categoryCount = new Set(GUIDES.map((guide: Guide) => guide.category)).size;
+
   return (
     <div className="pt-20">
-      <Section>
-        <SectionHeader as="h1" title="Guides" subtitle="Agent Engineering · Workflow Ownership · Operations" />
+      <Section className="pb-12 md:pb-16">
+        <div className="relative overflow-hidden border border-white/10 bg-slate-900/30 px-6 py-12 md:px-12 md:py-16">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            aria-hidden="true"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px)',
+              backgroundSize: '72px 72px',
+              maskImage: 'linear-gradient(to right, black, transparent 88%)',
+            }}
+          />
+          <div className="relative z-10 max-w-5xl">
+            <p className="mb-7 flex items-center gap-3 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-copper-400">
+              <span className="h-2 w-2 rounded-full bg-copper-500 shadow-[0_0_16px_rgba(230,130,73,.8)]" aria-hidden="true" />
+              Field notes on governed AI
+            </p>
+            <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl lg:text-7xl">
+              Build agents that can act—
+              <span className="block text-copper-400">and prove what happened.</span>
+            </h1>
+            <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
+              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                Long-form technical guides for AI systems that remain legible under pressure:
+                authority, evidence, observability, and fail-closed execution.
+              </p>
+              <dl className="grid grid-cols-3 gap-4 text-right">
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Lanes</dt><dd className="mt-1 text-2xl font-semibold text-white">{categoryCount}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? '—'}</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </Section>
 
-        <p className="text-slate-400 text-lg max-w-3xl mb-12">
-          Hands-on walkthroughs for building and running agentic systems you own: multi-agent delivery pipelines, layered review, self-hosting, and secure ingress on infrastructure you control. Field-tested, not theoretical.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {GUIDES.map((guide: Guide) => (
+      <Section className="pt-6 md:pt-8">
+        <div className="mb-10 grid gap-5 md:grid-cols-[1fr_22rem] md:items-end">
+          <div>
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">01 / Selected work</p>
+            <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Start with the signal.</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-slate-400">The newest field notes—the fastest route into the current body of work.</p>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-3">
+          {featuredGuides.map((guide: Guide, index: number) => (
             <Link
               key={guide.slug}
-              to={`/guides/${guide.slug}`}
-              className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
+              to={'/guides/' + guide.slug}
+              className="group flex min-h-[22rem] flex-col border border-white/10 bg-slate-900/25 transition-all duration-300 hover:-translate-y-1 hover:border-copper-500/40"
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
-                <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+              <div className={'relative h-32 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
+                <span className="absolute left-6 top-5 font-mono text-xs text-slate-300">{String(index + 1).padStart(2, '0')}</span>
+                <Layers size={48} className="absolute bottom-5 right-6 text-white/15" aria-hidden="true" />
+                <span className="absolute bottom-5 left-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-200">{guide.category}</span>
               </div>
-              <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">{guide.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{guide.lead}</p>
-              <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
-                Read the guide →
-              </span>
+              <div className="flex flex-1 flex-col p-6">
+                <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-copper-400">Guide · {guide.date}</p>
+                <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
+                <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
+                <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
+                  Read field note <ArrowRight size={14} aria-hidden="true" />
+                </span>
+              </div>
             </Link>
           ))}
         </div>
+      </Section>
 
-        <div className="mt-12 pt-8 border-t border-white/5">
-          <p className="text-slate-400 text-sm mb-3">Prefer the picture? The same systems, as visual explainers.</p>
-          <Link to="/diagrams" className="inline-flex items-center text-copper-500/80 font-mono text-xs uppercase tracking-widest hover:text-copper-400">
-            See the architecture diagrams →
+      <Section id="guide-library" className="pt-8 md:pt-12">
+        <div className="mb-9 grid gap-7 md:grid-cols-[1fr_minmax(20rem,32rem)] md:items-end">
+          <div>
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">02 / Guide library</p>
+            <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Follow the question.</h2>
+          </div>
+          <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
+            <span className="sr-only">Search guides</span>
+            <FileText size={17} className="text-copper-400" aria-hidden="true" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search title, category, or idea"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+            />
+            <kbd className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+          </label>
+        </div>
+
+        <div className="mb-7 flex flex-wrap gap-2" role="group" aria-label="Filter guides by recurring theme">
+          {GUIDE_LENSES.map((lens) => (
+            <button
+              key={lens.id}
+              type="button"
+              onClick={() => setActiveLens(lens.id)}
+              aria-pressed={activeLens === lens.id}
+              className={'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' + (activeLens === lens.id ? 'border-copper-500 bg-copper-500 text-slate-950' : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')}
+            >
+              {lens.label}
+            </button>
+          ))}
+        </div>
+        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-slate-500" aria-live="polite">
+          {visibleGuides.length} {visibleGuides.length === 1 ? 'guide' : 'guides'}
+        </p>
+        <div className="border-t border-white/15">
+          {visibleGuides.map((guide: Guide, index: number) => (
+            <Link
+              key={guide.slug}
+              to={'/guides/' + guide.slug}
+              className="group grid min-h-28 grid-cols-[3rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
+            >
+              <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
+              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-500 md:block">{guide.category}</span>
+              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl">{guide.title}</span>
+              <span className="hidden text-right font-mono text-[10px] text-slate-500 md:block">{guide.date}</span>
+              <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+          ))}
+          {visibleGuides.length === 0 && (
+            <div className="flex min-h-40 flex-col items-start justify-center gap-4 border-b border-white/10">
+              <p className="text-slate-300">No field notes match that search.</p>
+              <button type="button" onClick={() => { setQuery(''); setActiveLens('all'); }} className="font-mono text-xs uppercase tracking-widest text-copper-400">
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section className="pt-8 md:pt-12">
+        <div className="grid gap-10 border-t border-white/10 pt-12 lg:grid-cols-[22rem_1fr]">
+          <div>
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">03 / Recurring themes</p>
+            <h2 className="text-3xl font-light tracking-tight text-white md:text-4xl">The same hard questions, from different angles.</h2>
+            <p className="mt-5 text-sm leading-relaxed text-slate-400">The formats change. The doctrine does not. Use a theme as a lens into the corpus.</p>
+          </div>
+          <div className="grid gap-px bg-white/10 md:grid-cols-3">
+            {GUIDE_LENSES.filter((lens) => lens.id !== 'all').map((lens, index) => (
+              <button
+                key={lens.id}
+                type="button"
+                onClick={() => {
+                  setActiveLens(lens.id);
+                  setQuery('');
+                  document.getElementById('guide-library')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="group bg-slate-950 p-6 text-left hover:bg-slate-900"
+              >
+                <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
+                <h3 className="mt-8 text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
+                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                  {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-14 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-400">Prefer the picture? The same systems, as visual explainers.</p>
+          <Link to="/diagrams" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-copper-400 hover:text-copper-300">
+            Explore architecture diagrams <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </Section>
