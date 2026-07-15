@@ -8,6 +8,14 @@ import type { Thought, Diagram } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
+    title: "Silence Is Not Success",
+    preview: "An agent cannot distinguish nothing happened from the observation failed unless execution status is first-class evidence.",
+    date: "2026-07-13",
+    category: "Architecture",
+    slug: "2026-07-13-silence-is-not-success",
+    body: "Four failures, one shape, all from our own working logs.\n\nA probe ran with stderr suppressed and its empty output was read as zero violations. The command had failed; the agent recorded a clean pass. A test suite piped through tail gated a commit on tail's exit code, not pytest's; red tests were one keystroke from shipping. A grep that never ran was indistinguishable from a grep that found nothing. And a CI check that \"failed\" in three seconds was not a test failure at all: the run-level annotation said the account was billing-locked and the job never started. A PR merged inside that window with no validation and looked normal in every list view.\n\nThe shape: silence has two causes. Nothing to report, or the reporter died. An agent that treats empty output as evidence picks the flattering interpretation every time.\n\nThe fix is structural, not behavioral. Execution status travels with the observation: exit code, stderr, duration, bound to the result the decision consumes. A probe that cannot prove it ran is not a probe. It is a coin flip wearing a lab coat.\n\nWe now gate on the triplet, not the text. Silence stopped being success the day the reporter had to show its receipt.",
+  },
+  {
     title: "Why Most AI Governance Starts Too Late",
     preview: "Observability makes AI systems legible; only pre-execution authority evaluation makes them governable.",
     date: "2026-07-07",
