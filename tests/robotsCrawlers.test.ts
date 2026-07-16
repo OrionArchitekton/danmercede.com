@@ -19,14 +19,14 @@ const robots = readFileSync(path.join(root, 'public/robots.txt'), 'utf8');
 
 // Presence only. Correct for asserting a bot is ABSENT.
 const uaLine = (name: string) =>
-  new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*$`, 'm');
+  new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*$`, 'mi');
 
 // Presence AND access. A bot is citation-eligible only if its User-agent line
 // is immediately followed by `Allow: /`. Asserting the name alone is vacuous: a
 // regression flipping the directive to `Disallow: /` keeps the name present and
 // the test green (review finding on this PR series).
 const uaAllows = (name: string) =>
-  new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*\\nAllow:[ \\t]*/[ \\t]*$`, 'm');
+  new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*\\nAllow:[ \\t]*/[ \\t]*$`, 'mi');
 
 test('robots.txt allows Claude-User (user-directed retrieval)', () => {
   assert.match(robots, uaAllows('Claude-User'));
