@@ -17,7 +17,26 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const robots = readFileSync(path.join(root, 'public/robots.txt'), 'utf8');
 
-// Presence only. Correct for asserting a bot is ABSENT.
+// The answer-engine + training crawlers that carry their own explicit group.
+const ANSWER_ENGINE_BOTS = [
+  'GPTBot',
+  'OAI-SearchBot',
+  'ChatGPT-User',
+  'PerplexityBot',
+  'Perplexity-User',
+  'ClaudeBot',
+  'Claude-User',
+  'Claude-SearchBot',
+  'Google-Extended',
+];
+
+// The path exclusions the wildcard group applies; every named bot group must
+// inherit these explicitly, because a bot uses its most-specific matching group
+// ONLY and does not fall back to the '*' group's Disallow lines.
+const SITE_DISALLOW = ['/admin', '/api', '/preview', '/draft'];
+
+// Presence only. Correct for asserting a bot is ABSENT. Case-insensitive per
+// RFC 9309 (User-agent field name and product token are case-insensitive).
 const uaLine = (name: string) =>
   new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*$`, 'mi');
 
@@ -27,6 +46,13 @@ const uaLine = (name: string) =>
 // the test green (review finding on this PR series).
 const uaAllows = (name: string) =>
   new RegExp(`^User-agent:[ \\t]*${name}[ \\t]*\\nAllow:[ \\t]*/[ \\t]*$`, 'mi');
+
+// The directive lines of the robots.txt group for a given user-agent (blocks
+// are blank-line separated). Empty if the group is absent.
+const groupFor = (name: string): string[] => {
+  const block = robots.split(/\n\s*\n/).find((b) => uaLine(name).test(b));
+  return block ? block.split('\n').map((l) => l.trim()).filter(Boolean) : [];
+};
 
 test('robots.txt allows Claude-User (user-directed retrieval)', () => {
   assert.match(robots, uaAllows('Claude-User'));
@@ -41,15 +67,23 @@ test('robots.txt does NOT name the deprecated Claude-Web agent', () => {
 });
 
 test('robots.txt retains and allows the answer-engine + training allowlist', () => {
-  for (const bot of [
-    'GPTBot',
-    'OAI-SearchBot',
-    'ChatGPT-User',
-    'PerplexityBot',
-    'Perplexity-User',
-    'ClaudeBot',
-    'Google-Extended',
-  ]) {
+  for (const bot of ANSWER_ENGINE_BOTS) {
     assert.match(robots, uaAllows(bot), `User-agent: ${bot} must be present and Allow: /`);
+  }
+});
+
+test('each answer-engine bot inherits the site-wide path exclusions', () => {
+  for (const bot of ANSWER_ENGINE_BOTS) {
+    const lines = groupFor(bot);
+    assert.ok(
+      lines.some((l) => /^Allow:[ \t]*\/$/i.test(l)),
+      `${bot} group must Allow: /`,
+    );
+    for (const p of SITE_DISALLOW) {
+      assert.ok(
+        lines.some((l) => new RegExp(`^Disallow:[ \\t]*${p}$`, 'i').test(l)),
+        `${bot} group must Disallow: ${p} (bots do not inherit the '*' group's exclusions)`,
+      );
+    }
   }
 });
