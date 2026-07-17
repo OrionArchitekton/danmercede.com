@@ -98,3 +98,5 @@ The three paths compared, so the choice is legible:
 The plan I walked in with, a single elegant router, was the wrong instinct dressed up as the clean one. The winning design is a handful of subprocesses behind a security gate, choosing each model by whether its vendor will still let you in next month. Boring, durable, and off-budget. That is the trade, and it is a good one.
 
 *The vendor terms and enforcement dates in this guide are time-sensitive and were accurate to mid-2026; enforcement is active and moving, so re-verify a vendor's current terms before you build on any subscription seam.*
+
+**Reference:** [Claude Code model configuration](https://code.claude.com/docs/en/model-config).

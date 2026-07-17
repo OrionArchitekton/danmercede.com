@@ -598,3 +598,5 @@ You now have a defensible foundation. Once the happy path is solid, harden it in
 **Further reading:** Traefik routers/middlewares and static-vs-dynamic config docs, Cloudflare Tunnel + Zero Trust docs (including `cloudflared tunnel create`/`route dns`), Tailscale ACLs, the `100.64.0.0/10` CGNAT addressing model, and `tailscale serve`, plus the Let's Encrypt/ACME challenge-type reference.
 
 The discipline that makes all of this hold together is a single sentence: **classify every service by whether the public needs it, put it on the matching plane, and verify the bind address, not just the health check.** Do that consistently and your self-hosted estate stays sane no matter how many apps you add.
+
+**Reference:** [Cloudflare Tunnel documentation](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).

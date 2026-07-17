@@ -68,11 +68,14 @@ test('a danmercede self-link on ANY subdomain is NOT a third-party citation', ()
 
 // --- corpus: no-regression ratchet + advisory backfill worklist ---
 
-// Current compliant count across the published corpus (2 thoughts + 3 guides,
-// 2026-07-16). This is a RATCHET: raise it as backfill enriches posts; never
-// lower it except when a post is deliberately deleted. It does NOT require every
-// post to be dense (34/39 are not, today) - that would pressure fabrication.
-const DENSITY_FLOOR = 5;
+// Current compliant count across the published corpus (2 thoughts + 8 guides,
+// 2026-07-16, after the 5 guides were enriched with verified authoritative
+// citations). This is a RATCHET: raise it as backfill enriches posts; never lower
+// it except when a post is deliberately deleted. It does NOT require every post to
+// be dense (the 29 immutable substrate essays are not, by design: VAULT_SCHEMA
+// canonical immutability forbids rewriting them, so density is applied forward to
+// new drafts, not retrofitted) - forcing it would pressure fabrication.
+const DENSITY_FLOOR = 10;
 
 test('published corpus does not regress below the density floor', () => {
   const items = [

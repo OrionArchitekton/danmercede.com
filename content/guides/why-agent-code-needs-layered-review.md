@@ -114,3 +114,5 @@ Concretely:
 - **Treat the CI gate as a reviewer and read its real dependency graph,** including what your fail-closed meta-checks wait on. And keep credential-shaped data out of tests entirely.
 
 The through-line is not "more review." It is **independent** review. Five defects in one 20-line function, each invisible to every layer but one, is the normal shape of software when a fast writer meets a single slow reader. That is not a verdict on the agent; it is arithmetic. Give the writer four orthogonal readers instead, and the blind spots stop lining up.
+
+**Reference:** on why a model cannot reliably check its own work, see [Huang et al., "Large Language Models Cannot Self-Correct Reasoning Yet"](https://arxiv.org/abs/2310.01798).
