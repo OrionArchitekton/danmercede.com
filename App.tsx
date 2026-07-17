@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens, GuideLensId } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import {
@@ -1608,24 +1608,8 @@ const ThoughtDetailPage = () => {
   );
 };
 
-const GUIDE_LENSES = [
-  { id: 'all', label: 'All guides', description: 'The complete field library, newest first.', terms: [] },
-  { id: 'agent-systems', label: 'Agent systems', description: 'Models, tools, schemas, context, and orchestration.', terms: ['agent', 'model', 'schema', 'tool', 'context', 'router'] },
-  { id: 'proof-review', label: 'Proof & review', description: 'Verification, layered review, evidence, and honest failure.', terms: ['review', 'verifier', 'proof', 'trust', 'refutation', 'failure'] },
-  { id: 'governed-delivery', label: 'Governed delivery', description: 'Approval boundaries, safe delivery, and owned infrastructure.', terms: ['governed', 'delivery', 'approval', 'infrastructure', 'self-hosting', 'double-send'] },
-] as const;
-
-type GuideLensId = (typeof GUIDE_LENSES)[number]['id'];
-
 const guideSearchText = (guide: Guide) =>
   [guide.title, guide.category, guide.description, guide.lead].join(' ').toLowerCase();
-
-const guideMatchesLens = (guide: Guide, lensId: GuideLensId) => {
-  const lens = GUIDE_LENSES.find((candidate) => candidate.id === lensId);
-  if (!lens || lens.id === 'all') return true;
-  const corpus = guideSearchText(guide);
-  return lens.terms.some((term) => corpus.includes(term));
-};
 
 const GuidesPage = () => {
   usePageMeta();
@@ -1673,7 +1657,7 @@ const GuidesPage = () => {
               Field notes on governed AI
             </p>
             <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl lg:text-7xl">
-              Build agents that can act—
+              Build agents that can act
               <span className="block text-copper-400">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
@@ -1684,7 +1668,7 @@ const GuidesPage = () => {
               <dl className="grid grid-cols-3 gap-4 text-right">
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Lanes</dt><dd className="mt-1 text-2xl font-semibold text-white">{categoryCount}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? '—'}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
           </div>
@@ -1697,13 +1681,13 @@ const GuidesPage = () => {
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">01 / Selected work</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Start with the signal.</h2>
           </div>
-          <p className="text-sm leading-relaxed text-slate-400">The newest field notes—the fastest route into the current body of work.</p>
+          <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
         </div>
         <div className="grid gap-5 lg:grid-cols-3">
           {featuredGuides.map((guide: Guide, index: number) => (
             <Link
               key={guide.slug}
-              to={'/guides/' + guide.slug}
+              to={`/guides/${guide.slug}`}
               className="group flex min-h-[22rem] flex-col border border-white/10 bg-slate-900/25 transition-all duration-300 hover:-translate-y-1 hover:border-copper-500/40"
             >
               <div className={'relative h-32 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
@@ -1765,7 +1749,7 @@ const GuidesPage = () => {
           {visibleGuides.map((guide: Guide, index: number) => (
             <Link
               key={guide.slug}
-              to={'/guides/' + guide.slug}
+              to={`/guides/${guide.slug}`}
               className="group grid min-h-28 grid-cols-[3rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
             >
               <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>

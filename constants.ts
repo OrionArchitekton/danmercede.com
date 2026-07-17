@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Diagram } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -657,6 +657,57 @@ export function featuredEssays(
     return { slug: t.slug, title: t.title };
   });
 }
+
+// GUIDE_LENSES: hub-side curated theme lenses for the /guides index, mirroring the
+// FEATURED_ESSAY_SLUGS pattern: explicit slug membership, never keyword inference.
+// A guide may sit under multiple lenses; an unlensed guide still surfaces via the
+// "all" lens and free-text search. Slug validity guarded by tests/guidesLenses.test.ts.
+export const GUIDE_LENSES = [
+  {
+    id: 'all',
+    label: 'All guides',
+    description: 'The complete field library, newest first.',
+    slugs: [] as readonly string[],
+  },
+  {
+    id: 'agent-systems',
+    label: 'Agent systems',
+    description: 'Models, tools, schemas, context, and orchestration.',
+    slugs: [
+      'off-budget-subagents-under-claude-code',
+      'giving-your-agent-web-access',
+      'why-llm-schemas-get-rejected',
+    ] as readonly string[],
+  },
+  {
+    id: 'proof-review',
+    label: 'Proof & review',
+    description: 'Verification, layered review, evidence, and honest failure.',
+    slugs: [
+      'why-agent-code-needs-layered-review',
+      'verifier-abstention-not-refutation',
+      'agent-built-infrastructure-you-can-trust',
+    ] as readonly string[],
+  },
+  {
+    id: 'governed-delivery',
+    label: 'Governed delivery',
+    description: 'Approval boundaries, safe delivery, and owned infrastructure.',
+    slugs: [
+      'governed-double-send-safe-delivery',
+      'self-hosting-websites-and-apps',
+      'agent-built-infrastructure-you-can-trust',
+    ] as readonly string[],
+  },
+] as const;
+
+export type GuideLensId = (typeof GUIDE_LENSES)[number]['id'];
+
+export const guideMatchesLens = (guide: Guide, lensId: GuideLensId): boolean => {
+  const lens = GUIDE_LENSES.find((candidate) => candidate.id === lensId);
+  if (!lens || lens.id === 'all') return true;
+  return lens.slugs.includes(guide.slug);
+};
 
 // /works dev-hub framing: the single availability CTA, the contact route, and the
 // outbound rail. Copy is operator-tunable. Consumed by BOTH the React WorksPage
