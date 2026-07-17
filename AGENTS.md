@@ -61,6 +61,10 @@ tutorials), dev-lane — distinct from `/thoughts` (terse substrate doctrine) an
   library, consistent with the lean / externalized-React build). `GuideDetailPage`
   renders the body; `seoMeta.guideBodyToParagraphs` bakes a clean-prose crawl body
   (code/tables/figures dropped) for no-JS answer engines.
+- **Index lenses:** the `/guides` index theme filters are hub-side curation:
+  `GUIDE_LENSES` in `constants.ts`, explicit slug membership per lens (mirrors
+  `FEATURED_ESSAY_SLUGS`; never keyword inference). `tests/guidesLenses.test.ts`
+  guards slug validity; unlensed guides stay reachable via the All lens + search.
 - **Routes:** `/guides` (index, a static `ROUTE_META` route) + `/guides/:slug`
   (per-guide, derived from `GUIDES` via `guidePaths()`/`guideMeta()`); baked by
   `injectRouteMeta.ts` with `Article` JSON-LD + sitemap entries (mirrors `thoughts`).
