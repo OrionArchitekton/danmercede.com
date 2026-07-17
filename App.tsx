@@ -1611,6 +1611,9 @@ const ThoughtDetailPage = () => {
 const guideSearchText = (guide: Guide) =>
   [guide.title, guide.category, guide.description, guide.lead].join(' ').toLowerCase();
 
+const FEATURED_GUIDES = GUIDES.slice(0, 3);
+const GUIDE_CATEGORY_COUNT = new Set(GUIDES.map((guide: Guide) => guide.category)).size;
+
 const GuidesPage = () => {
   usePageMeta();
   const [query, setQuery] = useState('');
@@ -1621,7 +1624,7 @@ const GuidesPage = () => {
     const focusSearch = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
-      if (event.key === '/' && !isTyping) {
+      if (event.key === '/' && !isTyping && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault();
         searchRef.current?.focus();
       }
@@ -1635,9 +1638,6 @@ const GuidesPage = () => {
     (!normalizedQuery || guideSearchText(guide).includes(normalizedQuery)) &&
     guideMatchesLens(guide, activeLens),
   );
-  const featuredGuides = GUIDES.slice(0, 3);
-  const categoryCount = new Set(GUIDES.map((guide: Guide) => guide.category)).size;
-
   return (
     <div className="pt-20">
       <Section className="pb-12 md:pb-16">
@@ -1667,7 +1667,7 @@ const GuidesPage = () => {
               </p>
               <dl className="grid grid-cols-3 gap-4 text-right">
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Lanes</dt><dd className="mt-1 text-2xl font-semibold text-white">{categoryCount}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Lanes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_CATEGORY_COUNT}</dd></div>
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
@@ -1684,7 +1684,7 @@ const GuidesPage = () => {
           <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
         </div>
         <div className="grid gap-5 lg:grid-cols-3">
-          {featuredGuides.map((guide: Guide, index: number) => (
+          {FEATURED_GUIDES.map((guide: Guide, index: number) => (
             <Link
               key={guide.slug}
               to={`/guides/${guide.slug}`}
@@ -1785,12 +1785,13 @@ const GuidesPage = () => {
                 onClick={() => {
                   setActiveLens(lens.id);
                   setQuery('');
-                  document.getElementById('guide-library')?.scrollIntoView({ behavior: 'smooth' });
+                  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  document.getElementById('guide-library')?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
                 }}
                 className="group bg-slate-950 p-6 text-left hover:bg-slate-900"
               >
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
-                <h3 className="mt-8 text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</h3>
+                <span className="mt-8 block text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
                 <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
                 <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
