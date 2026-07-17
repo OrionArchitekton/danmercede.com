@@ -19,12 +19,38 @@ export interface DensityResult {
   detail: string;
 }
 
-// An outbound citation: a markdown link `](http(s)://host…)` to an EXTERNAL
-// host. Excludes danmercede's own domains (self-links are not third-party
-// citations) and code-example hosts (localhost / 127.0.0.1 / a host:port like
-// `http://traefik:80`), which are configuration, not evidence.
-const EXTERNAL_CITATION =
-  /\]\(https?:\/\/(?!(?:www\.)?danmercede\.|localhost|127\.0\.0\.1|[a-z0-9.-]*:\d)[^)]+\)/gi;
+// Strip fenced (```...```) and inline (`...`) code before matching, so a link or
+// URL shown as a code EXAMPLE (tutorial/guide content) is not miscounted as a
+// real citation.
+function stripCode(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]*`/g, ' ');
+}
+
+// A "danmercede" host (bare, www, or ANY subdomain: blog./docs./etc.) is a
+// self-link, not a third-party citation.
+const SELF_HOST = /^(?:[a-z0-9-]+\.)*danmercede\.[a-z]+$/i;
+
+function isExternalCitationUrl(url: string): boolean {
+  // Host only: strip scheme, then cut at the first path/port/query/fragment char.
+  const host = url.replace(/^https?:\/\//i, '').split(/[/:?#]/)[0].toLowerCase();
+  // Code/localhost hosts are configuration, not evidence.
+  if (host === 'localhost' || host === '127.0.0.1') return false;
+  // An internal service name has no dot (e.g. `traefik`, a docker-compose host);
+  // a real external citation always has a dotted domain (arxiv.org, example.gov).
+  if (!host.includes('.')) return false;
+  // danmercede's own domains (any subdomain) are self-links, not citations.
+  if (SELF_HOST.test(host)) return false;
+  return true;
+}
+
+// Markdown-link citation `[text](url)` to an external host. Group 1 captures a
+// leading `!`, which makes it an IMAGE embed (`![alt](url)`) - decoration, not a
+// citation - so those are skipped. Group 2 is the URL.
+const MD_LINK = /(!?)\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi;
+// Autolink `<https://url>` (unambiguous citation syntax). Group 1 is the URL.
+const AUTOLINK = /<(https?:\/\/[^>\s]+)>/gi;
 
 // A quantitative statistic: a percentage. The strongest, least-ambiguous stat
 // signal, chosen deliberately over "any number" so dates, counts, and version
@@ -32,11 +58,22 @@ const EXTERNAL_CITATION =
 const PERCENT_STAT = /\b\d+(?:\.\d+)?%/g;
 
 export function countCitations(md: string): number {
-  return (md.match(EXTERNAL_CITATION) || []).length;
+  const text = stripCode(md);
+  let n = 0;
+  // Markdown links, skipping image embeds (leading '!').
+  for (const m of text.matchAll(MD_LINK)) {
+    if (m[1] === '!') continue;
+    if (isExternalCitationUrl(m[2])) n += 1;
+  }
+  // Autolinks <url>.
+  for (const m of text.matchAll(AUTOLINK)) {
+    if (isExternalCitationUrl(m[1])) n += 1;
+  }
+  return n;
 }
 
 export function countStats(md: string): number {
-  return (md.match(PERCENT_STAT) || []).length;
+  return (stripCode(md).match(PERCENT_STAT) || []).length;
 }
 
 /**

@@ -35,6 +35,37 @@ test('a bare year or count is NOT counted as a statistic', () => {
   assert.equal(countStats('In 2026 we shipped 12 things across 4 nodes.'), 0);
 });
 
+// --- edge cases (adversarial-review hardening) ---
+
+test('an image embed ![alt](url) is NOT a citation', () => {
+  assert.equal(countCitations('![diagram](https://example.com/x.png)'), 0);
+  assert.equal(countCitations('![build](https://img.shields.io/x.svg)'), 0);
+});
+
+test('an autolink <https://url> IS a citation', () => {
+  assert.equal(countCitations('See <https://arxiv.org/abs/1810.03993> for detail.'), 1);
+});
+
+test('a link inside a fenced or inline code block is NOT a citation', () => {
+  assert.equal(countCitations('```\n[x](https://y.com)\n```'), 0);
+  assert.equal(countCitations('Write `[x](https://y.com)` to link.'), 0);
+});
+
+test('a legit external citation on a nonstandard port IS counted', () => {
+  assert.equal(countCitations('[report](https://example.gov:8443/report)'), 1);
+});
+
+test('a code-example host is NOT counted even without a port', () => {
+  assert.equal(countCitations('[health](http://localhost/health)'), 0);
+  assert.equal(countCitations('[node](http://127.0.0.1:9000/x)'), 0);
+});
+
+test('a danmercede self-link on ANY subdomain is NOT a third-party citation', () => {
+  assert.equal(countCitations('[a](https://blog.danmercede.com/x)'), 0);
+  assert.equal(countCitations('[b](https://docs.danmercede.online/y)'), 0);
+  assert.equal(countCitations('[c](https://www.danmercede.com/z)'), 0);
+});
+
 // --- corpus: no-regression ratchet + advisory backfill worklist ---
 
 // Current compliant count across the published corpus (2 thoughts + 3 guides,
