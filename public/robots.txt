@@ -8,26 +8,65 @@ Disallow: /draft
 # AI answer-engine crawlers — explicitly allowed (round-2 R13, earned-citation AEO)
 User-agent: GPTBot
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: Perplexity-User
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
-User-agent: Claude-Web
+User-agent: Claude-User
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /preview
+Disallow: /draft
 
 Sitemap: https://www.danmercede.com/sitemap.xml
