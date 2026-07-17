@@ -178,13 +178,13 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/guides': {
     title: 'Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede',
     description:
-      'Field-tested guides on building and running agentic systems you own: multi-agent pipelines, layered review, self-hosting, and secure ingress on infrastructure you control.',
+      'Long-form technical guides on governed AI: build agents that can act and prove what happened. Multi-agent pipelines, layered review, fail-closed execution, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
     body: {
       h1: 'Guides',
-      lead: 'Practical, field-tested walkthroughs.',
+      lead: 'Field notes on governed AI: practical, field-tested walkthroughs.',
       paragraphs: [
-        'Hands-on guides for building and running agentic systems with clear ownership, plus self-hosting and secure ingress on infrastructure you control.',
+        'Long-form, field-tested guides for building agents that can act and prove what happened: agent systems and orchestration, layered review and verification, governed delivery, and self-hosting with secure ingress on infrastructure you control.',
       ],
     },
   },
