@@ -618,6 +618,18 @@ export const WORKS: Work[] = [
     date: '2026-07-10',
     slug: 'engram',
   },
+  {
+    title: 'Whisperways',
+    description:
+      "Noise-aware flight corridor planning for advanced air mobility: pick two Los Angeles vertiports and it returns the direct route and the quiet route, showing how many people can hear an eVTOL overhead under each, then has Claude draft the community impact brief a vertiport operator could hand a neighborhood council, grounded only in the engine's numbers. Real US Census population, published eVTOL flyover acoustics, and a population-noise Dijkstra router, with the first-order acoustic model honestly labeled a planning heuristic, not certification. Built for the HTCJ Aviation Futures Innovation Challenge.",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/whisperways',
+    link: 'https://whisperways.vercel.app',
+    video: 'https://youtu.be/pAYEz0GL6KQ',
+    license: 'MIT',
+    date: '2026-07-17',
+    slug: 'whisperways',
+  },
 ];
 
 export { THOUGHTS };
