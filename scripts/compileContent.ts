@@ -77,6 +77,7 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-05-20-pre-execution-authority-gates',
   '2026-06-29-the-alibi-of-a-green-gate',
   '2026-07-06-do-my-agents-learn',
+  '2026-07-13-the-approve-button',
 ];
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
