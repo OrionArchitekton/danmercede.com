@@ -630,6 +630,42 @@ export const WORKS: Work[] = [
     date: '2026-07-17',
     slug: 'whisperways',
   },
+  {
+    title: 'Notary',
+    description:
+      "The context lie detector for data catalogs: an agent that cross-examines a catalog's claims (units, freshness, completeness, enums, deprecation) against the warehouse with deterministic SQL, adjudicates each as CONFIRMED, CONTRADICTED, or UNVERIFIABLE with evidence, and writes what it learned back to DataHub as a trust ledger, evidence dossier, and provenance-labeled correction. The evaluation table is published verbatim, misses included: 9 of 12 planted lies caught and 0 of the 6 adjudicated controls misclassified, because for a trust product a wrong CONTRADICTED is worse than a declared miss. Built for the DataHub Agent Hackathon (Category 1: Agents That Do Real Work).",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/notary',
+    link: 'https://notary-replay.vercel.app',
+    video: 'https://youtu.be/eMN0t10ZndM',
+    license: 'Apache-2.0',
+    date: '2026-07-19',
+    slug: 'notary',
+  },
+  {
+    title: 'Codex Rule Ledger',
+    description:
+      'Evidence-bound audits for Codex runs: it reconstructs the instruction chain from a launch capture and reports whether the supplied evidence supports, contradicts, or cannot decide each rule (SUPPORTED, CONTRADICTED, NOT_EVIDENCED, NOT_APPLICABLE), never confusing missing evidence with compliance or failure. GPT-5.6 proposes semantics; deterministic TypeScript alone owns evidence sufficiency and final ledger states, ending in a hash-bound JSON export. The public demo is deliberately recorded-case-only (two disclosed synthetic fixtures, keyless), and verification runs all 77 unit and contract tests plus five Chromium E2E flows. Built for OpenAI Build Week (Developer Tools).',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/codex-rule-ledger',
+    link: 'https://codex-rule-ledger.vercel.app',
+    video: 'https://youtu.be/7zJCkww6TaE',
+    license: 'MIT',
+    date: '2026-07-21',
+    slug: 'codex-rule-ledger',
+  },
+  {
+    title: 'Standing Questions',
+    description:
+      'Ask the Bluesky firehose a question once and get a living chart instead of a paragraph; pin it, and a scheduled agent keeps re-evaluating, reopening the thread in a public feed with a visual before/after delta card when the picture materially changes. Every turn runs as a durable Trigger.dev chat.agent() session, and the model never touches the database: it emits a JSON plan that a deterministic SQL gate validates before anything executes (single SELECT, allowlisted tables, re-validated at pin time and in the re-eval cron). 59 unit tests, with the honest limit stated up front: ingest is a sampled stream, a bounded 25 second Jetstream capture every 5 minutes, not the full firehose. Built for the ClickHouse and Trigger.dev Virtual Summer Hackathon 2026.',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/standing-questions',
+    link: 'https://standing-questions.vercel.app',
+    video: 'https://youtu.be/2oMPTFokXws',
+    license: 'MIT',
+    date: '2026-07-19',
+    slug: 'standing-questions',
+  },
 ];
 
 export { THOUGHTS };
