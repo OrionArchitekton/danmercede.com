@@ -637,6 +637,7 @@ export const WORKS: Work[] = [
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/notary',
     link: 'https://notary-replay.vercel.app',
+    video: 'https://youtu.be/eMN0t10ZndM',
     license: 'Apache-2.0',
     date: '2026-07-19',
     slug: 'notary',
