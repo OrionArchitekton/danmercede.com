@@ -8,6 +8,14 @@ import type { Thought, Diagram } from './types';
 
 export const THOUGHTS: Thought[] = [
   {
+    title: "Unpinned Is a Silent Write",
+    preview: "A floating version reference is a write to your running system that leaves no diff in your history.",
+    date: "2026-07-20",
+    category: "Enforcement",
+    slug: "2026-07-20-unpinned-is-a-silent-write",
+    body: "Two incidents from our own CI, one week apart, same root.\n\nA bot opened a routine bump: actions/checkout from v4 to v7. That action is pinned in a protected workflow by its full 40-character commit SHA, and a unit test asserts the exact string. The bump rewrote the pin. The test failed by design, on the pin, before the new action ever ran. The guard blocked the bump, so nothing the workflow executed had changed. A version label had.\n\nThe same week a drift check went red fetching canonical SDK schemas over a floating endpoint. Exit 22, HTTP over 400. No commit in our history touched that path. The upstream had moved under us.\n\nThe shape: a floating version reference is a write to your system that leaves no diff. A `:latest` tag, a caret range, a major-version action tag, a schema URL that resolves to whatever shipped this morning. Your git log stays clean. Your runtime is not the one you tested.\n\nThe fix is not vigilance. Pin to the immutable identity: the image digest, the exact commit SHA, the locked version. Then add a guard that asserts the pin, so the next bump fails a check instead of surfacing months later in a probe. A pin without a test that reads it is a comment.\n\nUnpinned is not convenient. It is a mutation you agreed to in advance and will discover by accident.",
+  },
+  {
     title: "Silence Is Not Success",
     preview: "An agent cannot distinguish nothing happened from the observation failed unless execution status is first-class evidence.",
     date: "2026-07-13",
