@@ -660,6 +660,7 @@ export const WORKS: Work[] = [
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/standing-questions',
     link: 'https://standing-questions.vercel.app',
+    video: 'https://youtu.be/2oMPTFokXws',
     license: 'MIT',
     date: '2026-07-19',
     slug: 'standing-questions',
