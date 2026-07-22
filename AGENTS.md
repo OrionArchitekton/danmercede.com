@@ -321,16 +321,20 @@ properties a change can break while every CI check still passes green.
 No change may make `SUBSTRATE_READ_TOKEN` or substrate content reachable from the
 untrusted `pull_request` lane (the workflow that runs PR-controlled code such as
 npm lifecycle scripts, tests, and build config). The credential belongs only to
-the trusted `pull_request_target` lane, which runs base-branch code, checks out
-the base commit, and reads the PR bundle purely as data. Moving a substrate read
-or the token into the untrusted lane is a credential-exfiltration defect.
+trusted lanes: the `pull_request_target` verification lane, which runs base-branch
+code, checks out the base commit, and reads the PR bundle purely as data; and the
+scheduled/manual substrate-sync lane (`schedule` / `workflow_dispatch`), which runs
+only base-branch code and never PR-controlled code. It must never be reachable from
+the untrusted `pull_request` lane. Moving a substrate read or the token into the
+untrusted lane is a credential-exfiltration defect.
 
 ### Never swap the fail-open / fail-loud postures
 
-The consumer compile must stay FAIL-OPEN: substrate unreachable or zero matches
-exits 0 and does NOT overwrite the committed generated bundle, so the site keeps
-serving what was last committed. The sync workflow strict path must stay
-FAIL-LOUD: zero matches exits non-zero and opens no PR. A fail-loud consumer
+The consumer compile must stay FAIL-OPEN: if the substrate is unreachable or there
+are zero matches, the process exits 0 and does NOT overwrite the committed
+generated bundle, so the site keeps serving what was last committed. The sync
+workflow strict path must stay FAIL-LOUD: zero matches exits non-zero and opens
+no PR. A fail-loud consumer
 takes the live site down; a fail-open sync silently strips the committed bundle.
 Swapping either posture is a defect.
 
