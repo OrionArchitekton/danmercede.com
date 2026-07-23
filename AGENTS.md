@@ -309,6 +309,57 @@ the solo-operator model (the attack requires push access to a repo
 branch), and matters only once semi-trusted contributors exist — the same
 horizon as `SUBSTRATE_READ_TOKEN`.
 
+## Code Review Rules
+
+Consequential, non-obvious invariants the pre-merge reviewer must enforce on any
+change to this repo. Framed as outcomes, not file or function names: apply each
+to whatever code in the diff could break the outcome. Most of these are security
+properties a change can break while every CI check still passes green.
+
+### Keep the substrate credential out of the untrusted lane
+
+No change may make `SUBSTRATE_READ_TOKEN` or substrate content reachable from the
+untrusted `pull_request` lane (the workflow that runs PR-controlled code such as
+npm lifecycle scripts, tests, and build config). The credential belongs only to
+trusted lanes: the `pull_request_target` verification lane, which runs base-branch
+code, checks out the base commit, and reads the PR bundle purely as data; and the
+scheduled/manual substrate-sync lane (`schedule` / `workflow_dispatch`), which runs
+only base-branch code and never PR-controlled code. It must never be reachable from
+the untrusted `pull_request` lane. Moving a substrate read or the token into the
+untrusted lane is a credential-exfiltration defect.
+
+### Never swap the fail-open / fail-loud postures
+
+The consumer compile must stay FAIL-OPEN: if the substrate is unreachable or there
+are zero matches, the process exits 0 and does NOT overwrite the committed
+generated bundle, so the site keeps serving what was last committed. The sync
+workflow strict path must stay FAIL-LOUD: zero matches exits non-zero and opens
+no PR. A fail-loud consumer
+takes the live site down; a fail-open sync silently strips the committed bundle.
+Swapping either posture is a defect.
+
+### Only the sync workflow mutates the generated bundle
+
+When the compile-status marker is SKIPPED, the PR must not have hand-edited the
+generated constants bundle: during the zero-match seed period the substrate-sync
+workflow is the only legitimate mutator. A PR that edits the generated bundle by
+hand is a defect.
+
+### Anchor the security gate by workflow path plus event, not by check name
+
+The substrate-verify gate must remain resolved from the workflow-runs API pinned
+to BOTH its own workflow file and `event=pull_request_target`, never by check
+name. Matching by name alone is forgeable: a PR can add its own `pull_request`
+workflow with a job of the same name and produce a second same-named check-run.
+Any change that resolves this gate by check name reopens that forgery.
+
+### Reject ambiguous substrate dates as fatal
+
+A substrate `date` that is an offset-less datetime or an engine-dependent shape
+must be rejected as fatal, never normalized: such values parse in the process
+timezone and render as a different calendar day per runner. Weakening this to a
+best-effort parse is a data-integrity defect.
+
 ## Files
 
 | File | Role |
