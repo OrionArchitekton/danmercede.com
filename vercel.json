@@ -95,6 +95,11 @@
       "permanent": true
     },
     {
+      "source": "/works/proctor",
+      "destination": "/works/proctor/",
+      "permanent": true
+    },
+    {
       "source": "/rss.xml",
       "destination": "/feed.xml",
       "permanent": true
@@ -153,6 +158,14 @@
     {
       "source": "/works/localfiscal/:path*",
       "destination": "https://localfiscal-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/proctor/",
+      "destination": "https://proctor-site.vercel.app/"
+    },
+    {
+      "source": "/works/proctor/:path*",
+      "destination": "https://proctor-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",

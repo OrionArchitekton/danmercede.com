@@ -566,11 +566,13 @@ export const WORKS: Work[] = [
   {
     title: 'Proctor',
     description:
-      "The agent that QAs other agents, regression-tests non-deterministic AI automations by learning each one's behavioral contract, catching when a model or prompt change silently breaks it, self-healing the tests when the change is legitimate, and escalating real regressions to a human. Built for UiPath AgentHack 2026 (Track 3: UiPath Test Cloud).",
+      'Behavioral regression testing for AI agents. Proctor learns a per-agent contract from sample runs, re-checks it on every model or prompt change, and classifies drift as real regression, legitimate evolution, or flaky. Consequential changes pause a durable workflow for human approval; approved evolution versions the contract. Verified live against a real UiPath tenant. Built for UiPath AgentHack 2026 (Track 3: UiPath Test Cloud); named a finalist.',
     category: 'Agent Project',
     repo: 'https://github.com/OrionArchitekton/proctor',
+    link: 'https://www.danmercede.com/works/proctor/',
+    video: 'https://youtu.be/GaTzq_fDmqU',
     license: 'MIT',
-    date: '2026-06-05',
+    date: '2026-07-23',
     slug: 'proctor',
   },
   {
