@@ -74,6 +74,22 @@ export interface RouteMeta {
   // image contentUrl and the alt text (rendered as the ImageObject.description).
   diagramSrc?: string;
   diagramAlt?: string;
+  // Open Graph object type. Defaults to 'profile' because the site is a personal
+  // brand surface; article-shaped routes set 'article' so the card type and the
+  // article:* properties match the content. Deliberately per-route rather than
+  // derived from schemaType: 'Article' is ALSO carried by listing surfaces like
+  // /thoughts and /guides, which are collections and must stay 'profile'.
+  ogType?: 'article' | 'profile';
+  // ISO publish date (YYYY-MM-DD) for article-shaped routes. Feeds both
+  // article:published_time and the Article JSON-LD datePublished/dateModified.
+  datePublished?: string;
+  // Clean content headline for JSON-LD, without the SEO title's brand suffix.
+  // Falls back to title when absent.
+  headline?: string;
+  // Full-length description for the JSON-LD Article node. The meta-tag
+  // description is length-capped for SERP display; structured data keeps the
+  // complete text, so capping the tag costs no machine-readable detail.
+  articleDescription?: string;
 }
 
 // Build the /works crawlable link set: the featured-essay deep-links (in lockstep
@@ -260,8 +276,16 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     return { title: 'Case Study Not Found | Dan Mercede' };
   }
   return {
+    // The ": Case Study" infix is retained deliberately, unlike guides and
+    // thoughts: tests/injectRouteMeta.test.ts pins this title format, so
+    // changing it is a separate decision from the og:type defect fixed here.
     title: `${study.title}: Case Study | Dan Mercede`,
-    description: study.description,
+    description: truncateForMeta(study.description),
+    articleDescription: study.description,
+    headline: study.title,
+    // CaseStudy carries no date, so the dateless article branch applies:
+    // article:published_time is omitted and the JSON-LD node carries no dates.
+    ogType: 'article',
     schemaType: 'Article',
     body: {
       h1: study.title,
@@ -325,9 +349,17 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
   }
   const paragraphs = bodyToParagraphs(thought.body);
   return {
-    title: `${thought.title}: Thought | Dan Mercede`,
-    // The preview (substrate `claim`) is the thesis, the ideal meta description.
-    description: thought.preview,
+    // No ": Thought" infix: the kind is already carried by the /thoughts/ path
+    // and the Article schema, and the redundant token only eats title budget.
+    title: `${thought.title} | Dan Mercede`,
+    // The preview (substrate `claim`) is the thesis, the ideal meta description,
+    // but most previews exceed the SERP display cap. The tag is truncated; the
+    // full text survives on articleDescription and reaches the JSON-LD node.
+    description: truncateForMeta(thought.preview),
+    articleDescription: thought.preview,
+    headline: thought.title,
+    ogType: 'article',
+    datePublished: thought.date,
     schemaType: 'Article',
     body: {
       h1: thought.title,
@@ -447,8 +479,14 @@ export function guideMeta(slug: string | undefined): RouteMeta {
   }
   const paragraphs = guideBodyToParagraphs(guide.body);
   return {
-    title: `${guide.title}: Guide | Dan Mercede`,
-    description: guide.description,
+    // No ": Guide" infix: the kind is already carried by the /guides/ path and
+    // the Article schema, and the redundant token only eats SERP title budget.
+    title: `${guide.title} | Dan Mercede`,
+    description: truncateForMeta(guide.description),
+    articleDescription: guide.description,
+    headline: guide.title,
+    ogType: 'article',
+    datePublished: guide.date,
     schemaType: 'Article',
     body: {
       h1: guide.title,
@@ -549,12 +587,77 @@ export function resolveMeta(m: RouteMeta) {
   };
 }
 
+// Search engines truncate the displayed description around 155-160 characters,
+// so anything past that is invisible weight in the <head>. Cap at a word
+// boundary rather than mid-word. The untruncated text is preserved separately
+// on RouteMeta.articleDescription for the JSON-LD node.
+export const META_DESCRIPTION_MAX = 160;
+
+export function truncateForMeta(text: string, max: number = META_DESCRIPTION_MAX): string {
+  const s = text.trim().replace(/\s+/g, ' ');
+  if (s.length <= max) return s;
+  // Caps below the ellipsis length need their own branch: s.slice(0, max - 3)
+  // takes a NEGATIVE index for max < 3 and would return nearly the whole string
+  // before appending '...', producing output LONGER than the cap.
+  if (max <= 0) return '';
+  if (max < 3) return s.slice(0, max);
+  const cut = s.slice(0, max - 3);
+  const lastSpace = cut.lastIndexOf(' ');
+  // Only honour the word boundary if it is not absurdly early (a single very
+  // long token would otherwise collapse the whole description to an ellipsis).
+  const body = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
+  return `${body.replace(/[\s,;:.]+$/, '')}...`;
+}
+
 function escapeAttr(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// article:author is spec-typed by Open Graph as a `profile` OBJECT, not a display
+// name, so it must be the URL of a page that itself declares og:type=profile.
+// /about is that page (ProfilePage schema, profile:* pair, prerendered, sitemapped).
+// Derived from SITE_ORIGIN so it cannot drift from the canonical origin. Note this
+// is deliberately NOT PERSON_ID: that is a JSON-LD @id whose #fragment is never
+// sent to a server, so any consumer dereferencing it lands on the homepage.
+export const ARTICLE_AUTHOR_URL = new URL('/about', SITE_ORIGIN).toString();
+
+// The COMPLETE set of og:type-scoped properties. Anything listed here is either
+// emitted or explicitly removed, never left stranded.
+export const TYPE_SCOPED_META_PROPS = [
+  'article:published_time',
+  'article:author',
+  'profile:first_name',
+  'profile:last_name',
+] as const;
+
+// Single source of truth for which meta properties belong to which og:type,
+// shared by the static renderer (renderSeoBlock) and the runtime head hook
+// (usePageMeta in App.tsx). Duplicating this branch is exactly what let the
+// hydrated head drift from the served head on client-side navigation: og:type
+// flipped while the other type's properties stayed behind. Returning both the
+// ADD set and the REMOVE set means a property added here is automatically
+// stripped on the branch that does not emit it.
+export function typeScopedMetaTags(
+  m: Pick<RouteMeta, 'ogType' | 'datePublished'>,
+): { add: [string, string][]; remove: string[] } {
+  const add: [string, string][] =
+    m.ogType === 'article'
+      ? [
+          ...(m.datePublished
+            ? ([['article:published_time', m.datePublished]] as [string, string][])
+            : []),
+          ['article:author', ARTICLE_AUTHOR_URL],
+        ]
+      : [
+          ['profile:first_name', 'Dan'],
+          ['profile:last_name', 'Mercede'],
+        ];
+  const added = new Set(add.map(([prop]) => prop));
+  return { add, remove: TYPE_SCOPED_META_PROPS.filter((p) => !added.has(p)) };
 }
 
 // Render the static <head> SEO tag block for a route. Deterministic; never
@@ -577,7 +680,7 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     `  <meta name="description" content="${d}" />`,
     `  <meta name="robots" content="index, follow, max-image-preview:large" />`,
     `  <link rel="canonical" href="${canonical}" />`,
-    `  <meta property="og:type" content="profile" />`,
+    `  <meta property="og:type" content="${m.ogType ?? 'profile'}" />`,
     `  <meta property="og:site_name" content="Dan Mercede" />`,
     `  <meta property="og:title" content="${t}" />`,
     `  <meta property="og:description" content="${d}" />`,
@@ -587,8 +690,13 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     `  <meta property="og:image:width" content="1200" />`,
     `  <meta property="og:image:height" content="630" />`,
     `  <meta property="og:image:alt" content="${alt}" />`,
-    `  <meta property="profile:first_name" content="Dan" />`,
-    `  <meta property="profile:last_name" content="Mercede" />`,
+    // Type-scoped properties come from typeScopedMetaTags, the single source
+    // shared with the runtime head hook. Routes with no ogType keep the profile
+    // pair verbatim, holding the homepage block byte-identical to index.html
+    // (guarded by tests/injectRouteMeta.test.ts).
+    ...typeScopedMetaTags(m).add.map(
+      ([prop, content]) => `  <meta property="${prop}" content="${escapeAttr(content)}" />`,
+    ),
     `  <meta name="twitter:card" content="summary_large_image" />`,
     `  <meta name="twitter:site" content="@danmercede" />`,
     `  <meta name="twitter:creator" content="@danmercede" />`,
@@ -703,9 +811,15 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
     graph.push({
       '@type': 'Article',
       '@id': `${canonical}#article`,
-      headline: r.title,
-      description: r.description,
+      // Clean content headline, not the brand-suffixed SEO title.
+      headline: m.headline ?? r.title,
+      // Structured data keeps the full description even when the meta tag is capped.
+      description: m.articleDescription ?? r.description,
       url: canonical,
+      image: new URL(r.ogImagePath, SITE_ORIGIN).toString(),
+      ...(m.datePublished
+        ? { datePublished: m.datePublished, dateModified: m.datePublished }
+        : {}),
       author: { '@id': PERSON_ID },
       publisher: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },

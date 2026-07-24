@@ -14,6 +14,7 @@ import {
   thoughtMeta,
   guideMeta,
   diagramMeta,
+  typeScopedMetaTags,
   type RouteMeta,
   SITE_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
@@ -952,6 +953,18 @@ const upsertMetaByProperty = (property: string, content: string) => {
   tag.setAttribute("content", content);
 };
 
+// Remove a meta tag outright. Deliberately NOT built on ensureSingleHeadTag,
+// which creates-if-missing (the opposite of what removal needs). Required
+// because og:type-scoped properties must be stripped, not merely overwritten,
+// when a client-side navigation changes the route's type: a guide -> homepage
+// nav that only rewrote og:type would strand the guide's article:* tags.
+// querySelectorAll returns a static NodeList, so removing during iteration is safe.
+const removeMetaByProperty = (property: string) => {
+  document.head
+    .querySelectorAll(`meta[property="${property}"]`)
+    .forEach((tag) => tag.remove());
+};
+
 const upsertCanonical = (href: string) => {
   const tag = ensureSingleHeadTag(`link[rel="canonical"]`, () => {
     const link = document.createElement("link");
@@ -966,7 +979,9 @@ const upsertCanonical = (href: string) => {
 // pass an explicit override. og:type/site_name/image and the rendered tag set
 // are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
 // crawler-facing static head agree.
-type PageMetaOverride = Partial<Pick<RouteMeta, 'title' | 'description' | 'ogImage'>>;
+type PageMetaOverride = Partial<
+  Pick<RouteMeta, 'title' | 'description' | 'ogImage' | 'ogType' | 'datePublished'>
+>;
 
 const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) => {
   const { pathname } = useLocation();
@@ -974,6 +989,8 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
   const overrideTitle = override?.title;
   const overrideDescription = override?.description;
   const overrideOgImage = override?.ogImage;
+  const overrideOgType = override?.ogType;
+  const overrideDatePublished = override?.datePublished;
 
   useEffect(() => {
     // Normalize trailing slashes (except root) so /about and /about/ resolve the
@@ -983,6 +1000,11 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     const title = overrideTitle ?? base.title ?? DEFAULT_TITLE;
     const description = overrideDescription ?? base.description ?? DEFAULT_META_DESCRIPTION;
     const ogImagePath = overrideOgImage ?? base.ogImage ?? DEFAULT_OG_IMAGE_PATH;
+    // Mirrors seoMeta.renderSeoBlock: article-shaped routes (guides) declare
+    // og:type=article, everything else stays profile. Kept in lockstep so the
+    // hydrated head does not drift from the crawler-facing static head.
+    const ogType = overrideOgType ?? base.ogType ?? "profile";
+    const datePublished = overrideDatePublished ?? base.datePublished;
     const canonicalUrl = new URL(normalizedPath || "/", SITE_ORIGIN).toString();
     const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
 
@@ -990,12 +1012,22 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     upsertMetaByName("description", description);
     upsertCanonical(canonicalUrl);
 
-    upsertMetaByProperty("og:type", "profile");
+    upsertMetaByProperty("og:type", ogType);
     upsertMetaByProperty("og:site_name", "Dan Mercede");
     upsertMetaByProperty("og:title", title);
     upsertMetaByProperty("og:description", description);
     upsertMetaByProperty("og:url", canonicalUrl);
     upsertMetaByProperty("og:image", ogImageUrl);
+
+    // Type-scoped properties, from the SAME helper the static renderer uses, so
+    // the hydrated head and the served head cannot disagree. Remove before add:
+    // the sets are disjoint today, but this order stays correct if they overlap.
+    const { add: typeScopedAdd, remove: typeScopedRemove } = typeScopedMetaTags({
+      ogType,
+      datePublished,
+    });
+    typeScopedRemove.forEach(removeMetaByProperty);
+    typeScopedAdd.forEach(([prop, content]) => upsertMetaByProperty(prop, content));
 
     upsertMetaByName("twitter:card", "summary_large_image");
     upsertMetaByName("twitter:site", "@danmercede");
@@ -1010,7 +1042,15 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
       "robots",
       noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
     );
-  }, [pathname, overrideTitle, overrideDescription, overrideOgImage, noindex]);
+  }, [
+    pathname,
+    overrideTitle,
+    overrideDescription,
+    overrideOgImage,
+    overrideOgType,
+    overrideDatePublished,
+    noindex,
+  ]);
 };
 
 const ResourcesPage = () => {
