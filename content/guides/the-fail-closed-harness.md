@@ -17,7 +17,7 @@ Not one of those is a wall. Every one is a speed bump that a deliberate, explici
 
 **Who this is for:** engineers building or operating an agent harness who have read the concept pieces, named the guardrails box on the diagram, and now need the guardrails box to actually hold.
 
-![Three capabilities converging inside one agent session: untrusted input, access to secrets or a production system, and a destructive or external action. When all three are present at once, the session needs supervision or a reliable validation step before a consequential action.](/assets/guides/fail-closed-harness/three-leg-refusal.webp "The three-leg convergence: untrusted input, sensitive access, and a consequential action in one session.")
+![Three agent capabilities, untrusted input, sensitive access, and consequential action, converge on a central supervision control, showing that a session holding all three requires supervision or reliable validation.](/assets/guides/fail-closed-harness/three-leg-refusal.webp "One session, three capabilities, with supervision at their convergence.")
 
 ---
 
@@ -59,7 +59,7 @@ The two framings differ on one leg. Willison's trifecta draws its third capabili
 
 Two clarifications keep this from being read too simply. First, leg (B) is broad. A force-push against a repository that matters is already access to a sensitive system, so that example usually implicates (A), (B), and (C) together rather than being a clean two-leg case. (A) plus (C) is genuinely lower risk only when the target is disposable. Second, the rule does not say that any two of three is safe, and Willison pushed back on exactly that reading. Two legs means lower blast radius, not immunity. Three legs means you need supervision or a reliable validation step before the action, which is not always the same as refusing it outright.
 
-![The Rule of Two as three legs. Leg A is untrusted input, leg B is sensitive or production access, leg C is any consequential output, including destructive or irreversible state-change and not only external communication. Holding all three legs at once is the condition that demands supervision or validation before acting.](/assets/guides/fail-closed-harness/rule-of-two-extended.webp "Meta's Rule of Two, with leg C read at its word: destructive state-change, not only exfiltration.")
+![Meta's Rule of Two shown as three architectural pillars: untrusted input, sensitive access, and the wider third leg of changing state or communicating externally. Leg C branches into data leaving and state changing, while the closing line warns that two legs lower risk but do not certify safety.](/assets/guides/fail-closed-harness/rule-of-two-extended.webp "The Rule of Two, with leg C read at its word and two legs treated as lower risk rather than safe.")
 
 ## How do you make refusal a property and not a prompt?
 
@@ -73,7 +73,7 @@ The failure mode is the other half. A gate is fail-closed only if the gate break
 
 Every other non-zero exit, including an unhandled crash, is treated as a non-blocking error and the action proceeds. That failure is not silent; the transcript carries a hook-error notice. But a notice after the fact is not a block, and it arrives when the command has already run. So a gate that throws on an input it did not anticipate fails open on exactly the weird input most likely to be an attack. Write the gate so its own error path exits blocking, and test that path, not just the happy one.
 
-![A decision flow for a destructive-command matcher. A command enters, the matcher checks it against known destructive shapes, an unmatched command continues to the normal controls, a matched command raises an explicit decision requiring a trusted authorization, and any internal error in the matcher itself exits on the blocking path rather than allowing the command.](/assets/guides/fail-closed-harness/gate-decision-flow.webp "The matcher's decision flow. An unmatched command is not a safe command, it is an unmatched one.")
+![A destructive-command tripwire checks a command for a known bad shape. A non-match continues to normal controls, while a match stops for a human decision. A separate error panel contrasts the current non-blocking failure path, which continues with a visible hook error, against a target blocking path that stops the command.](/assets/guides/fail-closed-harness/gate-decision-flow.webp "A tripwire is not a wall: current fail-open behavior contrasted with the target blocking path.")
 
 Then there is the override, and here I will be exact rather than flattering. What clears the block in my own setup today is an environment variable the operator sets. That is a weaker thing than it sounds: an environment variable is not authentication, it is not bound to the specific command, it is not single-use, and it leaves no audit trail. Those four properties are what an override should have, and naming the gap is more useful than implying it is closed. An override the model can set for itself is the permission prompt again in a different hat.
 
@@ -97,7 +97,7 @@ Fail-closed has a cost, and pretending otherwise is how you end up switching it 
 
 There is a market reason this matters, not only a safety one. The labs are bundling their own harnesses, Claude Code and Codex ship with the model, and third-party harnesses like LangChain's Deep Agents and Pydantic AI's Harness are racing them on capability. [LangChain showed](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering) how much capability lives in the harness rather than the weights: tuning only the harness moved their coding agent 13.7 points, from 52.8 to 66.5 on Terminal Bench 2.0, with the model held fixed. [Boris Cherny](https://x.com/bcherny/status/2007179832300581177), who built Claude Code, makes the capability case in one line, that giving an agent a way to verify its work "will 2-3x the quality of the final result." The safety case is the same move pointed the other way: check before a consequential action, and refuse while the check is unsatisfied. I have not seen that lane claimed yet.
 
-![Four control types, sorted by kind rather than counted. Three required gates that block until a check is satisfied: a first-touch fact gate and a stop-and-review gate, both declaration gates that record a statement without verifying it, and a secret scan, an evidence gate that reads the diff itself. Set apart below them is a destructive-command matcher, a tripwire that raises a decision and is fail-open by construction.](/assets/guides/fail-closed-harness/layered-enforcement-stack.webp "Three gates and a tripwire. Count the kinds, not the controls.")
+![Three required gates, first-touch declaration, secret scan, and stop plus review, share a default-refuse enforcement spine. A destructive-command matcher sits outside that spine as a separate tripwire that asks on a known match but fails open on an internal error.](/assets/guides/fail-closed-harness/layered-enforcement-stack.webp "Three required gates and one advisory tripwire, separated by role and default.")
 
 ## What are you actually shipping when you ship a harness?
 
