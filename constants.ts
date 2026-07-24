@@ -737,6 +737,7 @@ export const GUIDE_LENSES = [
       'why-agent-code-needs-layered-review',
       'verifier-abstention-not-refutation',
       'agent-built-infrastructure-you-can-trust',
+      'the-fail-closed-harness',
     ] as readonly string[],
   },
   {
@@ -747,6 +748,7 @@ export const GUIDE_LENSES = [
       'governed-double-send-safe-delivery',
       'self-hosting-websites-and-apps',
       'agent-built-infrastructure-you-can-trust',
+      'the-fail-closed-harness',
     ] as readonly string[],
   },
 ] as const;
