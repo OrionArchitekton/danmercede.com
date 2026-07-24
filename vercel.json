@@ -100,6 +100,11 @@
       "permanent": true
     },
     {
+      "source": "/works/standing-questions",
+      "destination": "/works/standing-questions/",
+      "permanent": true
+    },
+    {
       "source": "/rss.xml",
       "destination": "/feed.xml",
       "permanent": true
@@ -166,6 +171,14 @@
     {
       "source": "/works/proctor/:path*",
       "destination": "https://proctor-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/standing-questions/",
+      "destination": "https://standing-questions-site.vercel.app/"
+    },
+    {
+      "source": "/works/standing-questions/:path*",
+      "destination": "https://standing-questions-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",
