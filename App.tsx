@@ -966,7 +966,7 @@ const upsertCanonical = (href: string) => {
 // pass an explicit override. og:type/site_name/image and the rendered tag set
 // are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
 // crawler-facing static head agree.
-type PageMetaOverride = Partial<Pick<RouteMeta, 'title' | 'description' | 'ogImage'>>;
+type PageMetaOverride = Partial<Pick<RouteMeta, 'title' | 'description' | 'ogImage' | 'ogType'>>;
 
 const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) => {
   const { pathname } = useLocation();
@@ -974,6 +974,7 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
   const overrideTitle = override?.title;
   const overrideDescription = override?.description;
   const overrideOgImage = override?.ogImage;
+  const overrideOgType = override?.ogType;
 
   useEffect(() => {
     // Normalize trailing slashes (except root) so /about and /about/ resolve the
@@ -983,6 +984,10 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     const title = overrideTitle ?? base.title ?? DEFAULT_TITLE;
     const description = overrideDescription ?? base.description ?? DEFAULT_META_DESCRIPTION;
     const ogImagePath = overrideOgImage ?? base.ogImage ?? DEFAULT_OG_IMAGE_PATH;
+    // Mirrors seoMeta.renderSeoBlock: article-shaped routes (guides) declare
+    // og:type=article, everything else stays profile. Kept in lockstep so the
+    // hydrated head does not drift from the crawler-facing static head.
+    const ogType = overrideOgType ?? base.ogType ?? "profile";
     const canonicalUrl = new URL(normalizedPath || "/", SITE_ORIGIN).toString();
     const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
 
@@ -990,7 +995,7 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     upsertMetaByName("description", description);
     upsertCanonical(canonicalUrl);
 
-    upsertMetaByProperty("og:type", "profile");
+    upsertMetaByProperty("og:type", ogType);
     upsertMetaByProperty("og:site_name", "Dan Mercede");
     upsertMetaByProperty("og:title", title);
     upsertMetaByProperty("og:description", description);
@@ -1010,7 +1015,7 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
       "robots",
       noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
     );
-  }, [pathname, overrideTitle, overrideDescription, overrideOgImage, noindex]);
+  }, [pathname, overrideTitle, overrideDescription, overrideOgImage, overrideOgType, noindex]);
 };
 
 const ResourcesPage = () => {
