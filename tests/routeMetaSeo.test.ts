@@ -17,6 +17,8 @@ import {
   guidePaths,
   thoughtMeta,
   thoughtPaths,
+  caseStudyMeta,
+  caseStudyPaths,
   renderSeoBlock,
   renderRouteJsonLd,
   truncateForMeta,
@@ -268,6 +270,60 @@ test('every thought meta description is within the SERP display cap', () => {
       (description ?? '').length <= META_DESCRIPTION_MAX,
       `"${slug}" description is ${(description ?? '').length} chars`,
     );
+  }
+});
+
+// Case studies are the third article-shaped detail family. They carry no date,
+// so they exercise the dateless branch end to end: og:type=article and an
+// author, but NO article:published_time and no JSON-LD dates.
+const caseStudySlugs = caseStudyPaths().map((p) => p.replace('/case-studies/', ''));
+
+test('a case-study route is an article with an author but no published_time (dateless)', () => {
+  const slug = caseStudySlugs[0];
+  const block = renderSeoBlock(`/case-studies/${slug}`, caseStudyMeta(slug));
+  assert.match(block, /<meta property="og:type" content="article" \/>/);
+  assert.ok(block.includes(`<meta property="article:author" content="${ARTICLE_AUTHOR_URL}" />`));
+  assert.ok(!block.includes('article:published_time'), 'no date exists, so the tag must be omitted');
+  assert.ok(!block.includes('profile:first_name'));
+});
+
+test('a case-study JSON-LD node omits dates but keeps image and the @id backrefs', () => {
+  const slug = caseStudySlugs[0];
+  const art = articleNode(`/case-studies/${slug}`, caseStudyMeta(slug))!;
+  assert.ok(!('datePublished' in art));
+  assert.ok(!('dateModified' in art));
+  assert.match(String(art.image), /^https:\/\//);
+  assert.deepEqual(art.author, { '@id': PERSON_ID });
+});
+
+test('every article-shaped DETAIL route emits og:type=article, and no listing does', () => {
+  // The whole-class invariant this PR establishes: 44 detail routes are
+  // articles; listings and the homepage stay profile.
+  const detail = [
+    ...guidePaths().map((p) => [p, guideMeta(p.replace('/guides/', ''))] as const),
+    ...thoughtPaths().map((p) => [p, thoughtMeta(p.replace('/thoughts/', ''))] as const),
+    ...caseStudyPaths().map((p) => [p, caseStudyMeta(p.replace('/case-studies/', ''))] as const),
+  ];
+  assert.ok(detail.length >= 40, `expected the full detail corpus, got ${detail.length}`);
+  for (const [p, m] of detail) {
+    assert.match(renderSeoBlock(p, m), /<meta property="og:type" content="article" \/>/, `${p}`);
+  }
+  for (const listing of ['/', '/thoughts', '/guides', '/proof']) {
+    const m = ROUTE_META[listing];
+    if (!m) continue;
+    assert.match(
+      renderSeoBlock(listing, m),
+      /<meta property="og:type" content="profile" \/>/,
+      `${listing} is a listing and must stay profile`,
+    );
+  }
+});
+
+test('case-study titles keep their pinned ": Case Study" format', () => {
+  // Deliberately NOT harmonised with guides/thoughts: tests/injectRouteMeta.test.ts
+  // pins this format, and the defect fixed here was og:type, not the title.
+  for (const slug of caseStudySlugs) {
+    assert.match(caseStudyMeta(slug).title, /: Case Study \| Dan Mercede$/);
   }
 });
 

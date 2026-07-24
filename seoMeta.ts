@@ -276,8 +276,16 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     return { title: 'Case Study Not Found | Dan Mercede' };
   }
   return {
+    // The ": Case Study" infix is retained deliberately, unlike guides and
+    // thoughts: tests/injectRouteMeta.test.ts pins this title format, so
+    // changing it is a separate decision from the og:type defect fixed here.
     title: `${study.title}: Case Study | Dan Mercede`,
-    description: study.description,
+    description: truncateForMeta(study.description),
+    articleDescription: study.description,
+    headline: study.title,
+    // CaseStudy carries no date, so the dateless article branch applies:
+    // article:published_time is omitted and the JSON-LD node carries no dates.
+    ogType: 'article',
     schemaType: 'Article',
     body: {
       h1: study.title,
