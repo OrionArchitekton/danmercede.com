@@ -10,15 +10,24 @@
 // Keying it off schemaType would silently flip 48 routes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import {
   guideMeta,
   guidePaths,
+  thoughtMeta,
+  thoughtPaths,
   renderSeoBlock,
   renderRouteJsonLd,
   truncateForMeta,
+  typeScopedMetaTags,
+  ARTICLE_AUTHOR_URL,
+  TYPE_SCOPED_META_PROPS,
   META_DESCRIPTION_MAX,
   ROUTE_META,
 } from '../seoMeta';
+
+const PERSON_ID = 'https://www.danmercede.com/#person';
 
 const slugOf = (routePath: string) => routePath.replace('/guides/', '');
 const guideSlugs = guidePaths().map(slugOf);
@@ -40,7 +49,20 @@ test('a guide route declares og:type=article and carries article:* properties', 
   const block = renderSeoBlock(path, guideMeta(sampleSlug));
   assert.match(block, /<meta property="og:type" content="article" \/>/);
   assert.match(block, /<meta property="article:published_time" content="\d{4}-\d{2}-\d{2}" \/>/);
-  assert.match(block, /<meta property="article:author" content="Dan Mercede" \/>/);
+  assert.ok(
+    block.includes(`<meta property="article:author" content="${ARTICLE_AUTHOR_URL}" />`),
+    'article:author must be the profile URL, not a display name',
+  );
+});
+
+test('article:author is an absolute https URL to a real route that is itself a profile', () => {
+  // Open Graph types article:author as a profile OBJECT, so the value must be a
+  // URL, and the page it points at must itself declare og:type=profile.
+  assert.match(ARTICLE_AUTHOR_URL, /^https:\/\/www\.danmercede\.com\/[a-z-]+$/);
+  const authorPath = new URL(ARTICLE_AUTHOR_URL).pathname;
+  const authorMeta = ROUTE_META[authorPath];
+  assert.ok(authorMeta, `article:author points at ${authorPath}, which is not a known route`);
+  assert.match(renderSeoBlock(authorPath, authorMeta), /<meta property="og:type" content="profile" \/>/);
 });
 
 test('a guide route drops the profile:* pair (incoherent on an article card)', () => {
@@ -66,9 +88,67 @@ test('REGRESSION: a non-guide route with schemaType Article stays og:type=profil
   assert.match(block, /<meta property="og:type" content="profile" \/>/);
 });
 
-test('a route with no ogType (undefined) renders profile without throwing', () => {
+test('a route with no ogType (undefined) renders profile AND keeps the profile:* pair', () => {
   const block = renderSeoBlock('/x', { title: 'X' });
   assert.match(block, /<meta property="og:type" content="profile" \/>/);
+  assert.match(block, /<meta property="profile:first_name" content="Dan" \/>/);
+  assert.match(block, /<meta property="profile:last_name" content="Mercede" \/>/);
+});
+
+// typeScopedMetaTags is the single source shared by renderSeoBlock and the
+// runtime head hook. These assertions are what make the App.tsx half testable:
+// the repo has no DOM harness, so the branch itself is verified here instead.
+test('typeScopedMetaTags: an article route adds article:* and removes profile:*', () => {
+  const { add, remove } = typeScopedMetaTags({ ogType: 'article', datePublished: '2026-01-01' });
+  assert.deepEqual(add, [
+    ['article:published_time', '2026-01-01'],
+    ['article:author', ARTICLE_AUTHOR_URL],
+  ]);
+  assert.deepEqual(remove.sort(), ['profile:first_name', 'profile:last_name']);
+});
+
+test('typeScopedMetaTags: add and remove together cover every type-scoped property', () => {
+  for (const m of [
+    { ogType: 'article' as const, datePublished: '2026-01-01' },
+    { ogType: 'article' as const },
+    {},
+  ]) {
+    const { add, remove } = typeScopedMetaTags(m);
+    const covered = [...add.map(([p]) => p), ...remove].sort();
+    assert.deepEqual(
+      covered,
+      [...TYPE_SCOPED_META_PROPS].sort(),
+      'every type-scoped property must be either emitted or explicitly removed',
+    );
+  }
+});
+
+test('typeScopedMetaTags: a dateless article route removes article:published_time', () => {
+  const { add, remove } = typeScopedMetaTags({ ogType: 'article' });
+  assert.deepEqual(add, [['article:author', ARTICLE_AUTHOR_URL]]);
+  assert.ok(remove.includes('article:published_time'));
+});
+
+test('typeScopedMetaTags: a profile route removes both article:* properties', () => {
+  const { add, remove } = typeScopedMetaTags({});
+  assert.deepEqual(add, [
+    ['profile:first_name', 'Dan'],
+    ['profile:last_name', 'Mercede'],
+  ]);
+  assert.deepEqual(remove.sort(), ['article:author', 'article:published_time']);
+});
+
+test('the runtime head hook consumes the shared helper rather than duplicating the branch', () => {
+  // Guards the drift this PR fixes. There is no DOM harness in this repo, so the
+  // structural guarantee (one branch, not two) is what makes the runtime correct.
+  const app = readFileSync(path.resolve(process.cwd(), 'App.tsx'), 'utf8');
+  assert.match(app, /typeScopedMetaTags\(/, 'App.tsx must call the shared helper');
+  for (const prop of TYPE_SCOPED_META_PROPS) {
+    assert.ok(
+      !app.includes(`"${prop}"`) && !app.includes(`'${prop}'`),
+      `App.tsx must not hardcode ${prop}; it belongs to typeScopedMetaTags`,
+    );
+  }
 });
 
 test('guide titles drop the redundant ": Guide" infix', () => {
@@ -141,4 +221,62 @@ test('truncateForMeta still caps when there is no usable word boundary', () => {
   const out = truncateForMeta('x'.repeat(200), 40);
   assert.ok(out.length <= 40, `got ${out.length} chars`);
   assert.ok(out.endsWith('...'));
+});
+
+test('truncateForMeta handles caps below the ellipsis length', () => {
+  // Regression: slice(0, max - 3) takes a NEGATIVE index for max < 3 and
+  // returned nearly the whole string plus '...', i.e. LONGER than the cap.
+  assert.equal(truncateForMeta('abcdef', 0), '');
+  assert.equal(truncateForMeta('abcdef', 2), 'ab');
+  for (let max = 0; max <= 5; max += 1) {
+    const out = truncateForMeta('x'.repeat(200), max);
+    assert.ok(out.length <= Math.max(max, 0), `max=${max} produced ${out.length} chars`);
+  }
+});
+
+test('an Article route with no datePublished omits both date fields but keeps image and author', () => {
+  const art = articleNode('/x', { title: 'X', description: 'd', schemaType: 'Article' })!;
+  assert.ok(!('datePublished' in art), 'datePublished must be omitted when unknown');
+  assert.ok(!('dateModified' in art), 'dateModified must be omitted when unknown');
+  assert.match(String(art.image), /^https:\/\//);
+  assert.deepEqual(art.author, { '@id': PERSON_ID });
+  assert.deepEqual(art.publisher, { '@id': PERSON_ID });
+});
+
+// /thoughts/<slug> detail pages are article-shaped too. They were left on
+// og:type=profile by the first pass, which is 33 of the 42 article routes.
+const thoughtSlugs = thoughtPaths().map((p) => p.replace('/thoughts/', ''));
+
+test('a thought route declares og:type=article with a date and the profile-URL author', () => {
+  const slug = thoughtSlugs[0];
+  const block = renderSeoBlock(`/thoughts/${slug}`, thoughtMeta(slug));
+  assert.match(block, /<meta property="og:type" content="article" \/>/);
+  assert.match(block, /<meta property="article:published_time" content="\d{4}-\d{2}-\d{2}" \/>/);
+  assert.ok(block.includes(`<meta property="article:author" content="${ARTICLE_AUTHOR_URL}" />`));
+});
+
+test('a thought route drops the profile:* pair', () => {
+  const block = renderSeoBlock(`/thoughts/${thoughtSlugs[0]}`, thoughtMeta(thoughtSlugs[0]));
+  assert.ok(!block.includes('profile:first_name'));
+  assert.ok(!block.includes('profile:last_name'));
+});
+
+test('every thought meta description is within the SERP display cap', () => {
+  for (const slug of thoughtSlugs) {
+    const { description } = thoughtMeta(slug);
+    assert.ok(
+      (description ?? '').length <= META_DESCRIPTION_MAX,
+      `"${slug}" description is ${(description ?? '').length} chars`,
+    );
+  }
+});
+
+test('thought titles drop the ": Thought" infix and keep the full text in JSON-LD', () => {
+  for (const slug of thoughtSlugs) {
+    const m = thoughtMeta(slug) as ReturnType<typeof thoughtMeta> & { articleDescription?: string };
+    assert.ok(!m.title.includes(': Thought |'), `"${slug}" still carries the ": Thought" infix`);
+    assert.ok(m.title.endsWith(' | Dan Mercede'));
+    const art = articleNode(`/thoughts/${slug}`, m)!;
+    assert.equal(art.description, m.articleDescription);
+  }
 });

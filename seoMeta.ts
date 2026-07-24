@@ -341,9 +341,17 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
   }
   const paragraphs = bodyToParagraphs(thought.body);
   return {
-    title: `${thought.title}: Thought | Dan Mercede`,
-    // The preview (substrate `claim`) is the thesis, the ideal meta description.
-    description: thought.preview,
+    // No ": Thought" infix: the kind is already carried by the /thoughts/ path
+    // and the Article schema, and the redundant token only eats title budget.
+    title: `${thought.title} | Dan Mercede`,
+    // The preview (substrate `claim`) is the thesis, the ideal meta description,
+    // but most previews exceed the SERP display cap. The tag is truncated; the
+    // full text survives on articleDescription and reaches the JSON-LD node.
+    description: truncateForMeta(thought.preview),
+    articleDescription: thought.preview,
+    headline: thought.title,
+    ogType: 'article',
+    datePublished: thought.date,
     schemaType: 'Article',
     body: {
       h1: thought.title,
@@ -580,6 +588,11 @@ export const META_DESCRIPTION_MAX = 160;
 export function truncateForMeta(text: string, max: number = META_DESCRIPTION_MAX): string {
   const s = text.trim().replace(/\s+/g, ' ');
   if (s.length <= max) return s;
+  // Caps below the ellipsis length need their own branch: s.slice(0, max - 3)
+  // takes a NEGATIVE index for max < 3 and would return nearly the whole string
+  // before appending '...', producing output LONGER than the cap.
+  if (max <= 0) return '';
+  if (max < 3) return s.slice(0, max);
   const cut = s.slice(0, max - 3);
   const lastSpace = cut.lastIndexOf(' ');
   // Only honour the word boundary if it is not absurdly early (a single very
@@ -594,6 +607,49 @@ function escapeAttr(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// article:author is spec-typed by Open Graph as a `profile` OBJECT, not a display
+// name, so it must be the URL of a page that itself declares og:type=profile.
+// /about is that page (ProfilePage schema, profile:* pair, prerendered, sitemapped).
+// Derived from SITE_ORIGIN so it cannot drift from the canonical origin. Note this
+// is deliberately NOT PERSON_ID: that is a JSON-LD @id whose #fragment is never
+// sent to a server, so any consumer dereferencing it lands on the homepage.
+export const ARTICLE_AUTHOR_URL = new URL('/about', SITE_ORIGIN).toString();
+
+// The COMPLETE set of og:type-scoped properties. Anything listed here is either
+// emitted or explicitly removed, never left stranded.
+export const TYPE_SCOPED_META_PROPS = [
+  'article:published_time',
+  'article:author',
+  'profile:first_name',
+  'profile:last_name',
+] as const;
+
+// Single source of truth for which meta properties belong to which og:type,
+// shared by the static renderer (renderSeoBlock) and the runtime head hook
+// (usePageMeta in App.tsx). Duplicating this branch is exactly what let the
+// hydrated head drift from the served head on client-side navigation: og:type
+// flipped while the other type's properties stayed behind. Returning both the
+// ADD set and the REMOVE set means a property added here is automatically
+// stripped on the branch that does not emit it.
+export function typeScopedMetaTags(
+  m: Pick<RouteMeta, 'ogType' | 'datePublished'>,
+): { add: [string, string][]; remove: string[] } {
+  const add: [string, string][] =
+    m.ogType === 'article'
+      ? [
+          ...(m.datePublished
+            ? ([['article:published_time', m.datePublished]] as [string, string][])
+            : []),
+          ['article:author', ARTICLE_AUTHOR_URL],
+        ]
+      : [
+          ['profile:first_name', 'Dan'],
+          ['profile:last_name', 'Mercede'],
+        ];
+  const added = new Set(add.map(([prop]) => prop));
+  return { add, remove: TYPE_SCOPED_META_PROPS.filter((p) => !added.has(p)) };
 }
 
 // Render the static <head> SEO tag block for a route. Deterministic; never
@@ -626,21 +682,13 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     `  <meta property="og:image:width" content="1200" />`,
     `  <meta property="og:image:height" content="630" />`,
     `  <meta property="og:image:alt" content="${alt}" />`,
-    // profile:* are og:type=profile properties and are incoherent on an article
-    // card; article routes carry article:* instead. Routes that set no ogType
-    // keep the profile pair verbatim, which is what holds the homepage block
-    // byte-identical to index.html (guarded by tests/injectRouteMeta.test.ts).
-    ...(m.ogType === 'article'
-      ? [
-          ...(m.datePublished
-            ? [`  <meta property="article:published_time" content="${escapeAttr(m.datePublished)}" />`]
-            : []),
-          `  <meta property="article:author" content="Dan Mercede" />`,
-        ]
-      : [
-          `  <meta property="profile:first_name" content="Dan" />`,
-          `  <meta property="profile:last_name" content="Mercede" />`,
-        ]),
+    // Type-scoped properties come from typeScopedMetaTags, the single source
+    // shared with the runtime head hook. Routes with no ogType keep the profile
+    // pair verbatim, holding the homepage block byte-identical to index.html
+    // (guarded by tests/injectRouteMeta.test.ts).
+    ...typeScopedMetaTags(m).add.map(
+      ([prop, content]) => `  <meta property="${prop}" content="${escapeAttr(content)}" />`,
+    ),
     `  <meta name="twitter:card" content="summary_large_image" />`,
     `  <meta name="twitter:site" content="@danmercede" />`,
     `  <meta name="twitter:creator" content="@danmercede" />`,
