@@ -105,6 +105,41 @@
       "permanent": true
     },
     {
+      "source": "/works/whisperways",
+      "destination": "/works/whisperways/",
+      "permanent": true
+    },
+    {
+      "source": "/works/notary",
+      "destination": "/works/notary/",
+      "permanent": true
+    },
+    {
+      "source": "/works/codex-rule-ledger",
+      "destination": "/works/codex-rule-ledger/",
+      "permanent": true
+    },
+    {
+      "source": "/works/engram",
+      "destination": "/works/engram/",
+      "permanent": true
+    },
+    {
+      "source": "/works/algorithm-reviews",
+      "destination": "/works/algorithm-reviews/",
+      "permanent": true
+    },
+    {
+      "source": "/works/quorum",
+      "destination": "/works/quorum/",
+      "permanent": true
+    },
+    {
+      "source": "/works/plainspeak",
+      "destination": "/works/plainspeak/",
+      "permanent": true
+    },
+    {
       "source": "/rss.xml",
       "destination": "/feed.xml",
       "permanent": true
@@ -179,6 +214,62 @@
     {
       "source": "/works/standing-questions/:path*",
       "destination": "https://standing-questions-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/whisperways/",
+      "destination": "https://whisperways-site.vercel.app/"
+    },
+    {
+      "source": "/works/whisperways/:path*",
+      "destination": "https://whisperways-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/notary/",
+      "destination": "https://notary-site-kappa.vercel.app/"
+    },
+    {
+      "source": "/works/notary/:path*",
+      "destination": "https://notary-site-kappa.vercel.app/:path*"
+    },
+    {
+      "source": "/works/codex-rule-ledger/",
+      "destination": "https://codex-rule-ledger-site.vercel.app/"
+    },
+    {
+      "source": "/works/codex-rule-ledger/:path*",
+      "destination": "https://codex-rule-ledger-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/engram/",
+      "destination": "https://engram-site-psi.vercel.app/"
+    },
+    {
+      "source": "/works/engram/:path*",
+      "destination": "https://engram-site-psi.vercel.app/:path*"
+    },
+    {
+      "source": "/works/algorithm-reviews/",
+      "destination": "https://algorithm-reviews-site.vercel.app/"
+    },
+    {
+      "source": "/works/algorithm-reviews/:path*",
+      "destination": "https://algorithm-reviews-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/quorum/",
+      "destination": "https://quorum-site.vercel.app/"
+    },
+    {
+      "source": "/works/quorum/:path*",
+      "destination": "https://quorum-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/plainspeak/",
+      "destination": "https://plainspeak-site.vercel.app/"
+    },
+    {
+      "source": "/works/plainspeak/:path*",
+      "destination": "https://plainspeak-site.vercel.app/:path*"
     },
     {
       "source": "/(.*)",
