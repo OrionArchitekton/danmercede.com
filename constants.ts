@@ -576,6 +576,18 @@ export const WORKS: Work[] = [
     slug: 'proctor',
   },
   {
+    title: 'Standing Questions',
+    description:
+      'Turn one natural-language question about a live data stream into a living chart. A durable Trigger.dev agent re-evaluates the question on a schedule, and when a deterministic delta rule fires it reopens the thread with a visual before/after card. The model never touches the database: it emits a JSON plan that a deterministic SQL gate validates (a single SELECT over allowlisted tables) before anything runs. Built for the ClickHouse x Trigger.dev Virtual Summer Hackathon 2026.',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/standing-questions',
+    link: 'https://www.danmercede.com/works/standing-questions/',
+    video: 'https://youtu.be/2oMPTFokXws',
+    license: 'MIT',
+    date: '2026-07-24',
+    slug: 'standing-questions',
+  },
+  {
     title: 'Impact Lens',
     description:
       "Blast-radius and change-impact analysis for code, 'what does changing this break, and what must I re-test?', built as a GitLab Duo Agent Platform skill and flow over the GitLab Orbit knowledge graph, and published to the GitLab AI Catalog. Built for the GitLab Transcend Hackathon (Showcase Track).",
