@@ -110,6 +110,11 @@
       "permanent": true
     },
     {
+      "source": "/works/invisible-hand",
+      "destination": "/works/invisible-hand/",
+      "permanent": true
+    },
+    {
       "source": "/works/notary",
       "destination": "/works/notary/",
       "permanent": true
@@ -222,6 +227,14 @@
     {
       "source": "/works/whisperways/:path*",
       "destination": "https://whisperways-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/invisible-hand/",
+      "destination": "https://invisible-hand-site.vercel.app/"
+    },
+    {
+      "source": "/works/invisible-hand/:path*",
+      "destination": "https://invisible-hand-site.vercel.app/:path*"
     },
     {
       "source": "/works/notary/",

@@ -669,6 +669,18 @@ export const WORKS: Work[] = [
     date: '2026-07-19',
     slug: 'standing-questions',
   },
+  {
+    title: 'Invisible Hand',
+    description:
+      'An agent economy where real on-chain settlement, not a simulated score, decides which AI agents survive and breed. Seller-agents earn Base Sepolia testnet USDC behind x402 paywalls, adversarial buyer-verifiers cross-check every answer against the live source, cumulative net profit is fitness, insolvency delists to HTTP 410, and profitable sellers breed through a six-rule fail-closed guild gate. The frozen run produced 731 on-chain settlements and an honest headline: generation 1 reached 6.9x the unit economics of generation 0 while verified accuracy declined, reward hacking the market caught itself and reported receipt-true. Built solo in one day at SwarmHack SF.',
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/invisible-hand',
+    link: 'https://www.danmercede.com/works/invisible-hand/',
+    video: 'https://youtu.be/XA3-3MLTkAM',
+    license: 'MIT',
+    date: '2026-07-24',
+    slug: 'invisible-hand',
+  },
 ];
 
 export { THOUGHTS };
