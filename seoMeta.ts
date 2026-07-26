@@ -187,6 +187,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         'Build, open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
         'Selected essays point to the doctrine behind the build; the full archive lives at /thoughts.',
         WORKS_HUB.availability,
+        WORKS_HUB.pilot,
       ],
       links: worksBodyLinks(),
     },
