@@ -1570,26 +1570,29 @@ const ThoughtsPage = () => {
             view the count <p> below is empty and contributes no box, so this must carry the
             full gap (mb-12) to leave that view's rhythm exactly as it was before search existed. */}
         <div className={`grid gap-5 md:grid-cols-[1fr_22rem] md:items-center ${isLaneGroupedView ? 'mb-12' : 'mb-6'}`}>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter essays by substrate category">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded text-sm font-mono uppercase tracking-widest transition-all ${
-                  activeCategory === cat
-                    ? 'bg-copper-500/20 text-copper-400 border border-copper-500/40'
-                    : 'bg-slate-900/40 text-slate-400 border border-white/5 hover:border-copper-500/30 hover:text-slate-300'
-                }`}
+                type="button"
+                aria-pressed={activeCategory === cat}
+                className={
+                  'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' +
+                  (activeCategory === cat
+                    ? 'border-copper-500 bg-copper-500 text-slate-950'
+                    : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')
+                }
               >
                 {cat === 'all' ? 'All lanes' : cat}
               </button>
             ))}
           </div>
-          <label className="flex h-12 items-center gap-3 rounded border border-white/10 bg-slate-900/40 px-4 focus-within:border-copper-500/50">
+          <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
             {/* The kbd hint is aria-hidden: an implicit label concatenates its whole subtree
                 into the control's accessible name, which otherwise reads "Search essays /". */}
             <span className="sr-only">Search essays. Press slash to focus.</span>
-            <Search className="w-4 h-4 text-copper-400" aria-hidden="true" />
+            <Search size={17} className="text-copper-400" aria-hidden="true" />
             <input
               ref={searchRef}
               type="search"
@@ -1847,7 +1850,7 @@ const GuidesPage = () => {
           </div>
           <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
             <span className="sr-only">Search guides</span>
-            <FileText size={17} className="text-copper-400" aria-hidden="true" />
+            <Search size={17} className="text-copper-400" aria-hidden="true" />
             <input
               ref={searchRef}
               type="search"

@@ -85,3 +85,62 @@ test('the /guides hero theme tile counts curated lenses, not guide categories', 
     'a curated lens with no guides would inflate the hero Themes count',
   );
 });
+
+// ---------------------------------------------------------------------------
+// Index control parity (/thoughts and /guides).
+//
+// Both index pages carry the same two affordances: a search box and a row of
+// filter pills. They were implemented independently and drifted, /guides at h-14
+// with square corners and a FileText icon, /thoughts at h-12 with rounded corners
+// and a Search icon, plus two different pill treatments. Same affordance, two
+// visual languages. These assertions pin them to ONE spec.
+//
+// Source-level because the repo has no React harness (tests/routeCoverage.test.ts).
+// If a third index adopts these controls, prefer extracting a shared component
+// over widening these regexes.
+// ---------------------------------------------------------------------------
+
+const appTsx = () =>
+  fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'App.tsx'), 'utf8');
+
+test('both index search boxes use one identical shell spec', () => {
+  const shells = [...appTsx().matchAll(/<label className="(flex h-\d+[^"]*focus-within:[^"]*)"/g)].map((m) => m[1]);
+  assert.equal(shells.length, 2, `expected exactly 2 index search shells, found ${shells.length}`);
+  assert.equal(
+    shells[0],
+    shells[1],
+    `the /thoughts and /guides search boxes must share one spec.\n  a: ${shells[0]}\n  b: ${shells[1]}`,
+  );
+  // Pin the canonical values so a drift that changes BOTH still fails loudly.
+  assert.match(shells[0], /\bh-14\b/, 'canonical search height is h-14');
+  assert.match(shells[0], /border-white\/15/, 'canonical search border is white/15');
+  assert.ok(!/\brounded\b/.test(shells[0]), 'canonical search box has square corners');
+});
+
+test('both index search boxes use the same icon', () => {
+  const src = appTsx();
+  const icons = [...src.matchAll(/<(\w+) size=\{17\} className="text-copper-400" aria-hidden="true" \/>/g)].map((m) => m[1]);
+  assert.equal(icons.length, 2, `expected 2 search icons, found ${icons.length}`);
+  assert.equal(icons[0], icons[1], 'both index search boxes must use the same icon');
+  assert.equal(icons[0], 'Search', 'the search affordance uses the Search glyph, not a document glyph');
+});
+
+test('both index filter pill rows use one identical spec', () => {
+  const pills = [...appTsx().matchAll(/'(rounded-full border px-4 py-2 font-mono text-\[10px\][^']*)'/g)].map((m) => m[1]);
+  assert.equal(pills.length, 2, `expected exactly 2 index pill rows, found ${pills.length}`);
+  assert.equal(pills[0], pills[1], `the /thoughts and /guides filter pills must share one spec.\n  a: ${pills[0]}\n  b: ${pills[1]}`);
+
+  const src = appTsx();
+  const active = [...src.matchAll(/'(border-copper-500 bg-copper-500 text-slate-950)'/g)];
+  assert.equal(active.length, 2, 'both pill rows must use the same solid-copper active state');
+  assert.equal(
+    (src.match(/aria-pressed=\{/g) || []).length,
+    2,
+    'both pill rows must expose selection state via aria-pressed',
+  );
+  assert.equal(
+    (src.match(/role="group" aria-label="Filter /g) || []).length,
+    2,
+    'both pill rows must be a labelled group, not a bare div of buttons',
+  );
+});
