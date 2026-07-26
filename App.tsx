@@ -5,7 +5,8 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens, GuideLensId, selectThoughts, isLaneGroupedThoughtsView } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId } from './constants';
+import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import {

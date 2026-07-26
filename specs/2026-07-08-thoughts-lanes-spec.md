@@ -53,7 +53,9 @@ guards (the bundle is unchanged). The lane grouping is pure UI over `THOUGHT_LAN
 existing THOUGHTS corpus; no new test harness is introduced.
 
 Search (2026-07-26) is exercised at the same existing `thoughtLanes` seam. The predicate is a
-pure exported function (`thoughtMatchesQuery` / `thoughtSearchText` in `constants.ts`) rather
+pure exported function (`thoughtMatchesQuery` / `thoughtSearchText` / `selectThoughts` /
+`isLaneGroupedThoughtsView` in `thoughtsIndex.ts`, kept out of `constants.ts` which AGENTS.md
+reserves for static site constants) rather
 than inline page state, precisely so it is assertable without a React harness (this repo has
 none, per `tests/routeCoverage.test.ts`). The load-bearing assertion is that an empty query is
 identity over the corpus: that is what guarantees the lane-grouped default view above is

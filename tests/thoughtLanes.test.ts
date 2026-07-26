@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { THOUGHT_LANES, THOUGHTS, thoughtMatchesQuery, thoughtSearchText, selectThoughts, isLaneGroupedThoughtsView } from '../constants';
+import { THOUGHT_LANES, THOUGHTS } from '../constants';
+import { thoughtMatchesQuery, thoughtSearchText, selectThoughts, isLaneGroupedThoughtsView } from '../thoughtsIndex';
 import type { Thought } from '../types';
 
 // Guard the hub-side /thoughts lane curation (THOUGHT_LANES). Lanes hard-code
@@ -111,10 +112,22 @@ test('search does NOT match on body text the card never renders', () => {
   // body must not be findable, or this contract is vacuous.
   const long = THOUGHTS.find((t) => t.body.length > 800);
   assert.ok(long, 'expected at least one substantial essay body to test against');
-  const deepPhrase = long!.body.slice(600, 640).trim();
-  assert.ok(deepPhrase.length > 20, 'expected a usable body phrase');
+
+  // The phrase must be VERIFIED body-only. A fixed slice could legitimately overlap
+  // the preview (previews are often drawn from the opening), which would make this
+  // test fail on a corpus update even though search is behaving correctly.
+  const indexed = thoughtSearchText(long!);
+  let bodyOnlyPhrase: string | undefined;
+  for (let offset = 600; offset + 40 <= long!.body.length; offset += 40) {
+    const candidate = long!.body.slice(offset, offset + 40).trim();
+    if (candidate.length > 20 && !indexed.includes(candidate.toLowerCase())) {
+      bodyOnlyPhrase = candidate;
+      break;
+    }
+  }
+  assert.ok(bodyOnlyPhrase, 'expected to find a phrase present in the body but absent from the indexed text');
   assert.equal(
-    thoughtMatchesQuery(long!, deepPhrase),
+    thoughtMatchesQuery(long!, bodyOnlyPhrase!),
     false,
     'a phrase that appears only in the body must not produce a search hit',
   );

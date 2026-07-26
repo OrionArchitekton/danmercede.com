@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, Thought } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -774,46 +774,6 @@ export const guideMatchesLens = (guide: Guide, lensId: GuideLensId): boolean => 
   return lens.slugs.includes(guide.slug);
 };
 
-// /thoughts index search. Lives here rather than in App.tsx so it is a pure,
-// unit-testable seam: the repo has no React test harness (see
-// tests/routeCoverage.test.ts), so a predicate left inline in the page component
-// would ship with zero coverage. Mirrors guideMatchesLens in shape and intent.
-//
-// The searched fields are exactly the fields the card renders (title, category
-// badge, preview). `body` is deliberately excluded so no result can match on text
-// the reader cannot see; including it would need highlighting to stay honest.
-export const thoughtSearchText = (thought: Thought): string =>
-  [thought.title, thought.category, thought.preview].join(' ').toLowerCase();
-
-export const thoughtMatchesQuery = (thought: Thought, rawQuery: string): boolean => {
-  const needle = rawQuery.trim().toLowerCase();
-  if (!needle) return true;
-  return thoughtSearchText(thought).includes(needle);
-};
-
-// The /thoughts index result set: category AND query composed. Extracted so the
-// COMPOSITION is testable, not just the single-thought predicate. Without this seam
-// the only wiring between the tested predicate and the rendered grid is one argument
-// inside ThoughtsPage, and (verified by an adversarial reviewer) that argument can be
-// replaced with a constant while all tests stay green, silently turning search into a
-// no-op. A source-level assertion in tests/thoughtLanes.test.ts pins the call site,
-// since this repo has no React harness to assert the render itself.
-export const selectThoughts = (
-  thoughts: readonly Thought[],
-  activeCategory: string,
-  rawQuery: string,
-): Thought[] =>
-  thoughts.filter(
-    (thought) =>
-      (activeCategory === 'all' || thought.category === activeCategory) &&
-      thoughtMatchesQuery(thought, rawQuery),
-  );
-
-// True when the index shows the lane-grouped operating-journal view (AGENTS.md
-// /thoughts doctrine + the lanes spec): the default, and ONLY when neither the
-// category filter nor the search query is narrowing the corpus.
-export const isLaneGroupedThoughtsView = (activeCategory: string, rawQuery: string): boolean =>
-  activeCategory === 'all' && !rawQuery.trim();
 
 // /works dev-hub framing: the single availability CTA, the contact route, and the
 // outbound rail. Copy is operator-tunable. Consumed by BOTH the React WorksPage
