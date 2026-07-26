@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { GUIDES, GUIDE_LENSES, guideMatchesLens } from '../constants';
 
 // ---------------------------------------------------------------------------
@@ -38,4 +41,47 @@ test('"all" matches every guide; curated lenses match exactly their slug lists',
       );
     }
   }
+});
+
+// ---------------------------------------------------------------------------
+// Hero stat rail. There is no React test harness in this repo (see
+// tests/routeCoverage.test.ts), so the tile is guarded at the source level the
+// same way routeCoverage/routeMetaSeo/imageBudget guard their App.tsx contracts.
+//
+// Regression this exists for: the tile rendered `GUIDE_CATEGORY_COUNT` (distinct
+// `guide.category`, 2 values today) under the label "Lanes", a /thoughts concept
+// (THOUGHT_LANES) that does not exist on /guides. The live hero read "Lanes: 2"
+// while GUIDE_LENSES carried 4 ids. Count the axis the page navigates by.
+// ---------------------------------------------------------------------------
+
+test('the /guides hero theme tile counts curated lenses, not guide categories', () => {
+  const appSource = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'App.tsx'),
+    'utf8',
+  );
+
+  assert.ok(
+    !appSource.includes('GUIDE_CATEGORY_COUNT'),
+    'the hero stat rail must not derive a tile from distinct guide.category values',
+  );
+  assert.match(
+    appSource,
+    /const GUIDE_THEME_COUNT = GUIDE_LENSES\.filter\(\(lens\) => lens\.id !== 'all'\)\.length;/,
+    'GUIDE_THEME_COUNT must count curated GUIDE_LENSES (excluding the "all" escape hatch)',
+  );
+  assert.match(
+    appSource,
+    /Themes<\/dt><dd[^>]*>\{GUIDE_THEME_COUNT\}/,
+    'the "Themes" tile must render GUIDE_THEME_COUNT',
+  );
+
+  // The value the tile renders must be the real curated-lens count, and every
+  // curated lens must be reachable from the pills (guidesLenses tests above
+  // already assert none is empty), so the number is never aspirational.
+  const curated = GUIDE_LENSES.filter((lens) => lens.id !== 'all');
+  assert.equal(curated.length, 3, 'curated lens count changed; confirm the hero tile still reads true');
+  assert.ok(
+    curated.every((lens) => lens.slugs.length > 0),
+    'a curated lens with no guides would inflate the hero Themes count',
+  );
 });

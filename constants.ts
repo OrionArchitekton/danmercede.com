@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, Thought } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -772,6 +772,23 @@ export const guideMatchesLens = (guide: Guide, lensId: GuideLensId): boolean => 
   const lens = GUIDE_LENSES.find((candidate) => candidate.id === lensId);
   if (!lens || lens.id === 'all') return true;
   return lens.slugs.includes(guide.slug);
+};
+
+// /thoughts index search. Lives here rather than in App.tsx so it is a pure,
+// unit-testable seam: the repo has no React test harness (see
+// tests/routeCoverage.test.ts), so a predicate left inline in the page component
+// would ship with zero coverage. Mirrors guideMatchesLens in shape and intent.
+//
+// The searched fields are exactly the fields the card renders (title, category
+// badge, preview). `body` is deliberately excluded so no result can match on text
+// the reader cannot see; including it would need highlighting to stay honest.
+export const thoughtSearchText = (thought: Thought): string =>
+  [thought.title, thought.category, thought.preview].join(' ').toLowerCase();
+
+export const thoughtMatchesQuery = (thought: Thought, rawQuery: string): boolean => {
+  const needle = rawQuery.trim().toLowerCase();
+  if (!needle) return true;
+  return thoughtSearchText(thought).includes(needle);
 };
 
 // /works dev-hub framing: the single availability CTA, the contact route, and the
