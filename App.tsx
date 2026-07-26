@@ -1477,7 +1477,8 @@ const WorksPage = () => {
 
         {/* CTA, one action: availability → connect */}
         <div className="mt-20 border-l-2 border-copper-500 pl-6 max-w-2xl">
-          <p className="text-xl text-white mb-6">{WORKS_HUB.availability}</p>
+          <p className="text-xl text-white mb-3">{WORKS_HUB.availability}</p>
+          <p className="text-base text-slate-300 mb-6">{WORKS_HUB.pilot}</p>
           <div className="flex flex-wrap items-center gap-4">
             <Button to={WORKS_HUB.contactHref} variant="primary">Get in touch</Button>
           </div>

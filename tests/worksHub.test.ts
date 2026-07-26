@@ -45,6 +45,30 @@ test('WORKS_HUB carries the single CTA copy + contact/outbound rail', () => {
   assert.equal(WORKS_HUB.signalUrl, 'https://danmercede.online');
 });
 
+// The pilot qualifier sits BESIDE the roles line, it does not replace it. The roles
+// lane is the higher-dollar one; a pilot CTA that overwrites it dilutes both. This
+// test is the guard against a future edit quietly collapsing the two into one.
+test('WORKS_HUB.pilot adds a second qualifier without touching the roles line', () => {
+  assert.equal(
+    WORKS_HUB.availability,
+    'Available for staff/principal AI-systems roles and speaking.',
+    'the roles availability line must stay byte-identical; the pilot line is additive',
+  );
+  assert.ok(
+    typeof WORKS_HUB.pilot === 'string' && WORKS_HUB.pilot.trim().length > 0,
+    'WORKS_HUB.pilot must be non-empty copy',
+  );
+  assert.notEqual(WORKS_HUB.pilot, WORKS_HUB.availability, 'pilot must be distinct copy, not a duplicate');
+  for (const dash of ['—', '–', '―']) {
+    assert.ok(!WORKS_HUB.pilot.includes(dash), `pilot copy must not contain a long dash (${dash})`);
+  }
+});
+
+test('the /works baked body contains the pilot line, so visible and baked cannot drift', () => {
+  const block = renderBodyBlock('/works', ROUTE_META['/works']);
+  assert.ok(block.includes(WORKS_HUB.pilot), 'pilot line baked as crawlable text');
+});
+
 // ---------------------------------------------------------------------------
 // AC3 — the crawler bake carries availability text + featured deep-links + outbound
 // ---------------------------------------------------------------------------
@@ -95,8 +119,14 @@ test('the baked /works featured links carry the resolved TITLES too (parity defe
 });
 
 // AC4 — /works is a pointer, not a library: NO essay bodies leak into the bake.
-test('the /works baked body hosts NO essay bodies (stays a small pointer: lead + 3 framing paragraphs)', () => {
+test('the /works baked body hosts NO essay bodies (stays a small pointer: lead + 3 framing paragraphs + the pilot CTA)', () => {
   const block = renderBodyBlock('/works', ROUTE_META['/works']);
   const paras = (block.match(/<p>/g) || []).length;
-  assert.ok(paras <= 4, `/works must stay a pointer (<=4 <p>), got ${paras} — did an essay body leak in?`);
+  assert.ok(paras <= 5, `/works must stay a pointer (max 5 <p>), got ${paras}. Did an essay body leak in?`);
+  // Raising the count cap for the pilot CTA line would weaken this guard on its own,
+  // because a leaked essay body is ONE very long paragraph and would still pass a count
+  // check. Assert shape as well, so the cap increase cannot mask the hazard the test
+  // actually exists to catch. Longest legitimate paragraph today is 149 chars.
+  const longest = Math.max(0, ...(block.match(/<p>[\s\S]*?<\/p>/g) || []).map((p) => p.length));
+  assert.ok(longest <= 400, `no /works paragraph may run essay-length, longest is ${longest} chars`);
 });

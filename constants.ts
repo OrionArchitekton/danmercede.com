@@ -779,6 +779,10 @@ export const guideMatchesLens = (guide: Guide, lensId: GuideLensId): boolean => 
 // and the crawler bake so the visible and baked renders cannot drift.
 export const WORKS_HUB = {
   availability: 'Available for staff/principal AI-systems roles and speaking.',
+  // Secondary, additive qualifier. Deliberately does NOT replace the roles line:
+  // both lanes stay open and a single CTA that tried to serve both would dilute each.
+  // Describes a deliverable, never a guaranteed outcome.
+  pilot: 'Running agents in production? I do a five-day readout on your own logs: cost per verified success, and what a quality floor would have caught.',
   contactHref: '/connect',
   githubUrl: 'https://github.com/OrionArchitekton',
   signalUrl: 'https://danmercede.online',
