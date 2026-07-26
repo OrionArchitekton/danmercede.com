@@ -27,6 +27,13 @@ voice or bodies. Every existing post is kept.
 - **The substrate category filter is preserved.** The default `All lanes` view is the
   lane grouping; selecting a category (Architecture / Enforcement / Doctrine) switches to a
   flat filtered grid, keeping the documented /thoughts index filter available.
+- **Free-text search is a third trigger for that same flat filtered grid** (added 2026-07-26).
+  A reader can search the corpus by title, category, or preview text; `/` focuses the input.
+  Search and category compose: the flat grid honours both at once, and a result count is
+  announced politely while either is active. The lane-grouped view remains the default and is
+  rendered unchanged whenever the query is empty, so search adds a way in without displacing
+  the operating-journal framing. A query with no matches shows an explicit empty state with a
+  clear-filters affordance, so the reader is never left staring at a blank grid.
 
 ## Constraints / acceptance criteria
 
@@ -44,3 +51,15 @@ voice or bodies. Every existing post is kept.
 Exercised at the existing `routeCoverage` seam (essay links resolve) and the compile/bundle
 guards (the bundle is unchanged). The lane grouping is pure UI over `THOUGHT_LANES` and the
 existing THOUGHTS corpus; no new test harness is introduced.
+
+Search (2026-07-26) is exercised at the same existing `thoughtLanes` seam. The predicate is a
+pure exported function (`thoughtMatchesQuery` / `thoughtSearchText` / `selectThoughts` /
+`isLaneGroupedThoughtsView` in `thoughtsIndex.ts`, kept out of `constants.ts` which AGENTS.md
+reserves for static site constants) rather
+than inline page state, precisely so it is assertable without a React harness (this repo has
+none, per `tests/routeCoverage.test.ts`). The load-bearing assertion is that an empty query is
+identity over the corpus: that is what guarantees the lane-grouped default view above is
+reachable and unchanged. Search scope is deliberately title + category + preview and excludes
+`body`, so no result matches on text the card does not render; that exclusion is itself
+asserted, and adopting body search later should replace the assertion with a result-highlighting
+contract rather than delete it.

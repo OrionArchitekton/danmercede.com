@@ -1049,3 +1049,28 @@ test('no published THOUGHTS body carries a residual [[ wiki-link outside code (l
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// Shipped-array ordering.
+//
+// sortByIsoDateDesc is unit-tested above, but nothing asserted that the COMMITTED
+// constants.generated.ts is actually ordered. Any "newest N" surface built on
+// THOUGHTS.slice(0, n) silently depends on this (the /guides index already does
+// exactly that via FEATURED_GUIDES = GUIDES.slice(0, 3)), so a regenerate that
+// lost the sort would surface arbitrary essays with no test failing.
+//
+// Non-increasing, NOT strictly descending: same-day publishes are legitimate and
+// present today (two entries share 2026-07-13, tie-broken by slug asc).
+// ---------------------------------------------------------------------------
+
+test('shipped THOUGHTS is ordered newest-first (non-increasing publish date)', () => {
+  const dates = THOUGHTS.map((t) => t.date);
+  assert.ok(dates.length > 0, 'THOUGHTS must not be empty');
+  for (let i = 1; i < dates.length; i += 1) {
+    assert.ok(
+      dates[i - 1] >= dates[i],
+      `THOUGHTS out of order at index ${i}: "${dates[i - 1]}" precedes "${dates[i]}". ` +
+        'Regenerate with `node scripts/compileContent.ts` and commit.',
+    );
+  }
+});

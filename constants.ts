@@ -774,6 +774,7 @@ export const guideMatchesLens = (guide: Guide, lensId: GuideLensId): boolean => 
   return lens.slugs.includes(guide.slug);
 };
 
+
 // /works dev-hub framing: the single availability CTA, the contact route, and the
 // outbound rail. Copy is operator-tunable. Consumed by BOTH the React WorksPage
 // and the crawler bake so the visible and baked renders cannot drift.

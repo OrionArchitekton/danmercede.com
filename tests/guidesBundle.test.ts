@@ -31,3 +31,19 @@ test('committed constants.guides.generated.ts matches a fresh compile (no .md/.t
     'constants.guides.generated.ts is stale — run `node scripts/compileGuides.mjs` and commit the result.',
   );
 });
+
+// Twin of the THOUGHTS ordering guard in tests/compileContent.test.ts.
+// FEATURED_GUIDES = GUIDES.slice(0, 3) (App.tsx) treats this array as newest-first
+// with no guard of its own; assert the committed bundle actually is.
+// Non-increasing rather than strictly descending, so a same-day publish is legal.
+test('shipped GUIDES is ordered newest-first (non-increasing publish date)', () => {
+  const dates = GUIDES.map((g) => g.date);
+  assert.ok(dates.length > 0, 'GUIDES must not be empty');
+  for (let i = 1; i < dates.length; i += 1) {
+    assert.ok(
+      dates[i - 1] >= dates[i],
+      `GUIDES out of order at index ${i}: "${dates[i - 1]}" precedes "${dates[i]}". ` +
+        'Regenerate with `node scripts/compileGuides.mjs` and commit.',
+    );
+  }
+});
