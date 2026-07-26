@@ -66,12 +66,12 @@ test('the /guides hero theme tile counts curated lenses, not guide categories', 
   );
   assert.match(
     appSource,
-    /const GUIDE_THEME_COUNT = GUIDE_LENSES\.filter\(\(lens\) => lens\.id !== 'all'\)\.length;/,
+    /GUIDE_THEME_COUNT\s*=\s*GUIDE_LENSES\s*\.filter\([\s\S]{0,80}?!==\s*'all'[\s\S]{0,20}?\)\.length/,
     'GUIDE_THEME_COUNT must count curated GUIDE_LENSES (excluding the "all" escape hatch)',
   );
   assert.match(
     appSource,
-    /Themes<\/dt><dd[^>]*>\{GUIDE_THEME_COUNT\}/,
+    /Themes<\/dt>\s*<dd[^>]*>\s*\{GUIDE_THEME_COUNT\}/,
     'the "Themes" tile must render GUIDE_THEME_COUNT',
   );
 

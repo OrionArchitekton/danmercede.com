@@ -791,6 +791,30 @@ export const thoughtMatchesQuery = (thought: Thought, rawQuery: string): boolean
   return thoughtSearchText(thought).includes(needle);
 };
 
+// The /thoughts index result set: category AND query composed. Extracted so the
+// COMPOSITION is testable, not just the single-thought predicate. Without this seam
+// the only wiring between the tested predicate and the rendered grid is one argument
+// inside ThoughtsPage, and (verified by an adversarial reviewer) that argument can be
+// replaced with a constant while all tests stay green, silently turning search into a
+// no-op. A source-level assertion in tests/thoughtLanes.test.ts pins the call site,
+// since this repo has no React harness to assert the render itself.
+export const selectThoughts = (
+  thoughts: readonly Thought[],
+  activeCategory: string,
+  rawQuery: string,
+): Thought[] =>
+  thoughts.filter(
+    (thought) =>
+      (activeCategory === 'all' || thought.category === activeCategory) &&
+      thoughtMatchesQuery(thought, rawQuery),
+  );
+
+// True when the index shows the lane-grouped operating-journal view (AGENTS.md
+// /thoughts doctrine + the lanes spec): the default, and ONLY when neither the
+// category filter nor the search query is narrowing the corpus.
+export const isLaneGroupedThoughtsView = (activeCategory: string, rawQuery: string): boolean =>
+  activeCategory === 'all' && !rawQuery.trim();
+
 // /works dev-hub framing: the single availability CTA, the contact route, and the
 // outbound rail. Copy is operator-tunable. Consumed by BOTH the React WorksPage
 // and the crawler bake so the visible and baked renders cannot drift.

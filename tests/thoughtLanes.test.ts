@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { THOUGHT_LANES, THOUGHTS, thoughtMatchesQuery, thoughtSearchText } from '../constants';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { THOUGHT_LANES, THOUGHTS, thoughtMatchesQuery, thoughtSearchText, selectThoughts, isLaneGroupedThoughtsView } from '../constants';
 import type { Thought } from '../types';
 
 // Guard the hub-side /thoughts lane curation (THOUGHT_LANES). Lanes hard-code
@@ -121,4 +124,79 @@ test('a query with no corpus match filters everything out (empty-state is reacha
   const nonsense = 'zzzznotarealtermzzzz';
   const hits = THOUGHTS.filter((t) => thoughtMatchesQuery(t, nonsense));
   assert.equal(hits.length, 0, 'the zero-results branch must be reachable');
+});
+
+// ---------------------------------------------------------------------------
+// Index COMPOSITION (category x query) and the call-site wiring.
+//
+// An adversarial reviewer proved the gap these close: with only the
+// single-thought predicate tested, `thoughtMatchesQuery(t, query)` in
+// ThoughtsPage could be replaced by `thoughtMatchesQuery(t, '')` and the whole
+// search feature became a no-op with every test still green. The predicate was
+// covered; the WIRING was not.
+// ---------------------------------------------------------------------------
+
+test('selectThoughts: no category and no query returns the whole corpus', () => {
+  assert.equal(selectThoughts(THOUGHTS, 'all', '').length, THOUGHTS.length);
+  assert.equal(selectThoughts(THOUGHTS, 'all', '   ').length, THOUGHTS.length);
+});
+
+test('selectThoughts: a query narrows the corpus and every hit is explainable', () => {
+  const sample = THOUGHTS[0];
+  const word = sample.title.split(/\s+/).find((w) => w.length > 4)!;
+  const hits = selectThoughts(THOUGHTS, 'all', word);
+  assert.ok(hits.length > 0, 'expected at least one hit');
+  assert.ok(hits.length < THOUGHTS.length, 'a real query must actually narrow the corpus');
+  assert.ok(hits.some((h) => h.slug === sample.slug), 'the essay the term came from must be a hit');
+  for (const h of hits) {
+    assert.ok(thoughtSearchText(h).includes(word.toLowerCase()), `${h.slug} matched invisibly`);
+  }
+});
+
+test('selectThoughts: category and query COMPOSE (neither is ignored)', () => {
+  const sample = THOUGHTS[0];
+  const word = sample.title.split(/\s+/).find((w) => w.length > 4)!;
+  const other = THOUGHTS.find((t) => t.category !== sample.category);
+  assert.ok(other, 'expected at least two categories in the corpus');
+
+  // Same query, restricted to a category the matching essay is NOT in.
+  const crossed = selectThoughts(THOUGHTS, other!.category, word);
+  assert.ok(
+    !crossed.some((t) => t.slug === sample.slug),
+    'category must still constrain when a query is active',
+  );
+  for (const t of crossed) {
+    assert.equal(t.category, other!.category, 'query must not smuggle in other categories');
+  }
+
+  // Same category, with a query that matches nothing: category alone must not win.
+  assert.equal(selectThoughts(THOUGHTS, sample.category, 'zzzznotarealtermzzzz').length, 0);
+});
+
+test('isLaneGroupedThoughtsView: true ONLY when neither filter is narrowing', () => {
+  assert.equal(isLaneGroupedThoughtsView('all', ''), true);
+  assert.equal(isLaneGroupedThoughtsView('all', '   '), true);
+  assert.equal(isLaneGroupedThoughtsView('all', 'gov'), false);
+  assert.equal(isLaneGroupedThoughtsView('Architecture', ''), false);
+  assert.equal(isLaneGroupedThoughtsView('Architecture', 'gov'), false);
+});
+
+test('ThoughtsPage wires the live query/category STATE into both derivations', () => {
+  // No React harness in this repo, so the call site is pinned at the source level
+  // (same technique as the /guides hero tile guard). This is what stops the
+  // predicate being called with a constant while the unit tests stay green.
+  const appSource = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'App.tsx'),
+    'utf8',
+  );
+  assert.match(
+    appSource,
+    /const\s+matchingThoughts\s*=\s*selectThoughts\(\s*THOUGHTS\s*,\s*activeCategory\s*,\s*query\s*\)/,
+    'the rendered grid must be derived from selectThoughts(THOUGHTS, activeCategory, query)',
+  );
+  assert.match(
+    appSource,
+    /const\s+isLaneGroupedView\s*=\s*isLaneGroupedThoughtsView\(\s*activeCategory\s*,\s*query\s*\)/,
+    'the lane-grouped branch must be derived from isLaneGroupedThoughtsView(activeCategory, query)',
+  );
 });

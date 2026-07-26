@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens, GuideLensId, thoughtMatchesQuery } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens, GuideLensId, selectThoughts, isLaneGroupedThoughtsView } from './constants';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import {
@@ -1496,9 +1496,10 @@ const ThoughtsPage = () => {
   // Enforcement / Doctrine) is PRESERVED: selecting a category switches to a flat
   // filtered grid (the documented /thoughts index filter).
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  // Free-text search over the corpus. At 33 essays across only 3 substrate
-  // categories, the default lane holds 25 of them, so the taxonomy alone does not
-  // let a reader find a specific piece. Search is a THIRD trigger for the flat
+  // Free-text search over the corpus. Across only 3 substrate categories, the
+  // default lane holds the large majority of the essays, so the taxonomy alone does
+  // not let a reader find a specific piece. (Stated structurally on purpose: a hard
+  // count here would rot on the next substrate refresh.) Search is a THIRD trigger for the flat
   // filtered grid that the category filter already drives (below): the
   // lane-grouped default view is preserved unchanged whenever the query is empty,
   // which is what keeps the AGENTS.md / lanes-spec contract intact.
@@ -1524,13 +1525,11 @@ const ThoughtsPage = () => {
     return () => window.removeEventListener('keydown', focusSearch);
   }, []);
 
-  // Category and query compose: the flat grid honours both at once.
-  const matchingThoughts = THOUGHTS.filter(
-    (t: Thought) =>
-      (activeCategory === 'all' || t.category === activeCategory) &&
-      thoughtMatchesQuery(t, query),
-  );
-  const isLaneGroupedView = activeCategory === 'all' && !normalizedQuery;
+  // Category and query compose: the flat grid honours both at once. Both derivations
+  // are pure functions in constants.ts so they are unit-testable and the call sites
+  // below are source-asserted (no React harness in this repo).
+  const matchingThoughts = selectThoughts(THOUGHTS, activeCategory, query);
+  const isLaneGroupedView = isLaneGroupedThoughtsView(activeCategory, query);
 
   const renderCard = (thought: Thought, idx: number) => (
     <Link
@@ -1566,7 +1565,10 @@ const ThoughtsPage = () => {
         </p>
 
         {/* Category filter (substrate taxonomy). 'All lanes' shows the lane-grouped view. */}
-        <div className="grid gap-5 mb-6 md:grid-cols-[1fr_22rem] md:items-center">
+        {/* Spacing lives on this row, not on an empty spacer div: in the lane-grouped default
+            view the count <p> below is empty and contributes no box, so this must carry the
+            full gap (mb-12) to leave that view's rhythm exactly as it was before search existed. */}
+        <div className={`grid gap-5 md:grid-cols-[1fr_22rem] md:items-center ${isLaneGroupedView ? 'mb-12' : 'mb-6'}`}>
           <div className="flex flex-wrap gap-3">
             {categories.map((cat) => (
               <button
@@ -1583,7 +1585,9 @@ const ThoughtsPage = () => {
             ))}
           </div>
           <label className="flex h-12 items-center gap-3 rounded border border-white/10 bg-slate-900/40 px-4 focus-within:border-copper-500/50">
-            <span className="sr-only">Search essays</span>
+            {/* The kbd hint is aria-hidden: an implicit label concatenates its whole subtree
+                into the control's accessible name, which otherwise reads "Search essays /". */}
+            <span className="sr-only">Search essays. Press slash to focus.</span>
             <Search className="w-4 h-4 text-copper-400" aria-hidden="true" />
             <input
               ref={searchRef}
@@ -1593,18 +1597,27 @@ const ThoughtsPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
             />
-            <kbd className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
           </label>
         </div>
 
-        {/* Result count only while filtering: the default view is the journal, not a result set. */}
-        {!isLaneGroupedView && (
-          <p className="mb-6 font-mono text-[10px] uppercase tracking-widest text-slate-500" aria-live="polite">
-            {matchingThoughts.length} {matchingThoughts.length === 1 ? 'essay' : 'essays'}
-            {normalizedQuery && ` matching "${query.trim()}"`}
-          </p>
-        )}
-        {isLaneGroupedView && <div className="mb-6" />}
+        {/* Result count. The <p> is mounted UNCONDITIONALLY (only its text is conditional),
+            matching the /guides index: an aria-live region inserted into the DOM in the same
+            commit as its first content is not reliably announced, so a conditionally mounted
+            region silently drops the announcement on the transition OUT of the lane view.
+            Keeping one real box in flow also carries the spacing: an empty <div className="mb-6" />
+            would self-collapse and its margin would collapse with the filter row's, halving the
+            default view's gap rather than preserving it. */}
+        <p
+          className={`font-mono text-[10px] uppercase tracking-widest text-slate-500 ${isLaneGroupedView ? '' : 'mb-6'}`}
+          aria-live="polite"
+        >
+          {isLaneGroupedView
+            ? ''
+            : `${matchingThoughts.length} ${matchingThoughts.length === 1 ? 'essay' : 'essays'}${
+                normalizedQuery ? ` matching "${query.trim()}"` : ''
+              }`}
+        </p>
 
         {isLaneGroupedView ? (
           /* Lane-grouped essays (default operating-journal view) */
@@ -1649,7 +1662,7 @@ const ThoughtsPage = () => {
                 <p className="text-slate-300">No essays match that search.</p>
                 <button
                   type="button"
-                  onClick={() => { setQuery(''); setActiveCategory('all'); }}
+                  onClick={() => { setQuery(''); setActiveCategory('all'); searchRef.current?.focus(); }}
                   className="font-mono text-xs uppercase tracking-widest text-copper-400 hover:text-copper-300"
                 >
                   Clear filters
@@ -1842,7 +1855,7 @@ const GuidesPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
             />
-            <kbd className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
           </label>
         </div>
 
