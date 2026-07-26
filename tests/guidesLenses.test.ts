@@ -114,7 +114,18 @@ test('both index search boxes use one identical shell spec', () => {
   // Pin the canonical values so a drift that changes BOTH still fails loudly.
   assert.match(shells[0], /\bh-14\b/, 'canonical search height is h-14');
   assert.match(shells[0], /border-white\/15/, 'canonical search border is white/15');
-  assert.ok(!/\brounded\b/.test(shells[0]), 'canonical search box has square corners');
+  // Tokenise rather than regex the whole string. Any /\brounded.../ pattern also
+  // matches the "rounded" PREFIX of `rounded-none` (the "-" is a non-word char, so
+  // there is a boundary right after "d"), which would red a build that squared the
+  // corners the idiomatic Tailwind way. Checking whole class tokens has no such trap.
+  const radiusUtils = shells[0]
+    .split(/\s+/)
+    .filter((cls) => /^rounded(-.+)?$/.test(cls) && cls !== 'rounded-none');
+  assert.deepEqual(
+    radiusUtils,
+    [],
+    `canonical search box has square corners, found radius utility/utilities: ${radiusUtils.join(', ')}`,
+  );
 });
 
 test('both index search boxes use the same icon', () => {
@@ -133,6 +144,18 @@ test('both index filter pill rows use one identical spec', () => {
   const src = appTsx();
   const active = [...src.matchAll(/'(border-copper-500 bg-copper-500 text-slate-950)'/g)];
   assert.equal(active.length, 2, 'both pill rows must use the same solid-copper active state');
+
+  // The INACTIVE branch needs the same treatment. Pinning only the base fragment and
+  // the active literal leaves the default state of every unselected pill free to
+  // diverge per page with CI green (verified: mutating one page's inactive string
+  // passed all assertions before this was added).
+  const inactive = [...src.matchAll(/'(border-white\/15 text-slate-400[^']*)'/g)].map((m) => m[1]);
+  assert.equal(inactive.length, 2, `expected 2 inactive pill states, found ${inactive.length}`);
+  assert.equal(
+    inactive[0],
+    inactive[1],
+    `both pill rows must share one inactive state.\n  a: ${inactive[0]}\n  b: ${inactive[1]}`,
+  );
   assert.equal(
     (src.match(/aria-pressed=\{/g) || []).length,
     2,
