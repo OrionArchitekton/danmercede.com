@@ -153,6 +153,16 @@
       "source": "/rss",
       "destination": "/feed.xml",
       "permanent": true
+    },
+    {
+      "source": "/assets/Case_Study_Financial_Services.docx",
+      "destination": "/assets/Reference_Architecture_Financial_Services.docx",
+      "permanent": true
+    },
+    {
+      "source": "/assets/Case_Study_Healthcare.docx",
+      "destination": "/assets/Reference_Architecture_Healthcare.docx",
+      "permanent": true
     }
   ],
   "rewrites": [

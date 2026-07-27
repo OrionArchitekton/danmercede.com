@@ -861,7 +861,9 @@ const LAYER_JUMP_LINKS = [
   { id: 'drift', label: 'Drift' },
   { id: 'substrate', label: 'Substrate' },
   { id: 'economics', label: 'Economics' },
-  { id: 'production', label: 'Production' },
+  // id stays 'production' so existing #production deep links keep resolving;
+  // only the visible label is reframed to match the section copy.
+  { id: 'production', label: 'Reference' },
 ] as const;
 
 const LayerJumpBar = () => {

@@ -44,12 +44,12 @@ test('injectSeoBlock throws when markers are missing (build-time safety)', () =>
   assert.throws(() => injectSeoBlock('<head></head>', 'x'), /markers not found/);
 });
 
-test('caseStudyMeta: known slug yields a Case Study title; unknown yields the not-found fallback', () => {
+test('caseStudyMeta: known slug yields a Reference Architecture title; unknown yields the not-found fallback', () => {
   const knownSlug = caseStudyPaths()[0].split('/').pop()!; // real slug from committed content
   const known = caseStudyMeta(knownSlug);
-  assert.match(known.title, /: Case Study \| Dan Mercede$/);
+  assert.match(known.title, /: Reference Architecture \| Dan Mercede$/);
   assert.ok(known.description && known.description.length > 0);
-  assert.equal(caseStudyMeta('definitely-not-a-real-slug').title, 'Case Study Not Found | Dan Mercede');
+  assert.equal(caseStudyMeta('definitely-not-a-real-slug').title, 'Reference Architecture Not Found | Dan Mercede');
 });
 
 test('caseStudyPaths derives at least one /case-studies/<slug> path from committed content', () => {
