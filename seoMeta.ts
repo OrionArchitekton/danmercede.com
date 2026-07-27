@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -108,6 +108,22 @@ function worksBodyLinks(): { href: string; text: string }[] {
 
 // Static routes (mirrors the <Route> table in App.tsx). The homepage entry is
 // the default that lives un-injected in index.html.
+
+// The /proof evidence surface must reach no-JS answer engines, not just React.
+// EvidenceSection renders client-side only, so without this the crawlable body
+// carried none of the claims, checks, or links, which defeats the whole point of
+// publishing them. tests/proofEvidence.test.ts asserts parity between the two.
+export function evidenceBakeParagraphs(): string[] {
+  return PROOF_EVIDENCE.flatMap((tier) => [
+    `${tier.title}. ${tier.note}`,
+    ...tier.claims.map((c) => {
+      const check = c.verify ? ` Verify: ${c.verify}` : '';
+      const src = c.href ? ` Source: ${c.href}` : '';
+      return `${c.claim}${check}${src}`;
+    }),
+  ]);
+}
+
 export const ROUTE_META: Record<string, RouteMeta> = {
   '/': {
     title: DEFAULT_TITLE,
@@ -159,6 +175,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       paragraphs: [
         'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
         'Downloadable enforcement artifacts map to the four-layer governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
+        ...evidenceBakeParagraphs(),
       ],
     },
   },

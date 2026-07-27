@@ -110,11 +110,19 @@ export interface CaseStudy {
   commercialMapping: string[];
 }
 export interface EvidenceClaim {
+  /**
+   * 'check' means the claim is independently reproducible and MUST ship a
+   * concrete verify plus a source href. 'limitation' is an editorial statement
+   * about the strength of the evidence, which cannot be measured and therefore
+   * must NOT pretend to carry a check. Keeping them distinct is what stops the
+   * page promising a verification it cannot deliver.
+   */
+  kind: 'check' | 'limitation';
   /** One factual sentence. Every number here must be reproducible by `verify`. */
   claim: string;
-  /** A command or URL a reader can run to re-check the claim themselves. */
-  verify: string;
-  verifyKind: 'command' | 'url';
+  /** Required for kind 'check': a runnable command or a URL, never a placeholder. */
+  verify?: string;
+  verifyKind?: 'command' | 'url';
   href?: string;
 }
 

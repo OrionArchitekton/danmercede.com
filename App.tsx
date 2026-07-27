@@ -806,7 +806,7 @@ const EvidenceSection = () => (
       </span>
       <h2 className="text-2xl font-bold text-white mb-1">Checkable Claims</h2>
       <p className="text-sm text-slate-400">
-        Every line below carries the check that confirms it. Nothing here asks you to take my word.
+        Every checkable claim below carries the command or source that confirms it. The limits are labelled as limits.
       </p>
     </div>
 
@@ -833,22 +833,28 @@ const EvidenceSection = () => (
               {tier.claims.map((c, i) => (
                 <li key={i} className="border-l border-white/10 pl-4">
                   <p className="text-slate-300 text-sm leading-relaxed mb-1.5">{c.claim}</p>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <code className="text-[11px] font-mono text-slate-500 break-all">
-                      {c.verify}
-                    </code>
-                    {c.href ? (
-                      <a
-                        href={c.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-500 hover:text-copper-400 transition-colors"
-                      >
-                        check it
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : null}
-                  </div>
+                  {c.kind === 'check' ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <code className="text-[11px] font-mono text-slate-500 break-all">
+                        {c.verify}
+                      </code>
+                      {c.href ? (
+                        <a
+                          href={c.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-500 hover:text-copper-400 transition-colors"
+                        >
+                          check it
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500">
+                      Stated limitation
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

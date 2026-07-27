@@ -793,6 +793,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
     note: "Someone else's system attests to these. None of them rests on my own word.",
     claims: [
       {
+        kind: 'check',
         claim:
           'Proctor was named a finalist in UiPath AgentHack 2026, Track 3 (UiPath Test Cloud). 31 finalists were selected from the 203 solutions that reached judging, and Track 3 accounted for 11 of them.',
         verify: 'UiPath Community Forum finalist announcement, dated 2026-07-20',
@@ -800,16 +801,20 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         href: 'https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660',
       },
       {
+        kind: 'check',
         claim:
           'A pull request was merged into Arize-ai/openinference, a public repository with 1,113 stars.',
-        verify: "gh api repos/Arize-ai/openinference/pulls/3238 --jq '{merged,user:.user.login}'",
+        verify:
+          "gh api repos/Arize-ai/openinference/pulls/3238 --jq .merged && gh api repos/Arize-ai/openinference --jq .stargazers_count",
         verifyKind: 'command',
         href: 'https://github.com/Arize-ai/openinference/pull/3238',
       },
       {
+        kind: 'check',
         claim:
           'A pull request was merged into punkpeye/fastmcp, a public repository with 3,236 stars.',
-        verify: "gh api repos/punkpeye/fastmcp/pulls/275 --jq '{merged,user:.user.login}'",
+        verify:
+          "gh api repos/punkpeye/fastmcp/pulls/275 --jq .merged && gh api repos/punkpeye/fastmcp --jq .stargazers_count",
         verifyKind: 'command',
         href: 'https://github.com/punkpeye/fastmcp/pull/275',
       },
@@ -821,20 +826,25 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
     note: 'My own CI and releases. The claim is that you can re-run every check yourself, not that a third party audited it.',
     claims: [
       {
+        kind: 'check',
         claim:
-          '552 tests pass in CI across 8 public repositories, each on that repository current HEAD: notary 159, reprise 92, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, orion-skills 2.',
+          '552 tests pass in CI across 8 public repositories: notary 159, reprise 92, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, orion-skills 2.',
         verify:
-          'gh run list -R OrionArchitekton/<repo> --branch main --limit 1, then gh run view <id> --log',
+          'for r in notary reprise schemafit failclosed mcp-context-budget standing-questions fork-around-find-out orion-skills; do gh run list -R OrionArchitekton/$r --branch main --limit 1 --json conclusion,databaseId; done',
         verifyKind: 'command',
+        href: 'https://github.com/OrionArchitekton?tab=repositories',
       },
       {
+        kind: 'check',
         claim:
-          'failclosed runs 59 tests in CI, and the repository contains exactly 59 test definitions across 3 files. The runtime count and the source count match.',
-        verify: 'Count the def test_ lines in the three test files and compare against the CI log.',
+          'failclosed contains exactly 59 test definitions across 3 test files, matching the 59 tests its CI run executes.',
+        verify:
+          "for f in test_graphql_helpers.py test_parse_codex_output.py test_resolve_bot_threads.py; do gh api repos/OrionArchitekton/failclosed/contents/$f --jq .content | base64 -d | grep -cE '^[[:space:]]*def test_'; done",
         verifyKind: 'command',
         href: 'https://github.com/OrionArchitekton/failclosed',
       },
       {
+        kind: 'check',
         claim:
           'schemafit publishes 5 released versions on PyPI, 0.1.0 through 0.5.0, MIT licensed.',
         verify: 'curl -s https://pypi.org/pypi/schemafit/json',
@@ -842,18 +852,34 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         href: 'https://pypi.org/project/schemafit/',
       },
       {
+        kind: 'check',
         claim:
-          'Both published packages release through PyPI Trusted Publishing (OIDC). No API token is stored in either repository.',
-        verify:
-          'Read .github/workflows/release.yml in each repo: id-token write, and no PyPI token secret.',
+          'mcp-context-budget publishes 1 released version on PyPI, 0.4.0, MIT licensed.',
+        verify: 'curl -s https://pypi.org/pypi/mcp-context-budget/json',
         verifyKind: 'command',
+        href: 'https://pypi.org/project/mcp-context-budget/',
+      },
+      {
+        kind: 'check',
+        // Narrowed deliberately. A public reader can read the workflow and see it
+        // requests an OIDC token and references no API-token secret. Nobody outside
+        // the org can enumerate stored Actions secrets, so the stronger "no token is
+        // stored" phrasing asserted more than its own check could establish.
+        claim:
+          'Both published packages release through PyPI Trusted Publishing. Their release workflows request an OIDC id-token and reference no API-token secret.',
+        verify:
+          'curl -s https://raw.githubusercontent.com/OrionArchitekton/schemafit/main/.github/workflows/release.yml and the same path under mcp-context-budget',
+        verifyKind: 'url',
         href: 'https://github.com/OrionArchitekton/schemafit/blob/main/.github/workflows/release.yml',
       },
       {
+        kind: 'check',
         claim:
           'Three repositories pin every third-party GitHub Action to a full commit SHA rather than a floating tag: notary, reprise, and fork-around-find-out.',
-        verify: 'Read .github/workflows/ci.yml in each and check every uses: line.',
+        verify:
+          "for r in notary reprise fork-around-find-out; do gh api repos/OrionArchitekton/$r/contents/.github/workflows/ci.yml --jq .content | base64 -d | grep 'uses:'; done",
         verifyKind: 'command',
+        href: 'https://github.com/OrionArchitekton/notary/blob/main/.github/workflows/ci.yml',
       },
     ],
   },
@@ -863,26 +889,31 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
     note: 'The limits are part of the evidence. A proof page that lists only wins is marketing.',
     claims: [
       {
+        // Editorial, not measurable. Typed as a limitation so it is never counted
+        // as a verified claim, and so the page never promises a check it cannot ship.
+        kind: 'limitation',
         claim:
           'Self-run CI is not third-party review. The test counts above come from my own pipelines. Reproducibility is the claim; independent audit is not.',
-        verify: 'Stated limitation, not a measurement.',
-        verifyKind: 'command',
       },
       {
+        kind: 'check',
         claim:
-          '6 of the 14 tool repositories ship no CI at all. Four of those still carry test suites, they are simply not wired to a pipeline.',
+          '6 of the 14 tool repositories ship no CI at all: engram, proctor, agent-demo-video, invisible-hand, plainspeak, and whisperways. Four of those still carry test suites, they are simply not wired to a pipeline.',
         verify:
-          'gh api repos/OrionArchitekton/<repo>/contents/.github/workflows returns 404 for engram, proctor, agent-demo-video, invisible-hand, plainspeak, and whisperways.',
+          'for r in engram proctor agent-demo-video invisible-hand plainspeak whisperways; do gh api repos/OrionArchitekton/$r/contents/.github/workflows; done',
         verifyKind: 'command',
+        href: 'https://github.com/OrionArchitekton?tab=repositories',
       },
       {
+        kind: 'check',
         claim:
           'Fork Around & Find Out was submitted to Daytona HackSprint #5 and won no prize. It appears in the public project gallery with no winner badge.',
-        verify: 'Daytona HackSprint #5 Devpost project gallery',
+        verify: 'Daytona HackSprint #5 Devpost project page',
         verifyKind: 'url',
         href: 'https://devpost.com/software/fork-around-find-out',
       },
       {
+        kind: 'check',
         claim:
           'Invisible Hand is listed on the SwarmHack gallery with judging locked and no award, prize, or placement.',
         verify: 'tokens& SwarmHack project page',
@@ -890,10 +921,9 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         href: 'https://tokensand.com/p/invisible-hand',
       },
       {
+        kind: 'limitation',
         claim:
-          'No paying-customer outcomes are published here. The reference architectures on this page are illustrative patterns, not engagement records.',
-        verify: 'Open either reference architecture download; each opens with that disclaimer.',
-        verifyKind: 'command',
+          'No paying-customer outcomes are published here. The reference architectures on this page are illustrative patterns, not engagement records, and each download opens by saying so.',
       },
     ],
   },
