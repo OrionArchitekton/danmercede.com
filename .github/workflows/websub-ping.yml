@@ -20,13 +20,19 @@ jobs:
       - name: Wait for the deploy to change the served feed (bounded)
         run: |
           FEED="https://www.danmercede.com/feed.xml"
+          # Declare ourselves. These polls hit our OWN origin from GitHub-hosted
+          # runners on rotating Azure addresses, so no source-IP rule can ever
+          # attribute them. Undeclared, they counted as external audience in the
+          # AI-visibility register (85 records, 2026-07-26). The `orion-` prefix
+          # is what the counter's self-traffic policy matches on.
+          UA="orion-ci-websub-ping/1.0"
           # Capture the PRE-deploy baseline with retries: an empty baseline
           # (timeout/error page) must never be compared against, or the first
           # successful poll falsely reads as "changed" and pings before the
           # deploy lands (backported from oia-web #74 review).
           BEFORE=""
           for i in 1 2 3 4 5 6; do
-            BEFORE=$(curl -s --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
+            BEFORE=$(curl -s -A "$UA" --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
             [ -n "$BEFORE" ] && break
             sleep 15
           done
@@ -39,7 +45,7 @@ jobs:
           DEADLINE=$(( $(date +%s) + 480 ))
           while [ "$(date +%s)" -lt "$DEADLINE" ]; do
             sleep 30
-            NOW=$(curl -s --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
+            NOW=$(curl -s -A "$UA" --max-time 15 "$FEED" | grep -o '<lastBuildDate>[^<]*' || true)
             if [ -n "$NOW" ] && [ "$NOW" != "$BEFORE" ]; then
               echo "feed changed: $NOW"
               exit 0
