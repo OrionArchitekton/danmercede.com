@@ -102,7 +102,7 @@ export interface CaseStudy {
   industry: string;
   enforcementLayers: number[];
   layerNames: string[];
-  metrics: CaseStudyMetric[];
+  metrics?: CaseStudyMetric[];
   description: string;
   fileName: string;
   filePath: string;

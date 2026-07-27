@@ -431,13 +431,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Financial Services",
     enforcementLayers: [1, 2],
     layerNames: ["Authority Gate", "Immutable Receipts"],
-    metrics: [
-      { label: "Escalation Reduction", value: "67%" },
-      { label: "Task Completion", value: "94%" },
-      { label: "ROI Multiple", value: "4.2x" },
-      { label: "Cycle Time", value: "<48 hrs" },
-    ],
-    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to $4.2M financial exposure, SOC 2, and SOX compliance requirements.",
+    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to SOC 2 and SOX compliance requirements.",
     fileName: "Case_Study_Financial_Services.docx",
     filePath: "/assets/Case_Study_Financial_Services.docx",
     enforcementPoints: [
@@ -445,7 +439,7 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Cryptographic attestation for state mutations",
     ],
     commercialMapping: [
-      "$4.2M financial exposure containment",
+      "Financial exposure containment",
       "SOC 2 audit defensibility",
       "SOX compliance enforcement",
       "Operational blast radius reduction",
@@ -457,11 +451,6 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Healthcare",
     enforcementLayers: [3, 4],
     layerNames: ["Drift Guard", "Gated Substrate"],
-    metrics: [
-      { label: "SLA Compliance", value: "97%" },
-      { label: "Unattested Mutations", value: "Zero" },
-      { label: "Privilege Creep Reduction", value: "89%" },
-    ],
     description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. Maps to HIPAA and FDA SaMD regulatory exposure.",
     fileName: "Case_Study_Healthcare.docx",
     filePath: "/assets/Case_Study_Healthcare.docx",
