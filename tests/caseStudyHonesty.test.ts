@@ -69,20 +69,28 @@ function scanText(text: string, label: string): string[] {
  * exact label/value pair is listed below with a provenance note. Empty since
  * the honesty pass removed every row as unsourced.
  */
-const SOURCED_METRICS: { label: string; value: string; source: string }[] = [];
+const SOURCED_METRICS: { slug: string; label: string; value: string; source: string }[] = [];
 
 function unsourcedMetricProblems(
-  studies: { slug: string; metrics?: CaseStudyMetric[] }[]
+  studies: { slug: string; metrics?: CaseStudyMetric[] }[],
+  allowlist: typeof SOURCED_METRICS = SOURCED_METRICS
 ): string[] {
   const problems: string[] = [];
   for (const study of studies) {
     for (const m of study.metrics ?? []) {
-      const sourced = SOURCED_METRICS.some(
-        (s) => s.label === m.label && s.value === m.value
+      // An entry vouches for one row on one study: slug-scoped, so a pair
+      // sourced for one study cannot ride along on another, and only with a
+      // real provenance note, so an empty source cannot vouch for anything.
+      const sourced = allowlist.some(
+        (s) =>
+          s.slug === study.slug &&
+          s.label === m.label &&
+          s.value === m.value &&
+          s.source.trim() !== ''
       );
       if (!sourced) {
         problems.push(
-          `${study.slug}: metric { label: "${m.label}", value: "${m.value}" } has no entry in SOURCED_METRICS`
+          `${study.slug}: metric { label: "${m.label}", value: "${m.value}" } has no sourced entry in SOURCED_METRICS`
         );
       }
     }
@@ -279,6 +287,31 @@ test('reintroducing the removed Healthcare/Financial metric rows fails the gate'
       `the gate must reject the scanner-invisible value "${value}"`
     );
   }
+});
+
+test('an allowlist entry vouches only for its own study and needs a real source', () => {
+  const row = { label: 'Attestation Coverage', value: 'Complete' };
+  const healthcare = { slug: 'healthcare', metrics: [row] };
+  const financial = { slug: 'financial-services', metrics: [row] };
+  const sourcedForHealthcare = [
+    { slug: 'healthcare', ...row, source: 'measured over the 2026-Q2 receipt ledger' },
+  ];
+
+  // The owning study passes; the same pair on another study still fails.
+  assert.deepEqual(unsourcedMetricProblems([healthcare], sourcedForHealthcare), []);
+  assert.equal(
+    unsourcedMetricProblems([financial], sourcedForHealthcare).length,
+    1,
+    'a pair sourced for one study must not vouch for the same pair on another'
+  );
+
+  // An empty or whitespace source vouches for nothing, even on the owning study.
+  const emptySource = [{ slug: 'healthcare', ...row, source: '   ' }];
+  assert.equal(
+    unsourcedMetricProblems([healthcare], emptySource).length,
+    1,
+    'an allowlist entry with no provenance note must not pass its row'
+  );
 });
 
 test('the outcome-claim shapes catch rewordings, not just the exact removed strings', () => {
