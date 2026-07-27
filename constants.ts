@@ -937,7 +937,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           '43 individually addressable articles are self-published on danmercede.com: 34 essays under /thoughts and 9 long-form guides under /guides, each enumerated in the public sitemap, read 2026-07-27.',
         verify:
-          "curl -s https://www.danmercede.com/sitemap.xml | grep -cE 'danmercede.com/(thoughts|guides)/'",
+          "curl -s https://www.danmercede.com/sitemap.xml | grep -oE 'danmercede.com/(thoughts|guides)/' | sort | uniq -c",
         verifyKind: 'command',
         sources: ['https://www.danmercede.com/sitemap.xml'],
       },
@@ -1028,7 +1028,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           "OIA's case-studies page publishes anonymized engagement shapes under an explicit disclaimer: Not invented guarantees. They show how we work, not promised metrics.",
         verify:
-          "curl -s https://www.orionintelligenceagency.com/case-studies | sed 's/<[^>]*>/ /g' | grep -o 'Not invented guarantees'",
+          "curl -s https://www.orionintelligenceagency.com/case-studies | sed 's/<[^>]*>/ /g' | tr -s ' ' | grep -oE 'Not invented guarantees|These are anonymized engagement shapes|They show how we work, not promised metrics' | sort -u",
         verifyKind: 'command',
         sources: ['https://www.orionintelligenceagency.com/case-studies'],
       },
@@ -1037,7 +1037,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           'Every core page of the OIA site self-discloses its operating entity in the footer: Orion Intelligence Agency, LLC, founded 2025 in Ohio. Disclosure on my own site, not an independent registry record.',
         verify:
-          "curl -s https://www.orionintelligenceagency.com/about | grep -o 'Orion Intelligence Agency, LLC, founded 2025 in Ohio'",
+          'for p in "" about services contact case-studies; do printf \'/%s: \' "$p"; curl -s "https://www.orionintelligenceagency.com/$p" | grep -c \'Orion Intelligence Agency, LLC, founded 2025 in Ohio\'; done',
         verifyKind: 'command',
         sources: [
           'https://www.orionintelligenceagency.com/',
