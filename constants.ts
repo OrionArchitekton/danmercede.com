@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -777,3 +777,169 @@ export const WORKS_HUB = {
   githubUrl: 'https://github.com/OrionArchitekton',
   signalUrl: 'https://danmercede.online',
 } as const;
+
+// Evidence surface for /proof. EVERY claim here was independently re-verified by
+// an adversarial reviewer that ran the `verify` string and tried to refute it.
+// Claims that could not be reproduced, or whose wording overstated what the check
+// actually showed, were dropped rather than softened.
+//
+// Do not add a line here without a `verify` a stranger can run.
+// tests/proofEvidence.test.ts enforces that, and enforces that the limits tier
+// stays non-empty: a proof page that only lists wins is marketing.
+export const PROOF_EVIDENCE: EvidenceTier[] = [
+  {
+    id: 'independent',
+    title: 'Independently validated',
+    note: "Someone else's system attests to these. None of them rests on my own word.",
+    claims: [
+      {
+        kind: 'check',
+        claim:
+          'Proctor was named a finalist in UiPath AgentHack 2026, Track 3 (UiPath Test Cloud). 31 finalists were selected from the 203 solutions that reached judging, and Track 3 accounted for 11 of them.',
+        verify: 'UiPath Community Forum finalist announcement, dated 2026-07-20',
+        verifyKind: 'url',
+        sources: [
+          'https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660',
+        ],
+      },
+      {
+        kind: 'check',
+        claim:
+          'A pull request authored by OrionArchitekton is merged into Arize-ai/openinference, a public repository with 1,113 stars.',
+        verify:
+          'gh api repos/Arize-ai/openinference/pulls/3238 --jq \'{merged,author:.user.login}\' && gh api repos/Arize-ai/openinference --jq .stargazers_count',
+        verifyKind: 'command',
+        sources: ['https://github.com/Arize-ai/openinference/pull/3238'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'A pull request authored by OrionArchitekton is merged into punkpeye/fastmcp, a public repository with 3,236 stars.',
+        verify:
+          'gh api repos/punkpeye/fastmcp/pulls/275 --jq \'{merged,author:.user.login}\' && gh api repos/punkpeye/fastmcp --jq .stargazers_count',
+        verifyKind: 'command',
+        sources: ['https://github.com/punkpeye/fastmcp/pull/275'],
+      },
+    ],
+  },
+  {
+    id: 'reproducible',
+    title: 'Publicly reproducible',
+    note: 'My own CI and releases. The claim is that you can re-run every check yourself, not that a third party audited it.',
+    claims: [
+      {
+        kind: 'check',
+        claim:
+          '552 tests pass in CI across 8 public repositories: notary 159, reprise 92, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, orion-skills 2.',
+        // Extracts the per-repo pass counts from each run log rather than only
+        // listing run ids, so the command establishes the numbers the claim asserts.
+        verify:
+          'for r in notary reprise schemafit failclosed mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\'; done',
+        verifyKind: 'command',
+        sources: ['https://github.com/OrionArchitekton?tab=repositories'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'failclosed contains exactly 59 test definitions across its 3 test files, matching the 59 tests its CI run executes.',
+        verify:
+          'for f in test_graphql_helpers.py test_parse_codex_output.py test_resolve_bot_threads.py; do gh api repos/OrionArchitekton/failclosed/contents/$f --jq .content | base64 -d | grep -cE \'^[[:space:]]*def test_\'; done',
+        verifyKind: 'command',
+        sources: ['https://github.com/OrionArchitekton/failclosed'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'schemafit publishes 5 released versions on PyPI, 0.1.0 through 0.5.0, MIT licensed.',
+        verify:
+          'curl -s https://pypi.org/pypi/schemafit/json | python3 -c "import json,sys;d=json.load(sys.stdin);print(sorted(d[\'releases\']), d[\'info\'][\'license\'])"',
+        verifyKind: 'command',
+        sources: ['https://pypi.org/project/schemafit/'],
+      },
+      {
+        kind: 'check',
+        claim: 'mcp-context-budget publishes 1 released version on PyPI, 0.4.0, MIT licensed.',
+        verify:
+          'curl -s https://pypi.org/pypi/mcp-context-budget/json | python3 -c "import json,sys;d=json.load(sys.stdin);print(sorted(d[\'releases\']), d[\'info\'][\'license\'])"',
+        verifyKind: 'command',
+        sources: ['https://pypi.org/project/mcp-context-budget/'],
+      },
+      {
+        kind: 'check',
+        // Narrowed deliberately. A reader can see the workflow requests an OIDC
+        // token and references no API-token secret. Nobody outside the org can
+        // enumerate stored Actions secrets, so a stronger "no token is stored"
+        // phrasing would assert more than its own check can establish.
+        claim:
+          'Both published packages release through PyPI Trusted Publishing. Both release workflows request an OIDC id-token and reference no API-token secret.',
+        verify:
+          'for r in schemafit mcp-context-budget; do echo "== $r"; curl -s https://raw.githubusercontent.com/OrionArchitekton/$r/main/.github/workflows/release.yml | grep -nE \'id-token|secrets\\.\'; done',
+        verifyKind: 'command',
+        sources: [
+          'https://github.com/OrionArchitekton/schemafit/blob/main/.github/workflows/release.yml',
+          'https://github.com/OrionArchitekton/mcp-context-budget/blob/main/.github/workflows/release.yml',
+        ],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Three repositories pin every third-party GitHub Action to a full commit SHA rather than a floating tag: notary, reprise, and fork-around-find-out. Each has exactly one workflow file, so the check covers all of them.',
+        // Lists the workflow directory first, so the reader confirms ci.yml is the
+        // only workflow before reading its uses: lines. Without that step the
+        // command would only prove pinning in one file of an unknown set.
+        verify:
+          'for r in notary reprise fork-around-find-out; do echo "== $r"; gh api repos/OrionArchitekton/$r/contents/.github/workflows --jq \'.[].name\'; gh api repos/OrionArchitekton/$r/contents/.github/workflows/ci.yml --jq .content | base64 -d | grep \'uses:\'; done',
+        verifyKind: 'command',
+        sources: [
+          'https://github.com/OrionArchitekton/notary/blob/main/.github/workflows/ci.yml',
+          'https://github.com/OrionArchitekton/reprise/blob/main/.github/workflows/ci.yml',
+          'https://github.com/OrionArchitekton/fork-around-find-out/blob/main/.github/workflows/ci.yml',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'not-claimed',
+    title: 'What this page does not claim',
+    note: 'The limits are part of the evidence. A proof page that lists only wins is marketing.',
+    claims: [
+      {
+        kind: 'limitation',
+        claim:
+          'Self-run CI is not third-party review. The test counts above come from my own pipelines. Reproducibility is the claim; independent audit is not.',
+      },
+      {
+        kind: 'check',
+        claim:
+          '6 of the 14 tool repositories ship no CI at all: engram, proctor, agent-demo-video, invisible-hand, plainspeak, and whisperways.',
+        // Iterates the full 14-repo corpus the claim is measured against, so the
+        // denominator is established by the command rather than asserted by me.
+        verify:
+          'for r in failclosed orion-skills schemafit mcp-context-budget engram notary proctor reprise agent-demo-video invisible-hand plainspeak standing-questions whisperways fork-around-find-out; do printf "%s " "$r"; gh api repos/OrionArchitekton/$r/contents/.github/workflows --jq \'[.[].name]|join(",")\' 2>/dev/null || echo "NO CI"; done',
+        verifyKind: 'command',
+        sources: ['https://github.com/OrionArchitekton?tab=repositories'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Fork Around & Find Out was submitted to Daytona HackSprint #5 and won no prize. It appears in the public project gallery with no winner badge.',
+        verify: 'Daytona HackSprint #5 Devpost project page',
+        verifyKind: 'url',
+        sources: ['https://devpost.com/software/fork-around-find-out'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Invisible Hand is listed on the SwarmHack gallery with judging locked and no award, prize, or placement.',
+        verify: 'tokens& SwarmHack project page',
+        verifyKind: 'url',
+        sources: ['https://tokensand.com/p/invisible-hand'],
+      },
+      {
+        kind: 'limitation',
+        claim:
+          'No paying-customer outcomes are published here. The reference architectures on this page are illustrative patterns, not engagement records, and each download opens by saying so.',
+      },
+    ],
+  },
+];

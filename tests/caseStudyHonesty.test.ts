@@ -41,7 +41,24 @@ const OUTCOME_SHAPES: { re: RegExp; why: string }[] = [
   { re: /\$\s?\d[\d,.]*\s?[MKB]\b/i, why: 'a currency magnitude reads as measured exposure or savings' },
   { re: /\$\s?\d{1,3}(?:,\d{3})+/, why: 'a comma-grouped currency figure is a magnitude claim written longhand' },
   { re: /\b\d+(?:\.\d+)?\s*(?:million|billion|thousand)\b/i, why: 'a spelled magnitude is the same claim reworded' },
+  { re: /[<>]\s?\d+\s*(?:hrs?|hours?|days?|weeks?|months?|min(?:utes?)?)\b/i, why: 'a bounded duration like "<48 hrs" is a measured cycle-time claim' },
 ];
+
+// Applied ONLY to a metric's value, where context makes the claim unambiguous.
+// "zero shared resources" is fine in architectural prose; a metric whose VALUE is
+// "Zero" is an asserted outcome. Both forms shipped in the removed cards
+// ("Unattested Mutations: Zero", "Cycle Time: <48 hrs") and neither carries a
+// digit-and-unit the generic shapes above would catch.
+const OUTCOME_VALUE_SHAPES: { re: RegExp; why: string }[] = [
+  { re: /^\s*(?:zero|none|nil|0)\s*$/i, why: 'an absolute "zero" metric value is an asserted outcome' },
+  { re: /^\s*[<>~]\s*\d/, why: 'a bounded threshold value is an asserted outcome' },
+];
+
+function scanMetricValue(value: string, label: string): string[] {
+  return OUTCOME_VALUE_SHAPES.filter(({ re }) => re.test(value)).map(
+    ({ re, why }) => `${label}: metric value "${value}" matched ${re}, ${why}`
+  );
+}
 
 function scanText(text: string, label: string): string[] {
   const problems: string[] = [];
@@ -128,6 +145,9 @@ test('CASE_STUDIES carry no unsourced numeric outcome claims', () => {
     for (const [field, text] of surfaces) {
       problems.push(...scanText(text, `${study.slug}.${field}`));
     }
+    (study.metrics ?? []).forEach((m, i) => {
+      problems.push(...scanMetricValue(m.value, `${study.slug}.metrics[${i}]`));
+    });
   }
 
   assert.deepEqual(
@@ -208,6 +228,7 @@ test('the outcome-claim shapes catch rewordings, not just the exact removed stri
     '67%', '67.5%', '94.0%',
     '67 percent', '4.2x', '4.2 X',
     '$4.2M', '$4,200,000', '2.1 million', '1.5 billion',
+    '<48 hrs', '< 48 hours', '>90 days',
   ];
   for (const sample of mustCatch) {
     assert.notDeepEqual(
@@ -232,4 +253,23 @@ test('the outcome-claim shapes catch rewordings, not just the exact removed stri
       `scanner must not flag ordinary architectural prose: "${sample}"`
     );
   }
+});
+
+test('metric VALUES that assert an outcome without a digit-and-unit are caught', () => {
+  // Both forms shipped on the removed cards and neither trips the generic text
+  // shapes: "Unattested Mutations: Zero" and "Cycle Time: <48 hrs".
+  for (const v of ['Zero', 'zero', 'None', '0', '<48 hrs', '> 90 days', '~12 hours']) {
+    assert.notDeepEqual(
+      scanMetricValue(v, 'fixture'),
+      [],
+      `a metric value of "${v}" asserts an outcome and must be flagged`
+    );
+  }
+  // Context matters: the same word inside architectural prose is legitimate and
+  // must NOT be flagged, or the guard becomes noise and gets switched off.
+  assert.deepEqual(
+    scanText('PHI workloads isolated to a dedicated execution substrate with zero shared resources', 'fixture'),
+    [],
+    'architectural prose using "zero" descriptively must not be flagged'
+  );
 });

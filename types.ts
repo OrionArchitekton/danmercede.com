@@ -109,3 +109,32 @@ export interface CaseStudy {
   enforcementPoints: string[];
   commercialMapping: string[];
 }
+export interface EvidenceClaim {
+  /**
+   * 'check' means the claim is independently reproducible and MUST ship a
+   * concrete verify plus a source href. 'limitation' is an editorial statement
+   * about the strength of the evidence, which cannot be measured and therefore
+   * must NOT pretend to carry a check. Keeping them distinct is what stops the
+   * page promising a verification it cannot deliver.
+   */
+  kind: 'check' | 'limitation';
+  /** One factual sentence. Every number here must be reproducible by `verify`. */
+  claim: string;
+  /** Required for kind 'check': a runnable command or a URL, never a placeholder. */
+  verify?: string;
+  verifyKind?: 'command' | 'url';
+  /**
+   * One source URL per fact the claim asserts. A claim naming three repositories
+   * carries three sources, so a reader is never asked to accept part of a
+   * multi-target claim on the strength of a single link.
+   */
+  sources?: string[];
+}
+
+export interface EvidenceTier {
+  id: string;
+  title: string;
+  /** What KIND of evidence this tier is, stated plainly so tiers are not conflated. */
+  note: string;
+  claims: EvidenceClaim[];
+}
