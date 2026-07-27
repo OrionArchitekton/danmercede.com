@@ -882,6 +882,35 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       },
       {
         kind: 'check',
+        // The strongest form of "the gates are real": a public run where one
+        // FIRED. Green CI has two indistinguishable causes (nothing to catch,
+        // or catching nothing); a red run on main removes the ambiguity.
+        claim:
+          "The quality gates publicly fire rather than wave work through: reprise's CI history on main includes a push run where the Typecheck step failed the build, on 2026-07-26.",
+        verify: 'https://github.com/OrionArchitekton/reprise/actions/runs/30221340528',
+        verifyKind: 'url',
+        sources: ['https://github.com/OrionArchitekton/reprise/actions/runs/30221340528'],
+      },
+      {
+        kind: 'check',
+        claim:
+          "failclosed's enforcement contract is runnable by any stranger: a fresh clone passes its 59-test suite, which includes tests asserting that unparseable and schema-invalid reviewer output blocks a MERGE_READY verdict.",
+        verify:
+          'git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m pytest -q',
+        verifyKind: 'command',
+        sources: ['https://github.com/OrionArchitekton/failclosed'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'The orion-skills library publicly catalogs 26 agent skills as individually readable SKILL.md files, read 2026-07-27.',
+        verify:
+          'curl -s "https://api.github.com/repos/OrionArchitekton/orion-skills/git/trees/main?recursive=1" | grep -oE \'"skills/[^"]*/SKILL.md"\' | wc -l',
+        verifyKind: 'command',
+        sources: ['https://github.com/OrionArchitekton/orion-skills'],
+      },
+      {
+        kind: 'check',
         claim:
           'Three repositories pin every third-party GitHub Action to a full commit SHA rather than a floating tag: notary, reprise, and fork-around-find-out. Each has exactly one workflow file, so the check covers all of them.',
         // Lists the workflow directory first, so the reader confirms ci.yml is the
@@ -894,6 +923,128 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
           'https://github.com/OrionArchitekton/notary/blob/main/.github/workflows/ci.yml',
           'https://github.com/OrionArchitekton/reprise/blob/main/.github/workflows/ci.yml',
           'https://github.com/OrionArchitekton/fork-around-find-out/blob/main/.github/workflows/ci.yml',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'published',
+    title: 'Published work and live surfaces',
+    note: 'Self-published and self-hosted. These establish volume, recency, and that the systems serve live. None of it is reach, endorsement, or third-party review.',
+    claims: [
+      {
+        kind: 'check',
+        claim:
+          '43 individually addressable articles are self-published on danmercede.com: 34 essays under /thoughts and 9 long-form guides under /guides, each enumerated in the public sitemap, read 2026-07-27.',
+        verify:
+          "curl -s https://www.danmercede.com/sitemap.xml | grep -cE 'danmercede.com/(thoughts|guides)/'",
+        verifyKind: 'command',
+        sources: ['https://www.danmercede.com/sitemap.xml'],
+      },
+      {
+        kind: 'check',
+        // The command reproduces every number in the claim: the count, both
+        // dates, and how many articles declare a hub canonical.
+        claim:
+          '40 articles are published on dev.to under the danmercede account, dated 2026-06-20 through 2026-07-24, and 37 of the 40 declare a rel=canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
+        verify:
+          'curl -s "https://dev.to/api/articles?username=danmercede&per_page=200" | python3 -c "import json,sys;a=json.load(sys.stdin);print(len(a),min(x[\'published_at\'][:10] for x in a),max(x[\'published_at\'][:10] for x in a),sum(1 for x in a if str(x.get(\'canonical_url\')).startswith((\'https://www.danmercede.com\',\'https://www.danmercede.online\'))))"',
+        verifyKind: 'command',
+        sources: ['https://dev.to/danmercede'],
+      },
+      {
+        kind: 'check',
+        // The homepage does not display a post count, so the check queries
+        // Hashnode's public GraphQL API, which needs no token for reads.
+        claim:
+          'The Hashnode publication danmercede.hashnode.dev carries 32 published posts, and all 32 declare a canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
+        verify:
+          'curl -s -X POST https://gql-beta.hashnode.com -H \'Content-Type: application/json\' -d \'{"query":"query{publication(host:\\"danmercede.hashnode.dev\\"){posts(first:50){totalDocuments edges{node{canonicalUrl}}}}}"}\' | python3 -c "import json,sys;p=json.load(sys.stdin)[\'data\'][\'publication\'][\'posts\'];print(p[\'totalDocuments\'],sum(1 for e in p[\'edges\'] if str(e[\'node\'][\'canonicalUrl\']).startswith((\'https://www.danmercede.com\',\'https://www.danmercede.online\'))))"',
+        verifyKind: 'command',
+        sources: ['https://danmercede.hashnode.dev/'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'A public speaker profile exists on Sessionize, listing speaking topics across AI governance and agentic systems. A self-managed profile, not third-party recognition.',
+        verify: 'https://sessionize.com/dan-mercede/',
+        verifyKind: 'url',
+        sources: ['https://sessionize.com/dan-mercede/'],
+      },
+      {
+        kind: 'check',
+        // Unknown /works paths also return 200 with the hub shell, so liveness
+        // is established by each page's own title, never by status code.
+        claim:
+          'Each of the 16 product pages under danmercede.com/works serves live with its own product title, read 2026-07-27.',
+        verify:
+          "for s in agent-demo-video algorithm-reviews codex-rule-ledger engram failclosed invisible-hand localfiscal mcp-context-budget notary orion-skills plainspeak proctor quorum schemafit standing-questions whisperways; do printf '%s: ' $s; curl -sL https://www.danmercede.com/works/$s/ | grep -o 'title>[^<]*' | head -1; done",
+        verifyKind: 'command',
+        sources: ['https://www.danmercede.com/works'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'danmercede.online, the public raw working log, lists 117 dated entries in its sitemap, read 2026-07-27.',
+        verify:
+          "curl -sL https://www.danmercede.online/sitemap.xml | grep -cE '/[0-9]{4}-[0-9]{2}-[0-9]{2}-'",
+        verifyKind: 'command',
+        sources: ['https://www.danmercede.online/sitemap.xml'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Six of the shipped tools serve live public demos, read 2026-07-27: Reprise, Fork Around & Find Out, Standing Questions, Quorum, Notary, and Engram.',
+        verify:
+          "for u in reprise-murex.vercel.app fork-around-find-out.vercel.app standing-questions.vercel.app quorum-slack-agent.vercel.app notary-replay.vercel.app engram.orionbot.online; do printf '%s: ' $u; curl -sL https://$u | grep -o 'title>[^<]*' | head -1; done",
+        verifyKind: 'command',
+        sources: [
+          'https://reprise-murex.vercel.app',
+          'https://fork-around-find-out.vercel.app',
+          'https://standing-questions.vercel.app',
+          'https://quorum-slack-agent.vercel.app',
+          'https://notary-replay.vercel.app',
+          'https://engram.orionbot.online',
+        ],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Orion Intelligence Agency, the consulting lane I operate, publishes 15 individually addressable insight articles on its live site, each listed in the public sitemap, read 2026-07-27.',
+        verify:
+          "curl -s https://www.orionintelligenceagency.com/sitemap-0.xml | grep -c 'insights/'",
+        verifyKind: 'command',
+        sources: [
+          'https://www.orionintelligenceagency.com/sitemap-0.xml',
+          'https://www.orionintelligenceagency.com/insights',
+        ],
+      },
+      {
+        kind: 'check',
+        // Narrowed from "carries zero percentage or dollar figures": the raw
+        // HTML contains a Tailwind gradient stop ("transparent_68%"), so a
+        // stranger's grep would surface a percent sign that is not content.
+        // The quote is what the command reproduces cleanly.
+        claim:
+          "OIA's case-studies page publishes anonymized engagement shapes under an explicit disclaimer: Not invented guarantees. They show how we work, not promised metrics.",
+        verify:
+          "curl -s https://www.orionintelligenceagency.com/case-studies | sed 's/<[^>]*>/ /g' | grep -o 'Not invented guarantees'",
+        verifyKind: 'command',
+        sources: ['https://www.orionintelligenceagency.com/case-studies'],
+      },
+      {
+        kind: 'check',
+        claim:
+          'Every core page of the OIA site self-discloses its operating entity in the footer: Orion Intelligence Agency, LLC, founded 2025 in Ohio. Disclosure on my own site, not an independent registry record.',
+        verify:
+          "curl -s https://www.orionintelligenceagency.com/about | grep -o 'Orion Intelligence Agency, LLC, founded 2025 in Ohio'",
+        verifyKind: 'command',
+        sources: [
+          'https://www.orionintelligenceagency.com/',
+          'https://www.orionintelligenceagency.com/about',
+          'https://www.orionintelligenceagency.com/services',
+          'https://www.orionintelligenceagency.com/contact',
+          'https://www.orionintelligenceagency.com/case-studies',
         ],
       },
     ],
@@ -939,6 +1090,11 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         kind: 'limitation',
         claim:
           'No paying-customer outcomes are published here. The reference architectures on this page are illustrative patterns, not engagement records, and each download opens by saying so.',
+      },
+      {
+        kind: 'limitation',
+        claim:
+          'No third-party editorial placement exists to date. Every article above is self-published or syndicated under my own canonical URLs, and no conference talk has been delivered to date.',
       },
     ],
   },
