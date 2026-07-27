@@ -887,8 +887,11 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // or catching nothing); a red run on main removes the ambiguity.
         claim:
           "The quality gates publicly fire rather than wave work through: reprise's CI history on main includes a push run where the Typecheck step failed the build, on 2026-07-26.",
-        verify: 'https://github.com/OrionArchitekton/reprise/actions/runs/30221340528',
-        verifyKind: 'url',
+        // The run page renders step names client-side only, so the check reads
+        // the public jobs API, which needs no authentication.
+        verify:
+          'curl -s https://api.github.com/repos/OrionArchitekton/reprise/actions/runs/30221340528/jobs | python3 -c "import json,sys;j=json.load(sys.stdin)[\'jobs\'][0];print(j[\'name\'],j[\'conclusion\'],[s[\'name\'] for s in j[\'steps\'] if s[\'conclusion\']==\'failure\'])"',
+        verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton/reprise/actions/runs/30221340528'],
       },
       {
@@ -948,7 +951,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           '40 articles are published on dev.to under the danmercede account, dated 2026-06-20 through 2026-07-24, and 37 of the 40 declare a rel=canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
         verify:
-          'curl -s "https://dev.to/api/articles?username=danmercede&per_page=200" | python3 -c "import json,sys;a=json.load(sys.stdin);print(len(a),min(x[\'published_at\'][:10] for x in a),max(x[\'published_at\'][:10] for x in a),sum(1 for x in a if str(x.get(\'canonical_url\')).startswith((\'https://www.danmercede.com\',\'https://www.danmercede.online\'))))"',
+          'curl -s "https://dev.to/api/articles?username=danmercede&per_page=200" | python3 -c "import json,sys;a=json.load(sys.stdin);print(len(a),min(x[\'published_at\'][:10] for x in a),max(x[\'published_at\'][:10] for x in a),sum(1 for x in a if str(x.get(\'canonical_url\')).startswith((\'https://www.danmercede.com/\',\'https://www.danmercede.online/\'))))"',
         verifyKind: 'command',
         sources: ['https://dev.to/danmercede'],
       },
@@ -959,7 +962,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           'The Hashnode publication danmercede.hashnode.dev carries 32 published posts, and all 32 declare a canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
         verify:
-          'curl -s -X POST https://gql-beta.hashnode.com -H \'Content-Type: application/json\' -d \'{"query":"query{publication(host:\\"danmercede.hashnode.dev\\"){posts(first:50){totalDocuments edges{node{canonicalUrl}}}}}"}\' | python3 -c "import json,sys;p=json.load(sys.stdin)[\'data\'][\'publication\'][\'posts\'];print(p[\'totalDocuments\'],sum(1 for e in p[\'edges\'] if str(e[\'node\'][\'canonicalUrl\']).startswith((\'https://www.danmercede.com\',\'https://www.danmercede.online\'))))"',
+          'curl -s -X POST https://gql-beta.hashnode.com -H \'Content-Type: application/json\' -d \'{"query":"query{publication(host:\\"danmercede.hashnode.dev\\"){posts(first:50){totalDocuments edges{node{canonicalUrl}}}}}"}\' | python3 -c "import json,sys;p=json.load(sys.stdin)[\'data\'][\'publication\'][\'posts\'];print(p[\'totalDocuments\'],sum(1 for e in p[\'edges\'] if str(e[\'node\'][\'canonicalUrl\']).startswith((\'https://www.danmercede.com/\',\'https://www.danmercede.online/\'))))"',
         verifyKind: 'command',
         sources: ['https://danmercede.hashnode.dev/'],
       },
@@ -1035,7 +1038,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'Every core page of the OIA site self-discloses its operating entity in the footer: Orion Intelligence Agency, LLC, founded 2025 in Ohio. Disclosure on my own site, not an independent registry record.',
+          'Five primary pages of the OIA site (home, about, services, contact, and case-studies) each disclose the operating entity: Orion Intelligence Agency, LLC, founded 2025 in Ohio. Disclosure on my own site, not an independent registry record.',
         verify:
           'for p in "" about services contact case-studies; do printf \'/%s: \' "$p"; curl -s "https://www.orionintelligenceagency.com/$p" | grep -c \'Orion Intelligence Agency, LLC, founded 2025 in Ohio\'; done',
         verifyKind: 'command',
