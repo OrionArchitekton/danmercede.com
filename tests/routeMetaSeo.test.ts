@@ -319,11 +319,11 @@ test('every article-shaped DETAIL route emits og:type=article, and no listing do
   }
 });
 
-test('case-study titles keep their pinned ": Case Study" format', () => {
+test('case-study titles keep their pinned ": Reference Architecture" format', () => {
   // Deliberately NOT harmonised with guides/thoughts: tests/injectRouteMeta.test.ts
   // pins this format, and the defect fixed here was og:type, not the title.
   for (const slug of caseStudySlugs) {
-    assert.match(caseStudyMeta(slug).title, /: Case Study \| Dan Mercede$/);
+    assert.match(caseStudyMeta(slug).title, /: Reference Architecture \| Dan Mercede$/);
   }
 });
 

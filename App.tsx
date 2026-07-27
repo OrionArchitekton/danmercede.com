@@ -861,7 +861,9 @@ const LAYER_JUMP_LINKS = [
   { id: 'drift', label: 'Drift' },
   { id: 'substrate', label: 'Substrate' },
   { id: 'economics', label: 'Economics' },
-  { id: 'production', label: 'Production' },
+  // id stays 'production' so existing #production deep links keep resolving;
+  // only the visible label is reframed to match the section copy.
+  { id: 'production', label: 'Reference' },
 ] as const;
 
 const LayerJumpBar = () => {
@@ -1199,13 +1201,13 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Enforcement in Production, Case Studies */}
+        {/* Reference Enforcement Architectures, Case Studies */}
         {CASE_STUDIES.length > 0 && (
           <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement in Production</span>
-              <h2 className="text-2xl font-bold text-white mb-1">Enforcement in Production</h2>
-              <p className="text-sm text-slate-400">Before/after enforcement metrics from governed deployments.</p>
+              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Reference Architectures</span>
+              <h2 className="text-2xl font-bold text-white mb-1">Reference Enforcement Architectures</h2>
+              <p className="text-sm text-slate-400">Reference enforcement architectures by industry and regulatory surface. Illustrative patterns, not measured client outcomes.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {CASE_STUDIES.map((study, i) => (
@@ -1225,8 +1227,8 @@ const ResourcesPage = () => {
                   <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
                     {study.title}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                    {study.metrics.map((m, mi) => (
+                  <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${study.metrics?.length ? 'mb-4' : ''}`}>
+                    {(study.metrics ?? []).map((m, mi) => (
                       <div key={mi} className="text-center p-3 rounded bg-slate-800/60 border border-copper-500/15">
                         <span className="text-xl font-bold text-copper-400 block tabular-nums">{m.value}</span>
                         <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">{m.label}</span>
@@ -1283,7 +1285,7 @@ const CaseStudyPage = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {study.metrics.map((metric, i) => (
+          {(study.metrics ?? []).map((metric, i) => (
             <div key={i} className="border border-white/5 bg-slate-900/40 rounded-lg p-5 text-center">
               <div className="text-2xl md:text-3xl font-bold text-copper-500 mb-1">{metric.value}</div>
               <div className="text-xs font-mono uppercase tracking-widest text-slate-400">{metric.label}</div>
@@ -1338,7 +1340,7 @@ const CaseStudyPage = () => {
             className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-slate-950 rounded font-mono text-sm hover:bg-copper-400 transition-colors"
           >
             <Download className="w-4 h-4" />
-            Download Full Case Study
+            Download Reference Architecture
           </a>
           <a
             href={READINESS_SCAN.href}

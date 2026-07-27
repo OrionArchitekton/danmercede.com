@@ -274,13 +274,13 @@ export const ROUTE_META: Record<string, RouteMeta> = {
 export function caseStudyMeta(slug: string | undefined): RouteMeta {
   const study = CASE_STUDIES.find((cs) => cs.slug === slug);
   if (!study) {
-    return { title: 'Case Study Not Found | Dan Mercede' };
+    return { title: 'Reference Architecture Not Found | Dan Mercede' };
   }
   return {
-    // The ": Case Study" infix is retained deliberately, unlike guides and
-    // thoughts: tests/injectRouteMeta.test.ts pins this title format, so
-    // changing it is a separate decision from the og:type defect fixed here.
-    title: `${study.title}: Case Study | Dan Mercede`,
+    // The infix reads ": Reference Architecture" so the crawler and no-JS
+    // title matches the on-page framing and the download filename. Splitting the
+    // claim across surfaces is what the 2026-07-26 honesty pass exists to stop.
+    title: `${study.title}: Reference Architecture | Dan Mercede`,
     description: truncateForMeta(study.description),
     articleDescription: study.description,
     headline: study.title,
