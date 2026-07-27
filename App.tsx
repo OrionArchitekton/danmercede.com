@@ -838,17 +838,18 @@ const EvidenceSection = () => (
                       <code className="text-[11px] font-mono text-slate-500 break-all">
                         {c.verify}
                       </code>
-                      {c.href ? (
+                      {(c.sources ?? []).map((src, si) => (
                         <a
-                          href={c.href}
+                          key={si}
+                          href={src}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-500 hover:text-copper-400 transition-colors"
                         >
-                          check it
+                          {(c.sources ?? []).length > 1 ? `source ${si + 1}` : 'check it'}
                           <ExternalLink className="w-3 h-3" />
                         </a>
-                      ) : null}
+                      ))}
                     </div>
                   ) : (
                     <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500">

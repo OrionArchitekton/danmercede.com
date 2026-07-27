@@ -116,12 +116,22 @@ function worksBodyLinks(): { href: string; text: string }[] {
 export function evidenceBakeParagraphs(): string[] {
   return PROOF_EVIDENCE.flatMap((tier) => [
     `${tier.title}. ${tier.note}`,
-    ...tier.claims.map((c) => {
-      const check = c.verify ? ` Verify: ${c.verify}` : '';
-      const src = c.href ? ` Source: ${c.href}` : '';
-      return `${c.claim}${check}${src}`;
-    }),
+    ...tier.claims.map((c) => (c.verify ? `${c.claim} Verify: ${c.verify}` : c.claim)),
   ]);
+}
+
+// Evidence sources baked as real anchors. RouteBody.links renders escaped
+// <a href> elements, so a crawler receives navigable citations rather than URL
+// text it has to parse out of a paragraph.
+export function evidenceBakeLinks(): { href: string; text: string }[] {
+  return PROOF_EVIDENCE.flatMap((tier) =>
+    tier.claims.flatMap((c) =>
+      (c.sources ?? []).map((href) => ({
+        href,
+        text: `Source: ${c.claim.split(/[.,]/)[0].slice(0, 60)}`,
+      }))
+    )
+  );
 }
 
 export const ROUTE_META: Record<string, RouteMeta> = {
@@ -177,6 +187,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         'Downloadable enforcement artifacts map to the four-layer governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
         ...evidenceBakeParagraphs(),
       ],
+      links: evidenceBakeLinks(),
     },
   },
   '/thoughts': {

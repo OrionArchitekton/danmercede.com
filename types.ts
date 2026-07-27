@@ -123,7 +123,12 @@ export interface EvidenceClaim {
   /** Required for kind 'check': a runnable command or a URL, never a placeholder. */
   verify?: string;
   verifyKind?: 'command' | 'url';
-  href?: string;
+  /**
+   * One source URL per fact the claim asserts. A claim naming three repositories
+   * carries three sources, so a reader is never asked to accept part of a
+   * multi-target claim on the strength of a single link.
+   */
+  sources?: string[];
 }
 
 export interface EvidenceTier {

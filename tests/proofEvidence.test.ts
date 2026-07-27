@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { PROOF_EVIDENCE } from '../constants';
-import { ROUTE_META, renderBodyBlock, evidenceBakeParagraphs } from '../seoMeta';
+import { ROUTE_META, renderBodyBlock, evidenceBakeParagraphs, evidenceBakeLinks } from '../seoMeta';
 
 /**
  * Integrity guard for the /proof evidence surface.
@@ -56,8 +56,48 @@ test('a claim presented as checkable ships a runnable check and a source', () =>
       `${label} verify contains an unresolved placeholder, so a reader cannot run it as written`
     );
     assert.ok(
-      c.href && /^https:\/\/\S+$/.test(c.href),
-      `${label} needs an https source href covering the asserted facts, got ${String(c.href)}`
+      c.sources && c.sources.length > 0,
+      `${label} needs at least one https source covering the asserted facts`
+    );
+    for (const src of c.sources!) {
+      assert.match(src, /^https:\/\/\S+$/, `${label} has a malformed source: ${src}`);
+    }
+    // A 'url' verifier means the check IS the source, so it must resolve to one.
+    // A 'command' verifier must look like something a shell can execute, not prose.
+    if (c.verifyKind === 'command') {
+      assert.match(
+        c.verify!,
+        /^(for |gh |curl |npx |node |python3 |npm |[a-z0-9_-]+ )/,
+        `${label} is typed 'command' but reads as prose: "${c.verify}"`
+      );
+    }
+  }
+});
+
+test('a claim naming several repositories cites a source for each of them', () => {
+  // A three-repository claim backed by one link asks the reader to accept two
+  // thirds of it on trust. Reviewers flagged exactly that on the SHA-pinning and
+  // Trusted Publishing claims.
+  const NAMED = [
+    'notary', 'reprise', 'fork-around-find-out', 'schemafit',
+    'mcp-context-budget', 'failclosed', 'orion-skills', 'standing-questions',
+    'engram', 'proctor', 'agent-demo-video', 'invisible-hand', 'plainspeak', 'whisperways',
+  ];
+  for (const c of checks) {
+    // Only claims that enumerate repos as a LIST, which is where partial
+    // sourcing hides. Aggregate counts are covered by their own command.
+    const named = NAMED.filter((r) => new RegExp(`\\b${r}\\b`).test(c.claim));
+    if (named.length < 2) continue;
+
+    // Coverage is satisfied EITHER by a source per repository, OR by a verify
+    // command that itself names every repository the claim covers. The command
+    // is the stronger form: running it reproduces all of them. What is NOT
+    // acceptable is a multi-repo claim whose check reaches only some of them.
+    const perRepoSources = (c.sources ?? []).length >= named.length;
+    const commandCoversAll = named.every((r) => (c.verify ?? '').includes(r));
+    assert.ok(
+      perRepoSources || commandCoversAll,
+      `"${c.claim.slice(0, 50)}" names ${named.length} repositories (${named.join(', ')}) but neither cites a source for each nor runs a command naming all of them`
     );
   }
 });
@@ -74,10 +114,11 @@ test('a stated limitation never pretends to carry a check', () => {
   }
 });
 
-test('every href is absolute https, so no check points at an insecure target', () => {
+test('every source is absolute https, so no check points at an insecure target', () => {
   for (const c of allClaims) {
-    if (!c.href) continue;
-    assert.match(c.href, /^https:\/\//, `href must be absolute https, got ${c.href}`);
+    for (const src of c.sources ?? []) {
+      assert.match(src, /^https:\/\//, `source must be absolute https, got ${src}`);
+    }
   }
 });
 
@@ -130,11 +171,14 @@ test('PARITY: every published claim reaches the no-JS crawl body for /proof', ()
     );
   }
 
+  // Sources must be real anchors, not URL text a crawler has to parse out of prose.
   for (const c of checks) {
-    assert.ok(
-      bakedText.includes(c.href!),
-      `source link missing from the crawl body: ${c.href}`
-    );
+    for (const src of c.sources ?? []) {
+      assert.ok(
+        bakedText.includes(`href="${src}"`),
+        `source is not baked as a crawlable anchor: ${src}`
+      );
+    }
   }
 });
 
@@ -150,4 +194,14 @@ test('the bake helper emits a lead line per tier plus one line per claim', () =>
     paras.every((p) => p.trim().length > 0),
     'no baked paragraph may be empty'
   );
+});
+
+test('every evidence source is baked as a link, one per source', () => {
+  const links = evidenceBakeLinks();
+  const expected = PROOF_EVIDENCE.flatMap((t) => t.claims.flatMap((c) => c.sources ?? [])).length;
+  assert.equal(links.length, expected, `expected ${expected} baked source links, got ${links.length}`);
+  for (const l of links) {
+    assert.match(l.href, /^https:\/\//, `baked link must be https: ${l.href}`);
+    assert.ok(l.text.trim().length > 0, 'baked link needs anchor text');
+  }
 });
