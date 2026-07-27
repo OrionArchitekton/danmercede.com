@@ -1009,9 +1009,9 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // Unknown /works paths also return 200 with the hub shell, so liveness
         // is established by each page's own title, never by status code.
         claim:
-          'Each of the 16 product pages under danmercede.com/works serves live with its own product title, read 2026-07-27.',
+          'Each of the 19 product pages under danmercede.com/works serves live with its own product title, asserted against an expected-title map rather than a status code.',
         verify:
-          "for s in agent-demo-video algorithm-reviews codex-rule-ledger engram failclosed invisible-hand localfiscal mcp-context-budget notary orion-skills plainspeak proctor quorum schemafit standing-questions whisperways; do printf '%s: ' $s; curl -sL https://www.danmercede.com/works/$s/ | grep -o 'title>[^<]*' | head -1; done",
+          "set -euo pipefail; while IFS='|' read -r s want; do got=$(curl -sL --fail --show-error https://www.danmercede.com/works/$s/ | grep -o 'title>[^<]*' | head -1); case \"$got\" in *\"$want\"*) echo \"OK $s\";; *) echo \"FAIL $s: $got\"; exit 1;; esac; done <<'EOF'\nagent-demo-video|automated, narrated, captioned demo videos\nalgorithm-reviews|a review whose reviewing is reviewable\ncodex-rule-ledger|evidence-bound audits for Codex runs\nengram|a memory engine for AI agents\nfailclosed|Fail-closed merge admission control\nfork-around-find-out|speculative execution for agent safety\ninvisible-hand|an agent economy where on-chain settlement\nlocalfiscal|Local-first private receipt\nmcp-context-budget|enforce MCP tool-surface budgets\nnotary|the context lie detector\norion-skills|skills for Claude Code\nplainspeak|AI that reads the fine print\nproctor|behavioral regression testing for AI agents\nquorum|the decision memory for your Slack workspace\nrekindle|your abandoned side project misses you\nreprise|check what you already generated\nschemafit|Lint LLM structured-output\nstanding-questions|ask a live stream once\nwhisperways|noise-aware eVTOL flight corridors\nEOF",
         verifyKind: 'command',
         sources: ['https://www.danmercede.com/works'],
       },
@@ -1029,7 +1029,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           'Six of the shipped tools serve live public demos, read 2026-07-27: Reprise, Fork Around & Find Out, Standing Questions, Quorum, Notary, and Engram.',
         verify:
-          "for u in reprise-murex.vercel.app fork-around-find-out.vercel.app standing-questions.vercel.app quorum-slack-agent.vercel.app notary-replay.vercel.app engram.orionbot.online; do printf '%s: ' $u; curl -sL https://$u | grep -o 'title>[^<]*' | head -1; done",
+          "set -euo pipefail; while IFS='|' read -r u want; do got=$(curl -sL --fail --show-error https://$u | grep -o 'title>[^<]*' | head -1); case \"$got\" in *\"$want\"*) echo \"OK $u\";; *) echo \"FAIL $u: $got\"; exit 1;; esac; done <<'EOF'\nreprise-murex.vercel.app|Reprise\nfork-around-find-out.vercel.app|speculative execution for agent safety\nstanding-questions.vercel.app|Standing Questions\nquorum-slack-agent.vercel.app|Quorum\nnotary-replay.vercel.app|Notary\nengram.orionbot.online|a memory engine for AI agents\nEOF",
         verifyKind: 'command',
         sources: [
           'https://reprise-murex.vercel.app',
