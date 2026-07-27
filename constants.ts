@@ -472,6 +472,36 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'Fork Around & Find Out',
+    description:
+      "A fail-closed decision gateway for agent tool-calls. Instead of reading a proposed action and guessing whether it is dangerous, it runs the action in a disposable Daytona sandbox, measures the actual blast radius (files touched, network egress, honeytoken reads even when the secret leaves in a request body), and returns ALLOW, QUARANTINE, or BLOCK. If the run cannot be measured, the action is blocked. Built solo at Daytona HackSprint #5.",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/fork-around-find-out',
+    link: 'https://www.danmercede.com/works/fork-around-find-out/',
+    date: '2026-07-24',
+    slug: 'fork-around-find-out',
+  },
+  {
+    title: 'Reprise',
+    description:
+      "A reuse-first gateway for generative media. It answers one question per request: did we already generate this? An exact or near-exact match is served straight from Backblaze B2 with the saving booked, the ambiguous band routes to a human, and only genuinely new work reaches the pipeline. Every decision lands in an Object-Lock ledger under GOVERNANCE retention, so the savings scoreboard is recomputed from records nobody can edit while retention holds.",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/reprise',
+    link: 'https://www.danmercede.com/works/reprise/',
+    date: '2026-07-26',
+    slug: 'reprise',
+  },
+  {
+    title: 'Rekindle',
+    description:
+      "Paste a dormant GitHub repo and get three things: an honest diagnosis of why the flame died, read from commit cadence and the gap between README ambition and reality; a three-step plan whose first step fits in fifteen minutes tonight; and a roughly ninety-word cornerman speech about your project by name, spoken out loud. Model output runs at temperature 0 and is parsed defensively and clamped server-side.",
+    category: 'Agent Project',
+    repo: 'https://github.com/OrionArchitekton/rekindle',
+    link: 'https://www.danmercede.com/works/rekindle/',
+    date: '2026-07-10',
+    slug: 'rekindle',
+  },
+  {
     title: 'agent-demo-video',
     description:
       'A headless pipeline that turns a Markdown DEMO_SCRIPT and a running web app into a finished, narrated, captioned MP4. Audio-first: narration is synthesised first and its per-character timing paces both the screen recording and the captions, so audio, video, and captions stay in sync with zero drift. Runs keyless with FAKE_TTS to iterate before spending any API quota.',

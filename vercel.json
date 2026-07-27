@@ -163,9 +163,48 @@
       "source": "/assets/Case_Study_Healthcare.docx",
       "destination": "/assets/Reference_Architecture_Healthcare.docx",
       "permanent": true
+    },
+    {
+      "source": "/works/fork-around-find-out",
+      "destination": "/works/fork-around-find-out/",
+      "permanent": true
+    },
+    {
+      "source": "/works/reprise",
+      "destination": "/works/reprise/",
+      "permanent": true
+    },
+    {
+      "source": "/works/rekindle",
+      "destination": "/works/rekindle/",
+      "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/fork-around-find-out/",
+      "destination": "https://fork-around-find-out-site.vercel.app/"
+    },
+    {
+      "source": "/works/fork-around-find-out/:path*",
+      "destination": "https://fork-around-find-out-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/reprise/",
+      "destination": "https://reprise-site.vercel.app/"
+    },
+    {
+      "source": "/works/reprise/:path*",
+      "destination": "https://reprise-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/rekindle/",
+      "destination": "https://rekindle-site-ten.vercel.app/"
+    },
+    {
+      "source": "/works/rekindle/:path*",
+      "destination": "https://rekindle-site-ten.vercel.app/:path*"
+    },
     {
       "source": "/works/mcp-context-budget/",
       "destination": "https://mcp-context-budget-site.vercel.app/"
