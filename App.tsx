@@ -1338,7 +1338,7 @@ const CaseStudyPage = () => {
             className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-slate-950 rounded font-mono text-sm hover:bg-copper-400 transition-colors"
           >
             <Download className="w-4 h-4" />
-            Download Full Case Study
+            Download Reference Architecture
           </a>
           <a
             href={READINESS_SCAN.href}

@@ -168,7 +168,7 @@ test('vercel.json immutable /assets rule caches a hashed bundle but NOT a human 
   );
 
   // A second document extension to lock the scoping (DOCX case-study).
-  const docxPath = '/assets/Case_Study_Healthcare.docx';
+  const docxPath = '/assets/Reference_Architecture_Healthcare.docx';
   assert.doesNotMatch(
     cacheControlFor(rules, docxPath) ?? '',
     /\bimmutable\b/,

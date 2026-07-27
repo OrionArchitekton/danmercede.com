@@ -432,8 +432,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     enforcementLayers: [1, 2],
     layerNames: ["Authority Gate", "Immutable Receipts"],
     description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to SOC 2 and SOX compliance requirements.",
-    fileName: "Case_Study_Financial_Services.docx",
-    filePath: "/assets/Case_Study_Financial_Services.docx",
+    fileName: "Reference_Architecture_Financial_Services.docx",
+    filePath: "/assets/Reference_Architecture_Financial_Services.docx",
     enforcementPoints: [
       "Pre-execution authority verification for trading operations",
       "Cryptographic attestation for state mutations",
@@ -452,8 +452,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     enforcementLayers: [3, 4],
     layerNames: ["Drift Guard", "Gated Substrate"],
     description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. Maps to HIPAA and FDA SaMD regulatory exposure.",
-    fileName: "Case_Study_Healthcare.docx",
-    filePath: "/assets/Case_Study_Healthcare.docx",
+    fileName: "Reference_Architecture_Healthcare.docx",
+    filePath: "/assets/Reference_Architecture_Healthcare.docx",
     enforcementPoints: [
       "Behavioral containment for clinical decision support",
       "Workload isolation for PHI-handling agents",
