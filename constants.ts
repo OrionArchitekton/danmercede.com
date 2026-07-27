@@ -890,7 +890,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // The run page renders step names client-side only, so the check reads
         // the public jobs API, which needs no authentication.
         verify:
-          'curl -s https://api.github.com/repos/OrionArchitekton/reprise/actions/runs/30221340528/jobs | python3 -c "import json,sys;j=json.load(sys.stdin)[\'jobs\'][0];print(j[\'name\'],j[\'conclusion\'],[s[\'name\'] for s in j[\'steps\'] if s[\'conclusion\']==\'failure\'])"',
+          'curl -s https://api.github.com/repos/OrionArchitekton/reprise/actions/runs/30221340528 | python3 -c "import json,sys;r=json.load(sys.stdin);print(r[\'head_branch\'],r[\'event\'],r[\'created_at\'][:10],r[\'conclusion\'])"; curl -s https://api.github.com/repos/OrionArchitekton/reprise/actions/runs/30221340528/jobs | python3 -c "import json,sys;j=json.load(sys.stdin)[\'jobs\'][0];print(j[\'name\'],j[\'conclusion\'],[s[\'name\'] for s in j[\'steps\'] if s[\'conclusion\']==\'failure\'])"',
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton/reprise/actions/runs/30221340528'],
       },
