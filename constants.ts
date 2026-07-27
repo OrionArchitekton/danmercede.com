@@ -8,7 +8,7 @@ import {
   Zap,
   PenTool
 } from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram } from './types';
+import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -777,3 +777,124 @@ export const WORKS_HUB = {
   githubUrl: 'https://github.com/OrionArchitekton',
   signalUrl: 'https://danmercede.online',
 } as const;
+
+// Evidence surface for /proof. EVERY claim here was independently re-verified by
+// an adversarial reviewer that ran the `verify` string and tried to refute it.
+// Claims that could not be reproduced, or whose wording overstated what the check
+// actually showed, were dropped rather than softened.
+//
+// Do not add a line here without a `verify` a stranger can run.
+// tests/proofEvidence.test.ts enforces that, and enforces that the limits tier
+// stays non-empty: a proof page that only lists wins is marketing.
+export const PROOF_EVIDENCE: EvidenceTier[] = [
+  {
+    id: 'independent',
+    title: 'Independently validated',
+    note: "Someone else's system attests to these. None of them rests on my own word.",
+    claims: [
+      {
+        claim:
+          'Proctor was named a finalist in UiPath AgentHack 2026, Track 3 (UiPath Test Cloud). 31 finalists were selected from the 203 solutions that reached judging, and Track 3 accounted for 11 of them.',
+        verify: 'UiPath Community Forum finalist announcement, dated 2026-07-20',
+        verifyKind: 'url',
+        href: 'https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660',
+      },
+      {
+        claim:
+          'A pull request was merged into Arize-ai/openinference, a public repository with 1,113 stars.',
+        verify: "gh api repos/Arize-ai/openinference/pulls/3238 --jq '{merged,user:.user.login}'",
+        verifyKind: 'command',
+        href: 'https://github.com/Arize-ai/openinference/pull/3238',
+      },
+      {
+        claim:
+          'A pull request was merged into punkpeye/fastmcp, a public repository with 3,236 stars.',
+        verify: "gh api repos/punkpeye/fastmcp/pulls/275 --jq '{merged,user:.user.login}'",
+        verifyKind: 'command',
+        href: 'https://github.com/punkpeye/fastmcp/pull/275',
+      },
+    ],
+  },
+  {
+    id: 'reproducible',
+    title: 'Publicly reproducible',
+    note: 'My own CI and releases. The claim is that you can re-run every check yourself, not that a third party audited it.',
+    claims: [
+      {
+        claim:
+          '552 tests pass in CI across 8 public repositories, each on that repository current HEAD: notary 159, reprise 92, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, orion-skills 2.',
+        verify:
+          'gh run list -R OrionArchitekton/<repo> --branch main --limit 1, then gh run view <id> --log',
+        verifyKind: 'command',
+      },
+      {
+        claim:
+          'failclosed runs 59 tests in CI, and the repository contains exactly 59 test definitions across 3 files. The runtime count and the source count match.',
+        verify: 'Count the def test_ lines in the three test files and compare against the CI log.',
+        verifyKind: 'command',
+        href: 'https://github.com/OrionArchitekton/failclosed',
+      },
+      {
+        claim:
+          'schemafit publishes 5 released versions on PyPI, 0.1.0 through 0.5.0, MIT licensed.',
+        verify: 'curl -s https://pypi.org/pypi/schemafit/json',
+        verifyKind: 'command',
+        href: 'https://pypi.org/project/schemafit/',
+      },
+      {
+        claim:
+          'Both published packages release through PyPI Trusted Publishing (OIDC). No API token is stored in either repository.',
+        verify:
+          'Read .github/workflows/release.yml in each repo: id-token write, and no PyPI token secret.',
+        verifyKind: 'command',
+        href: 'https://github.com/OrionArchitekton/schemafit/blob/main/.github/workflows/release.yml',
+      },
+      {
+        claim:
+          'Three repositories pin every third-party GitHub Action to a full commit SHA rather than a floating tag: notary, reprise, and fork-around-find-out.',
+        verify: 'Read .github/workflows/ci.yml in each and check every uses: line.',
+        verifyKind: 'command',
+      },
+    ],
+  },
+  {
+    id: 'not-claimed',
+    title: 'What this page does not claim',
+    note: 'The limits are part of the evidence. A proof page that lists only wins is marketing.',
+    claims: [
+      {
+        claim:
+          'Self-run CI is not third-party review. The test counts above come from my own pipelines. Reproducibility is the claim; independent audit is not.',
+        verify: 'Stated limitation, not a measurement.',
+        verifyKind: 'command',
+      },
+      {
+        claim:
+          '6 of the 14 tool repositories ship no CI at all. Four of those still carry test suites, they are simply not wired to a pipeline.',
+        verify:
+          'gh api repos/OrionArchitekton/<repo>/contents/.github/workflows returns 404 for engram, proctor, agent-demo-video, invisible-hand, plainspeak, and whisperways.',
+        verifyKind: 'command',
+      },
+      {
+        claim:
+          'Fork Around & Find Out was submitted to Daytona HackSprint #5 and won no prize. It appears in the public project gallery with no winner badge.',
+        verify: 'Daytona HackSprint #5 Devpost project gallery',
+        verifyKind: 'url',
+        href: 'https://devpost.com/software/fork-around-find-out',
+      },
+      {
+        claim:
+          'Invisible Hand is listed on the SwarmHack gallery with judging locked and no award, prize, or placement.',
+        verify: 'tokens& SwarmHack project page',
+        verifyKind: 'url',
+        href: 'https://tokensand.com/p/invisible-hand',
+      },
+      {
+        claim:
+          'No paying-customer outcomes are published here. The reference architectures on this page are illustrative patterns, not engagement records.',
+        verify: 'Open either reference architecture download; each opens with that disclaimer.',
+        verifyKind: 'command',
+      },
+    ],
+  },
+];

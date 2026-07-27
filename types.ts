@@ -109,3 +109,19 @@ export interface CaseStudy {
   enforcementPoints: string[];
   commercialMapping: string[];
 }
+export interface EvidenceClaim {
+  /** One factual sentence. Every number here must be reproducible by `verify`. */
+  claim: string;
+  /** A command or URL a reader can run to re-check the claim themselves. */
+  verify: string;
+  verifyKind: 'command' | 'url';
+  href?: string;
+}
+
+export interface EvidenceTier {
+  id: string;
+  title: string;
+  /** What KIND of evidence this tier is, stated plainly so tiers are not conflated. */
+  note: string;
+  claims: EvidenceClaim[];
+}
