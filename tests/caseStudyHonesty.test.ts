@@ -35,9 +35,12 @@ const BANNED_LITERALS = [
 // Generic outcome-claim shapes, so a NEW fabricated number is caught too, not
 // just the specific ones removed. This is the leg that survives a reword.
 const OUTCOME_SHAPES: { re: RegExp; why: string }[] = [
-  { re: /\b\d{1,3}\s?%/, why: 'a bare percentage reads as a measured rate' },
+  { re: /\b\d{1,3}(?:\.\d+)?\s?%/, why: 'a percentage reads as a measured rate' },
+  { re: /\b\d{1,3}(?:\.\d+)?\s*percent\b/i, why: 'a spelled-out percentage is the same claim reworded' },
   { re: /\b\d+(\.\d+)?\s?x\b/i, why: 'an "Nx" multiple reads as a measured ROI' },
   { re: /\$\s?\d[\d,.]*\s?[MKB]\b/i, why: 'a currency magnitude reads as measured exposure or savings' },
+  { re: /\$\s?\d{1,3}(?:,\d{3})+/, why: 'a comma-grouped currency figure is a magnitude claim written longhand' },
+  { re: /\b\d+(?:\.\d+)?\s*(?:million|billion|thousand)\b/i, why: 'a spelled magnitude is the same claim reworded' },
 ];
 
 function scanText(text: string, label: string): string[] {
@@ -59,8 +62,9 @@ function scanText(text: string, label: string): string[] {
  * installed, and the local-header path is unreliable when sizes live in a data
  * descriptor, so the central directory is the trustworthy source of offsets.
  */
-function readDocxText(absPath: string): string {
+function readDocxParts(absPath: string): { part: string; text: string }[] {
   const buf = fs.readFileSync(absPath);
+  const parts: { part: string; text: string }[] = [];
 
   let eocd = -1;
   for (let i = buf.length - 22; i >= 0 && i > buf.length - 66_000; i--) {
@@ -84,18 +88,25 @@ function readDocxText(absPath: string): string {
     const localOff = buf.readUInt32LE(ptr + 42);
     const name = buf.subarray(ptr + 46, ptr + 46 + nameLen).toString('utf8');
 
-    if (name === 'word/document.xml') {
+    // Every prose-bearing part, not just the main document. A KPI table parked in
+    // a header, footer, or footnote would otherwise ship publicly while the suite
+    // stayed green, which is the fail-open shape this guard exists to prevent.
+    if (/^word\/(document|header\d*|footer\d*|footnotes|endnotes|comments)\.xml$/.test(name)) {
       const lNameLen = buf.readUInt16LE(localOff + 26);
       const lExtraLen = buf.readUInt16LE(localOff + 28);
       const start = localOff + 30 + lNameLen + lExtraLen;
       const raw = buf.subarray(start, start + compSize);
       const xml = method === 8 ? zlib.inflateRawSync(raw) : raw;
-      return xml.toString('utf8').replace(/<[^>]+>/g, ' ');
+      parts.push({ part: name, text: xml.toString('utf8').replace(/<[^>]+>/g, ' ') });
     }
     ptr += 46 + nameLen + extraLen + commentLen;
   }
 
-  assert.fail(`${absPath}: word/document.xml not found in archive`);
+  assert.ok(
+    parts.some((p) => p.part === 'word/document.xml'),
+    `${absPath}: word/document.xml not found in archive`
+  );
+  return parts;
 }
 
 test('CASE_STUDIES carry no unsourced numeric outcome claims', () => {
@@ -159,13 +170,16 @@ test('the downloadable case-study documents carry no unsourced numeric outcome c
 
   for (const study of docx) {
     const abs = path.join(projectRoot, 'public', study.filePath.replace(/^\//, ''));
-    const text = readDocxText(abs);
+    const parts = readDocxParts(abs);
+    const combined = parts.map((x) => x.text).join(' ');
     assert.ok(
-      text.trim().length > 500,
-      `${study.filePath}: extracted only ${text.trim().length} chars, the reader is probably broken`
+      combined.trim().length > 500,
+      `${study.filePath}: extracted only ${combined.trim().length} chars across ${parts.length} parts, the reader is probably broken`
     );
     scanned++;
-    problems.push(...scanText(text, study.filePath));
+    for (const { part, text } of parts) {
+      problems.push(...scanText(text, `${study.filePath}#${part}`));
+    }
   }
 
   assert.equal(scanned, docx.length, 'not every referenced .docx was scanned');
@@ -184,4 +198,38 @@ test('CaseStudy.metrics is optional, so a study may omit outcome numbers entirel
     withoutMetrics.length > 0,
     'expected at least one case study with no metrics block after the honesty pass'
   );
+});
+
+test('the outcome-claim shapes catch rewordings, not just the exact removed strings', () => {
+  // A guard that only matches the literal figures it was written for is fail-open:
+  // any trivial reword ships the same claim. These fixtures pin the reworded forms
+  // that were verified to BYPASS the first version of this scanner.
+  const mustCatch = [
+    '67%', '67.5%', '94.0%',
+    '67 percent', '4.2x', '4.2 X',
+    '$4.2M', '$4,200,000', '2.1 million', '1.5 billion',
+  ];
+  for (const sample of mustCatch) {
+    assert.notDeepEqual(
+      scanText(sample, 'fixture'),
+      [],
+      `scanner must flag "${sample}"; an outcome claim in this form would ship silently`
+    );
+  }
+
+  // Benign strings the guard must NOT flag, so it stays usable. A guard that
+  // fires on ordinary prose gets disabled, which is its own fail-open path.
+  const mustPass = [
+    'SOC 2 Type II certification at risk due to insufficient AI execution controls',
+    'Authority Gate (Layer 1)',
+    'HIPAA compliance requirements for all systems accessing protected health information',
+    'Fail-closed configuration: unverified intent halts the execution pipeline',
+  ];
+  for (const sample of mustPass) {
+    assert.deepEqual(
+      scanText(sample, 'fixture'),
+      [],
+      `scanner must not flag ordinary architectural prose: "${sample}"`
+    );
+  }
 });
