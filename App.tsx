@@ -1199,12 +1199,12 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Enforcement in Production, Case Studies */}
+        {/* Reference Enforcement Architectures, Case Studies */}
         {CASE_STUDIES.length > 0 && (
           <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement in Production</span>
-              <h2 className="text-2xl font-bold text-white mb-1">Enforcement in Production</h2>
+              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Reference Architectures</span>
+              <h2 className="text-2xl font-bold text-white mb-1">Reference Enforcement Architectures</h2>
               <p className="text-sm text-slate-400">Reference enforcement architectures by industry and regulatory surface. Illustrative patterns, not measured client outcomes.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
