@@ -6,6 +6,7 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 import { CASE_STUDIES } from '../constants';
+import type { CaseStudyMetric } from '../types';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -28,6 +29,7 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const BANNED_LITERALS = [
   '67%', '94%', '4.2x', '97%', '89%', '99%',
   '$4.2M', '$2.1M', '$3.2M', '$4.8M', '$12.40', '$8.60',
+  '<48 hrs',
   'Post-Engagement', 'ROI Scorecard', 'Baseline KPI',
   'Annualized Risk Reduction', 'Financial Exposure Estimate',
 ];
@@ -70,6 +72,45 @@ function scanText(text: string, label: string): string[] {
   for (const { re, why } of OUTCOME_SHAPES) {
     const m = text.match(re);
     if (m) problems.push(`${label}: matched ${re} ("${m[0]}"), ${why}`);
+  }
+  return problems;
+}
+
+/**
+ * Positive-evidence gate for metric rows. Two of the removed claims,
+ * { label: 'Unattested Mutations', value: 'Zero' } and
+ * { label: 'Cycle Time', value: '<48 hrs' }, carry no digit-with-unit shape the
+ * scanners above can match, and 'Zero' cannot be literal-banned without firing
+ * on ordinary prose ("zero-trust", "zero drift"). Enumerating bad value shapes
+ * is fail-open here, so the gate inverts: a metric row ships ONLY when its
+ * exact label/value pair is listed below with a provenance note. Empty since
+ * the honesty pass removed every row as unsourced.
+ */
+const SOURCED_METRICS: { slug: string; label: string; value: string; source: string }[] = [];
+
+function unsourcedMetricProblems(
+  studies: { slug: string; metrics?: CaseStudyMetric[] }[],
+  allowlist: typeof SOURCED_METRICS = SOURCED_METRICS
+): string[] {
+  const problems: string[] = [];
+  for (const study of studies) {
+    for (const m of study.metrics ?? []) {
+      // An entry vouches for one row on one study: slug-scoped, so a pair
+      // sourced for one study cannot ride along on another, and only with a
+      // real provenance note, so an empty source cannot vouch for anything.
+      const sourced = allowlist.some(
+        (s) =>
+          s.slug === study.slug &&
+          s.label === m.label &&
+          s.value === m.value &&
+          s.source.trim() !== ''
+      );
+      if (!sourced) {
+        problems.push(
+          `${study.slug}: metric { label: "${m.label}", value: "${m.value}" } has no sourced entry in SOURCED_METRICS`
+        );
+      }
+    }
   }
   return problems;
 }
@@ -220,6 +261,79 @@ test('CaseStudy.metrics is optional, so a study may omit outcome numbers entirel
   );
 });
 
+test('every metric row on the /proof cards is explicitly sourced', () => {
+  const problems = unsourcedMetricProblems(CASE_STUDIES);
+  assert.deepEqual(
+    problems,
+    [],
+    `metric rows without provenance are back on the /proof cards:\n  ${problems.join('\n  ')}`
+  );
+});
+
+test('reintroducing the removed Healthcare/Financial metric rows fails the gate', () => {
+  // The exact rows the honesty pass removed (commit 8be1d3f). "Zero" and
+  // "<48 hrs" bypass the text scanners by shape, so this pins the allowlist
+  // gate as the leg that catches them; the shape-covered rows prove the gate
+  // fires independently of the scanners.
+  const oldRows: { slug: string; metrics: CaseStudyMetric[] }[] = [
+    {
+      slug: 'healthcare',
+      metrics: [
+        { label: 'SLA Compliance', value: '97%' },
+        { label: 'Unattested Mutations', value: 'Zero' },
+        { label: 'Privilege Creep Reduction', value: '89%' },
+      ],
+    },
+    {
+      slug: 'financial-services',
+      metrics: [
+        { label: 'Escalation Reduction', value: '67%' },
+        { label: 'Task Completion', value: '94%' },
+        { label: 'ROI Multiple', value: '4.2x' },
+        { label: 'Cycle Time', value: '<48 hrs' },
+      ],
+    },
+  ];
+  const problems = unsourcedMetricProblems(oldRows);
+  assert.equal(
+    problems.length,
+    7,
+    `every removed metric row must fail the gate, got:\n  ${problems.join('\n  ')}`
+  );
+  // The two scanner-invisible values specifically: the gate is their ONLY guard.
+  for (const value of ['Zero', '<48 hrs']) {
+    assert.ok(
+      problems.some((p) => p.includes(`value: "${value}"`)),
+      `the gate must reject the scanner-invisible value "${value}"`
+    );
+  }
+});
+
+test('an allowlist entry vouches only for its own study and needs a real source', () => {
+  const row = { label: 'Attestation Coverage', value: 'Complete' };
+  const healthcare = { slug: 'healthcare', metrics: [row] };
+  const financial = { slug: 'financial-services', metrics: [row] };
+  const sourcedForHealthcare = [
+    { slug: 'healthcare', ...row, source: 'measured over the 2026-Q2 receipt ledger' },
+  ];
+
+  // The owning study passes; the same pair on another study still fails.
+  assert.deepEqual(unsourcedMetricProblems([healthcare], sourcedForHealthcare), []);
+  assert.equal(
+    unsourcedMetricProblems([financial], sourcedForHealthcare).length,
+    1,
+    'a pair sourced for one study must not vouch for the same pair on another'
+  );
+
+  // An empty or whitespace source vouches for nothing, even on the owning study.
+  const emptySource = [{ slug: 'healthcare', ...row, source: '   ' }];
+  assert.equal(
+    unsourcedMetricProblems([healthcare], emptySource).length,
+    1,
+    'an allowlist entry with no provenance note must not pass its row'
+  );
+});
+
 test('the outcome-claim shapes catch rewordings, not just the exact removed strings', () => {
   // A guard that only matches the literal figures it was written for is fail-open:
   // any trivial reword ships the same claim. These fixtures pin the reworded forms
@@ -245,6 +359,10 @@ test('the outcome-claim shapes catch rewordings, not just the exact removed stri
     'Authority Gate (Layer 1)',
     'HIPAA compliance requirements for all systems accessing protected health information',
     'Fail-closed configuration: unverified intent halts the execution pipeline',
+    // Bare "zero" is deliberately NOT literal-banned: it appears in ordinary
+    // prose ("zero-trust", "zero drift"). The SOURCED_METRICS gate is the leg
+    // that stops { value: 'Zero' } returning as a metric row.
+    'Zero-trust posture with fail-closed defaults across the execution plane',
   ];
   for (const sample of mustPass) {
     assert.deepEqual(
