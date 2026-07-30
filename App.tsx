@@ -835,21 +835,25 @@ const EvidenceSection = () => (
                   <p className="text-slate-300 text-sm leading-relaxed mb-1.5">{c.claim}</p>
                   {c.kind === 'check' ? (
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <code className="text-[11px] font-mono text-slate-500 break-all">
+                      <code className="text-[11px] font-mono text-slate-500 min-w-0 max-w-full whitespace-pre-wrap break-words">
                         {c.verify}
                       </code>
-                      {(c.sources ?? []).map((src, si) => (
-                        <a
-                          key={si}
-                          href={src}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-500 hover:text-copper-400 transition-colors"
-                        >
-                          {(c.sources ?? []).length > 1 ? `source ${si + 1}` : 'check it'}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ))}
+                      {(c.sources ?? []).map((src, si) => {
+                        const sourceLabel = (c.sources ?? []).length > 1 ? `source ${si + 1}` : 'check it';
+                        return (
+                          <a
+                            key={si}
+                            href={src}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${sourceLabel}: ${c.claim}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-500 hover:text-copper-400 transition-colors"
+                          >
+                            {sourceLabel}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        );
+                      })}
                     </div>
                   ) : (
                     <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500">

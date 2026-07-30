@@ -826,7 +826,8 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         kind: 'check',
         claim:
           'Proctor was named a finalist in UiPath AgentHack 2026, Track 3 (UiPath Test Cloud). 31 finalists were selected from the 203 solutions that reached judging, and Track 3 accounted for 11 of them.',
-        verify: 'UiPath Community Forum finalist announcement, dated 2026-07-20',
+        verify:
+          'https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660',
         verifyKind: 'url',
         sources: [
           'https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660',
@@ -1107,7 +1108,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         kind: 'check',
         claim:
           'Fork Around & Find Out was submitted to Daytona HackSprint #5 and won no prize. It appears in the public project gallery with no winner badge.',
-        verify: 'Daytona HackSprint #5 Devpost project page',
+        verify: 'https://devpost.com/software/fork-around-find-out',
         verifyKind: 'url',
         sources: ['https://devpost.com/software/fork-around-find-out'],
       },
@@ -1115,7 +1116,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         kind: 'check',
         claim:
           'Invisible Hand is listed on the SwarmHack gallery with judging locked and no award, prize, or placement.',
-        verify: 'tokens& SwarmHack project page',
+        verify: 'https://tokensand.com/p/invisible-hand',
         verifyKind: 'url',
         sources: ['https://tokensand.com/p/invisible-hand'],
       },
