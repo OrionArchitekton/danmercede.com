@@ -289,6 +289,7 @@ test('scanner-safe outcome wording is still forbidden as a metric row', () => {
   ]);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /Attestation Coverage/);
+  assert.match(problems[0], /Complete/);
 });
 
 test('the outcome-claim shapes catch rewordings, not just the exact removed strings', () => {
