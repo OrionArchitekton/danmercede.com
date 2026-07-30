@@ -74,6 +74,22 @@ function scanText(text: string, label: string): string[] {
   return problems;
 }
 
+// There is no repository contract that binds a public metric row to its
+// population, measurement window, method, and immutable result artifact.
+// Until that contract exists, accepting a URL or prose note would only make an
+// unsupported number look sourced. Fail closed: case-study cards carry no
+// metric rows, regardless of whether a value happens to evade the scanners.
+function forbiddenMetricProblems(
+  studies: { slug: string; metrics?: { label: string; value: string }[] }[]
+): string[] {
+  return studies.flatMap((study) =>
+    (study.metrics ?? []).map(
+      (metric) =>
+        `${study.slug}: metric { label: "${metric.label}", value: "${metric.value}" } is forbidden until a binding measurement-evidence contract exists`
+    )
+  );
+}
+
 /**
  * Minimal DOCX (zip) reader over the central directory. No zip dependency is
  * installed, and the local-header path is unreliable when sizes live in a data
@@ -218,6 +234,62 @@ test('CaseStudy.metrics is optional, so a study may omit outcome numbers entirel
     withoutMetrics.length > 0,
     'expected at least one case study with no metrics block after the honesty pass'
   );
+});
+
+test('case-study cards publish no metrics without a binding evidence contract', () => {
+  const problems = forbiddenMetricProblems(CASE_STUDIES);
+  assert.deepEqual(
+    problems,
+    [],
+    `metric rows are back on the /proof cards without a binding measurement-evidence contract:\n  ${problems.join('\n  ')}`
+  );
+});
+
+test('reintroducing the removed Healthcare/Financial metric rows fails the gate', () => {
+  const oldRows = [
+    {
+      slug: 'healthcare',
+      metrics: [
+        { label: 'SLA Compliance', value: '97%' },
+        { label: 'Unattested Mutations', value: 'Zero' },
+        { label: 'Privilege Creep Reduction', value: '89%' },
+      ],
+    },
+    {
+      slug: 'financial-services',
+      metrics: [
+        { label: 'Escalation Reduction', value: '67%' },
+        { label: 'Task Completion', value: '94%' },
+        { label: 'ROI Multiple', value: '4.2x' },
+        { label: 'Cycle Time', value: '<48 hrs' },
+      ],
+    },
+  ];
+  const problems = forbiddenMetricProblems(oldRows);
+  const expectedRows = oldRows.reduce((total, study) => total + study.metrics.length, 0);
+  assert.equal(
+    problems.length,
+    expectedRows,
+    `every removed metric row must fail the gate, got:\n  ${problems.join('\n  ')}`
+  );
+  for (const value of ['Zero', '<48 hrs']) {
+    assert.ok(
+      problems.some((p) => p.includes(`value: "${value}"`)),
+      `the gate must reject the scanner-invisible value "${value}"`
+    );
+  }
+});
+
+test('scanner-safe outcome wording is still forbidden as a metric row', () => {
+  const problems = forbiddenMetricProblems([
+    {
+      slug: 'healthcare',
+      metrics: [{ label: 'Attestation Coverage', value: 'Complete' }],
+    },
+  ]);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /Attestation Coverage/);
+  assert.match(problems[0], /Complete/);
 });
 
 test('the outcome-claim shapes catch rewordings, not just the exact removed strings', () => {
