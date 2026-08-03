@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -314,6 +314,25 @@ const HomePage = () => {
           ))}
         </div>
       </div>
+
+      {/* Upcoming Speaking - third-party credential proof block */}
+      <Section className="py-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.label}</p>
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">{SPEAKING.event}</h3>
+          <p className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.date}</p>
+          <p className="text-slate-400 mb-2 max-w-xl mx-auto italic">"{SPEAKING.title}"</p>
+          <p className="text-slate-400 text-sm mb-6 max-w-xl mx-auto">{SPEAKING.detail}</p>
+          <a
+            href={SPEAKING.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-copper-500 text-sm font-semibold tracking-wider uppercase hover:text-copper-400 transition-colors inline-flex items-center"
+          >
+            Event details <ExternalLink className="w-4 h-4 ml-2" />
+          </a>
+        </div>
+      </Section>
 
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
