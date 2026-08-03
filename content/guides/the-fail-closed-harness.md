@@ -111,8 +111,13 @@ Now the other kind. In a fresh scratch repository holding zero commits, I ran a 
 whose message carried a long dash, which the estate bans from anything public:
 
 ```
-git commit -m "feat: add the reuse layer — it checks B2 before generating"
+git commit -m "feat: add the reuse layer <U+2014> it checks B2 before generating"
 ```
+
+The `<U+2014>` above stands for the literal em dash. It cannot appear on this page,
+because the rule being demonstrated governs this page too, and a guard now enforces
+that across every published guide. Writing the codepoint instead of the character is
+the same move the demonstration itself needed, one paragraph later.
 
 It was refused, and the refusal offered no override:
 
