@@ -96,7 +96,7 @@ kinds at the same target, minutes apart, and watched what each one did.
 The ask first. An ordinary recursive delete on a scratch directory tripped the
 destructive-command matcher, which graded it and stopped:
 
-```
+```text
 [rule-of-two] HOLD, destructive state-change detected. Ask-with-override, not a hard block.
 graded: tier=CONFIRM score=65/100 (thresholds review=35 confirm=60 block=85)
 triggered by: floor:rm with recursive+force
@@ -110,7 +110,7 @@ tells you how to proceed anyway.
 Now the other kind. In a fresh scratch repository holding zero commits, I ran a real commit
 whose message carried a long dash, which the estate bans from anything public:
 
-```
+```sh
 git commit -m "feat: add the reuse layer <U+2014> it checks B2 before generating"
 ```
 
@@ -121,14 +121,14 @@ the same move the demonstration itself needed, one paragraph later.
 
 It was refused, and the refusal offered no override:
 
-```
+```text
 Banned long dash in a publish/PR/commit command. Em (U+2014), en (U+2013), and
 horizontal-bar (U+2015) dashes are not allowed in public-facing content ...
 Policy: ~/.claude/rules/no-em-dashes.md
 ```
 
 Then the half that actually matters, because a refusal message proves nothing on its own.
-Afterwards the repository still held zero commits and zero reflog entries, and the file was
+Afterward the repository still held zero commits and zero reflog entries, and the file was
 still sitting in the index, never written to history. The protected property survived the
 attempt. That is the claim worth making, rather than the harness having merely complained.
 
@@ -136,15 +136,15 @@ One more step, and it is load-bearing. A gate that blocks everything is useless 
 safe, and from outside the two are indistinguishable. So I sent the same commit again with
 the dash replaced by a comma, and it went straight through:
 
-```
+```sh
 git commit -m "feat: add the reuse layer, it checks B2 before generating"
 ```
 
 Blocked the violation, passed the legitimate variant, left the protected state untouched.
 That is a wall, and it is the only thing in this guide I am willing to call one.
 
-Be careful what it generalises to, because it is narrower than it looks. Of 78 hooks on disk
-that day, 13 carried a deny signal at all. One of the strongest looking candidates, a
+Be careful what it generalizes to, because it is narrower than it looks. Of 78 hooks on disk
+that day, 13 carried a deny signal at all. One of the strongest-looking candidates, a
 config-protection gate, is excluded from this demonstration entirely because it is fail-open
 by construction and disarmed by default, even though its arm marker happened to be present.
 
