@@ -87,6 +87,73 @@ You tell them apart by firing the control. A canary is a known violation you sen
 
 Be precise about what a fired canary buys, though, because it is less than the phrase suggests. Armed-and-green proves nothing. Fired-and-caught proves that one path bound, at one moment. It says nothing about the path you did not exercise. So rotate the canaries: send a plainly known-bad command, then send the same intent dressed up in an alias or an `eval`, then force the control's own error path. Those three fail independently, and only the first is usually tested. A gate proven in June and quietly broken in July is worth exactly nothing in August.
 
+## Is anything in here actually a wall?
+
+Everything above is about gates that ask. It is fair to read all of it and conclude that the
+harness never really prevents anything, only slows it down. So on 2026-08-02 I fired both
+kinds at the same target, minutes apart, and watched what each one did.
+
+The ask first. An ordinary recursive delete on a scratch directory tripped the
+destructive-command matcher, which graded it and stopped:
+
+```
+[rule-of-two] HOLD, destructive state-change detected. Ask-with-override, not a hard block.
+graded: tier=CONFIRM score=65/100 (thresholds review=35 confirm=60 block=85)
+triggered by: floor:rm with recursive+force
+To proceed intentionally, rerun the exact command with the override env var:
+  RULE_OF_TWO_OK=1 <your command>
+```
+
+That is the gate this guide already described honestly. It hands the decision back, and it
+tells you how to proceed anyway.
+
+Now the other kind. In a fresh scratch repository holding zero commits, I ran a real commit
+whose message carried a long dash, which the estate bans from anything public:
+
+```
+git commit -m "feat: add the reuse layer — it checks B2 before generating"
+```
+
+It was refused, and the refusal offered no override:
+
+```
+Banned long dash in a publish/PR/commit command. Em (U+2014), en (U+2013), and
+horizontal-bar (U+2015) dashes are not allowed in public-facing content ...
+Policy: ~/.claude/rules/no-em-dashes.md
+```
+
+Then the half that actually matters, because a refusal message proves nothing on its own.
+Afterwards the repository still held zero commits and zero reflog entries, and the file was
+still sitting in the index, never written to history. The protected property survived the
+attempt. That is the claim worth making, rather than the harness having merely complained.
+
+One more step, and it is load-bearing. A gate that blocks everything is useless rather than
+safe, and from outside the two are indistinguishable. So I sent the same commit again with
+the dash replaced by a comma, and it went straight through:
+
+```
+git commit -m "feat: add the reuse layer, it checks B2 before generating"
+```
+
+Blocked the violation, passed the legitimate variant, left the protected state untouched.
+That is a wall, and it is the only thing in this guide I am willing to call one.
+
+Be careful what it generalises to, because it is narrower than it looks. Of 78 hooks on disk
+that day, 13 carried a deny signal at all. One of the strongest looking candidates, a
+config-protection gate, is excluded from this demonstration entirely because it is fail-open
+by construction and disarmed by default, even though its arm marker happened to be present.
+
+And the gate that did hold inspects command text, which has a consequence I hit while writing
+this section: the hook blocked my own attempt to paste the offending commit into this guide,
+then let the same text through when I built the character from its codepoint instead. That is
+not a defeat of the control, it is the control's documented boundary. A dash living in a file
+passed by reference, `git commit -F` or a PR body file, is outside what a command matcher can
+see, and that path is guarded by operator habit rather than by the hook.
+
+So the honest summary is not that the harness prevents things. It is that this harness holds
+at least one path that prevents and at least one that only asks, and that the two are told
+apart by firing them, never by reading their descriptions.
+
 ## Does fail-closed scale, and what does it cost?
 
 On 2026-07-23 four control types touched one session: a first-touch fact gate, a pre-commit secret scan, a stop gate that blocked the session from ending, and a destructive-command matcher. Three of them hold until a check is satisfied. The fourth is fail-open by construction, and conflating the two is how a stack gets oversold.
