@@ -79,6 +79,7 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-07-06-do-my-agents-learn',
   '2026-07-13-the-approve-button',
   '2026-07-20-nobody-owned-the-workflow',
+  '2026-07-27-the-machines-came-back',
 ];
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
