@@ -73,6 +73,15 @@ export const SIGNALS = [
   "Trademark Holder",
 ];
 
+export const SPEAKING = {
+  label: "Upcoming Speaking",
+  event: "NODES 2026 by Neo4j",
+  date: "November 12, 2026",
+  title: "Don't Flatten the Tree: Ingesting Branched Conversations into a Knowledge Graph",
+  detail: "Selected speaker at Neo4j's global developer conference: ingesting branched LLM conversation history into a production knowledge graph, with the patterns that keep it idempotent and re-runnable.",
+  href: "https://neo4j.com/nodes/",
+};
+
 export const BELIEFS: Belief[] = [
   { statement: "INTELLIGENCE AUGMENTS HUMANS", detail: "Operator authority stays in the loop." },
   { statement: "TRUST REQUIRES TRACEABILITY", detail: "If it can’t be audited, it can’t be trusted." },
