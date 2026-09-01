@@ -77,9 +77,17 @@ export const SPEAKING = {
   label: "Upcoming Speaking",
   event: "NODES 2026 by Neo4j",
   date: "November 12, 2026",
+  // Published slot, verified against the live agenda 2026-09-01:
+  // datetime="2026-11-12T19:30:00+00:00" (19:30-20:00 UTC), Americas panel.
+  time: "11:30 AM PST",
+  track: "Data Intelligence",
   title: "Don't Flatten the Tree: Ingesting Branched Conversations into a Knowledge Graph",
   detail: "Selected speaker at Neo4j's global developer conference: ingesting branched LLM conversation history into a production knowledge graph, with the patterns that keep it idempotent and re-runnable.",
-  href: "https://neo4j.com/nodes/",
+  // The canonical Neo4j speaker page (self-canonical, robots index,follow). This is
+  // the credential-proof target: neo4j.com/nodes/ itself carries zero mentions of Dan.
+  // Mirrored into Person.sameAs in index.html per docs/identity-contract.md.
+  href: "https://neo4j.com/nodes/speakers/dan-mercede/",
+  cta: "Speaker profile",
 };
 
 export const BELIEFS: Belief[] = [
