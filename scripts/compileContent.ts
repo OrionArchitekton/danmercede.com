@@ -85,6 +85,7 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-09-01-gate-what-you-cannot-undo',
   '2026-09-07-the-plan-checked-itself-and-passed',
   '2026-09-14-the-fix-never-reached-the-customer',
+  '2026-09-21-approved-but-not-the-version-that-shipped',
 ];
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
