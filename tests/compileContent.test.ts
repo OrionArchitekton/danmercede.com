@@ -965,6 +965,11 @@ test('HUB_ESSAY_ALLOWLIST contains the 2 flagship essays', () => {
   assert.ok(HUB_ESSAY_ALLOWLIST.includes('2026-05-20-pre-execution-authority-gates'));
 });
 
+test('HUB_ESSAY_ALLOWLIST contains the Edition 10 release slug exactly once', () => {
+  const slug = '2026-09-21-approved-but-not-the-version-that-shipped';
+  assert.equal(HUB_ESSAY_ALLOWLIST.filter((s) => s === slug).length, 1);
+});
+
 test('mapSubstrateToEntry admits an allowlisted slug whose surface_targets exclude danmercede.com', () => {
   const slug = HUB_ESSAY_ALLOWLIST[0];
   const data = {
