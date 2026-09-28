@@ -39,7 +39,11 @@ work is the hub Works entry; the working-log entry is the dated announcement.
 1. Append one entry to `WORKS` in `constants.ts` (static `Work[]`, like
    `VENTURES`/`CASE_STUDIES`): `title`, `description`, `category`, `repo`
    (GitHub URL — drives the JSON-LD `codeRepository`), optional `link`/`gist`/
-   `license`/`date`, and a unique `slug`.
+   `license`/`date`, and a unique `slug`. The `date` feeds JSON-LD `datePublished`
+   only; cards do not display it.
+1b. Place the new `slug` in `WORKS_PRIORITY` (same file) at the position its importance
+   earns, not simply at the end. The page renders in that order, and `npm test` fails
+   until every work is listed there exactly once.
 2. No route/JSON-LD change is needed for an additional work — the `/works`
    `CollectionPage` in `seoMeta.ts` (`renderRouteJsonLd`) maps over `WORKS`
    automatically, emitting one `SoftwareSourceCode` per entry, each

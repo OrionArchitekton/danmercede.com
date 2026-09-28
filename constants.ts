@@ -719,6 +719,51 @@ export const WORKS: Work[] = [
   },
 ];
 
+// /works display order, most important first: value to a visitor and fit with the
+// governed-agentic-systems thesis, NOT ship date (dates made the page read as a
+// publishing calendar). Every WORKS slug appears exactly once; tests/worksHub.test.ts
+// enforces it, so a newly shipped work must be placed here deliberately.
+export const WORKS_PRIORITY: readonly string[] = [
+  // Open Source & Tooling
+  'failclosed',
+  'orion-skills',
+  'mcp-context-budget',
+  'schemafit',
+  'agent-demo-video',
+  'localfiscal',
+  // Applied Agent Projects
+  'proctor',
+  'fork-around-find-out',
+  'codex-rule-ledger',
+  'algorithm-reviews',
+  'notary',
+  'invisible-hand',
+  'engram',
+  'orbit-impact-lens',
+  'quorum',
+  'reprise',
+  'standing-questions',
+  'plainspeak',
+  'rekindle',
+  'whisperways',
+];
+
+// The works in one /works section, in WORKS_PRIORITY order. Fail-loud: a work missing
+// from the priority list throws instead of rendering in an arbitrary position.
+export function worksByPriority(
+  category: string,
+  works: readonly Work[] = WORKS,
+  priority: readonly string[] = WORKS_PRIORITY,
+): Work[] {
+  const rank = new Map(priority.map((slug, i) => [slug, i]));
+  const inSection = works.filter((w) => w.category === category);
+  const missing = inSection.filter((w) => !rank.has(w.slug)).map((w) => w.slug);
+  if (missing.length > 0) {
+    throw new Error(`WORKS_PRIORITY is missing: ${missing.join(', ')}`);
+  }
+  return [...inSection].sort((a, b) => rank.get(a.slug)! - rank.get(b.slug)!);
+}
+
 export { THOUGHTS };
 export { GUIDES };
 // Defensive: resolves to the generated DIAGRAMS array once present, else [].

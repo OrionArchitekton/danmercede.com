@@ -56,6 +56,11 @@ nav-label change; URL-param filter on `/thoughts`; new `WORKS` entries; any new 
   `THOUGHTS` entry (title in sync with the corpus). **Fail-loud** if a slug is not in `THOUGHTS`
   (throw) so a typo/unpublished slug is caught at build/test, never a dangling link. Preserves
   `FEATURED_ESSAY_SLUGS` order.
+- `export const WORKS_PRIORITY: readonly string[]` + `worksByPriority(category)` (added
+  2026-09-28): the /works display order, most important first (value to a visitor and fit with
+  the governed-agentic-systems thesis), never ship date. Every `WORKS` slug appears exactly once
+  (test); `worksByPriority` throws on a work missing from the list, so a new ship is placed
+  deliberately instead of landing at an arbitrary position.
 - `export const WORKS_HUB = { availability: "Available for staff/principal AI-systems roles and
   speaking.", contactHref: "/connect", githubUrl: "https://github.com/OrionArchitekton",
   signalUrl: "https://danmercede.online" }` (exact copy operator-tunable).
@@ -67,8 +72,10 @@ Restructure within the existing `Section`/`SectionHeader`/card system (copper-on
 - **Header:** `<SectionHeader as="h1" title="Works" subtitle="Build · Selected essays · Signal" />`
   + a dev-hub intro paragraph framing "open-source tooling and field-tested patterns from shipping
   governed agentic systems in production."
-- **Build:** the existing `WORKS.map(...)` grid (unchanged), under a sub-header "Build — open
-  source & tooling."
+- **Build:** the `WORKS` grid, under a sub-header "Build: open
+  source & tooling." Each section renders in `WORKS_PRIORITY` order (`worksByPriority`), and
+  the cards (`components/WorkCard.tsx`) show NO ship date: dates made the page read as a
+  publishing calendar. JSON-LD keeps `datePublished` (§3.4 unchanged).
 - **Selected essays:** render `featuredEssays()` (≤5) as a compact list — each a react-router
   `<Link to={`/thoughts/${slug}`}>{title}</Link>` (NO body, NO filter) — followed by a bare
   `<Link to="/thoughts">Full archive →</Link>` (bare because `/thoughts` has no enterprise CTA;
@@ -119,6 +126,8 @@ Person") stays green.
 - **AC5** — `worksJsonLd` (exactly one CollectionPage, no second Person), `headHygiene`,
   `bodyBake`, `sitemapParity` all stay green.
 - **AC6** — `npm test` + `npm run build` green.
+- **AC7** (2026-09-28): each /works section renders in `WORKS_PRIORITY` order, which lists every
+  work exactly once, and no card renders a date (tests render the card and check its HTML).
 
 ## §5 — Invariants
 
@@ -131,6 +140,7 @@ Person") stays green.
 5. Existing design system reused; **no new visual language;** nav label "Works" + the `/works`
    URL kept.
 6. `featuredEssays()` fail-loud on an unresolved slug — no dangling internal links.
+7. `/works` order is by importance (`WORKS_PRIORITY`), never by date, and cards show no date.
 
 ## §6 — Files touched
 
