@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS } from '../constants';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
+import { WorkCard } from '../components/WorkCard';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 // ---------------------------------------------------------------------------
@@ -129,4 +132,57 @@ test('the /works baked body hosts NO essay bodies (stays a small pointer: lead +
   // actually exists to catch. Longest legitimate paragraph today is 149 chars.
   const longest = Math.max(0, ...(block.match(/<p>[\s\S]*?<\/p>/g) || []).map((p) => p.length));
   assert.ok(longest <= 400, `no /works paragraph may run essay-length, longest is ${longest} chars`);
+});
+
+// ---------------------------------------------------------------------------
+// /works order is by importance (WORKS_PRIORITY), and cards carry no ship date
+// ---------------------------------------------------------------------------
+// Dates made the page read as a publishing calendar (many ships landed in one
+// month), and date order buried the flagship work. The page now shows no date
+// and follows an explicit priority list. Structured data keeps datePublished
+// (tests/worksJsonLd.test.ts); only the visible card changed.
+
+test('WORKS_PRIORITY lists every work exactly once, so a new ship must be placed deliberately', () => {
+  const slugs = WORKS.map((w) => w.slug);
+  assert.equal(new Set(WORKS_PRIORITY).size, WORKS_PRIORITY.length, 'no duplicate priority slugs');
+  assert.deepEqual([...WORKS_PRIORITY].sort(), [...slugs].sort(), 'priority list and WORKS must hold the same slugs');
+});
+
+test('each /works section renders in priority order, not by date', () => {
+  for (const category of ['Open Source', 'Agent Project']) {
+    const expected = WORKS_PRIORITY.filter((s) => WORKS.find((w) => w.slug === s)!.category === category);
+    assert.deepEqual(worksByPriority(category).map((w) => w.slug), expected, category);
+  }
+  assert.equal(worksByPriority('Open Source')[0].slug, 'failclosed', 'flagship open-source work leads');
+  assert.equal(worksByPriority('Agent Project')[0].slug, 'proctor', 'the finalist agent project leads');
+});
+
+test('worksByPriority fails loud when a work is missing from the priority list', () => {
+  const works = [
+    { title: 'A', description: 'a', category: 'Open Source', repo: 'r', slug: 'a' },
+    { title: 'B', description: 'b', category: 'Open Source', repo: 'r', slug: 'b' },
+  ];
+  assert.deepEqual(worksByPriority('Open Source', works, ['b', 'a']).map((w) => w.slug), ['b', 'a']);
+  assert.throws(() => worksByPriority('Open Source', works, ['a']), /b/);
+});
+
+test('a Works card shows no ship date', () => {
+  const dated = WORKS.filter((w) => w.date);
+  assert.ok(dated.length > 0, 'guards against a vacuous pass: some works carry a date');
+  for (const work of dated) {
+    const html = renderToStaticMarkup(createElement(WorkCard, { work }));
+    assert.ok(html.includes(work.category), `${work.slug}: category still shown`);
+    assert.ok(!html.includes(work.date!), `${work.slug}: date must not render`);
+    assert.doesNotMatch(html, /\b20\d\d-\d\d-\d\d\b/, `${work.slug}: no ISO date of any kind`);
+  }
+});
+
+test('every work belongs to a section the page renders, so none is dropped silently', () => {
+  for (const work of WORKS) {
+    assert.ok(
+      (WORKS_SECTIONS as readonly string[]).includes(work.category),
+      `${work.slug}: category "${work.category}" is not a /works section (${WORKS_SECTIONS.join(', ')})`,
+    );
+  }
+  assert.throws(() => worksByPriority('Open source'), /not a \/works section/);
 });

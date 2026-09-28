@@ -5,10 +5,11 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
+import { WorkCard } from './components/WorkCard';
 import {
   ROUTE_META,
   caseStudyMeta,
@@ -1458,59 +1459,6 @@ const CaseStudyPage = () => {
   );
 };
 
-// One Works card. Extracted so the "Open Source & Tooling" and "Applied Agent
-// Projects" sections render identical cards from a single definition.
-const WorkCard = ({ work }: { work: Work }) => (
-  <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
-    <div className="flex items-center justify-between mb-4">
-      <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-        {work.category}
-      </span>
-      {work.date && <span className="text-xs font-mono text-slate-400">{work.date}</span>}
-    </div>
-    <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
-      {work.title}
-    </h3>
-    <p className="text-slate-400 text-sm leading-relaxed flex-grow">{work.description}</p>
-    <div className="mt-5 flex flex-wrap items-center gap-4">
-      <a
-        href={work.link || work.repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`${work.link && work.link !== work.repo ? 'View project' : 'Repository'}: ${work.title}`}
-        className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
-      >
-        {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
-      </a>
-      {work.gist && (
-        <a
-          href={work.gist}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Code sample for ${work.title}`}
-          className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
-        >
-          Sample <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
-        </a>
-      )}
-      {work.video && (
-        <a
-          href={work.video}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Demo video for ${work.title}`}
-          className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
-        >
-          Watch demo <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
-        </a>
-      )}
-      {work.license && (
-        <span className="text-xs font-mono text-slate-500 uppercase tracking-wider ml-auto">{work.license}</span>
-      )}
-    </div>
-  </div>
-);
-
 const WorksPage = () => {
   usePageMeta();
   const featured = featuredEssays();
@@ -1526,26 +1474,19 @@ const WorksPage = () => {
         {/* Build, open source & tooling */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build: Open Source &amp; Tooling</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Newest shipped work first. Source array stays append-on-ship (see
-              docs/runbooks/works-update-on-ship.md); display sorts by date desc. */}
-          {[...WORKS]
-            .filter((w) => w.category === 'Open Source')
-            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-            .map((work: Work) => (
-              <WorkCard key={work.slug} work={work} />
-            ))}
+          {/* Most important first (WORKS_PRIORITY in constants.ts), never by date. */}
+          {worksByPriority('Open Source').map((work: Work) => (
+            <WorkCard key={work.slug} work={work} />
+          ))}
         </div>
 
         {/* Build, applied agent projects (hackathon-built agent systems;
             competition context lives in each card's description, not the heading). */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6 mt-16">Build: Applied Agent Projects</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...WORKS]
-            .filter((w) => w.category === 'Agent Project')
-            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-            .map((work: Work) => (
-              <WorkCard key={work.slug} work={work} />
-            ))}
+          {worksByPriority('Agent Project').map((work: Work) => (
+            <WorkCard key={work.slug} work={work} />
+          ))}
         </div>
 
         {/* Selected essays, a CAPPED pointer into /thoughts (no bodies, no filter) */}
