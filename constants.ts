@@ -748,13 +748,21 @@ export const WORKS_PRIORITY: readonly string[] = [
   'whisperways',
 ];
 
-// The works in one /works section, in WORKS_PRIORITY order. Fail-loud: a work missing
-// from the priority list throws instead of rendering in an arbitrary position.
+// The /works sections, in page order. Every WORKS category must be one of these
+// (tests/worksHub.test.ts), or the work would render in no section at all.
+export const WORKS_SECTIONS = ['Open Source', 'Agent Project'] as const;
+
+// The works in one /works section, in WORKS_PRIORITY order. Fail-loud: an unknown
+// section, or a work missing from the priority list, throws instead of rendering in an
+// arbitrary position or not at all.
 export function worksByPriority(
   category: string,
   works: readonly Work[] = WORKS,
   priority: readonly string[] = WORKS_PRIORITY,
 ): Work[] {
+  if (!(WORKS_SECTIONS as readonly string[]).includes(category)) {
+    throw new Error(`"${category}" is not a /works section (${WORKS_SECTIONS.join(', ')})`);
+  }
   const rank = new Map(priority.map((slug, i) => [slug, i]));
   const inSection = works.filter((w) => w.category === category);
   const missing = inSection.filter((w) => !rank.has(w.slug)).map((w) => w.slug);

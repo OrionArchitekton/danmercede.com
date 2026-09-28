@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS, WORKS, WORKS_PRIORITY, worksByPriority } from '../constants';
+import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
 import { WorkCard } from '../components/WorkCard';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
@@ -175,4 +175,14 @@ test('a Works card shows no ship date', () => {
     assert.ok(!html.includes(work.date!), `${work.slug}: date must not render`);
     assert.doesNotMatch(html, /\b20\d\d-\d\d-\d\d\b/, `${work.slug}: no ISO date of any kind`);
   }
+});
+
+test('every work belongs to a section the page renders, so none is dropped silently', () => {
+  for (const work of WORKS) {
+    assert.ok(
+      (WORKS_SECTIONS as readonly string[]).includes(work.category),
+      `${work.slug}: category "${work.category}" is not a /works section (${WORKS_SECTIONS.join(', ')})`,
+    );
+  }
+  assert.throws(() => worksByPriority('Open source'), /not a \/works section/);
 });

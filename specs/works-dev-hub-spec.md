@@ -127,7 +127,8 @@ Person") stays green.
   `bodyBake`, `sitemapParity` all stay green.
 - **AC6** — `npm test` + `npm run build` green.
 - **AC7** (2026-09-28): each /works section renders in `WORKS_PRIORITY` order, which lists every
-  work exactly once, and no card renders a date (tests render the card and check its HTML).
+  work exactly once, every work belongs to a rendered section (`WORKS_SECTIONS`), and no
+  card renders a date (tests render the card and check its HTML).
 
 ## §5 — Invariants
 
