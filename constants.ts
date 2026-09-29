@@ -276,8 +276,8 @@ export const INTENT_ROUTES = [
   },
   {
     audience: 'Reliability and governance',
-    prompt: 'Evaluating governed AI infrastructure?',
-    description: 'The reliability and governance archive: enforcement artifacts and production proof.',
+    prompt: 'Want evidence you can check?',
+    description: 'Checkable claims first, then how the systems are built, labeled for what each piece is.',
     href: '/proof',
     cta: 'See the proof',
     external: false,
