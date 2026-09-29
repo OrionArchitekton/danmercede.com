@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -149,10 +149,21 @@ const Footer = () => (
         <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
-      <div className="flex space-x-6 text-slate-400">
+      <div className="flex flex-col items-start md:items-end gap-3 text-slate-400">
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {FOOTER_LINKS.map((l) =>
+            l.href.endsWith('.xml') ? (
+              <a key={l.href} href={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</a>
+            ) : (
+              <Link key={l.href} to={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</Link>
+            ),
+          )}
+        </div>
+        <div className="flex space-x-6">
         <Link to="/legal" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Legal</Link>
         <Link to="/privacy" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Privacy</Link>
         <Link to="/imprint" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Imprint</Link>
+        </div>
       </div>
     </div>
   </footer>
@@ -1617,6 +1628,31 @@ const ThoughtsPage = () => {
             Work with OIA on one workflow.
           </a>
         </p>
+
+        {/* Start here: curated entry into the strongest practical material */}
+        <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mb-10 max-w-4xl">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+            <h2 className="text-xl font-bold text-white">Start here</h2>
+            <a href="/feed.xml" className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Follow via RSS</a>
+          </div>
+          <ul className="space-y-4">
+            {START_HERE.map((item) => {
+              const title = item.kind === 'guide'
+                ? GUIDES.find((g) => g.slug === item.slug)?.title
+                : THOUGHTS.find((th) => th.slug === item.slug)?.title;
+              const to = item.kind === 'guide' ? `/guides/${item.slug}` : `/thoughts/${item.slug}`;
+              return (
+                <li key={item.slug}>
+                  <Link to={to} className="group block">
+                    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mr-2">{item.kind === 'guide' ? 'Guide' : 'Essay'}</span>
+                    <span className="text-white font-semibold group-hover:text-copper-400 transition-colors">{title}</span>
+                    <span className="block text-sm text-slate-400 mt-1">{item.why}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         {/* Category filter (substrate taxonomy). 'All lanes' shows the lane-grouped view. */}
         {/* Spacing lives on this row, not on an empty spacer div: in the lane-grouped default

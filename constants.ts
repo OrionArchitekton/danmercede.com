@@ -8,16 +8,22 @@ import { THOUGHTS } from './constants.generated';
 import * as generatedBundle from './constants.generated';
 import { GUIDES } from './constants.guides.generated';
 
+// Primary nav (2026-09-29 site audit): what a visitor came for, not the site's
+// internal categories. The logo is the home link. Secondary surfaces live in
+// FOOTER_LINKS so nothing becomes unreachable (tests/navigation.test.ts).
 export const NAV_ITEMS = [
-  { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
-  { label: 'Ecosystem', path: '/ecosystem' },
-  { label: 'Thoughts', path: '/thoughts' },
-  { label: 'Proof', path: '/proof' },
-  { label: 'Works', path: '/works' },
+  { label: 'Work', path: '/works' },
+  { label: 'Writing', path: '/thoughts' },
   { label: 'Guides', path: '/guides' },
-  { label: 'Diagrams', path: '/diagrams' },
-  { label: 'Connect', path: '/connect' },
+  { label: 'Proof', path: '/proof' },
+  { label: 'About', path: '/about' },
+  { label: 'Contact', path: '/connect' },
+];
+
+export const FOOTER_LINKS: { label: string; href: string }[] = [
+  { label: 'Ecosystem', href: '/ecosystem' },
+  { label: 'Diagrams', href: '/diagrams' },
+  { label: 'RSS', href: '/feed.xml' },
 ];
 
 export const HERO_CONTENT = {
@@ -852,6 +858,37 @@ export const DIAGRAMS: Diagram[] =
   (generatedBundle as { DIAGRAMS?: Diagram[] }).DIAGRAMS ?? [];
 
 // --- /works dev-hub data (PR2) ---------------------------------------------
+// /thoughts "Start here" (2026-09-29 site audit): a short curated entry into the
+// strongest practical material, so chronology is not the only way in. Each entry
+// says why it is worth reading first. Slugs are checked by tests/navigation.test.ts.
+export const START_HERE: { kind: 'guide' | 'essay'; slug: string; why: string }[] = [
+  {
+    kind: 'guide',
+    slug: 'the-fail-closed-harness',
+    why: 'The whole approach in one place: how the checks around an AI coding agent fit together.',
+  },
+  {
+    kind: 'guide',
+    slug: 'giving-your-agent-web-access',
+    why: 'The most-read guide: web access for a coding agent without flooding its context window.',
+  },
+  {
+    kind: 'guide',
+    slug: 'governed-double-send-safe-delivery',
+    why: 'What it takes before agent output leaves the building: review, approval, and a send that never silently repeats.',
+  },
+  {
+    kind: 'essay',
+    slug: '2026-06-08-authority-gate-made-runnable',
+    why: 'Where the doctrine became a tool you can run: failclosed.',
+  },
+  {
+    kind: 'essay',
+    slug: '2026-05-19-the-merge-is-a-state-mutation',
+    why: 'Why merging AI-written code deserves the same gate as any other production change.',
+  },
+];
+
 // FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a
 // CAPPED pointer into /thoughts. The cap (3-5) is load-bearing, it keeps /works
 // from drifting into a second /thoughts. Enforced by tests/worksHub.test.ts.
