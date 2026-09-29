@@ -372,6 +372,11 @@ export const CONTACT_INTENTS: {
   },
 ];
 
+// One href per intent, shared by ConnectPage and the /connect prerender.
+export function contactHref(intent: { subject?: string; href?: string }): string {
+  return intent.href ?? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(intent.subject ?? '')}`;
+}
+
 export const FOOTER_DATA = {
   entity: "Orion Apex Capital",
   jurisdiction: "United States",

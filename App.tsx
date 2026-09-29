@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -2130,7 +2130,7 @@ const ConnectPage = () => {
         <div className="space-y-4">
           {CONTACT_INTENTS.map((intent) => {
             const external = Boolean(intent.href);
-            const href = intent.href ?? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(intent.subject ?? '')}`;
+            const href = contactHref(intent);
             return (
               <a
                 key={intent.id}
