@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -92,8 +94,9 @@ test('the not-found file derives from the empty template, never the rendered hom
 });
 
 test('routes outside the rendered set keep an empty #root and their crawl block', () => {
+  // Since S3 every published route is rendered, so this set is empty; it guards
+  // the rollback path (an emptied or partial set keeps the baseline output).
   const others = collectRoutes().filter((r) => !RENDERED_ROUTES.has(r.path));
-  assert.ok(others.length > 50, 'expected every other baked route');
   for (const { path: route } of others) {
     const html = fs.readFileSync(fileFor(route), 'utf8');
     assert.ok(html.includes('<div id="root"></div>'), `${route}: #root must stay empty`);
@@ -164,3 +167,48 @@ test('rendered routes keep the content contracts their crawl blocks carried', as
   const guides = decode(render('/guides'));
   assert.deepEqual(GUIDES.filter((g) => !guides.includes(g.title)).map((g) => g.slug), [], '/guides lists every guide');
 });
+
+// S3: essays and guides ship their full text in the initial HTML, not a shell.
+// The rendered root must carry most of the source's words (markdown syntax and
+// figure captions make an exact comparison brittle, so the bar is 80%).
+test('every essay and guide ships its full text in the initial HTML', () => {
+  const words = (text: string) => text.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
+  const short: string[] = [];
+  let checked = 0;
+  for (const [family, items] of [['thoughts', THOUGHTS], ['guides', GUIDES]] as const) {
+    for (const item of items as ReadonlyArray<{ slug: string; body?: string }>) {
+      if (!item.body) continue;
+      const file = fileFor(`/${family}/${item.slug}`);
+      if (!fs.existsSync(file)) continue;
+      const root = decode(rootOf(fs.readFileSync(file, 'utf8')).inner.replace(/<[^>]+>/g, ' '));
+      const source = words(item.body.replace(/[#*_`>\[\]()!-]/g, ' '));
+      checked++;
+      if (words(root) < source * 0.8) short.push(`/${family}/${item.slug}: ${words(root)} of ~${source} words`);
+    }
+  }
+  assert.ok(checked > 40, `expected every published essay and guide, checked ${checked}`);
+  assert.deepEqual(short, []);
+});
+
+// Re-running the injector without a new `vite build` must change nothing: the
+// homepage render lands in build/index.html itself, so the injector keeps the
+// empty template beside the SSR bundle, and it reads the committed sitemap
+// rather than the copy a previous run already extended.
+test('re-running the injector changes no built file', () => {
+  const snapshot = () =>
+    Object.fromEntries(
+      [...walkFiles(buildDir)].map((f) => [path.relative(buildDir, f), createHash('sha256').update(fs.readFileSync(f)).digest('hex')]),
+    );
+  const before = snapshot();
+  const run = spawnSync('npx', ['tsx', 'scripts/injectRouteMeta.ts'], { cwd: root, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(snapshot(), before);
+});
+
+function* walkFiles(dir: string): Generator<string> {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) yield* walkFiles(full);
+    else yield full;
+  }
+}
