@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_INTENTS } from '../constants';
+import { ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, contactHref } from '../constants';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -88,4 +88,20 @@ test('the new front-door copy follows the house voice', () => {
   for (const banned of [/passionate/i, /synergy/i, /responsible AI/i, /vibe[- ]?cod/i, /Daniel Mercede/]) {
     assert.doesNotMatch(copy, banned, `banned voice term ${banned}`);
   }
+});
+
+test('the no-JS bakes carry real links, not just labels', () => {
+  const about = renderBodyBlock('/about', ROUTE_META['/about']);
+  for (const r of ABOUT_BIO.recognition) {
+    assert.ok(about.includes(`href="${r.href}"`), `/about prerender must link ${r.href}`);
+  }
+  const connect = renderBodyBlock('/connect', ROUTE_META['/connect']);
+  assert.ok(connect.includes(CONTACT_EMAIL), '/connect prerender must show the email address');
+  for (const intent of CONTACT_INTENTS) {
+    const href = contactHref(intent).replace(/&/g, '&amp;');
+    assert.ok(connect.includes(`href="${href}"`), `/connect prerender must link ${intent.id}: ${href}`);
+  }
+  const app = read('App.tsx');
+  const page = app.slice(app.indexOf('const ConnectPage'), app.indexOf('const LegalPage'));
+  assert.match(page, /contactHref\(intent\)/, 'ConnectPage and the prerender must share contactHref');
 });

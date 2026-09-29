@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, contactHref } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -162,6 +162,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         ...ABOUT_BIO.sections.flatMap((s) => s.paragraphs),
         ...ABOUT_BIO.recognition.map((r) => r.label),
       ],
+      links: ABOUT_BIO.recognition.map((r) => ({ href: r.href, text: r.label })),
     },
   },
   '/ecosystem': {
@@ -258,10 +259,14 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       'Contact Dan Mercede about hiring or team roles, speaking, open-source collaboration, or AI implementation work through Orion Intelligence Agency.',
     body: {
       h1: 'Contact Dan',
-      lead: 'Email reaches me directly. Pick the reason that fits.',
+      lead: `Email reaches me directly at ${CONTACT_EMAIL}. Pick the reason that fits.`,
       paragraphs: [
         ...CONTACT_INTENTS.map((i) => `${i.label}: ${i.detail}`),
         'LinkedIn: linkedin.com/in/danmercede',
+      ],
+      links: [
+        ...CONTACT_INTENTS.map((i) => ({ href: contactHref(i), text: i.label })),
+        { href: 'https://www.linkedin.com/in/danmercede/', text: 'LinkedIn' },
       ],
     },
   },
