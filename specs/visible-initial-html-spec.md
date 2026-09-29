@@ -19,6 +19,9 @@ This PR carries the spec only. No production code changes.
 - **Rendered-route set**: the explicit routes whose initial HTML carries the page
   render; every other route keeps the crawl block unchanged.
 - **Hydration**: the client attaching to existing markup instead of re-creating it.
+- **Baseline output**: the built output after S0 (today's output minus the inert
+  importmap). Parity and rollback claims compare against it, not against today's
+  bytes, because S0 deliberately changes every route file.
 
 ## Problem and evidence
 
@@ -93,8 +96,8 @@ for `StaticRouter` through a resolve alias) rendered with `renderToString`:
     patch. The nav compares the path exactly (`App.tsx:94`), and Vercel serves
     `/about` and `/about/` from the same file.
   - An unknown URL served homepage page-render markup (the SPA catch-all rewrite at
-    `vercel.json:337-338` serves `build/index.html`): hydration failed and React
-    regenerated the tree.
+    `vercel.json:337-338` served `build/index.html`; #165 removes it): hydration
+    failed and React regenerated the tree.
 - Linter impact: with page-render markup inside `#root`, today's `extractability`
   linter fails 88 of 88 routes. With `#root` counted as readable, the
   heading-hierarchy check still fails 85 of 88. The pages really do skip heading
@@ -144,7 +147,7 @@ so the client wraps it in `BrowserRouter` and the build wraps it in `StaticRoute
   randomness); two build targets; the `extractability` linter and about ten tests
   change; 85 routes need heading fixes before the full heading check can gate.
 - Effort: 6 small PRs (S0 to S5, see slices).
-- Rollback: empty the rendered-route set; output returns to today's bytes.
+- Rollback: empty the rendered-route set; output returns to the baseline output.
 
 ### B. Visible crawl block generated from shared content constants
 
@@ -183,13 +186,14 @@ features the hub does not need.
 2. Hydrate only when the markup was rendered for this path: the build stamps the
    rendered path on `#root`; the client hydrates when it equals the current path
    normalized for a trailing slash, and otherwise clears the root and renders
-   fresh. This covers `/about/` and catch-all URLs.
+   fresh. This covers `/about/` and unknown URLs.
 3. Normalize the path wherever it feeds the render. The nav highlight (`App.tsx:94`)
    must treat `/about/` and `/about` alike. Do not set `trailingSlash` in
    `vercel.json`: the microsite rewrites use trailing-slash sources.
-4. The SPA catch-all must not serve page-render markup for unknown URLs. Either the
-   homepage file keeps an empty root plus a separate homepage file serves `/`, or
-   the catch-all points at an empty shell file (open question 2).
+4. Unknown URLs must never receive page-render markup. The audit P0 change (#165)
+   removed the SPA catch-all rewrite: unknown URLs now get the not-found file with
+   HTTP 404. That file must keep deriving from the empty template, never from the
+   rendered homepage, once `/` joins the rendered-route set (S3 adds the test).
 5. `ScrollToTop` (`App.tsx:2303-2308`) must not scroll on first mount: visitors can
    now scroll before hydration, and a mount-time `scrollTo(0, 0)` would jump them
    back to the top.
@@ -215,8 +219,8 @@ demoable on its Vercel preview deploy.
   the /works and /proof parity tests to the page render. Demo: the /works initial
   HTML lists all 20 project titles.
 - **S3: detail families and the homepage.** Essays, guides, diagrams, case studies,
-  the remaining static routes, then / with the catch-all decision from open
-  question 2. Retire the markdown-to-crawl-block path for essays.
+  the remaining static routes, then / (constraint 4 keeps the not-found file
+  empty). Retire the markdown-to-crawl-block path for essays.
 - **S4: headings and gate.** Fix heading skips across shared chrome and pages, then
   switch the `extractability` gate to lint every built route file.
 - **S5: retire the crawl block.** Delete the crawl block renderer, the per-route
@@ -259,11 +263,11 @@ fewest, highest seams, all existing in kind:
    visible homepage flash.
 6. A visitor who scrolls before scripts finish loading is not scrolled back to top
    when the page becomes interactive.
-7. Head meta, JSON-LD, sitemap and feed output are byte-identical to today for
-   every route.
+7. Head meta, JSON-LD, sitemap and feed output are byte-identical to the baseline
+   output for every route.
 8. Routes outside the rendered-route set produce byte-identical initial HTML to
-   today (S1 to S3).
-9. Emptying the rendered-route set restores today's output for every route.
+   the baseline output (S1 to S3).
+9. Emptying the rendered-route set restores the baseline output for every route.
 10. After S4, the `extractability` gate lints every built route file and passes.
 11. After S5, no hand-written per-route body copy exists; the page components are
     the only source of visible route content.
@@ -290,8 +294,9 @@ fewest, highest seams, all existing in kind:
 - **WARNING, hydration mismatch in production.** React does not patch attribute
   mismatches. Mitigation: guarded hydration, path normalization, browser check on
   every slice, `hydration_error` telemetry.
-- **WARNING, catch-all serving the wrong markup.** Proven by the probe. Mitigation:
-  constraint 4 before the homepage joins the set.
+- **INFO, unknown URLs receiving page-render markup.** Proven by the probe against
+  the old catch-all, which #165 removed. Remaining guard: constraint 4 keeps the
+  not-found file empty once the homepage joins the set.
 - **WARNING, heading fixes touch shared chrome.** 85 of 88 routes skip levels;
   changing the footer and card headings alters every page's outline. Mitigation:
   semantic element changes only, styles pinned; S4 is its own PR.
@@ -310,21 +315,21 @@ fewest, highest seams, all existing in kind:
 - **Monitoring and validation:** `hydration_error` events in GA4 after each merge;
   `curl` production /about after S1; Search Console URL inspection after S1, S2.
 - **Rollback:** remove routes from the rendered-route set (one-line revert); the
-  build re-emits today's crawl block for them. S5 deletes that fallback, so it
+  build re-emits the baseline crawl block for them. S5 deletes that fallback, so it
   ships last, after two weeks without `hydration_error` events.
 
 ## Open questions for Dan
 
 1. Approve approach A over B (cheaper, keeps drift) and C (framework migration)?
-2. Unknown URLs: point the SPA catch-all at an empty shell file (one `vercel.json`
-   line, breaking the earlier "zero `vercel.json` change" stance) or keep the
-   catch-all and give the homepage its own file?
+2. ~~Unknown URLs: empty shell file or a separate homepage file?~~ Resolved: the
+   audit P0 change (#165) removed the catch-all and serves a not-found file with
+   HTTP 404 (constraint 4).
 3. Heading fixes (S4) change the semantic outline of shared chrome. Fold them into
    this arc, or relax the heading check to the main content region first?
 4. Add a headless-browser dev dependency so the hydration check gates CI, or keep
    it an operator step per preview deploy?
-5. Sequencing against the open audit P0 work and the held Edition 10 allowlist
-   PR (#162): start S0 and S1 now, or after those land?
+5. ~~Sequencing~~ Resolved 2026-09-29: #162 merged 2026-09-28, and the audit PRs
+   merge as one train; S0 starts after that train lands on main.
 
 ## Appendix: how the numbers were measured
 
