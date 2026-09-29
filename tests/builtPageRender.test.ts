@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_INTENTS, WORKS } from '../constants';
+import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
+import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
 
@@ -124,4 +125,42 @@ test('every published route renders with a clean heading outline', async () => {
     if (bad.length) failing.push(`${route}: ${bad.map((f) => f.detail).join('; ')}`);
   }
   assert.deepEqual(failing, []);
+});
+
+// The content contracts the crawl-block tests assert (homepage.test.ts,
+// worksHub.test.ts, frontDoor.test.ts, contentBoundary.test.ts) bind the hidden
+// crawl block, which a rendered route no longer ships. These bind the render the
+// build does ship for the same routes. Review of #184, 2026-09-29.
+test('rendered routes keep the content contracts their crawl blocks carried', async () => {
+  const render = await loadRender();
+  const home = render('/');
+  for (const w of SELECTED_WORK) assert.ok(decode(home).includes(w.title), `homepage: selected work ${w.title}`);
+  const homeMain = home.slice(home.indexOf('<main'), home.indexOf('</main>'));
+  assert.ok(homeMain.length > 0, 'homepage: expected a <main> region');
+  // The shared footer names the entity on every page; the homepage body must not.
+  assert.doesNotMatch(homeMain, /Orion Apex Capital/, 'homepage: entity-structure copy belongs on /ecosystem');
+
+  const works = render('/works');
+  assert.ok(decode(works).includes(WORKS_HUB.pilot), '/works: pilot line');
+  assert.ok(decode(works).includes(WORKS_HUB.availability), '/works: availability line');
+  for (const e of featuredEssays()) assert.ok(works.includes(`href="/thoughts/${e.slug}"`), `/works: featured essay ${e.slug}`);
+  assert.ok(works.includes(`href="${WORKS_HUB.signalUrl}"`), '/works: signal link');
+  assert.ok(works.includes(`href="${WORKS_HUB.githubUrl}"`), '/works: GitHub link');
+
+  const connect = render('/connect');
+  assert.ok(connect.includes(CONTACT_EMAIL), '/connect: the email address');
+  for (const intent of CONTACT_INTENTS) {
+    assert.ok(decode(connect).includes(intent.label), `/connect: intent ${intent.id}`);
+    assert.ok(connect.includes(`href="${contactHref(intent).replace(/&/g, '&amp;')}"`), `/connect: link for ${intent.id}`);
+  }
+
+  const about = render('/about');
+  for (const r of ABOUT_BIO.recognition) assert.ok(about.includes(`href="${r.href}"`), `/about: recognition link ${r.href}`);
+  const aboutText = decode(about.replace(/<[^>]+>/g, ' ')).toLowerCase();
+  assert.deepEqual(FORBIDDEN_NEEDLES.filter((n) => aboutText.includes(n)), [], '/about is identity-only: no call-to-action copy');
+
+  const thoughts = decode(render('/thoughts'));
+  assert.deepEqual(THOUGHTS.filter((t) => !thoughts.includes(t.title)).map((t) => t.slug), [], '/thoughts lists every essay');
+  const guides = decode(render('/guides'));
+  assert.deepEqual(GUIDES.filter((g) => !guides.includes(g.title)).map((g) => g.slug), [], '/guides lists every guide');
 });
