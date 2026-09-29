@@ -48,7 +48,7 @@ No test or lint scripts are defined. CI runs `npm ci` followed by `npm run build
 
 None are required to run, build, or deploy the site.
 
-`vite.config.ts` still defines `process.env.API_KEY` and `process.env.GEMINI_API_KEY` from a `GEMINI_API_KEY` env var. This is unused leftover scaffolding from the project's Google AI Studio origin — no code reads either value. It can be removed without affecting behavior.
+The unused `GEMINI_API_KEY` / `process.env.API_KEY` defines left over from the project's Google AI Studio origin were removed on 2026-09-29; no code read them.
 
 ---
 

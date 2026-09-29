@@ -276,8 +276,8 @@ export const INTENT_ROUTES = [
   },
   {
     audience: 'Reliability and governance',
-    prompt: 'Evaluating governed AI infrastructure?',
-    description: 'The reliability and governance archive: enforcement artifacts and production proof.',
+    prompt: 'Want evidence you can check?',
+    description: 'Checkable claims first, then how the systems are built, labeled for what each piece is.',
     href: '/proof',
     cta: 'See the proof',
     external: false,
@@ -502,7 +502,7 @@ export const RESOURCES: Resource[] = [
   // L4: Gated Substrate
   {
     title: "Speaking One-Sheet",
-    description: "Credential and topic mapping for CIO, CTO, CISO audiences. Talk tracks anchored to enforcement stack layers, substrate isolation mechanics, and quantified enterprise risk reduction. Architectural authority positioning.",
+    description: "One page for event organizers: bio, the NODES 2026 talk, the UiPath AgentHack finalist result, four talk topics, and a direct speaking contact.",
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
     downloadLabel: "Speaker one-sheet",
@@ -537,7 +537,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Financial Services",
     enforcementLayers: [1, 2],
     layerNames: ["Authority Gate", "Immutable Receipts"],
-    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to SOC 2 and SOX compliance requirements.",
+    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. The pattern produces evidence relevant to SOC 2 and SOX controls; it does not by itself make a system compliant.",
     fileName: "Reference_Architecture_Financial_Services.docx",
     filePath: "/assets/Reference_Architecture_Financial_Services.docx",
     enforcementPoints: [
@@ -547,7 +547,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     commercialMapping: [
       "Financial exposure containment",
       "SOC 2 audit defensibility",
-      "SOX compliance enforcement",
+      "Evidence for SOX control testing",
       "Operational blast radius reduction",
     ],
   },
@@ -557,7 +557,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Healthcare",
     enforcementLayers: [3, 4],
     layerNames: ["Drift Guard", "Gated Substrate"],
-    description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. Maps to HIPAA and FDA SaMD regulatory exposure.",
+    description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. The pattern supports safeguards relevant to HIPAA and FDA SaMD reviews; it does not by itself make a system compliant.",
     fileName: "Reference_Architecture_Healthcare.docx",
     filePath: "/assets/Reference_Architecture_Healthcare.docx",
     enforcementPoints: [
@@ -565,7 +565,7 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Workload isolation for PHI-handling agents",
     ],
     commercialMapping: [
-      "HIPAA compliance enforcement",
+      "Evidence for HIPAA safeguard reviews",
       "FDA SaMD regulatory alignment",
       "Patient safety risk containment",
       "Audit defensibility for clinical AI",

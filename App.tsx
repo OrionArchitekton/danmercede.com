@@ -2171,10 +2171,14 @@ const LegalPage = () => {
         </p>
         <p className="mb-6">
           <strong>2. Intellectual Property</strong><br />
-          All systems, methodologies, architectures, and branding referenced on this site are the intellectual property of Orion Apex Capital or their respective operating entities. Unauthorized reproduction, distribution, or use without written permission is prohibited.
+          The written content, diagrams, and branding on this site belong to Orion Apex Capital or its operating entities. Reproducing them without written permission is not allowed.
         </p>
         <p className="mb-6">
-          <strong>3. Limitation of Liability</strong><br />
+          <strong>3. Open-Source Software</strong><br />
+          Open-source tools linked from this site are licensed separately, under the license in each tool's own repository (most are MIT). These terms cover this website's content and do not restrict or replace those licenses.
+        </p>
+        <p className="mb-6">
+          <strong>4. Limitation of Liability</strong><br />
           The owner is not liable for any direct or indirect loss, damage, or injury arising from the use or inability to use the information provided on this site.
         </p>
       </div>
