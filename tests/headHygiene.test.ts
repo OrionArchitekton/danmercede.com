@@ -154,7 +154,7 @@ test('vercel.json immutable /assets rule caches a hashed bundle but NOT a human 
   // A real stable-named human download artifact (from constants.ts, linked via
   // App.tsx download anchors): must NOT be immutable, or a same-filename
   // correction would be year-cached and never revalidate.
-  const docPath = '/assets/Executive_Deck.pdf';
+  const docPath = '/assets/Speaking_One_Sheet.pdf';
   const docCC = cacheControlFor(rules, docPath);
   assert.doesNotMatch(
     docCC ?? '',
