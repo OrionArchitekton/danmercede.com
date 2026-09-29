@@ -24,13 +24,21 @@ const assetsDir = path.join(projectRoot, 'public', 'assets');
 
 const DOCUMENT_EXTS = new Set(['.pdf', '.pptx', '.docx', '.doc', '.ppt', '.xlsx']);
 
-// Types whose prose caseStudyHonesty.test.ts actually reads and scans.
-const SCANNED_EXTS = new Set(['.docx']);
+// The downloads whose prose caseStudyHonesty.test.ts actually reads and scans:
+// the CASE_STUDIES DOCX files, not every DOCX. A file-type rule here is what let
+// the template (and before it, the deck) sit unscanned.
+const SCANNED = new Set(
+  CASE_STUDIES.filter((c) => c.filePath.toLowerCase().endsWith('.docx')).map((c) => c.filePath.slice('/assets/'.length)),
+);
 
 // Served documents of a type no test can read, keyed by path under public/assets.
 // The sha256 pins the reviewed bytes: replacing the file fails this suite until
 // someone re-reviews it and updates the hash (`sha256sum public/assets/<file>`).
 const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
+  'Case_Study_Template.docx': {
+    sha256: '604413e451b238ede4a0617c0258a6d6816f7780bcaca16037292032fccbc494',
+    review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
+  },
   'Speaking_One_Sheet.pdf': {
     sha256: 'e07553e99b366b0f3cc04f2d72cc84fb190cb76247671ac9150db76db93b74bd',
     review: '2026-09-29: bio, talk topics, contact. No outcome figures. Stale positioning tracked by audit item 1.3.',
@@ -88,10 +96,10 @@ test('every document served from public/assets is linked from the site, and vice
   );
 });
 
-test('every served document type without a content scanner has a review pinned to its bytes', () => {
+test('every served document the honesty scanner does not read has a review pinned to its bytes', () => {
   const problems: string[] = [];
   for (const rel of servedDocuments()) {
-    if (SCANNED_EXTS.has(path.extname(rel).toLowerCase())) continue;
+    if (SCANNED.has(rel)) continue;
     const entry = REVIEWED_UNSCANNED[rel];
     if (!entry) {
       problems.push(`${rel}: served but no test can read it; review it and add an entry, or remove it`);

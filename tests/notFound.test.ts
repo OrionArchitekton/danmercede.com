@@ -74,3 +74,14 @@ test('renderNotFoundHtml marks the page noindex, drops the canonical, and keeps 
   assert.doesNotMatch(html, /<h1>DAN MERCEDE<\/h1>/, 'the homepage body must not ride on the 404');
   assert.match(html, /<div id="root"><\/div><script type="module" src="\/assets\/index.js"><\/script>/);
 });
+
+test('every detail page marks an unknown slug noindex after hydration', () => {
+  const appSrc = readFileSync(path.join(root, 'App.tsx'), 'utf8');
+  const pages = ['CaseStudyPage', 'ThoughtDetailPage', 'GuideDetailPage', 'DiagramDetailPage'];
+  for (const name of pages) {
+    const start = appSrc.indexOf(`const ${name} = `);
+    assert.ok(start >= 0, `expected to find ${name} in App.tsx`);
+    const head = appSrc.slice(start, start + 1200);
+    assert.match(head, /usePageMeta\([^;]*\{\s*noindex:\s*![a-zA-Z]+\s*\}\)/, `${name} must pass { noindex: !found } to usePageMeta`);
+  }
+});

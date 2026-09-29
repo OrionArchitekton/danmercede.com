@@ -1357,7 +1357,7 @@ const ResourcesPage = () => {
 const CaseStudyPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const study = CASE_STUDIES.find(cs => cs.slug === slug);
-  usePageMeta(caseStudyMeta(slug));
+  usePageMeta(caseStudyMeta(slug), { noindex: !study });
 
   if (!study) {
     return (
@@ -1737,7 +1737,9 @@ const ThoughtsPage = () => {
 const ThoughtDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const thought = THOUGHTS.find((t: Thought) => t.slug === slug);
-  usePageMeta(thoughtMeta(slug));
+  // Unknown slugs already get HTTP 404 from the server; keep the hydrated head
+  // noindex too, matching the guide and diagram detail pages.
+  usePageMeta(thoughtMeta(slug), { noindex: !thought });
 
   if (!thought) {
     return (

@@ -114,3 +114,9 @@ test('the no-JS /privacy prerender carries the full policy', () => {
     );
   }
 });
+
+test('the automatic page-view hit is disclosed', () => {
+  const component = read('components/Analytics.tsx');
+  assert.match(component, /'page_view'/, 'expected Analytics.tsx to send page_view (positive control)');
+  assert.match(policyText(), /page views/, 'Analytics.tsx sends page_view on every route change; the policy must say so');
+});
