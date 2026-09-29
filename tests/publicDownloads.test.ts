@@ -40,8 +40,8 @@ const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
     review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
   },
   'Speaking_One_Sheet.pdf': {
-    sha256: 'e07553e99b366b0f3cc04f2d72cc84fb190cb76247671ac9150db76db93b74bd',
-    review: '2026-09-29: bio, talk topics, contact. No outcome figures. Stale positioning tracked by audit item 1.3.',
+    sha256: 'e9b789ab8852c686fdd9152210319ec3a48d80e54cb4206dc560a94771944d01',
+    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html. Bio, NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
   },
   'What_We_Deliver.pdf': {
     sha256: 'c7635540b31ecdf90ceaece4a4c8be67083fff28ccc6db211db17fa1b91deb7c',
