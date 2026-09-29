@@ -4,7 +4,7 @@ slug: governed-double-send-safe-delivery
 date: 2026-07-03
 reviewed: 2026-09-29
 category: Agent Engineering
-description: "I built a multi-agent system that emailed real people on a business's behalf, then retired the business. The delivery pipeline is the part worth keeping: a design that sends each customer email at most once, holds any send with an unknown outcome for a human instead of retrying it, and ships nothing a human did not approve. Here is the pattern, the failure mode that shaped it, and the reaper rule most teams get wrong."
+description: "I built a multi-agent system that emailed real people on a business's behalf, then retired the business. The delivery pipeline is the part worth keeping: a design that never retries a customer email with an unknown outcome, holds it for a human instead, names the one gap a lease cannot close, and ships nothing a human did not approve. Here is the pattern, the failure mode that shaped it, and the reaper rule most teams get wrong."
 lead: "An agent that sends email is one crash away from sending it twice. I learned that building a governed multi-agent system, and the delivery pipeline is the one piece I would build again unchanged. Here is how it works and the reaper rule behind it."
 ---
 
@@ -33,7 +33,7 @@ The pipeline composes into one spine, and the rule is that no consequential send
 3. **Score.** Attach a confidence score to the output. This is the input to review routing, not a gate by itself.
 4. **Review.** Route low-confidence items to a human review queue. High-confidence items still do not bypass the next stage.
 5. **Approve.** A fail-closed approval gate. The release is blocked by default and proceeds only on an explicit, recorded authorization.
-6. **Send and attest.** Send at most once under a lease, holding any send whose outcome is ambiguous for a human instead of retrying it, then reconcile and write an evidence receipt describing what happened.
+6. **Send and attest.** Send under a lease and never retry a send whose outcome is ambiguous; hold it for a human instead, then reconcile and write an evidence receipt describing what happened. (A stalled worker is the one case a lease alone cannot stop; see below.)
 
 The important property is that steps 2 through 6 are separate durable transitions, not one function call. Each stage can crash without losing or duplicating work, because the state that matters lives in the store, not in a worker's memory. Internal stages resume on their own. A send that crashed mid-flight does not: it waits for a human, and that delay is the price of not risking a duplicate.
 
