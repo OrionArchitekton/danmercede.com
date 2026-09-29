@@ -44,8 +44,13 @@ test('the one-sheet copy follows the house voice', () => {
   assert.doesNotMatch(text, /[\u2013\u2014\u2015]/, 'no long dashes in public copy');
 });
 
-test('the published PDF carries a real title, not "(anonymous)"', () => {
+test('the published PDF carries exactly the one-sheet title', () => {
   const pdf = fs.readFileSync(pdfPath).toString('latin1');
-  assert.doesNotMatch(pdf, /\/Title\s*\(\\?\(anonymous\\?\)\)/, 'PDF title is still "(anonymous)"');
-  assert.match(pdf, /\/Title\s*[(<]/, 'expected a /Title entry in the PDF info dictionary');
+  const m = pdf.match(/\/Title\s*(\((?:\\.|[^\\)])*\)|<[0-9A-Fa-f]+>)/);
+  assert.ok(m, 'expected a /Title entry in the PDF info dictionary');
+  const raw = m![1];
+  const title = raw.startsWith('<')
+    ? Buffer.from(raw.slice(1, -1), 'hex').swap16().toString('utf16le').replace(/^\uFEFF/, '')
+    : raw.slice(1, -1).replace(/\\(.)/g, '$1');
+  assert.equal(title, 'Dan Mercede, Speaker One-Sheet');
 });

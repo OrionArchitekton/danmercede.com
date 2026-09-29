@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RESOURCES, proofGroupFor } from '../constants';
+import { RESOURCES, proofGroupFor, INTENT_ROUTES } from '../constants';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,4 +55,17 @@ test('the /proof prerender names the three kinds of material', () => {
   for (const phrase of ['Evidence', 'Approach', 'Commercial and speaking']) {
     assert.ok(body.includes(phrase), `the /proof prerender should mention "${phrase}"`);
   }
+});
+
+test('no download is marked gated, because DownloadCard has no gated path', () => {
+  // DownloadCard always links the file. Gating a resource without first adding a
+  // gated branch to DownloadCard would silently serve it anyway.
+  const gated = RESOURCES.filter((r) => r.gated).map((r) => r.fileName);
+  assert.deepEqual(gated, [], 'add a gated branch to DownloadCard before marking a resource gated');
+});
+
+test('the homepage card for /proof describes the page as it now is', () => {
+  const card = INTENT_ROUTES.find((r) => r.href === '/proof');
+  assert.ok(card, 'expected a homepage intent card for /proof');
+  assert.doesNotMatch(`${card!.prompt} ${card!.description}`, /enforcement artifacts|production proof/i);
 });
