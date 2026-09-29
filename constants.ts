@@ -305,8 +305,8 @@ export const ABOUT_BIO = {
     {
       heading: "Operating background",
       paragraphs: [
-        "From 2021 to 2025 I was General Manager at 24 Hour Fitness in Carlsbad, California, with full P&L ownership of a business doing more than $3M a year and a team of about 20. I built the KPI dashboards and CRM automation the club ran on, and it finished above target four years in a row. I received Sales and GM of the Year awards in 2022, 2023, and 2024.",
-        "Before that I spent fifteen years in sales and financial operations at Apple, Diageo, and Nestl\u00e9 USA: strategic accounts at Apple, quota-carrying field sales at Diageo, and financial reporting and analysis at Nestl\u00e9 USA. I hold a B.A. in Economics from Queen's University.",
+        "From 2021 to 2025 I was General Manager at 24 Hour Fitness in Escondido, California, with full P&L ownership of a business doing more than $3M a year and a team of about 20. I built the KPI dashboards and CRM automation the club ran on, and it finished above target four years in a row. I received Sales and GM of the Year awards in 2022, 2023, and 2024.",
+        "Before that I spent fifteen years in sales and financial operations: representing Apple as a field sales rep with Mosaic Sales Solutions, quota-carrying field sales at Diageo, and financial reporting and analysis at Nestl\u00e9 USA. I hold a B.A. in Economics from Queen's University.",
       ],
     },
     {
@@ -314,7 +314,7 @@ export const ABOUT_BIO = {
       paragraphs: [
         "Running a business showed me where automation breaks: nobody owns the workflow, so nobody notices when it drifts. I started building AI systems around that problem while still running the club, and have done it full time since 2025.",
         "I operate a private AI control plane (a decision kernel, an immutable receipt store, policy evaluation, and tracing) that has run continuously for months on a self-managed multi-node cluster. The reusable parts ship as open-source tools, including failclosed (merge admission for AI-written code), schemafit (structured-output schema linting, on PyPI), and mcp-context-budget (MCP tool-surface budget checks, on PyPI).",
-        "I also work as a contract architect on shared AI infrastructure for a multi-venture AI studio.",
+        "From April to July 2026 I also worked as a contract architect on shared AI infrastructure for a multi-venture AI studio.",
       ],
     },
     {

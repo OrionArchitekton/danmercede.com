@@ -40,8 +40,8 @@ const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
     review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
   },
   'Speaking_One_Sheet.pdf': {
-    sha256: 'e9b789ab8852c686fdd9152210319ec3a48d80e54cb4206dc560a94771944d01',
-    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html. Bio, NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
+    sha256: '749ebf2c6d686af03c2703fde102f1898eff98eb5b5ea07d70ffc3b43068c357',
+    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html after the re-audit. Bio names Apple as represented through Mosaic Sales Solutions; NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
   },
 };
 

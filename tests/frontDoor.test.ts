@@ -38,6 +38,24 @@ test('the About biography states operating history, current work, and external r
   }
 });
 
+// 2026-09-29 re-audit: three biography facts disagreed with Dan's own records.
+// Dan settled them: the club was in Escondido; Apple was represented through
+// Mosaic Sales Solutions, not an employer; the studio contract ended in July 2026.
+// The About page and the speaker one-sheet must carry the settled version.
+test('biography facts match the record Dan settled on 2026-09-29', () => {
+  const sheet = read('docs/one-sheets/speaking-one-sheet.html');
+  for (const [surface, text] of [['About', bioText()], ['one-sheet', sheet]] as const) {
+    assert.doesNotMatch(text, /Carlsbad/, `${surface}: the club was in Escondido`);
+    assert.doesNotMatch(text, /\bat Apple\b/, `${surface}: Apple was represented through Mosaic Sales Solutions, not an employer`);
+    assert.doesNotMatch(text, /\b(?:work|works) as a contract architect\b/, `${surface}: the studio contract ended in July 2026`);
+  }
+  const bio = bioText();
+  assert.match(bio, /24 Hour Fitness in Escondido/);
+  assert.match(bio, /Apple as a field sales rep with Mosaic Sales Solutions/);
+  assert.match(bio, /From April to July 2026 I also worked as a contract architect/);
+  assert.match(sheet, /Apple \(as a field sales rep with Mosaic Sales Solutions\)/);
+});
+
 test('the /about prerender carries the full biography', () => {
   const body = renderBodyBlock('/about', ROUTE_META['/about']);
   const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
