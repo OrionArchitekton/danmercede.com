@@ -1,14 +1,4 @@
-import {
-  ShieldCheck,
-  Cpu,
-  Scale,
-  Network,
-  Globe,
-  Briefcase,
-  Zap,
-  PenTool
-} from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
+import { Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -33,45 +23,9 @@ export const NAV_ITEMS = [
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
   positioning: "AI systems fail when nobody owns the workflow.",
-  philosophy: "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
+  philosophy: "I'm an operator and systems builder. I build AI workflows with clear ownership, from the first working version to the tools, controls, and handoffs that keep it running.",
   wedge: "The teams that win with AI own the workflow, not just the model.",
 };
-
-export const PILLARS: Pillar[] = [
-  { title: "Human-Owned Intelligence", icon: Cpu, description: "AI aligned with operator intent, control, and accountability." },
-  { title: "Governance & Accountability", icon: ShieldCheck, description: "Traceability, auditability, and policy enforcement by default." },
-  { title: "Execution Over Hype", icon: Zap, description: "Production systems with measurable outcomes: not experiments." },
-  { title: "Systems That Scale", icon: Network, description: "Architectures designed to compound, degrade safely, and endure." },
-];
-
-export const BUILD_AREAS = [
-  {
-    label: "Platform",
-    icon: Globe,
-    description: "Governed AI Operating System design: control planes and execution frameworks that unify memory, decision-making, and oversight."
-  },
-  {
-    label: "Agency",
-    icon: Briefcase,
-    description: "SMB AI strategy and consulting: one workflow from strategy to a system your team owns. Builds, not just advises."
-  },
-  {
-    label: "Capital",
-    icon: Scale,
-    description: "Ownership, structure, and capital alignment for long-term system builders."
-  },
-  {
-    label: "Media",
-    icon: PenTool,
-    description: "Signal creation and narrative architecture to teach categories, not market products."
-  },
-];
-
-export const SIGNALS = [
-  "Founder of Cosmocrat",
-  "Director of Orion Intel",
-  "Trademark Holder",
-];
 
 export const SPEAKING = {
   label: "Upcoming Speaking",
@@ -241,6 +195,62 @@ export const THOUGHT_LANES: readonly ThoughtLane[] = [
 // Homepage intent-router: routes each visitor to the surface that fits their
 // intent. danmercede.com is the authority router; OIA is the commercial lane.
 // External SMB card points at the OIA readiness-scan; the rest are in-hub routes.
+// Project status vocabulary (2026-09-29 site audit): one small, honest set so a
+// competition build, a maintained library, and a running personal system are
+// never flattened into one "shipped to production" claim.
+export const WORK_STATUSES = [
+  "Maintained open source",
+  "Personal production",
+  "Working prototype",
+  "Demonstration or reference implementation",
+  "Archived experiment",
+] as const;
+export type WorkStatus = (typeof WORK_STATUSES)[number];
+
+// Homepage selected work: three complementary pieces (external recognition, a
+// clear mechanism, sustained operation). Copy mirrors the WORKS entries and the
+// verified SPEAKING entry; tests/homepage.test.ts checks links and statuses.
+export const SELECTED_WORK: {
+  title: string;
+  status: WorkStatus;
+  summary: string;
+  evidence: string;
+  href: string;
+}[] = [
+  {
+    title: "Proctor",
+    status: "Working prototype",
+    summary: "Behavioral regression testing for AI agents. It learns a per-agent contract from sample runs, re-checks it on every model or prompt change, and pauses consequential drift for human approval.",
+    evidence: "Verified live against a real UiPath tenant. Finalist, UiPath AgentHack 2026.",
+    href: "/works/proctor/",
+  },
+  {
+    title: "failclosed",
+    status: "Maintained open source",
+    summary: "Merge admission control for AI-written code. It runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory.",
+    evidence: "MIT licensed, Python 3.9+, runs from a fresh clone.",
+    href: "/works/failclosed/",
+  },
+  {
+    title: "Production knowledge graph",
+    status: "Personal production",
+    summary: "Ingests branched LLM conversation history into a production Neo4j knowledge graph, keeping each branch's identity and staying idempotent and re-runnable.",
+    evidence: `Selected talk at ${SPEAKING.event}, ${SPEAKING.date}.`,
+    href: SPEAKING.href,
+  },
+];
+
+// Homepage validation strip: external confirmation only, each linked to its source.
+export const VALIDATION: { label: string; href: string }[] = [
+  {
+    label: "Finalist, UiPath AgentHack 2026",
+    href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
+  },
+  { label: `Speaker, ${SPEAKING.event}`, href: SPEAKING.href },
+  { label: "schemafit on PyPI", href: "https://pypi.org/project/schemafit/" },
+  { label: "mcp-context-budget on PyPI", href: "https://pypi.org/project/mcp-context-budget/" },
+];
+
 export const INTENT_ROUTES = [
   {
     audience: 'SMB buyer',
@@ -267,11 +277,11 @@ export const INTENT_ROUTES = [
     external: false,
   },
   {
-    audience: 'Investor or operator',
-    prompt: 'Exploring the bigger picture?',
-    description: 'The Orion ecosystem and Orion Apex Capital, the entity stack under one governance framework.',
-    href: '/ecosystem',
-    cta: 'View the ecosystem',
+    audience: 'Hiring manager or recruiter',
+    prompt: 'Evaluating Dan for a role?',
+    description: 'Operating background, current work, and credentials you can check.',
+    href: '/about',
+    cta: 'Read the background',
     external: false,
   },
 ];

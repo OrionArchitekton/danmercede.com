@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -213,20 +213,27 @@ const HomePage = () => {
               <p className="text-slate-400 mb-10 max-w-md">
                 {HERO_CONTENT.philosophy}
               </p>
-              {/* Hero CTA - Single Conversion Path */}
-              <div className="flex flex-col gap-4">
+              {/* Hero actions: the work first, then direct contact; OIA stays one line below */}
+              <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href={READINESS_SCAN.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#selected-work"
                   className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
                 >
-                  {READINESS_SCAN.cta}
+                  See selected work
                 </a>
-                <p className="text-slate-400 text-xs font-mono max-w-md">
-                  Deliverables: {READINESS_SCAN.deliverables.join(' · ')}
-                </p>
+                <Link
+                  to="/connect"
+                  className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-slate-600 text-white hover:border-copper-500"
+                >
+                  Contact Dan
+                </Link>
               </div>
+              <p className="text-slate-400 text-sm mt-5 max-w-md">
+                Business implementation work runs through{' '}
+                <a href={READINESS_SCAN.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">
+                  Orion Intelligence Agency
+                </a>.
+              </p>
             </div>
 
             {/* Image Placeholder */}
@@ -262,59 +269,55 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Selected Work */}
+      <Section id="selected-work" className="pt-10 md:pt-16">
+        <SectionHeader title="Selected work" subtitle="Built, running, and checked" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {SELECTED_WORK.map((work) => {
+            const external = !work.href.startsWith('/');
+            return (
+              <a
+                key={work.title}
+                href={work.href}
+                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="flex flex-col p-6 border border-white/10 bg-slate-900/40 hover:border-copper-500/50 transition-colors group h-full"
+              >
+                <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>
+                <h3 className="text-2xl font-bold text-white mb-3">{work.title}</h3>
+                <p className="text-slate-300 leading-relaxed mb-4 flex-grow">{work.summary}</p>
+                <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
+                <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
+                  {external ? 'Source' : 'Project page'}
+                  {external ? <ExternalLink className="w-4 h-4 ml-2" /> : <ArrowRight className="w-4 h-4 ml-2" />}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+        {/* Validation strip: external confirmation only */}
+        <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/5 pt-6">
+          {VALIDATION.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-sm text-slate-300 hover:text-copper-400 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4 text-copper-500 mr-2" />
+              {item.label}
+            </a>
+          ))}
+        </div>
+        <div className="mt-8">
+          <Link to="/works" className="text-copper-500 hover:text-copper-400 text-sm font-semibold inline-flex items-center">
+            All projects <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </div>
+      </Section>
+
       {/* Intent Router - route visitors by intent (authority-router role) */}
       <IntentRouter />
-
-      {/* Pillars */}
-      <Section className="bg-slate-900/20 pt-10 md:pt-16 border-t border-white/5 md:border-t-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {PILLARS.map((pillar, idx) => (
-            <div key={idx} className="p-6 border border-white/5 hover:border-copper-500/30 transition-colors group">
-              <pillar.icon className="w-8 h-8 text-copper-500 mb-4 group-hover:scale-110 transition-transform duration-500" />
-              <h3 className="text-white font-semibold mb-2">{pillar.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{pillar.description}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* What I Build */}
-      <Section>
-        <SectionHeader title="Architecture" subtitle="Core Competencies" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {BUILD_AREAS.map((area, idx) => (
-            <div key={idx} className="flex flex-col items-start p-6 border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-copper-500/30 transition-all group h-full">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-slate-800/50 rounded-sm mr-4 group-hover:bg-copper-500/10 transition-colors">
-                  <area.icon className="w-6 h-6 text-slate-400 group-hover:text-copper-500 transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-white tracking-tight">{area.label}</h3>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed border-l border-slate-800 pl-4 group-hover:border-copper-500/50 transition-colors">
-                {area.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* System Interoperability Anchor */}
-        <div className="border-t border-white/5 pt-8">
-          <p className="text-center text-slate-400 text-sm max-w-3xl mx-auto">
-            Each entity operates independently but shares a common governance framework and capital structure managed by <span className="text-slate-400">Orion Apex Capital</span>.
-          </p>
-        </div>
-      </Section>
-
-      {/* Signal Strip */}
-      <div className="border-y border-white/5 bg-slate-950 py-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-8 md:gap-16">
-          {SIGNALS.map((signal, idx) => (
-            <span key={idx} className="text-slate-400 font-mono text-xs md:text-sm uppercase tracking-widest">
-              {signal}
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* Upcoming Speaking - third-party credential proof block */}
       <Section className="py-16">

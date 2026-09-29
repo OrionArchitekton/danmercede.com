@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, HERO_CONTENT, SELECTED_WORK } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -141,10 +141,12 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     body: {
       h1: 'Dan Mercede',
       lead: 'AI systems fail when nobody owns the workflow.',
+      // Same sources the React homepage renders: the hero line and the three
+      // selected works, so the no-JS body carries the evidence, not only the pitch.
       paragraphs: [
-        "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
-        'The teams that win with AI own the workflow, not just the model.',
-        'Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.',
+        HERO_CONTENT.philosophy,
+        HERO_CONTENT.wedge,
+        ...SELECTED_WORK.map((w) => `${w.title} (${w.status}): ${w.summary} ${w.evidence}`),
       ],
     },
   },
