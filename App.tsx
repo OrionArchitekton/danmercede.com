@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, FileText, Layers, Lock, ArrowRight, AlertTriangle, Search } from 'lucide-react';
+import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, contactHref } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
-import { WorkCard } from './components/WorkCard';
+import { WorkCard, linkTargetProps } from './components/WorkCard';
 import {
   ROUTE_META,
   caseStudyMeta,
@@ -149,10 +149,21 @@ const Footer = () => (
         <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
-      <div className="flex space-x-6 text-slate-400">
+      <div className="flex flex-col items-start md:items-end gap-3 text-slate-400">
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {FOOTER_LINKS.map((l) =>
+            l.href.endsWith('.xml') ? (
+              <a key={l.href} href={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</a>
+            ) : (
+              <Link key={l.href} to={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</Link>
+            ),
+          )}
+        </div>
+        <div className="flex space-x-6">
         <Link to="/legal" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Legal</Link>
         <Link to="/privacy" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Privacy</Link>
         <Link to="/imprint" className="text-xs hover:text-copper-500 cursor-pointer transition-colors">Imprint</Link>
+        </div>
       </div>
     </div>
   </footer>
@@ -213,20 +224,27 @@ const HomePage = () => {
               <p className="text-slate-400 mb-10 max-w-md">
                 {HERO_CONTENT.philosophy}
               </p>
-              {/* Hero CTA - Single Conversion Path */}
-              <div className="flex flex-col gap-4">
+              {/* Hero actions: the work first, then direct contact; OIA stays one line below */}
+              <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href={READINESS_SCAN.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#selected-work"
                   className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
                 >
-                  {READINESS_SCAN.cta}
+                  See selected work
                 </a>
-                <p className="text-slate-400 text-xs font-mono max-w-md">
-                  Deliverables: {READINESS_SCAN.deliverables.join(' · ')}
-                </p>
+                <Link
+                  to="/connect"
+                  className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-slate-600 text-white hover:border-copper-500"
+                >
+                  Contact Dan
+                </Link>
               </div>
+              <p className="text-slate-400 text-sm mt-5 max-w-md">
+                Business implementation work runs through{' '}
+                <a href={READINESS_SCAN.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">
+                  Orion Intelligence Agency
+                </a>.
+              </p>
             </div>
 
             {/* Image Placeholder */}
@@ -262,59 +280,55 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Selected Work */}
+      <Section id="selected-work" className="pt-10 md:pt-16">
+        <SectionHeader title="Selected work" subtitle="Built, running, and checked" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {SELECTED_WORK.map((work) => {
+            const external = Boolean(linkTargetProps(work.href).target);
+            return (
+              <a
+                key={work.title}
+                href={work.href}
+                {...linkTargetProps(work.href)}
+                className="flex flex-col p-6 border border-white/10 bg-slate-900/40 hover:border-copper-500/50 transition-colors group h-full"
+              >
+                <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>
+                <h3 className="text-2xl font-bold text-white mb-3">{work.title}</h3>
+                <p className="text-slate-300 leading-relaxed mb-4 flex-grow">{work.summary}</p>
+                <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
+                <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
+                  {external ? 'Source' : 'Project page'}
+                  {external ? <ExternalLink className="w-4 h-4 ml-2" /> : <ArrowRight className="w-4 h-4 ml-2" />}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+        {/* Validation strip: external confirmation only */}
+        <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/5 pt-6">
+          {VALIDATION.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-sm text-slate-300 hover:text-copper-400 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4 text-copper-500 mr-2" />
+              {item.label}
+            </a>
+          ))}
+        </div>
+        <div className="mt-8">
+          <Link to="/works" className="text-copper-500 hover:text-copper-400 text-sm font-semibold inline-flex items-center">
+            All projects <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </div>
+      </Section>
+
       {/* Intent Router - route visitors by intent (authority-router role) */}
       <IntentRouter />
-
-      {/* Pillars */}
-      <Section className="bg-slate-900/20 pt-10 md:pt-16 border-t border-white/5 md:border-t-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {PILLARS.map((pillar, idx) => (
-            <div key={idx} className="p-6 border border-white/5 hover:border-copper-500/30 transition-colors group">
-              <pillar.icon className="w-8 h-8 text-copper-500 mb-4 group-hover:scale-110 transition-transform duration-500" />
-              <h3 className="text-white font-semibold mb-2">{pillar.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{pillar.description}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* What I Build */}
-      <Section>
-        <SectionHeader title="Architecture" subtitle="Core Competencies" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {BUILD_AREAS.map((area, idx) => (
-            <div key={idx} className="flex flex-col items-start p-6 border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-copper-500/30 transition-all group h-full">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-slate-800/50 rounded-sm mr-4 group-hover:bg-copper-500/10 transition-colors">
-                  <area.icon className="w-6 h-6 text-slate-400 group-hover:text-copper-500 transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-white tracking-tight">{area.label}</h3>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed border-l border-slate-800 pl-4 group-hover:border-copper-500/50 transition-colors">
-                {area.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* System Interoperability Anchor */}
-        <div className="border-t border-white/5 pt-8">
-          <p className="text-center text-slate-400 text-sm max-w-3xl mx-auto">
-            Each entity operates independently but shares a common governance framework and capital structure managed by <span className="text-slate-400">Orion Apex Capital</span>.
-          </p>
-        </div>
-      </Section>
-
-      {/* Signal Strip */}
-      <div className="border-y border-white/5 bg-slate-950 py-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-8 md:gap-16">
-          {SIGNALS.map((signal, idx) => (
-            <span key={idx} className="text-slate-400 font-mono text-xs md:text-sm uppercase tracking-widest">
-              {signal}
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* Upcoming Speaking - third-party credential proof block */}
       <Section className="py-16">
@@ -726,22 +740,6 @@ const LAYER_INVARIANTS: Record<number, string> = {
   4: 'Capability must be removed, not restricted.',
 };
 
-const ARTIFACT_LABELS: Record<string, string> = {
-  'evidence-pack': 'Evidence Pack',
-  'blueprint': 'Blueprint',
-  'template': 'Template',
-  'one-sheet': 'One-Sheet',
-  'diagram': 'Diagram',
-  'deck': 'Executive Deck',
-};
-
-const LAYER_OUTPUTS: Record<number, string> = {
-  1: 'Gate decision log',
-  2: 'Receipt chain',
-  3: 'Drift intervention record',
-  4: 'Egress reject record',
-};
-
 const ReadinessScanCTA = () => (
   <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mt-10">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -895,79 +893,32 @@ const EvidenceSection = () => (
   </div>
 );
 
-const ProofArtifactCard = ({ resource }: { resource: Resource }) => {
-  const isGated = resource.gated;
-  return (
-    <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group">
-      <div className="flex items-start justify-between mb-3">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
-          <Layers className="w-3 h-3" />
-          L{resource.enforcementLayer}: {LAYER_NAMES[resource.enforcementLayer]}
-        </span>
-        <span className="text-xs font-mono text-slate-400">
-          {ARTIFACT_LABELS[resource.artifactType] || resource.artifactType}
-        </span>
-      </div>
-
-      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">
-        {resource.title}
-      </h3>
-
-      <p className="text-sm text-slate-400 mb-3 leading-relaxed">
-        {resource.description}
-      </p>
-
-      <div className="flex items-start gap-2 mb-4 p-3 rounded bg-slate-800/40 border border-white/5">
-        <AlertTriangle className="w-4 h-4 text-copper-500/70 mt-0.5 shrink-0" />
-        <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-0.5">Risk Domain</span>
-          <p className="text-xs text-slate-400 leading-relaxed">{resource.riskDomain}</p>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-1">Enforcement Point</span>
-        <p className="text-xs text-slate-300 leading-relaxed">{resource.enforcementPoint}</p>
-      </div>
-
-      <div className="flex items-center gap-2 mb-5 text-xs font-mono text-slate-400">
-        <FileText className="w-3.5 h-3.5 text-copper-500/50" />
-        <span className="uppercase tracking-widest">Artifact Output:</span>
-        <span className="text-slate-400">{LAYER_OUTPUTS[resource.enforcementLayer]}</span>
-      </div>
-
-      {isGated ? (
-        <span className="inline-flex items-center gap-2 text-sm text-slate-400 font-mono cursor-default" title="Email required for access">
-          <Lock className="w-4 h-4" />
-          Request Enforcement Artifact
-        </span>
-      ) : (
-        <a
-          href={resource.filePath}
-          download={resource.fileName}
-          className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Download Proof Asset
-        </a>
-      )}
-    </div>
-  );
-};
+// A plain download: says what the file is, never dresses it as an enforcement
+// artifact (2026-09-29 site audit).
+const DownloadCard = ({ resource }: { resource: Resource }) => (
+  <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
+    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mb-3">
+      {resource.downloadLabel ?? resource.title} · {resource.fileType.toUpperCase()}
+    </span>
+    <h3 className="text-lg font-semibold text-white mb-2">{resource.title}</h3>
+    <p className="text-sm text-slate-400 mb-5 leading-relaxed flex-grow">{resource.description}</p>
+    <a
+      href={resource.filePath}
+      download={resource.fileName}
+      className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
+    >
+      <Download className="w-4 h-4" />
+      Download
+    </a>
+  </div>
+);
 
 const LAYER_JUMP_LINKS = [
-  { id: 'control-plane', label: 'Control Plane' },
-  { id: 'authority', label: 'Authority' },
-  { id: 'runnable-proof', label: 'Runnable' },
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'gate-cascade', label: 'Gate Cascade' },
-  { id: 'receipts', label: 'Receipts' },
-  { id: 'drift', label: 'Drift' },
-  { id: 'substrate', label: 'Substrate' },
-  { id: 'economics', label: 'Economics' },
-  // id stays 'production' so existing #production deep links keep resolving;
-  // only the visible label is reframed to match the section copy.
+  { id: 'evidence-first', label: 'Evidence' },
+  { id: 'approach', label: 'Approach' },
+  // id stays 'production' so existing #production deep links keep resolving.
   { id: 'production', label: 'Reference' },
+  { id: 'commercial', label: 'Commercial and speaking' },
 ] as const;
 
 const LayerJumpBar = () => {
@@ -1168,7 +1119,27 @@ const ResourcesPage = () => {
     <div className="pt-20">
       <LayerJumpBar />
       <Section>
-        <SectionHeader as="h1" title="Proof" subtitle="Reliability and governance archive" />
+        <SectionHeader as="h1" title="Proof" subtitle="Evidence, approach, and resources" />
+        <p className="text-slate-300 text-lg max-w-3xl mb-12">
+          Three kinds of material live here, each labeled for what it is: evidence you can check, explanations of how the systems are built, and reference and commercial documents.
+        </p>
+
+        {/* Evidence first: runnable proof and checkable claims */}
+        <div id="evidence-first">
+          <RunnableProofCallout />
+          <EvidenceSection />
+        </div>
+
+        {/* Approach: how the systems are built (design, not measured outcomes) */}
+        <div id="approach" className="mb-4">
+          {/* Old layer deep links (#authority, #receipts, #drift, #substrate) land here. */}
+          <span id="authority" /><span id="receipts" /><span id="drift" /><span id="substrate" />
+          <div className="border-l-2 border-copper-500 pl-6 mb-8">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Approach</span>
+            <h2 className="text-2xl font-bold text-white mb-1">How the systems are built</h2>
+            <p className="text-sm text-slate-400">These diagrams explain the design. They are not measured outcomes.</p>
+          </div>
+        </div>
 
         {/* Signature Diagram, Runtime Execution Control Plane Architecture */}
         <div id="control-plane" className="mb-16">
@@ -1183,9 +1154,6 @@ const ResourcesPage = () => {
           <div className="max-w-4xl">
             <p className="text-base text-slate-300 leading-relaxed">
               Governance is enforced at four deterministic boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
-            </p>
-            <p className="text-sm text-slate-400 mt-2">
-              Every artifact below maps to one of these enforcement points.
             </p>
           </div>
           <div className="mt-8 border-l-2 border-copper-500/40 pl-6 max-w-3xl">
@@ -1214,32 +1182,6 @@ const ResourcesPage = () => {
           </div>
         </div>
 
-        {/* Layer 1, Authority Gate */}
-        {(() => {
-          const l1Resources = RESOURCES.filter(r => r.enforcementLayer === 1);
-          return l1Resources.length > 0 ? (
-            <div id="authority" className="mb-16">
-              <div className="border-l-2 border-copper-500 pl-6 mb-8">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer 1</span>
-                <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[1]}</h2>
-                <p className="text-sm text-white font-bold">{LAYER_INVARIANTS[1]}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {l1Resources.map((resource, i) => (
-                  <ProofArtifactCard key={i} resource={resource} />
-                ))}
-              </div>
-              <ReadinessScanCTA />
-            </div>
-          ) : null;
-        })()}
-
-        {/* Runnable Proof, failclosed (Authority Gate, made runnable) */}
-        <RunnableProofCallout />
-
-        {/* Evidence, every claim paired with the check that confirms it */}
-        <EvidenceSection />
-
         {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
@@ -1264,27 +1206,6 @@ const ResourcesPage = () => {
             name="Pipeline Diagram"
           />
         </div>
-
-        {/* Layers 2-4, Vertical Enforcement-Layer Sections */}
-        {([2, 3, 4] as const).map(layer => {
-          const layerResources = RESOURCES.filter(r => r.enforcementLayer === layer);
-          if (layerResources.length === 0) return null;
-          return (
-            <div key={layer} id={layer === 2 ? 'receipts' : layer === 3 ? 'drift' : 'substrate'} className="mb-16">
-              <div className="border-l-2 border-copper-500 pl-6 mb-8">
-                <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Layer {layer}</span>
-                <h2 className="text-2xl font-bold text-white mb-1">{LAYER_NAMES[layer]}</h2>
-                <p className="text-sm text-white font-bold">{LAYER_INVARIANTS[layer]}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {layerResources.map((resource, i) => (
-                  <ProofArtifactCard key={i} resource={resource} />
-                ))}
-              </div>
-              <ReadinessScanCTA />
-            </div>
-          );
-        })}
 
         {/* Diagram, Governance Economics Scorecard (above Case Studies) */}
         <div id="economics" className="mb-16">
@@ -1349,9 +1270,28 @@ const ResourcesPage = () => {
                 </Link>
               ))}
             </div>
-            <ReadinessScanCTA />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {RESOURCES.filter((r) => proofGroupFor(r) === 'resources').map((resource) => (
+                <DownloadCard key={resource.fileName} resource={resource} />
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Commercial and speaking: offers and the speaker one-sheet, kept apart from evidence */}
+        <div id="commercial" className="mb-16">
+          <div className="border-l-2 border-copper-500 pl-6 mb-8">
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Commercial and speaking</span>
+            <h2 className="text-2xl font-bold text-white mb-1">Working together</h2>
+            <p className="text-sm text-slate-400">Service and speaking documents. These describe offers, not results.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {RESOURCES.filter((r) => proofGroupFor(r) === 'commercial').map((resource) => (
+              <DownloadCard key={resource.fileName} resource={resource} />
+            ))}
+          </div>
+          <ReadinessScanCTA />
+        </div>
       </Section>
     </div>
   );
@@ -1614,6 +1554,31 @@ const ThoughtsPage = () => {
             Work with OIA on one workflow.
           </a>
         </p>
+
+        {/* Start here: curated entry into the strongest practical material */}
+        <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mb-10 max-w-4xl">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+            <h2 className="text-xl font-bold text-white">Start here</h2>
+            <a href="/feed.xml" className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Follow via RSS</a>
+          </div>
+          <ul className="space-y-4">
+            {START_HERE.map((item) => {
+              const title = item.kind === 'guide'
+                ? GUIDES.find((g) => g.slug === item.slug)?.title
+                : THOUGHTS.find((th) => th.slug === item.slug)?.title;
+              const to = item.kind === 'guide' ? `/guides/${item.slug}` : `/thoughts/${item.slug}`;
+              return (
+                <li key={item.slug}>
+                  <Link to={to} className="group block">
+                    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mr-2">{item.kind === 'guide' ? 'Guide' : 'Essay'}</span>
+                    <span className="text-white font-semibold group-hover:text-copper-400 transition-colors">{title}</span>
+                    <span className="block text-sm text-slate-400 mt-1">{item.why}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         {/* Category filter (substrate taxonomy). 'All lanes' shows the lane-grouped view. */}
         {/* Spacing lives on this row, not on an empty spacer div: in the lane-grouped default
@@ -2206,10 +2171,14 @@ const LegalPage = () => {
         </p>
         <p className="mb-6">
           <strong>2. Intellectual Property</strong><br />
-          All systems, methodologies, architectures, and branding referenced on this site are the intellectual property of Orion Apex Capital or their respective operating entities. Unauthorized reproduction, distribution, or use without written permission is prohibited.
+          The written content, diagrams, and branding on this site belong to Orion Apex Capital or its operating entities. Reproducing them without written permission is not allowed.
         </p>
         <p className="mb-6">
-          <strong>3. Limitation of Liability</strong><br />
+          <strong>3. Open-Source Software</strong><br />
+          Open-source tools linked from this site are licensed separately, under the license in each tool's own repository (most are MIT). These terms cover this website's content and do not restrict or replace those licenses.
+        </p>
+        <p className="mb-6">
+          <strong>4. Limitation of Liability</strong><br />
           The owner is not liable for any direct or indirect loss, damage, or injury arising from the use or inability to use the information provided on this site.
         </p>
       </div>

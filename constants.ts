@@ -1,14 +1,4 @@
-import {
-  ShieldCheck,
-  Cpu,
-  Scale,
-  Network,
-  Globe,
-  Briefcase,
-  Zap,
-  PenTool
-} from 'lucide-react';
-import { Pillar, Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
+import { Venture, Belief, Resource, CaseStudy, Work, Guide, Diagram, EvidenceTier } from './types';
 import { THOUGHTS } from './constants.generated';
 // Namespace import so DIAGRAMS can default to [] when the (substrate-verified)
 // generated bundle does not yet export it, a NAMED import would hard-fail at
@@ -18,60 +8,30 @@ import { THOUGHTS } from './constants.generated';
 import * as generatedBundle from './constants.generated';
 import { GUIDES } from './constants.guides.generated';
 
+// Primary nav (2026-09-29 site audit): what a visitor came for, not the site's
+// internal categories. The logo is the home link. Secondary surfaces live in
+// FOOTER_LINKS so nothing becomes unreachable (tests/navigation.test.ts).
 export const NAV_ITEMS = [
-  { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
-  { label: 'Ecosystem', path: '/ecosystem' },
-  { label: 'Thoughts', path: '/thoughts' },
-  { label: 'Proof', path: '/proof' },
-  { label: 'Works', path: '/works' },
+  { label: 'Work', path: '/works' },
+  { label: 'Writing', path: '/thoughts' },
   { label: 'Guides', path: '/guides' },
-  { label: 'Diagrams', path: '/diagrams' },
-  { label: 'Connect', path: '/connect' },
+  { label: 'Proof', path: '/proof' },
+  { label: 'About', path: '/about' },
+  { label: 'Contact', path: '/connect' },
+];
+
+export const FOOTER_LINKS: { label: string; href: string }[] = [
+  { label: 'Ecosystem', href: '/ecosystem' },
+  { label: 'Diagrams', href: '/diagrams' },
+  { label: 'RSS', href: '/feed.xml' },
 ];
 
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
   positioning: "AI systems fail when nobody owns the workflow.",
-  philosophy: "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
+  philosophy: "I'm an operator and systems builder. I build AI workflows with clear ownership, from the first working version to the tools, controls, and handoffs that keep it running.",
   wedge: "The teams that win with AI own the workflow, not just the model.",
 };
-
-export const PILLARS: Pillar[] = [
-  { title: "Human-Owned Intelligence", icon: Cpu, description: "AI aligned with operator intent, control, and accountability." },
-  { title: "Governance & Accountability", icon: ShieldCheck, description: "Traceability, auditability, and policy enforcement by default." },
-  { title: "Execution Over Hype", icon: Zap, description: "Production systems with measurable outcomes: not experiments." },
-  { title: "Systems That Scale", icon: Network, description: "Architectures designed to compound, degrade safely, and endure." },
-];
-
-export const BUILD_AREAS = [
-  {
-    label: "Platform",
-    icon: Globe,
-    description: "Governed AI Operating System design: control planes and execution frameworks that unify memory, decision-making, and oversight."
-  },
-  {
-    label: "Agency",
-    icon: Briefcase,
-    description: "SMB AI strategy and consulting: one workflow from strategy to a system your team owns. Builds, not just advises."
-  },
-  {
-    label: "Capital",
-    icon: Scale,
-    description: "Ownership, structure, and capital alignment for long-term system builders."
-  },
-  {
-    label: "Media",
-    icon: PenTool,
-    description: "Signal creation and narrative architecture to teach categories, not market products."
-  },
-];
-
-export const SIGNALS = [
-  "Founder of Cosmocrat",
-  "Director of Orion Intel",
-  "Trademark Holder",
-];
 
 export const SPEAKING = {
   label: "Upcoming Speaking",
@@ -241,6 +201,62 @@ export const THOUGHT_LANES: readonly ThoughtLane[] = [
 // Homepage intent-router: routes each visitor to the surface that fits their
 // intent. danmercede.com is the authority router; OIA is the commercial lane.
 // External SMB card points at the OIA readiness-scan; the rest are in-hub routes.
+// Project status vocabulary (2026-09-29 site audit): one small, honest set so a
+// competition build, a maintained library, and a running personal system are
+// never flattened into one "shipped to production" claim.
+export const WORK_STATUSES = [
+  "Maintained open source",
+  "Personal production",
+  "Working prototype",
+  "Demonstration or reference implementation",
+  "Archived experiment",
+] as const;
+export type WorkStatus = (typeof WORK_STATUSES)[number];
+
+// Homepage selected work: three complementary pieces (external recognition, a
+// clear mechanism, sustained operation). Copy mirrors the WORKS entries and the
+// verified SPEAKING entry; tests/homepage.test.ts checks links and statuses.
+export const SELECTED_WORK: {
+  title: string;
+  status: WorkStatus;
+  summary: string;
+  evidence: string;
+  href: string;
+}[] = [
+  {
+    title: "Proctor",
+    status: "Working prototype",
+    summary: "Behavioral regression testing for AI agents. It learns a per-agent contract from sample runs, re-checks it on every model or prompt change, and pauses consequential drift for human approval.",
+    evidence: "Verified live against a real UiPath tenant. Finalist, UiPath AgentHack 2026.",
+    href: "/works/proctor/",
+  },
+  {
+    title: "failclosed",
+    status: "Maintained open source",
+    summary: "Merge admission control for AI-written code. It runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory.",
+    evidence: "MIT licensed, Python 3.9+, runs from a fresh clone.",
+    href: "/works/failclosed/",
+  },
+  {
+    title: "Production knowledge graph",
+    status: "Personal production",
+    summary: "Ingests branched LLM conversation history into a production Neo4j knowledge graph, keeping each branch's identity and staying idempotent and re-runnable.",
+    evidence: `Selected talk at ${SPEAKING.event}, ${SPEAKING.date}.`,
+    href: SPEAKING.href,
+  },
+];
+
+// Homepage validation strip: external confirmation only, each linked to its source.
+export const VALIDATION: { label: string; href: string }[] = [
+  {
+    label: "Finalist, UiPath AgentHack 2026",
+    href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
+  },
+  { label: `Speaker, ${SPEAKING.event}`, href: SPEAKING.href },
+  { label: "schemafit on PyPI", href: "https://pypi.org/project/schemafit/" },
+  { label: "mcp-context-budget on PyPI", href: "https://pypi.org/project/mcp-context-budget/" },
+];
+
 export const INTENT_ROUTES = [
   {
     audience: 'SMB buyer',
@@ -260,18 +276,18 @@ export const INTENT_ROUTES = [
   },
   {
     audience: 'Reliability and governance',
-    prompt: 'Evaluating governed AI infrastructure?',
-    description: 'The reliability and governance archive: enforcement artifacts and production proof.',
+    prompt: 'Want evidence you can check?',
+    description: 'Checkable claims first, then how the systems are built, labeled for what each piece is.',
     href: '/proof',
     cta: 'See the proof',
     external: false,
   },
   {
-    audience: 'Investor or operator',
-    prompt: 'Exploring the bigger picture?',
-    description: 'The Orion ecosystem and Orion Apex Capital, the entity stack under one governance framework.',
-    href: '/ecosystem',
-    cta: 'View the ecosystem',
+    audience: 'Hiring manager or recruiter',
+    prompt: 'Evaluating Dan for a role?',
+    description: 'Operating background, current work, and credentials you can check.',
+    href: '/about',
+    cta: 'Read the background',
     external: false,
   },
 ];
@@ -460,6 +476,7 @@ export const RESOURCES: Resource[] = [
     description: "Engagement deliverable map linking control-plane gap analysis, failure-mode heatmaps, and evidence checklists to enforcement layers. Risk-bounded pricing tiers anchored to audit defensibility outcomes.",
     category: "sales-collateral",
     fileName: "What_We_Deliver.pdf",
+    downloadLabel: "Engagement sheet",
     filePath: "/assets/What_We_Deliver.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 1,
@@ -476,6 +493,7 @@ export const RESOURCES: Resource[] = [
     description: "Structured engagement template mapping findings to enforcement stack layers. Captures enforcement points deployed, behavioral drift metrics, containment thresholds, and quantified risk reduction tied to operational blast radius.",
     category: "template",
     fileName: "Case_Study_Template.docx",
+    downloadLabel: "Blank template",
     filePath: "/assets/Case_Study_Template.docx",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 3,
@@ -489,9 +507,10 @@ export const RESOURCES: Resource[] = [
   // L4: Gated Substrate
   {
     title: "Speaking One-Sheet",
-    description: "Credential and topic mapping for CIO, CTO, CISO audiences. Talk tracks anchored to enforcement stack layers, substrate isolation mechanics, and quantified enterprise risk reduction. Architectural authority positioning.",
+    description: "One page for event organizers: bio, the NODES 2026 talk, the UiPath AgentHack finalist result, four talk topics, and a direct speaking contact.",
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
+    downloadLabel: "Speaker one-sheet",
     filePath: "/assets/Speaking_One_Sheet.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 4,
@@ -503,6 +522,13 @@ export const RESOURCES: Resource[] = [
     fileSize: "4 KB",
   },
 ];
+
+// /proof groups (2026-09-29 site audit): commercial and speaking material is
+// kept apart from evidence and reference resources, so a sales sheet never reads
+// as a proof artifact. tests/proofStructure.test.ts pins the mapping.
+export function proofGroupFor(resource: Resource): 'resources' | 'commercial' {
+  return resource.category === 'sales-collateral' ? 'commercial' : 'resources';
+}
 
 // Leads every /case-studies/<slug> page (React render and prerender body) so a
 // visitor landing from search sees the status before any architecture detail.
@@ -516,7 +542,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Financial Services",
     enforcementLayers: [1, 2],
     layerNames: ["Authority Gate", "Immutable Receipts"],
-    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. Maps to SOC 2 and SOX compliance requirements.",
+    description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. The pattern produces evidence relevant to SOC 2 and SOX controls; it does not by itself make a system compliant.",
     fileName: "Reference_Architecture_Financial_Services.docx",
     filePath: "/assets/Reference_Architecture_Financial_Services.docx",
     enforcementPoints: [
@@ -526,7 +552,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     commercialMapping: [
       "Financial exposure containment",
       "SOC 2 audit defensibility",
-      "SOX compliance enforcement",
+      "Evidence for SOX control testing",
       "Operational blast radius reduction",
     ],
   },
@@ -536,7 +562,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     industry: "Healthcare",
     enforcementLayers: [3, 4],
     layerNames: ["Drift Guard", "Gated Substrate"],
-    description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. Maps to HIPAA and FDA SaMD regulatory exposure.",
+    description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. The pattern supports safeguards relevant to HIPAA and FDA SaMD reviews; it does not by itself make a system compliant.",
     fileName: "Reference_Architecture_Healthcare.docx",
     filePath: "/assets/Reference_Architecture_Healthcare.docx",
     enforcementPoints: [
@@ -544,7 +570,7 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Workload isolation for PHI-handling agents",
     ],
     commercialMapping: [
-      "HIPAA compliance enforcement",
+      "Evidence for HIPAA safeguard reviews",
       "FDA SaMD regulatory alignment",
       "Patient safety risk containment",
       "Audit defensibility for clinical AI",
@@ -847,6 +873,37 @@ export const DIAGRAMS: Diagram[] =
   (generatedBundle as { DIAGRAMS?: Diagram[] }).DIAGRAMS ?? [];
 
 // --- /works dev-hub data (PR2) ---------------------------------------------
+// /thoughts "Start here" (2026-09-29 site audit): a short curated entry into the
+// strongest practical material, so chronology is not the only way in. Each entry
+// says why it is worth reading first. Slugs are checked by tests/navigation.test.ts.
+export const START_HERE: { kind: 'guide' | 'essay'; slug: string; why: string }[] = [
+  {
+    kind: 'guide',
+    slug: 'the-fail-closed-harness',
+    why: 'The whole approach in one place: how the checks around an AI coding agent fit together.',
+  },
+  {
+    kind: 'guide',
+    slug: 'giving-your-agent-web-access',
+    why: 'The most-read guide: web access for a coding agent without flooding its context window.',
+  },
+  {
+    kind: 'guide',
+    slug: 'governed-double-send-safe-delivery',
+    why: 'What it takes before agent output leaves the building: review, approval, and a send that never silently repeats.',
+  },
+  {
+    kind: 'essay',
+    slug: '2026-06-08-authority-gate-made-runnable',
+    why: 'Where the doctrine became a tool you can run: failclosed.',
+  },
+  {
+    kind: 'essay',
+    slug: '2026-05-19-the-merge-is-a-state-mutation',
+    why: 'Why merging AI-written code deserves the same gate as any other production change.',
+  },
+];
+
 // FEATURED_ESSAY_SLUGS: operator-curated flagship essays surfaced on /works as a
 // CAPPED pointer into /thoughts. The cap (3-5) is load-bearing, it keeps /works
 // from drifting into a second /thoughts. Enforced by tests/worksHub.test.ts.
