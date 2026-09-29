@@ -6,11 +6,12 @@
 // the estate's LOCKED answer-first doctrine (~130-170 words;
 // ~/.claude/skills/product-launch/references/seo-geo-aeo.md):
 //
-//   1. token budget   — the answer-first passage (H1 + lead) is extractable-
+//   1. token budget: the answer-first passage (H1 + lead) is extractable-
 //                        length, not a wall of text (<= MAX_ANSWER_TOKENS).
-//   2. js-off readable — the answer lives OUTSIDE the React mount (#root), so a
+//   2. js-off readable: the answer lives OUTSIDE the React mount (#root), or in
+//                        a #root rendered at build time (data-rendered-path), so a
 //                        no-JS crawler can read it (readable ratio >= MIN_JS_OFF_RATIO).
-//   3. heading         — exactly one H1, first heading is H1, no level skips.
+//   3. heading: exactly one H1, first heading is H1, no level skips.
 //
 // It DELIBERATELY does not reward FAQPage coverage and does not rank llms.txt
 // Tier-1 (BOTH refuted by seo-geo-aeo.md), and does NOT gate on query-phrased
@@ -142,7 +143,11 @@ function answerFirstText(crawl: string): string {
 
 export function lintExtractability(html: string): LintResult {
   const noCode = stripCode(html);
-  const { rootInner, jsOff } = splitRoot(noCode);
+  // A #root stamped with data-rendered-path carries the real page render in the
+  // initial HTML (specs/visible-initial-html-spec.md), so a no-JS crawler reads
+  // it; only an unstamped #root is script-only.
+  const rootTag = /<div\b[^>]*\bid=["']root["'][^>]*>/i.exec(noCode)?.[0] ?? '';
+  const { rootInner, jsOff } = /\bdata-rendered-path=/.test(rootTag) ? { rootInner: '', jsOff: noCode } : splitRoot(noCode);
 
   // check 1 — token budget on the answer-first passage
   const answer = answerFirstText(jsOff);

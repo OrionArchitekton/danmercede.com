@@ -65,6 +65,38 @@ export function renderedThoughtBody(routePath: string): string | undefined {
 
 const BUILD_DIR = path.resolve(process.cwd(), 'build');
 
+// Visible initial HTML (specs/visible-initial-html-spec.md): routes whose initial
+// HTML carries the real page render inside #root instead of the hidden crawl
+// block. It grows slice by slice; emptying it restores the baseline output.
+export const RENDERED_ROUTES: ReadonlySet<string> = new Set(['/about']);
+
+// The build-time render bundle (`vite build --ssr entry-server.tsx`), written
+// outside the deployed build/ directory.
+const SSR_ENTRY = path.resolve(process.cwd(), 'build-ssr', 'entry-server.js');
+
+const EMPTY_ROOT = '<div id="root"></div>';
+
+// Put a route's page render inside #root, stamped with the path it was rendered
+// for (the client hydrates only on that path), and drop the crawl block so the
+// page text appears once. The block anchors stay in place.
+export function injectPageRender(html: string, routePath: string, markup: string): string {
+  const roots = html.split(EMPTY_ROOT).length - 1;
+  if (roots !== 1) throw new Error(`expected exactly one empty #root in the template, found ${roots}`);
+  const withoutCrawlBlock = injectBlock(html, BODY_BLOCK_START, BODY_BLOCK_END, '', '  ');
+  // A replacer function, so `$&` or `$1` in the markup is inserted verbatim.
+  return withoutCrawlBlock.replace(EMPTY_ROOT, () => `<div id="root" data-rendered-path="${routePath}">${markup}</div>`);
+}
+
+async function loadPageRenderer(): Promise<(url: string) => string> {
+  try {
+    await fs.access(SSR_ENTRY);
+  } catch {
+    throw new Error(`${SSR_ENTRY} not found; run \`vite build --ssr entry-server.tsx\` first.`);
+  }
+  const mod = (await import(pathToFileURL(SSR_ENTRY).href)) as { render: (url: string) => string };
+  return mod.render;
+}
+
 // The full per-route bake set: static (ROUTE_META, minus the homepage which IS
 // build/index.html) + dynamic case-study / thought / guide / diagram routes, each
 // derived from committed content so a content refresh needs no slug-list edit.
@@ -158,6 +190,7 @@ async function main() {
   }
 
   const routes = collectRoutes();
+  const renderPage = RENDERED_ROUTES.size > 0 ? await loadPageRenderer() : null;
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -180,6 +213,10 @@ async function main() {
       renderBodyBlock(routePath, meta, renderedThoughtBody(routePath)),
       '  ',
     );
+    // 4) the real page render inside #root, for the rendered-route set
+    if (renderPage && RENDERED_ROUTES.has(routePath)) {
+      html = injectPageRender(html, routePath, renderPage(routePath));
+    }
     const outDir = path.join(BUILD_DIR, routePath.replace(/^\//, ''));
     await fs.mkdir(outDir, { recursive: true });
     await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');

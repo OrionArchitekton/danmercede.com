@@ -426,6 +426,17 @@ does nothing in CI until it is added to the `test` script in `package.json`.
 After adding one, check that the reported test count rose by the number of new
 tests; an unchanged count means the new guard is not running.
 
+### Keep rendered pages hydratable
+
+Some routes ship their real page render in the initial HTML and the browser
+hydrates it (the rendered-route set; `specs/visible-initial-html-spec.md`). A
+component must not read `window`, `document`, the clock, or randomness while it
+renders: do that in an effect. A render-time read either breaks the build-time
+render or makes the browser's first render differ from the shipped markup, and
+React then discards and rebuilds the page. `npm run test:built` renders every
+published route twice and fails on any difference; production reports a
+`hydration_error` analytics event when React recovers from a mismatch.
+
 ## Estate Authority
 
 See `orion-estate-audit/AGENTS.md` for cross-repo doctrine. This repo is a

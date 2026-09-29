@@ -90,6 +90,7 @@ const EVENT_DISCLOSURES: Record<string, RegExp> = {
   page_view: /page views/,
   generate_lead: /clicking the email link/,
   connect_click: /clicking the LinkedIn link/,
+  hydration_error: /technical error report/,
 };
 
 // Every first-party source file, not a hand-picked list: an event sent from a
