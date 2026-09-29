@@ -213,3 +213,20 @@ test('ThoughtsPage wires the live query/category STATE into both derivations', (
     'the lane-grouped branch must be derived from isLaneGroupedThoughtsView(activeCategory, query)',
   );
 });
+
+// 2026-09-29 re-audit P1.5: the homepage leads with workflow ownership, but the
+// Workflow Ownership lane was empty (a "coming soon" note) while the essays on
+// exactly that theme sat in the default lane. The lane carries them now.
+test('the Workflow Ownership lane carries the published workflow-ownership essays', () => {
+  const lane = THOUGHT_LANES.find((l) => l.name === 'Workflow Ownership');
+  assert.ok(lane, 'expected the Workflow Ownership lane');
+  const slugs = lane.slugs ?? [];
+  for (const slug of [
+    '2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow',
+    '2026-07-27-the-machines-came-back',
+    '2026-07-20-nobody-owned-the-workflow',
+  ]) {
+    assert.ok(slugs.includes(slug), `${slug} belongs in Workflow Ownership`);
+  }
+  assert.equal(lane.emptyNote, undefined, 'a populated lane needs no coming-soon note');
+});

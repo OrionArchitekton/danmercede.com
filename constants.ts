@@ -179,8 +179,11 @@ export const THOUGHT_LANES: readonly ThoughtLane[] = [
   {
     name: 'Workflow Ownership',
     blurb: 'Turning AI from experiments into workflows a team owns, the bridge into hands-on work.',
-    slugs: [],
-    emptyNote: 'New essays are landing here. In the meantime, work with OIA on one workflow.',
+    slugs: [
+      '2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow',
+      '2026-07-27-the-machines-came-back',
+      '2026-07-20-nobody-owned-the-workflow',
+    ],
   },
   {
     name: 'Public Signals',

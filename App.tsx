@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { normalizePath } from './hydration';
+import { syncRouteJsonLd } from './routeJsonLd';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
@@ -18,6 +19,8 @@ import {
   guideMeta,
   diagramMeta,
   typeScopedMetaTags,
+  routeMetaFor,
+  routeJsonLdText,
   type RouteMeta,
   SITE_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
@@ -146,7 +149,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center">
       <div className="mb-8 md:mb-0">
         <img src="/dm-mark.svg" alt="" aria-hidden="true" className="h-8 w-8 mb-3" />
-        <h4 className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</h4>
+        <p className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</p>
         <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
@@ -1112,6 +1115,13 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
       "robots",
       noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
     );
+
+    // Route JSON-LD: the build bakes each page's graph into <head>, so after an
+    // in-app navigation the head still describes the entry page. Swap in the
+    // current route's graph, resolved the way the build resolves it (none for
+    // a noindex page).
+    const routeMeta = noindex ? null : routeMetaFor(normalizedPath);
+    syncRouteJsonLd(document.head, routeMeta ? routeJsonLdText(normalizedPath, routeMeta) : null);
   }, [
     pathname,
     overrideTitle,

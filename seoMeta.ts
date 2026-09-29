@@ -844,7 +844,33 @@ function escapeJsonForHtml(json: string): string {
 // node plus a BreadcrumbList, both linked to the canonical homepage entity
 // graph (#person / #website) so answer engines resolve one Dan Mercede entity.
 // FAQPage is intentionally NOT emitted, its rich result was deprecated 2026.
+// The route metadata the build bakes for a path, or null when no page exists at
+// it. The build (collectRoutes) and the client (route JSON-LD after an in-app
+// navigation) both resolve paths through the same families, so a page is
+// described the same way however the visitor arrived. A trailing slash is the
+// same route.
+export function routeMetaFor(pathname: string, diagrams: Diagram[] = DIAGRAMS): RouteMeta | null {
+  const route = pathname.replace(/\/+$/, '') || '/';
+  if (Object.prototype.hasOwnProperty.call(ROUTE_META, route)) return ROUTE_META[route];
+  const slug = route.split('/').pop();
+  if (caseStudyPaths().includes(route)) return caseStudyMeta(slug);
+  if (thoughtPaths().includes(route)) return thoughtMeta(slug);
+  if (guidePaths().includes(route)) return guideMeta(slug);
+  if (diagramPaths(diagrams).includes(route)) return diagramMeta(slug, diagrams);
+  return null;
+}
+
+// The JSON text of a route's JSON-LD script, exactly as renderRouteJsonLd bakes
+// it; the client inserts the same text after an in-app navigation.
+export function routeJsonLdText(path: string, m: RouteMeta): string {
+  return escapeJsonForHtml(JSON.stringify(routeJsonLdDoc(path, m), null, 2));
+}
+
 export function renderRouteJsonLd(path: string, m: RouteMeta): string {
+  return `  <script type="application/ld+json">\n${routeJsonLdText(path, m)}\n  </script>`;
+}
+
+function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
   const r = resolveMeta(m);
   const canonical = new URL(path, SITE_ORIGIN).toString();
   const graph: Record<string, unknown>[] = [];
@@ -925,8 +951,7 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
 
   graph.push(renderBreadcrumb(path, breadcrumbLabel(r.title)));
 
-  const doc = { '@context': 'https://schema.org', '@graph': graph };
-  return `  <script type="application/ld+json">\n${escapeJsonForHtml(JSON.stringify(doc, null, 2))}\n  </script>`;
+  return { '@context': 'https://schema.org', '@graph': graph };
 }
 
 // Concise breadcrumb leaf: strip the trailing brand suffix (", Dan Mercede" /
