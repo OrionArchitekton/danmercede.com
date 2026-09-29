@@ -1208,7 +1208,7 @@ export const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: '3. Analytics and Cookies',
-    body: 'This site uses Google Analytics 4 to count page views and two interaction events: clicking the email link and clicking the LinkedIn link. Google Analytics sets first-party cookies to tell visits apart. IP anonymization is on, and advertising storage, ad personalization, and ad user data are turned off. The site also uses Vercel Web Analytics (page views, referrers, and coarse location and device type) and Vercel Speed Insights (page-load performance). We do not use advertising cookies and do not sell or share analytics data for advertising.',
+    body: 'This site uses Google Analytics 4 to count page views and these interactions: clicking the email link and clicking the LinkedIn link. Google Analytics sets first-party cookies to tell visits apart. IP anonymization is on, and advertising storage, ad personalization, and ad user data are turned off. The site also uses Vercel Web Analytics (page views, referrers, and coarse location and device type) and Vercel Speed Insights (page-load performance). We do not use advertising cookies and do not sell or share analytics data for advertising.',
   },
   {
     heading: '4. Your Choices',

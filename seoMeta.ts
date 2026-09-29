@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -279,9 +279,9 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
     body: {
       h1: 'Privacy Policy',
-      paragraphs: [
-        'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
-      ],
+      // The full policy, from the same source the React page renders, so no-JS
+      // visitors and crawlers get the actual disclosures (privacyDisclosure.test.ts).
+      paragraphs: PRIVACY_SECTIONS.map((s) => `${s.heading}: ${s.body}`),
     },
   },
   '/imprint': {

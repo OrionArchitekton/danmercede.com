@@ -412,9 +412,14 @@ BEFORE the sync workflow runs against a non-empty substrate match set.
 |---|---|
 | `npm run compile` | regenerate `constants.generated.ts` from substrate (fail-open) |
 | `npm run compile -- --strict` | strict-mode compile (fail-loud) |
-| `npm test` | run `tsx --test tests/compileContent.test.ts` |
+| `npm test` | run `tsx --test` over the test files listed in `package.json` (explicit list, see below) |
 | `npm run build` | runs `prebuild` (= compile) then `vite build` |
 | `npm run dev` | Vite dev server |
+
+`npm test` runs an explicit file list, not a glob. A new `tests/*.test.ts` file
+does nothing in CI until it is added to the `test` script in `package.json`.
+After adding one, check that the reported test count rose by the number of new
+tests; an unchanged count means the new guard is not running.
 
 ## Estate Authority
 

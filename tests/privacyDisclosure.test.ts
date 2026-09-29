@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { PRIVACY_SECTIONS } from '../constants';
 import { resolveGaConfig } from '../analytics/gaConfig';
+import { ROUTE_META } from '../seoMeta';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => fs.readFileSync(path.join(projectRoot, rel), 'utf8');
@@ -69,4 +70,47 @@ test('the /privacy page renders the tested policy, not a separate copy', () => {
   const app = read('App.tsx');
   assert.match(app, /PRIVACY_SECTIONS\.map\(/, 'PrivacyPage must render PRIVACY_SECTIONS');
   assert.doesNotMatch(app, /behavioral tracking cookies/, 'the old inline privacy copy must be gone');
+});
+
+test('the privacy claims about GA4 settings match gaConfig.ts', () => {
+  const cfg = resolveGaConfig('G-TEST123')!;
+  const text = policyText();
+  const claimsIpAnon = /IP anonymization is on/.test(text);
+  assert.equal(claimsIpAnon, cfg.configParams.anonymize_ip === true, 'IP anonymization claim must match configParams.anonymize_ip');
+  const adsOff =
+    cfg.consentDefaults.ad_storage === 'denied' &&
+    cfg.consentDefaults.ad_personalization === 'denied' &&
+    cfg.consentDefaults.ad_user_data === 'denied';
+  const claimsAdsOff = /advertising storage, ad personalization, and ad user data are turned off/.test(text);
+  assert.equal(claimsAdsOff, adsOff, 'the ads-off claim must match the three ad consent defaults');
+});
+
+// Each GA event the site sends, and the phrase that discloses it.
+const EVENT_DISCLOSURES: Record<string, RegExp> = {
+  generate_lead: /clicking the email link/,
+  connect_click: /clicking the LinkedIn link/,
+};
+
+test('every analytics event the site sends is disclosed', () => {
+  const sources = ['App.tsx', ...fs.readdirSync(path.join(projectRoot, 'components')).map((f) => `components/${f}`)];
+  const names = new Set(
+    sources.flatMap((rel) => [...read(rel).matchAll(/trackEvent\([^,]+,\s*'([a-z_]+)'/g)].map((m) => m[1])),
+  );
+  assert.ok(names.has('generate_lead'), 'expected to find the email-click event (positive control)');
+  const text = policyText();
+  for (const name of names) {
+    const phrase = EVENT_DISCLOSURES[name];
+    assert.ok(phrase, `event "${name}" is sent but has no disclosure entry; add it to the policy and this map`);
+    assert.match(text, phrase, `event "${name}" is not described in the privacy policy`);
+  }
+});
+
+test('the no-JS /privacy prerender carries the full policy', () => {
+  const paragraphs = ROUTE_META['/privacy'].body?.paragraphs ?? [];
+  for (const s of PRIVACY_SECTIONS) {
+    assert.ok(
+      paragraphs.some((p) => p.includes(s.body)),
+      `the /privacy prerender body is missing section "${s.heading}"`,
+    );
+  }
 });

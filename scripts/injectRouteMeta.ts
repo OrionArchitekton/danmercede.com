@@ -120,7 +120,7 @@ export function buildSitemapExtraEntries(diagrams: Diagram[] = DIAGRAMS): string
 // build/404.html: Vercel serves it with HTTP 404 for any path that matches no
 // file and no rewrite. It keeps the app shell so NotFoundPage still renders, but
 // the head is noindex with no canonical (the file answers arbitrary URLs), and the
-// homepage's route JSON-LD and prerender body are replaced.
+// homepage prerender body is replaced and all structured data is removed.
 export function renderNotFoundHtml(baseHtml: string): string {
   const seo = [
     '  <title>Page Not Found | Dan Mercede</title>',
@@ -139,7 +139,9 @@ export function renderNotFoundHtml(baseHtml: string): string {
     }),
     '  ',
   );
-  return html;
+  // The site-wide entity graph (Person / WebSite / ImageObject) lives outside the
+  // anchors in index.html; a 404 describes no entity, so drop every JSON-LD block.
+  return html.replace(/[ \t]*<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
 }
 
 async function main() {

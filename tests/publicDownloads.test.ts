@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +18,8 @@ const assetsDir = path.join(projectRoot, 'public', 'assets');
  * plus an unlinked PDF twin) kept serving the same figures because nothing
  * scanned those file types. The fix is on the coverage axis, not the file: a
  * document served from public/assets must be linked from the site, and a
- * document type this suite cannot read must carry an explicit human review.
+ * document type this suite cannot read must carry a human review bound to the
+ * exact bytes that were reviewed.
  */
 
 const DOCUMENT_EXTS = new Set(['.pdf', '.pptx', '.docx', '.doc', '.ppt', '.xlsx']);
@@ -25,20 +27,42 @@ const DOCUMENT_EXTS = new Set(['.pdf', '.pptx', '.docx', '.doc', '.ppt', '.xlsx'
 // Types whose prose caseStudyHonesty.test.ts actually reads and scans.
 const SCANNED_EXTS = new Set(['.docx']);
 
-// Served documents of a type no test can read. Each entry is a human review of
-// the current file contents; replacing the file means re-reviewing it here.
-const REVIEWED_UNSCANNED: Record<string, string> = {
-  'Speaking_One_Sheet.pdf':
-    'Reviewed 2026-09-29: bio, talk topics, contact. No outcome figures. Stale positioning tracked by audit item 1.3.',
-  'What_We_Deliver.pdf':
-    'Reviewed 2026-09-29: engagement tiers with published prices, no outcome figures. Keep-or-retire decision tracked by audit item 1.4.',
+// Served documents of a type no test can read, keyed by path under public/assets.
+// The sha256 pins the reviewed bytes: replacing the file fails this suite until
+// someone re-reviews it and updates the hash (`sha256sum public/assets/<file>`).
+const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
+  'Speaking_One_Sheet.pdf': {
+    sha256: 'e07553e99b366b0f3cc04f2d72cc84fb190cb76247671ac9150db76db93b74bd',
+    review: '2026-09-29: bio, talk topics, contact. No outcome figures. Stale positioning tracked by audit item 1.3.',
+  },
+  'What_We_Deliver.pdf': {
+    sha256: 'c7635540b31ecdf90ceaece4a4c8be67083fff28ccc6db211db17fa1b91deb7c',
+    review: '2026-09-29: engagement tiers with published prices, no outcome figures. Keep-or-retire tracked by audit item 1.4.',
+  },
 };
 
+// Source files that can carry an href to a downloadable document.
+const HREF_SOURCES = [
+  'App.tsx',
+  'constants.ts',
+  'constants.generated.ts',
+  'constants.guides.generated.ts',
+  'seoMeta.ts',
+  'public/llms.txt',
+];
+
+function walk(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const abs = path.join(dir, e.name);
+    return e.isDirectory() ? walk(abs) : e.isFile() ? [abs] : [];
+  });
+}
+
+// Every document anywhere under public/assets, as a path relative to it.
 function servedDocuments(): string[] {
-  return fs
-    .readdirSync(assetsDir, { withFileTypes: true })
-    .filter((e) => e.isFile() && DOCUMENT_EXTS.has(path.extname(e.name).toLowerCase()))
-    .map((e) => e.name)
+  return walk(assetsDir)
+    .filter((abs) => DOCUMENT_EXTS.has(path.extname(abs).toLowerCase()))
+    .map((abs) => path.relative(assetsDir, abs).split(path.sep).join('/'))
     .sort();
 }
 
@@ -46,6 +70,9 @@ function linkedDocuments(): string[] {
   const paths = [...RESOURCES.map((r) => r.filePath), ...CASE_STUDIES.map((c) => c.filePath)];
   return [...new Set(paths.filter((p) => p.startsWith('/assets/')).map((p) => p.slice('/assets/'.length)))].sort();
 }
+
+const sha256 = (rel: string) =>
+  crypto.createHash('sha256').update(fs.readFileSync(path.join(assetsDir, rel))).digest('hex');
 
 test('every document served from public/assets is linked from the site, and vice versa', () => {
   const served = servedDocuments();
@@ -61,19 +88,43 @@ test('every document served from public/assets is linked from the site, and vice
   );
 });
 
-test('every served document type without a content scanner has an explicit review', () => {
-  const unreviewed = servedDocuments().filter(
-    (name) => !SCANNED_EXTS.has(path.extname(name).toLowerCase()) && !(name in REVIEWED_UNSCANNED),
-  );
-  assert.deepEqual(
-    unreviewed,
-    [],
-    'these downloads are served but no test can read them; review them and add an entry, or remove them',
-  );
+test('every served document type without a content scanner has a review pinned to its bytes', () => {
+  const problems: string[] = [];
+  for (const rel of servedDocuments()) {
+    if (SCANNED_EXTS.has(path.extname(rel).toLowerCase())) continue;
+    const entry = REVIEWED_UNSCANNED[rel];
+    if (!entry) {
+      problems.push(`${rel}: served but no test can read it; review it and add an entry, or remove it`);
+    } else if (sha256(rel) !== entry.sha256) {
+      problems.push(`${rel}: bytes changed since the ${entry.review.slice(0, 10)} review; re-review and update its sha256`);
+    }
+  }
+  assert.deepEqual(problems, []);
 });
 
 test('the unscanned-review ledger names only files that still exist', () => {
   const served = new Set(servedDocuments());
   const stale = Object.keys(REVIEWED_UNSCANNED).filter((name) => !served.has(name));
   assert.deepEqual(stale, [], 'drop ledger entries for files that are no longer served');
+});
+
+test('no source file links a document that is not served', () => {
+  const served = new Set(servedDocuments());
+  // Old download names that vercel.json redirects to a served file are fine.
+  const cfg = JSON.parse(fs.readFileSync(path.join(projectRoot, 'vercel.json'), 'utf8'));
+  const redirected = new Set<string>(
+    (cfg.redirects ?? []).map((r: { source: string }) => r.source.replace(/^\/assets\//, '')),
+  );
+  const hrefs = HREF_SOURCES.flatMap((rel) =>
+    [...fs.readFileSync(path.join(projectRoot, rel), 'utf8').matchAll(/\/assets\/([A-Za-z0-9_./-]+\.(?:pdf|pptx|docx|doc|ppt|xlsx))/gi)].map(
+      (m) => `${rel}: /assets/${m[1]}`,
+    ),
+  );
+  // Positive control: the scan must find the Proof page's known download links.
+  assert.ok(hrefs.some((h) => h.includes('Speaking_One_Sheet.pdf')), 'expected to find a known download href');
+  const dangling = hrefs.filter((h) => {
+    const name = h.slice(h.indexOf('/assets/') + '/assets/'.length);
+    return !served.has(name) && !redirected.has(name);
+  });
+  assert.deepEqual(dangling, [], 'these hrefs point at documents the site no longer serves');
 });
