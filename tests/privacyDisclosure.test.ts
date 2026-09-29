@@ -87,16 +87,29 @@ test('the privacy claims about GA4 settings match gaConfig.ts', () => {
 
 // Each GA event the site sends, and the phrase that discloses it.
 const EVENT_DISCLOSURES: Record<string, RegExp> = {
+  page_view: /page views/,
   generate_lead: /clicking the email link/,
   connect_click: /clicking the LinkedIn link/,
 };
 
+// Every first-party source file, not a hand-picked list: an event sent from a
+// file the scan skipped would ship undisclosed.
+function sourceFiles(dir = projectRoot): string[] {
+  const skip = new Set(['node_modules', 'tests', 'build', 'dist', '.git', 'public', 'vendor']);
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    if (e.isDirectory()) return skip.has(e.name) ? [] : sourceFiles(path.join(dir, e.name));
+    return /\.(ts|tsx)$/.test(e.name) && !/\.generated\.ts$/.test(e.name) ? [path.join(dir, e.name)] : [];
+  });
+}
+
 test('every analytics event the site sends is disclosed', () => {
-  const sources = ['App.tsx', ...fs.readdirSync(path.join(projectRoot, 'components')).map((f) => `components/${f}`)];
-  const names = new Set(
-    sources.flatMap((rel) => [...read(rel).matchAll(/trackEvent\([^,]+,\s*'([a-z_]+)'/g)].map((m) => m[1])),
-  );
-  assert.ok(names.has('generate_lead'), 'expected to find the email-click event (positive control)');
+  const names = new Set<string>();
+  for (const file of sourceFiles()) {
+    const src = fs.readFileSync(file, 'utf8');
+    for (const m of src.matchAll(/trackEvent\([^,]+,\s*['"]([a-z_]+)['"]/g)) names.add(m[1]);
+    for (const m of src.matchAll(/gtag\??\.?\(\s*['"]event['"],\s*['"]([a-z_]+)['"]/g)) names.add(m[1]);
+  }
+  assert.ok(names.has('generate_lead') && names.has('page_view'), 'expected the known events (positive control)');
   const text = policyText();
   for (const name of names) {
     const phrase = EVENT_DISCLOSURES[name];
@@ -119,4 +132,26 @@ test('the automatic page-view hit is disclosed', () => {
   const component = read('components/Analytics.tsx');
   assert.match(component, /'page_view'/, 'expected Analytics.tsx to send page_view (positive control)');
   assert.match(policyText(), /page views/, 'Analytics.tsx sends page_view on every route change; the policy must say so');
+});
+
+// 2026-09-29 review: the choices section must not imply that cookie controls stop
+// every analytics tool when the Vercel tools keep running without those cookies.
+test('the stated choices match which tools they actually stop', () => {
+  const choices = PRIVACY_SECTIONS.find((s) => /choices/i.test(s.heading));
+  assert.ok(choices, 'expected a Your Choices section');
+  const component = read('components/Analytics.tsx');
+  if (/@vercel\/analytics|@vercel\/speed-insights/.test(component)) {
+    assert.match(choices!.body, /do(es)? not stop Vercel/i, 'say that cookie controls leave the Vercel tools running');
+    assert.match(choices!.body, /blocks analytics scripts/i, 'name a choice that stops every tool');
+  }
+  // 2026-09-29 final review: blocking or deleting cookies resets GA's identifiers, but
+  // gtag still sends page views, so no sentence may say a cookie control stops GA.
+  const sentences = choices!.body.split(/(?<=\.)\s+/);
+  for (const sentence of sentences.filter((x) => /stops Google Analytics/i.test(x))) {
+    assert.doesNotMatch(sentence, /cookies/i, `cookie controls do not stop GA: "${sentence}"`);
+  }
+  assert.ok(
+    sentences.some((x) => /opt-out add-on/i.test(x) && /stops Google Analytics/i.test(x)),
+    'name the choice that does stop Google Analytics',
+  );
 });

@@ -136,3 +136,15 @@ test('no source file links a document that is not served', () => {
   });
   assert.deepEqual(dangling, [], 'these hrefs point at documents the site no longer serves');
 });
+
+test('every vercel.json redirect into /assets lands on a served document', () => {
+  const cfg = JSON.parse(fs.readFileSync(path.join(projectRoot, 'vercel.json'), 'utf8'));
+  const served = new Set(servedDocuments());
+  const intoAssets = (cfg.redirects ?? []).filter((r: { destination: string }) => r.destination.startsWith('/assets/'));
+  assert.ok(intoAssets.length > 0, 'expected the old case-study download redirects (positive control)');
+  const broken = intoAssets
+    .map((r: { source: string; destination: string }) => r)
+    .filter((r: { destination: string }) => !served.has(r.destination.slice('/assets/'.length)))
+    .map((r: { source: string; destination: string }) => `${r.source} -> ${r.destination}`);
+  assert.deepEqual(broken, [], 'these redirects point at documents the site no longer serves');
+});

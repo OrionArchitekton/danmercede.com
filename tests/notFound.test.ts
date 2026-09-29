@@ -85,3 +85,22 @@ test('every detail page marks an unknown slug noindex after hydration', () => {
     assert.match(head, /usePageMeta\([^;]*\{\s*noindex:\s*![a-zA-Z]+\s*\}\)/, `${name} must pass { noindex: !found } to usePageMeta`);
   }
 });
+
+test('the 404 built from the real index.html carries no canonical, og:url, or structured data', () => {
+  const html = renderNotFoundHtml(readFileSync(path.join(root, 'index.html'), 'utf8'));
+  // Positive control: the real template does carry these before the 404 transform.
+  const template = readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(template, /rel="canonical"/);
+  assert.match(template, /application\/ld\+json/);
+  assert.doesNotMatch(html, /rel="canonical"/);
+  assert.doesNotMatch(html, /property="og:url"/);
+  assert.doesNotMatch(html, /application\/ld\+json/);
+  assert.match(html, /<meta name="robots" content="noindex/);
+});
+
+test('a noindex page drops its canonical and og:url after hydration instead of writing them', () => {
+  const appSrc = readFileSync(path.join(root, 'App.tsx'), 'utf8');
+  const hook = appSrc.slice(appSrc.indexOf('const usePageMeta = '), appSrc.indexOf('const usePageMeta = ') + 4000);
+  assert.match(hook, /if \(noindex\) \{[\s\S]*?removeCanonical\(\)[\s\S]*?removeMetaByProperty\("og:url"\)[\s\S]*?\} else \{[\s\S]*?upsertCanonical\(canonicalUrl\)/,
+    'usePageMeta must remove canonical + og:url when noindex, and only upsert them otherwise');
+});
