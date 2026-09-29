@@ -117,6 +117,31 @@ export function buildSitemapExtraEntries(diagrams: Diagram[] = DIAGRAMS): string
     .join('\n');
 }
 
+// build/404.html: Vercel serves it with HTTP 404 for any path that matches no
+// file and no rewrite. It keeps the app shell so NotFoundPage still renders, but
+// the head is noindex with no canonical (the file answers arbitrary URLs), and the
+// homepage's route JSON-LD and prerender body are replaced.
+export function renderNotFoundHtml(baseHtml: string): string {
+  const seo = [
+    '  <title>Page Not Found | Dan Mercede</title>',
+    '  <meta name="description" content="This page does not exist on danmercede.com." />',
+    '  <meta name="robots" content="noindex, follow" />',
+  ].join('\n');
+  let html = injectSeoBlock(baseHtml, seo);
+  html = injectBlock(html, JSONLD_BLOCK_START, JSONLD_BLOCK_END, '', '  ');
+  html = injectBlock(
+    html,
+    BODY_BLOCK_START,
+    BODY_BLOCK_END,
+    renderBodyBlock('/404', {
+      title: 'Page Not Found | Dan Mercede',
+      body: { h1: 'Page Not Found', paragraphs: ['This page does not exist. Start from the homepage or browse selected work at /works.'] },
+    }),
+    '  ',
+  );
+  return html;
+}
+
 async function main() {
   const indexPath = path.join(BUILD_DIR, 'index.html');
   const baseHtml = await fs.readFile(indexPath, 'utf8').catch(() => {
@@ -158,6 +183,8 @@ async function main() {
     await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
     written++;
   }
+
+  await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');
 
   // Regenerate the per-thought sitemap entries into the BUILT sitemap so the
   // served sitemap is always in lockstep with the THOUGHTS corpus. The committed

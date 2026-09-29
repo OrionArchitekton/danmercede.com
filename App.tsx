@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -1384,6 +1384,7 @@ const CaseStudyPage = () => {
         <div className="border-l-2 border-copper-500 pl-6 mb-12">
           <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-2">{study.industry}</span>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{study.title}</h1>
+          <p className="text-sm font-semibold text-copper-400 mb-4">{REFERENCE_ARCHITECTURE_NOTICE}</p>
           <p className="text-slate-400 max-w-3xl leading-relaxed">{study.description}</p>
         </div>
 
@@ -2216,18 +2217,12 @@ const PrivacyPage = () => {
     <Section>
       <SectionHeader as="h1" title="Privacy Policy" subtitle="Data Governance" />
       <div className="prose prose-invert prose-lg text-slate-400 max-w-4xl">
-        <p className="mb-6">
-          <strong>1. General</strong><br />
-          We respect your privacy and treat personal data in accordance with applicable data protection regulations.
-        </p>
-        <p className="mb-6">
-          <strong>2. Data Collection</strong><br />
-          This site is a static informational website. We do not collect personal data unless you voluntarily provide it via direct contact (e.g., email).
-        </p>
-        <p className="mb-6">
-          <strong>3. Cookies & Tracking</strong><br />
-          We do not use advertising or behavioral tracking cookies. Any local storage used is strictly for essential technical functionality.
-        </p>
+        {PRIVACY_SECTIONS.map((section) => (
+          <p key={section.heading} className="mb-6">
+            <strong>{section.heading}</strong><br />
+            {section.body}
+          </p>
+        ))}
       </div>
     </Section>
   </div>

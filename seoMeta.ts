@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -319,7 +319,7 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     body: {
       h1: study.title,
       lead: study.industry,
-      paragraphs: [study.description],
+      paragraphs: [REFERENCE_ARCHITECTURE_NOTICE, study.description],
     },
   };
 }
