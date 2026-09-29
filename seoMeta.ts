@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, HERO_CONTENT, SELECTED_WORK, CONTACT_EMAIL, contactHref } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -141,25 +141,30 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     body: {
       h1: 'Dan Mercede',
       lead: 'AI systems fail when nobody owns the workflow.',
+      // Same sources the React homepage renders: the hero line and the three
+      // selected works, so the no-JS body carries the evidence, not only the pitch.
       paragraphs: [
-        "I'm an operator and systems builder. I help teams turn AI from experiments into owned, governed workflows they can actually run, not just advice and slideware.",
-        'The teams that win with AI own the workflow, not just the model.',
-        'Each entity in the ecosystem operates independently but shares a common governance framework and capital structure managed by Orion Apex Capital.',
+        HERO_CONTENT.philosophy,
+        HERO_CONTENT.wedge,
+        ...SELECTED_WORK.map((w) => `${w.title} (${w.status}): ${w.summary} ${w.evidence}`),
       ],
     },
   },
   '/about': {
     title: 'About: Dan Mercede',
     description:
-      'Operator and systems builder helping teams turn AI from experiments into owned workflows. Governance as proof depth, not the pitch.',
+      'Former General Manager with full P&L ownership, now building AI workflows with clear ownership, a private AI control plane, and open-source tools.',
     schemaType: 'ProfilePage',
+    // The full biography from ABOUT_BIO, the same source AboutPage renders, so the
+    // no-JS body matches what visitors read (tests/frontDoor.test.ts).
     body: {
-      h1: 'The Throughline',
-      lead: 'From operations to architecture: build systems operators can own and run.',
+      h1: 'About Dan Mercede',
+      lead: ABOUT_BIO.lead,
       paragraphs: [
-        'I help teams turn AI from experiments into owned workflows. Strategy and facilitation first. Build when the path is clear. Hand off ownership so day two is real.',
-        'Governance and reliability are how the work holds under pressure. They are proof depth, not the front-door pitch. My path runs from complex human operations to the digital systems that automate them.',
+        ...ABOUT_BIO.sections.flatMap((s) => s.paragraphs),
+        ...ABOUT_BIO.recognition.map((r) => r.label),
       ],
+      links: ABOUT_BIO.recognition.map((r) => ({ href: r.href, text: r.label })),
     },
   },
   '/ecosystem': {
@@ -175,17 +180,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/proof': {
-    title: 'Reliability and Governance Archive | Dan Mercede',
+    title: 'Proof: Evidence, Approach, and Resources | Dan Mercede',
     description:
-      'The reliability and governance archive: downloadable enforcement artifacts mapped to the four-layer governance stack (Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate). Proof depth, not the front-door pitch.',
+      'Evidence first: checkable claims, each paired with the check that confirms it. Then how the systems are built, illustrative reference architectures, and commercial and speaking material, each labeled for what it is.',
     schemaType: 'Article',
     body: {
       h1: 'Proof',
-      lead: 'Reliability and governance archive: proof depth, not the pitch.',
+      lead: 'Evidence, approach, and resources, each labeled for what it is.',
       paragraphs: [
-        'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
-        'Downloadable enforcement artifacts map to the four-layer governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
+        'Evidence: checkable claims, each paired with the check that confirms it.',
         ...evidenceBakeParagraphs(),
+        'Approach: architecture diagrams that explain how the systems are built, with governance enforced at four deterministic boundaries (Authority, Attestation, Behavioral Constraint, Physical Isolation). They describe the design, not measured outcomes.',
+        'Reference architectures and templates: illustrative patterns and a blank template, not client engagements.',
+        'Commercial and speaking: the engagement sheet and the speaker one-sheet.',
       ],
       links: evidenceBakeLinks(),
     },
@@ -251,14 +258,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/connect': {
-    title: 'Connect: Initiate Protocol | Dan Mercede',
+    title: 'Contact: Roles, Speaking, and Collaboration | Dan Mercede',
     description:
-      'Engage with Dan Mercede on operator-led AI systems, workflow ownership, and SMB AI strategy consulting through OIA.',
+      'Contact Dan Mercede about hiring or team roles, speaking, open-source collaboration, or AI implementation work through Orion Intelligence Agency.',
     body: {
-      h1: 'Connect',
-      lead: 'Initiate protocol.',
+      h1: 'Contact Dan',
+      lead: `Email reaches me directly at ${CONTACT_EMAIL}. Pick the reason that fits.`,
       paragraphs: [
-        'Engage with Dan Mercede on operator-led AI systems, one-workflow ownership, and SMB AI strategy consulting through Orion Intelligence Agency.',
+        ...CONTACT_INTENTS.map((i) => `${i.label}: ${i.detail}`),
+        'LinkedIn: linkedin.com/in/danmercede',
+      ],
+      links: [
+        ...CONTACT_INTENTS.map((i) => ({ href: contactHref(i), text: i.label })),
+        { href: 'https://www.linkedin.com/in/danmercede/', text: 'LinkedIn' },
       ],
     },
   },
@@ -279,9 +291,9 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
     body: {
       h1: 'Privacy Policy',
-      paragraphs: [
-        'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
-      ],
+      // The full policy, from the same source the React page renders, so no-JS
+      // visitors and crawlers get the actual disclosures (privacyDisclosure.test.ts).
+      paragraphs: PRIVACY_SECTIONS.map((s) => `${s.heading}: ${s.body}`),
     },
   },
   '/imprint': {
@@ -309,8 +321,10 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     // title matches the on-page framing and the download filename. Splitting the
     // claim across surfaces is what the 2026-07-26 honesty pass exists to stop.
     title: `${study.title}: Reference Architecture | Dan Mercede`,
-    description: truncateForMeta(study.description),
-    articleDescription: study.description,
+    // The notice leads the snippet and the Article node too, so a search result or
+    // a structured-data consumer sees the status before any architecture detail.
+    description: truncateForMeta(`${REFERENCE_ARCHITECTURE_NOTICE} ${study.description}`),
+    articleDescription: `${REFERENCE_ARCHITECTURE_NOTICE} ${study.description}`,
     headline: study.title,
     // CaseStudy carries no date, so the dateless article branch applies:
     // article:published_time is omitted and the JSON-LD node carries no dates.
@@ -319,7 +333,7 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     body: {
       h1: study.title,
       lead: study.industry,
-      paragraphs: [study.description],
+      paragraphs: [REFERENCE_ARCHITECTURE_NOTICE, study.description],
     },
   };
 }

@@ -117,3 +117,46 @@ test('the /connect page wires the lead conversion events (regression guard)', ()
   assert.match(app, /trackEvent\(\s*window\s*,\s*['"]generate_lead['"]/, 'email link must fire generate_lead');
   assert.match(app, /trackEvent\(\s*window\s*,\s*['"]connect_click['"]/, 'linkedin link must fire connect_click');
 });
+
+// 2026-09-29 review: page_view carried the full URL, so an email address or token in
+// a link's query string would reach Google Analytics. Only campaign tags survive.
+test('redactUrlForAnalytics keeps campaign tags and drops every other query value and the fragment', async () => {
+  const { redactUrlForAnalytics } = await import('../analytics/gaConfig');
+  assert.equal(
+    redactUrlForAnalytics('https://www.danmercede.com/about?email=a%40b.com&utm_source=li&token=xyz&utm_campaign=ed11#top'),
+    'https://www.danmercede.com/about?utm_source=li&utm_campaign=ed11',
+  );
+  assert.equal(redactUrlForAnalytics('https://www.danmercede.com/works?q=secret'), 'https://www.danmercede.com/works');
+  assert.equal(redactUrlForAnalytics('/thoughts?utm_medium=email&ref=x'), '/thoughts?utm_medium=email');
+  assert.equal(redactUrlForAnalytics('/'), '/');
+});
+
+// 2026-09-29 final review: campaign tags are free text, so a crafted link could put an
+// email address in utm_content and it would reach Google Analytics as a "campaign tag".
+test('redactUrlForAnalytics drops a campaign value that carries an email address', async () => {
+  const { redactUrlForAnalytics } = await import('../analytics/gaConfig');
+  assert.equal(
+    redactUrlForAnalytics('https://www.danmercede.com/about?utm_source=li&utm_content=alice%40example.com'),
+    'https://www.danmercede.com/about?utm_source=li',
+  );
+  assert.equal(redactUrlForAnalytics('/?utm_term=a@b.co'), '/');
+});
+
+// 2026-09-29 final review: the policy says every other query value is removed before
+// it is sent, so the Vercel tools must send the same redacted URL that GA gets.
+test('the Vercel tools send only redacted URLs', async () => {
+  const { redactEventUrl } = await import('../analytics/gaConfig');
+  assert.deepEqual(
+    redactEventUrl({ type: 'pageview', url: 'https://www.danmercede.com/about?email=a%40b.com&utm_source=li' }),
+    { type: 'pageview', url: 'https://www.danmercede.com/about?utm_source=li' },
+  );
+  const src = readFileSync(new URL('../components/Analytics.tsx', import.meta.url), 'utf8');
+  assert.match(src, /<VercelAnalytics\s+beforeSend=\{redactEventUrl\}\s*\/>/);
+  assert.match(src, /<SpeedInsights\s+beforeSend=\{redactEventUrl\}\s*\/>/);
+});
+
+test('the page_view hit sends only redacted URLs', () => {
+  const src = readFileSync(new URL('../components/Analytics.tsx', import.meta.url), 'utf8');
+  assert.match(src, /page_path: redactUrlForAnalytics\(`\$\{pathname\}\$\{search\}`\)/);
+  assert.match(src, /page_location: redactUrlForAnalytics\(window\.location\.href\)/);
+});
