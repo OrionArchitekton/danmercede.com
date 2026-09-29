@@ -2007,6 +2007,9 @@ const GuideDetailPage = () => {
             <div className="flex items-center gap-4 mb-4">
               <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
               <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+              {guide.reviewed && (
+                <span className="text-xs font-mono text-slate-400">Reviewed {guide.reviewed}</span>
+              )}
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
             <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>

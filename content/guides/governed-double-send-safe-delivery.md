@@ -2,8 +2,9 @@
 title: "Building a Governed, Double-Send-Safe Delivery Pipeline for Agent Outputs"
 slug: governed-double-send-safe-delivery
 date: 2026-07-03
+reviewed: 2026-09-29
 category: Agent Engineering
-description: "I built a multi-agent system that emailed real people on a business's behalf, then retired the business. The delivery pipeline is the part worth keeping: the design that guarantees an agent never sends a customer the same email twice and never ships anything a human did not approve. Here is the pattern, the failure mode that shaped it, and the reaper rule most teams get wrong."
+description: "I built a multi-agent system that emailed real people on a business's behalf, then retired the business. The delivery pipeline is the part worth keeping: a design that never retries a customer email with an unknown outcome, holds it for a human instead, names the one gap a lease cannot close, and ships nothing a human did not approve. Here is the pattern, the failure mode that shaped it, and the reaper rule most teams get wrong."
 lead: "An agent that sends email is one crash away from sending it twice. I learned that building a governed multi-agent system, and the delivery pipeline is the one piece I would build again unchanged. Here is how it works and the reaper rule behind it."
 ---
 
@@ -32,9 +33,9 @@ The pipeline composes into one spine, and the rule is that no consequential send
 3. **Score.** Attach a confidence score to the output. This is the input to review routing, not a gate by itself.
 4. **Review.** Route low-confidence items to a human review queue. High-confidence items still do not bypass the next stage.
 5. **Approve.** A fail-closed approval gate. The release is blocked by default and proceeds only on an explicit, recorded authorization.
-6. **Send and attest.** Send exactly once under a lease, then reconcile and write an evidence receipt describing what happened.
+6. **Send and attest.** Send under a lease and never retry a send whose outcome is ambiguous; hold it for a human instead, then reconcile and write an evidence receipt describing what happened. (A stalled worker is the one case a lease alone cannot stop; see below.)
 
-The important property is that steps 2 through 6 are separate durable transitions, not one function call. Each stage can crash and resume without losing or duplicating work, because the state that matters lives in the store, not in a worker's memory.
+The important property is that steps 2 through 6 are separate durable transitions, not one function call. Each stage can crash without losing or duplicating work, because the state that matters lives in the store, not in a worker's memory. Internal stages resume on their own. A send that crashed mid-flight does not: it waits for a human, and that delay is the price of not risking a duplicate.
 
 ![The governed delivery spine: six durable stages (produce, persist, score, review, approve, and send with attest), with low-confidence items branching to a human review queue and each arrow a separate durable transition.](/assets/guides/governed-double-send-safe-delivery/governed-delivery-spine.webp "Six durable stages; each arrow is its own transaction, so a crash between stages never loses or duplicates work.")
 
@@ -49,6 +50,8 @@ The lease is what makes crash recovery safe, and the reaper is where the real de
 > An external-send action is non-requeueable on lease expiry. When its lease dies, the reaper strands the task for human reconciliation instead of re-running it.
 
 That is the whole trick. A visible stuck task beats an invisible double-send. You trade an automatic recovery you cannot prove is safe for a manual one a human can resolve in seconds by checking whether the message actually went out. Internal, side-effect-free tasks stay auto-requeueable; only the actions that touch the outside world are stranded. Encode the action type in the task and let the reaper branch on it; do not rely on a human remembering the distinction.
+
+One gap stays open even with the reaper. A lease assumes the worker that lost it has actually stopped. A worker that was paused rather than dead (a long garbage-collection stall, a network partition) can wake up after its task was stranded and finish the send anyway, and if a human already re-sent the message, the customer gets two. Re-checking the lease immediately before the send narrows that window; passing the provider an idempotency key it enforces closes it. Without one of them, "at most once" holds for workers that die, not for workers that stall.
 
 ![The double-send-safe reaper: a worker claims a task under a lease and dies mid-send; when the lease expires the reaper branches on action type, requeuing internal tasks but stranding external sends for human reconciliation to avoid a duplicate customer send.](/assets/guides/governed-double-send-safe-delivery/double-send-safe-reaper.webp "The recovery path branches on action type: internal tasks requeue, external sends strand for a human.")
 

@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-
-interface Node {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-}
+import {
+  CONNECTION_DISTANCE,
+  NODE_COUNT,
+  computeLinks,
+  createNodes,
+  startFrameLoop,
+  stepNodes,
+  type Bounds,
+  type ConstellationNode,
+  type Link,
+} from './constellationModel';
 
 const ConstellationBackground: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -18,90 +21,61 @@ const ConstellationBackground: React.FC = () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const svg = d3.select(svgRef.current);
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    // Mutable: the resize handler updates it and every frame reads it.
+    const bounds: Bounds = { width: window.innerWidth, height: window.innerHeight };
 
-    svg.attr('width', width).attr('height', height);
+    svg.attr('width', bounds.width).attr('height', bounds.height);
 
-    // Configuration
-    const nodeCount = 40;
-    const connectionDistance = 150;
-    const nodes: Node[] = [];
+    const nodes = createNodes(NODE_COUNT, bounds);
 
-    // Initialize nodes
-    for (let i = 0; i < nodeCount; i++) {
-      nodes.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.5, // Slow velocity
-        vy: (Math.random() - 0.5) * 0.5,
-        r: Math.random() * 2 + 1,
-      });
-    }
+    // Build the scene once; frames only update attributes. Lines sit under the nodes.
+    const linkLayer = svg.append('g');
+    const nodeLayer = svg.append('g');
+    const circles = nodeLayer
+      .selectAll<SVGCircleElement, ConstellationNode>('circle')
+      .data(nodes)
+      .join('circle')
+      .attr('r', d => d.r)
+      .attr('fill', '#94a3b8') // Slate 400
+      .attr('opacity', 0.6);
 
-    // Draw function
-    const tick = () => {
-      svg.selectAll('*').remove();
+    const draw = () => {
+      stepNodes(nodes, bounds);
 
-      // Update positions
-      nodes.forEach(node => {
-        node.x += node.vx;
-        node.y += node.vy;
+      // Connections (blueprint lines): reuse existing <line> elements, add/remove only the delta.
+      linkLayer
+        .selectAll<SVGLineElement, Link>('line')
+        .data(computeLinks(nodes, CONNECTION_DISTANCE))
+        .join(enter => enter.append('line').attr('stroke', '#B87333').attr('stroke-width', 0.5)) // Copper
+        .attr('x1', d => d.x1)
+        .attr('y1', d => d.y1)
+        .attr('x2', d => d.x2)
+        .attr('y2', d => d.y2)
+        .attr('opacity', d => d.strength * 0.3); // Subtle
 
-        // Bounce off walls
-        if (node.x <= 0 || node.x >= width) node.vx *= -1;
-        if (node.y <= 0 || node.y >= height) node.vy *= -1;
-      });
-
-      // Draw connections (Blueprint lines)
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < connectionDistance) {
-            const opacity = 1 - distance / connectionDistance;
-            svg.append('line')
-              .attr('x1', nodes[i].x)
-              .attr('y1', nodes[i].y)
-              .attr('x2', nodes[j].x)
-              .attr('y2', nodes[j].y)
-              .attr('stroke', '#B87333') // Copper
-              .attr('stroke-width', 0.5)
-              .attr('opacity', opacity * 0.3); // Subtle
-          }
-        }
-      }
-
-      // Draw nodes
-      svg.selectAll('circle')
-        .data(nodes)
-        .enter()
-        .append('circle')
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y)
-        .attr('r', d => d.r)
-        .attr('fill', '#94a3b8') // Slate 400
-        .attr('opacity', 0.6);
-
-      // Honor reduced-motion: render a single static frame, do not loop.
-      if (!prefersReducedMotion) {
-        requestAnimationFrame(tick);
-      }
+      circles.attr('cx', d => d.x).attr('cy', d => d.y);
     };
 
-    const animationId = requestAnimationFrame(tick);
+    // Honor reduced-motion: draw a single static frame, do not loop.
+    const stopLoop = startFrameLoop(
+      draw,
+      { request: cb => requestAnimationFrame(cb), cancel: id => cancelAnimationFrame(id) },
+      !prefersReducedMotion,
+    );
 
     const handleResize = () => {
-      svg.attr('width', window.innerWidth).attr('height', window.innerHeight);
+      bounds.width = window.innerWidth;
+      bounds.height = window.innerHeight;
+      svg.attr('width', bounds.width).attr('height', bounds.height);
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationId);
+      stopLoop();
+      linkLayer.remove();
+      nodeLayer.remove();
     };
   }, []);
 

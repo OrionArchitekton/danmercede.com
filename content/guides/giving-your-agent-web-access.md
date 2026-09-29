@@ -2,6 +2,7 @@
 title: "Giving Your Coding Agent Web Access Without Wrecking Its Context Window"
 slug: giving-your-agent-web-access
 date: 2026-07-05
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "A coding agent that reads the raw web spends most of its tokens on HTML boilerplate, trips provider rate limits, and floods its own context. I measured the waste (one page was 9,541 tokens raw and 1,678 as clean markdown, an 82% cut) and built the fix: a few thin CLIs and a subagent-offload pattern that keep raw pages out of the main context. Free and self-hosted first."
 lead: "Point a coding agent at a docs page and it swallows the HTML: nav, ads, cookie banners, script tags, the lot. One page I measured was 9,541 tokens raw and 1,678 as clean markdown. That 82% is the easiest token saving you will find, and the default fetch tool leaves it on the table."
@@ -50,7 +51,7 @@ For scraping proper, the same free-first ranking holds. **Crawl4AI** is Apache-2
 
 ## Why does a thin CLI beat an MCP server for agent web tools?
 
-Because an MCP server costs context on every host, and a CLI costs almost none. As of 2026-07, Claude Code defers MCP tool schemas until a tool is invoked, so an MCP is cheapish there. But Codex has no such deferral: every MCP schema loads in full, every session, and a harness that already carries a dozen servers pays that tax constantly. A thin CLI you shell out to via Bash costs zero resident context until the moment you call it.
+Because an MCP server costs context on every host, and a CLI costs almost none. As of 2026-07, Claude Code defers MCP tool schemas until a tool is invoked, so an MCP is cheapish there. But Codex has no such deferral: every MCP schema loads in full, every session, and a harness that already carries a dozen servers pays that tax constantly. A thin CLI you shell out to via Bash costs close to zero resident context until the moment you call it.
 
 So for anything I want available on more than one agent host, I ship a CLI, not an MCP. I built three this way: a search CLI over a grounded-answer API, a live-social search CLI, and a page-reader over Jina. Each self-wraps its own secret retrieval (read the key from the environment, or transparently re-run under a secrets manager if it is not set) so the caller passes no credentials, and each takes a `--json` flag so an agent can parse it. One implementation, every host, near-zero context. The rule generalizes: prefer a working CLI over its MCP unless the tool genuinely needs a stateful session.
 

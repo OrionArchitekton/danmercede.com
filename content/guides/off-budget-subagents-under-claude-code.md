@@ -2,6 +2,7 @@
 title: "The Router Is a Trap: Running Other Models Under Claude Code, Off Their Own Subscriptions"
 slug: off-budget-subagents-under-claude-code
 date: 2026-07-08
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "I wanted Claude Code to keep Opus orchestrating while fanning subagent work out to other models on their own subscriptions. The obvious tool, an ANTHROPIC_BASE_URL router, turned out to be the wrong one: it corrupts the tool calls a subagent depends on, and the real wall is the Terms of Service, not the tooling. Here is what actually works, the three-of-four vendor ban that decides it, and the gated delegation layer I shipped."
 lead: "My preference going in was a model router. The research inverted it. A proxy that swaps Claude for another model behind Claude Code's own API corrupts the one thing a subagent has to do reliably, which is call tools, and the seam it rides is banned at three of the four vendors I wanted to use. The mechanism that survives is the boring one: shell out to each vendor's own CLI."
@@ -55,7 +56,7 @@ The security catch is real and specific: nearly every community CLI-bridge I loo
 
 Five rails carry the safety, and each is one small function:
 
-- **Never emit a bypass flag.** A denylist is asserted in a unit test so a bypass flag can never regress into the spawned `argv`. The read-only sandbox is the default; write access is an explicit, separate opt-in.
+- **Never emit a bypass flag.** A denylist of the known bypass flags is asserted in a unit test, so reintroducing any of them into the spawned `argv` fails the test. The read-only sandbox is the default; write access is an explicit, separate opt-in.
 - **Scrub the child environment by whitelist, not denylist.** The child gets `PATH`, `HOME`, and its *own* provider key, and nothing else. A future secret-shaped variable you have not thought of yet does not survive by default, because the default is to drop, not to keep.
 - **Resolve the CLI by absolute path.** Never exec a bare command name; resolve it to an absolute path first so a planted binary earlier on `PATH` cannot shadow the real one.
 - **Close stdin.** Recent Codex versions deadlock on a non-TTY pipe, so the child gets `stdin` pointed at `/dev/null`.
@@ -81,7 +82,7 @@ If you take one architecture from this, take this shape, which I settled on afte
 
 1. **Orchestrator:** a Claude model in Claude Code, unchanged.
 2. **Primary off-budget subagent:** GPT via `codex exec` on the ChatGPT plan. This is the one durable subscription-reuse path, so it earns the default slot.
-3. **Cheap bulk fan-out:** a metered API key (DeepSeek and Kimi run roughly an order of magnitude cheaper than frontier Claude on input tokens) or a free local model on your own GPU box via a local inference endpoint. No subscription to reuse means no ban risk.
+3. **Cheap bulk fan-out:** a metered API key (DeepSeek and Kimi run roughly an order of magnitude cheaper than frontier Claude on input tokens) or a free local model on your own GPU box via a local inference endpoint. No subscription to reuse means none of the subscription-reuse bans above apply.
 4. **Gemini or Grok, if at all:** only on a paid API key, isolated from the primary Google account. Never the consumer login.
 5. **Mechanism:** headless-CLI subprocess, not a proxy. If you ever want a proxy for *API-key* models, the routers are fine; just treat their subscription-brokering as the liability it is.
 

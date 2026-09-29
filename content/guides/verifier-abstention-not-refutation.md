@@ -2,6 +2,7 @@
 title: "Self-Correcting Agents: Learning the Loop the Hard Way"
 slug: verifier-abstention-not-refutation
 date: 2026-06-27
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "In self-correcting agent loops, a crashed verifier gets read as a refutation, and the loop quietly throws away true results. The three-state gate design and recovery that prevent it."
 lead: "A crashed verifier isn't a refutation. The hard-won lessons of building self-correcting agent loops that fail honestly, and recover."
