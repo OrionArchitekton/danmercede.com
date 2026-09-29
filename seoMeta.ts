@@ -192,7 +192,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         ...evidenceBakeParagraphs(),
         'Approach: architecture diagrams that explain how the systems are built, with governance enforced at four deterministic boundaries (Authority, Attestation, Behavioral Constraint, Physical Isolation). They describe the design, not measured outcomes.',
         'Reference architectures and templates: illustrative patterns and a blank template, not client engagements.',
-        'Commercial and speaking: the engagement sheet and the speaker one-sheet.',
+        'Commercial and speaking: the speaker one-sheet. Hiring, collaboration, and implementation inquiries go through the Contact page.',
       ],
       links: evidenceBakeLinks(),
     },

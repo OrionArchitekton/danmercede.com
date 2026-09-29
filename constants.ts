@@ -470,23 +470,6 @@ export function getImageMeta(srcOrFilename: string): ImageMeta {
 }
 
 export const RESOURCES: Resource[] = [
-  // L1: Authority Gate
-  {
-    title: "What We Deliver",
-    description: "Engagement deliverable map linking control-plane gap analysis, failure-mode heatmaps, and evidence checklists to enforcement layers. Risk-bounded pricing tiers anchored to audit defensibility outcomes.",
-    category: "sales-collateral",
-    fileName: "What_We_Deliver.pdf",
-    downloadLabel: "Engagement sheet",
-    filePath: "/assets/What_We_Deliver.pdf",
-    enforcementLayers: [1, 2, 3, 4],
-    enforcementLayer: 1,
-    riskDomain: "Deployment friction, no structured path from SOC 2 / ISO 42001 gap identification to deterministic enforcement",
-    gated: false,
-    enforcementPoint: "Pre-execution authority gate evaluation",
-    artifactType: "one-sheet",
-    fileType: "pdf",
-    fileSize: "4 KB",
-  },
   // L3: Drift Guard
   {
     title: "Case Study Template",

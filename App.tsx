@@ -1289,12 +1289,12 @@ const ResourcesPage = () => {
           </div>
         )}
 
-        {/* Commercial and speaking: offers and the speaker one-sheet, kept apart from evidence */}
+        {/* Commercial and speaking: the speaker one-sheet and the route to Contact, kept apart from evidence */}
         <div id="commercial" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Commercial and speaking</span>
             <h2 className="text-2xl font-bold text-white mb-1">Working together</h2>
-            <p className="text-sm text-slate-400">Service and speaking documents. These describe offers, not results.</p>
+            <p className="text-sm text-slate-400">The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {RESOURCES.filter((r) => proofGroupFor(r) === 'commercial').map((resource) => (
