@@ -12,9 +12,11 @@ sha256sum public/assets/Speaking_One_Sheet.pdf
 ```
 
 Then update the `Speaking_One_Sheet.pdf` entry in `tests/publicDownloads.test.ts`
-(`REVIEWED_UNSCANNED`) with the new sha256 and a one-line review of what the file
-now says. The PDF is served but no test can read its text, so the hash pins the
-reviewed bytes.
+(`REVIEWED_UNSCANNED`): the PDF's sha256, `renderedFrom.sha256` (from
+`sha256sum docs/one-sheets/speaking-one-sheet.html`), and a one-line review of
+what the file now says. The PDF is served but no test can read its text, so the
+hash pins the reviewed bytes, and the source hash beside it fails the tests when
+the HTML changes until the PDF is re-rendered and both hashes are updated together.
 
 `tests/speakingSheet.test.ts` checks the HTML against the `SPEAKING` and
 `CONTACT_INTENTS` constants and checks that the PDF carries a real title. Keep the
