@@ -117,3 +117,22 @@ test('the /connect page wires the lead conversion events (regression guard)', ()
   assert.match(app, /trackEvent\(\s*window\s*,\s*['"]generate_lead['"]/, 'email link must fire generate_lead');
   assert.match(app, /trackEvent\(\s*window\s*,\s*['"]connect_click['"]/, 'linkedin link must fire connect_click');
 });
+
+// 2026-09-29 review: page_view carried the full URL, so an email address or token in
+// a link's query string would reach Google Analytics. Only campaign tags survive.
+test('redactUrlForAnalytics keeps campaign tags and drops every other query value and the fragment', async () => {
+  const { redactUrlForAnalytics } = await import('../analytics/gaConfig');
+  assert.equal(
+    redactUrlForAnalytics('https://www.danmercede.com/about?email=a%40b.com&utm_source=li&token=xyz&utm_campaign=ed11#top'),
+    'https://www.danmercede.com/about?utm_source=li&utm_campaign=ed11',
+  );
+  assert.equal(redactUrlForAnalytics('https://www.danmercede.com/works?q=secret'), 'https://www.danmercede.com/works');
+  assert.equal(redactUrlForAnalytics('/thoughts?utm_medium=email&ref=x'), '/thoughts?utm_medium=email');
+  assert.equal(redactUrlForAnalytics('/'), '/');
+});
+
+test('the page_view hit sends only redacted URLs', () => {
+  const src = readFileSync(new URL('../components/Analytics.tsx', import.meta.url), 'utf8');
+  assert.match(src, /page_path: redactUrlForAnalytics\(`\$\{pathname\}\$\{search\}`\)/);
+  assert.match(src, /page_location: redactUrlForAnalytics\(window\.location\.href\)/);
+});
