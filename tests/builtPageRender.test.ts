@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO } from '../constants';
+import { ABOUT_BIO, CONTACT_INTENTS, WORKS } from '../constants';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
 
@@ -60,7 +60,7 @@ test('every rendered route ships its page render, stamped, with no crawl block',
 // on /about/ would not match the shipped markup.
 test('every rendered route renders identically with a trailing slash', async () => {
   const render = await loadRender();
-  for (const route of RENDERED_ROUTES) {
+  for (const route of [...RENDERED_ROUTES].filter((r) => r !== '/')) {
     assert.equal(render(`${route}/`), render(route), `${route}/ renders differently from ${route}`);
   }
 });
@@ -73,6 +73,21 @@ test('/about shows the real biography before any script runs', () => {
     assert.ok(text.includes(section.heading), `section "${section.heading}"`);
     for (const paragraph of section.paragraphs) assert.ok(text.includes(paragraph), `paragraph "${paragraph.slice(0, 40)}..."`);
   }
+});
+
+test('/works and /connect show their full content before any script runs', () => {
+  const works = decode(rootOf(fs.readFileSync(fileFor('/works'), 'utf8')).inner);
+  const missing = WORKS.filter((w) => !works.includes(w.title)).map((w) => w.title);
+  assert.deepEqual(missing, [], 'every project title is in the initial HTML');
+  const connect = decode(rootOf(fs.readFileSync(fileFor('/connect'), 'utf8')).inner);
+  for (const intent of CONTACT_INTENTS) assert.ok(connect.includes(intent.label), `contact intent "${intent.label}"`);
+});
+
+test('the not-found file derives from the empty template, never the rendered homepage', () => {
+  const notFound = fs.readFileSync(path.join(buildDir, '404.html'), 'utf8');
+  assert.ok(notFound.includes('<div id="root"></div>'));
+  assert.doesNotMatch(notFound, /data-rendered-path/);
+  assert.match(fs.readFileSync(fileFor('/'), 'utf8'), /<div id="root" data-rendered-path="\/">/, 'the homepage itself is rendered');
 });
 
 test('routes outside the rendered set keep an empty #root and their crawl block', () => {
