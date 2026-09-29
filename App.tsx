@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { normalizePath } from './hydration';
+import { syncRouteJsonLd } from './routeJsonLd';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
@@ -18,6 +19,8 @@ import {
   guideMeta,
   diagramMeta,
   typeScopedMetaTags,
+  routeMetaFor,
+  routeJsonLdText,
   type RouteMeta,
   SITE_ORIGIN,
   DEFAULT_OG_IMAGE_PATH,
@@ -1112,6 +1115,13 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
       "robots",
       noindex ? "noindex, follow" : "index, follow, max-image-preview:large",
     );
+
+    // Route JSON-LD: the build bakes each page's graph into <head>, so after an
+    // in-app navigation the head still describes the entry page. Swap in the
+    // current route's graph, resolved the way the build resolves it (none for
+    // a noindex page).
+    const routeMeta = noindex ? null : routeMetaFor(normalizedPath);
+    syncRouteJsonLd(document.head, routeMeta ? routeJsonLdText(normalizedPath, routeMeta) : null);
   }, [
     pathname,
     overrideTitle,

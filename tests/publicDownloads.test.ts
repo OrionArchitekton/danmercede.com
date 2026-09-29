@@ -34,14 +34,21 @@ const SCANNED = new Set(
 // Served documents of a type no test can read, keyed by path under public/assets.
 // The sha256 pins the reviewed bytes: replacing the file fails this suite until
 // someone re-reviews it and updates the hash (`sha256sum public/assets/<file>`).
-const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
+// `renderedFrom` pins the source a document is rendered from, in the same
+// reviewed record as the document's own hash. It is a tripwire, not proof: no
+// test can read the PDF's text, so nothing here confirms these bytes were
+// rendered from that source. What it enforces is that the source and the PDF
+// are re-pinned together: an edit to the source fails until this record is
+// updated, and the render procedure in the source's README runs at that step.
+const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string; renderedFrom?: { path: string; sha256: string } }> = {
   'Case_Study_Template.docx': {
     sha256: '604413e451b238ede4a0617c0258a6d6816f7780bcaca16037292032fccbc494',
     review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
   },
   'Speaking_One_Sheet.pdf': {
-    sha256: 'e9b789ab8852c686fdd9152210319ec3a48d80e54cb4206dc560a94771944d01',
-    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html. Bio, NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
+    sha256: '8cd4fcdbcb180a82d154ebf7037132a977bf3e5b9af7753353a2efec2958cb51',
+    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html after the re-audit. Bio says Dan represented Apple as a field sales rep with Mosaic Sales Solutions (Mosaic was the employer); NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
+    renderedFrom: { path: 'docs/one-sheets/speaking-one-sheet.html', sha256: '4b4da06314591923799388e00e713c687f03b516720de388642907dd8f99c42b' },
   },
 };
 
@@ -104,6 +111,16 @@ test('every served document the honesty scanner does not read has a review pinne
     }
   }
   assert.deepEqual(problems, []);
+});
+
+test('a rendered document is re-pinned together with its source', () => {
+  const rendered = Object.entries(REVIEWED_UNSCANNED).filter(([, e]) => e.renderedFrom);
+  assert.ok(rendered.length > 0, 'expected the speaker one-sheet (positive control)');
+  for (const [name, entry] of rendered) {
+    const { path: source, sha256: pinned } = entry.renderedFrom!;
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(projectRoot, source))).digest('hex');
+    assert.equal(actual, pinned, `${source} changed: re-render ${name} from it (see its README), then update this record's two hashes and review`);
+  }
 });
 
 test('the unscanned-review ledger names only files that still exist', () => {
