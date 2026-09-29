@@ -9,7 +9,7 @@ import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES,
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
-import { WorkCard } from './components/WorkCard';
+import { WorkCard, linkTargetProps } from './components/WorkCard';
 import {
   ROUTE_META,
   caseStudyMeta,
@@ -285,12 +285,12 @@ const HomePage = () => {
         <SectionHeader title="Selected work" subtitle="Built, running, and checked" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {SELECTED_WORK.map((work) => {
-            const external = !work.href.startsWith('/');
+            const external = Boolean(linkTargetProps(work.href).target);
             return (
               <a
                 key={work.title}
                 href={work.href}
-                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                {...linkTargetProps(work.href)}
                 className="flex flex-col p-6 border border-white/10 bg-slate-900/40 hover:border-copper-500/50 transition-colors group h-full"
               >
                 <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>

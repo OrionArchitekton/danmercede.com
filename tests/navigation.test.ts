@@ -36,14 +36,16 @@ test('every public page stays reachable from the nav or the footer', () => {
 });
 
 test('same-site project links open in place; off-site links open a new tab', () => {
-  for (const href of ['/works/proctor/', 'https://www.danmercede.com/works/failclosed/']) {
+  for (const href of ['/works/proctor/', 'https://www.danmercede.com/works/failclosed/', 'https://danmercede.com/works/x/']) {
     assert.deepEqual(linkTargetProps(href), {}, `${href} is on this site and must not force a new tab`);
   }
-  for (const href of ['https://github.com/OrionArchitekton/failclosed', 'https://youtu.be/abc']) {
+  for (const href of ['https://github.com/OrionArchitekton/failclosed', 'https://youtu.be/abc', '//evil.example/phish']) {
     assert.deepEqual(linkTargetProps(href), { target: '_blank', rel: 'noopener noreferrer' });
   }
   const card = fs.readFileSync(path.join(root, 'components/WorkCard.tsx'), 'utf8');
   assert.doesNotMatch(card, /target="_blank"/, 'WorkCard must derive targets from linkTargetProps, not hard-code them');
+  const home = appSrc.slice(appSrc.indexOf('const HomePage = '), appSrc.indexOf('const AboutPage = '));
+  assert.match(home, /linkTargetProps\(work\.href\)/, 'homepage selected-work cards must use the same classifier');
 });
 
 test('Writing has a curated Start here list that resolves to real guides and essays', () => {

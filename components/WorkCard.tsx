@@ -7,8 +7,17 @@ import { Work } from '../types';
 // still carries datePublished (seoMeta.ts).
 // Same-site pages (including the /works/<slug>/ microsites served on this origin)
 // open in place; only off-site links open a new tab (2026-09-29 site audit).
+const SITE_ORIGINS = new Set(['https://www.danmercede.com', 'https://danmercede.com']);
+
 export function linkTargetProps(href: string): { target?: string; rel?: string } {
-  const sameSite = href.startsWith('/') || href.startsWith('https://www.danmercede.com/');
+  // Resolve against the site so a protocol-relative "//host/..." is judged by its
+  // real origin, not by its leading slash.
+  let sameSite = false;
+  try {
+    sameSite = SITE_ORIGINS.has(new URL(href, 'https://www.danmercede.com').origin);
+  } catch {
+    sameSite = false;
+  }
   return sameSite ? {} : { target: '_blank', rel: 'noopener noreferrer' };
 }
 
