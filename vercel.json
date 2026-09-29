@@ -332,10 +332,6 @@
     {
       "source": "/works/plainspeak/:path*",
       "destination": "https://plainspeak-site.vercel.app/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ],
   "headers": [

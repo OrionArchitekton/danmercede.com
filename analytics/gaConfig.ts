@@ -76,3 +76,28 @@ export function trackEvent(
 ): void {
   target?.gtag?.('event', event, params ?? {});
 }
+
+// Page views carry only the path and campaign tags. Any other query value (an email
+// address, a token, a search term) and the fragment are dropped before the hit
+// leaves the browser, so a link that carries personal data cannot forward it to
+// Google Analytics. Works for absolute URLs and for path+search strings.
+const CAMPAIGN_PARAMS = new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']);
+
+export function redactUrlForAnalytics(href: string): string {
+  const absolute = /^[a-z][a-z0-9+.-]*:/i.test(href);
+  const url = new URL(href, 'https://www.danmercede.com');
+  const kept = new URLSearchParams();
+  url.searchParams.forEach((value, key) => {
+    // Campaign values are free text; one carrying an email address is dropped too.
+    if (CAMPAIGN_PARAMS.has(key) && !value.includes('@')) kept.append(key, value);
+  });
+  const query = kept.toString();
+  const rest = `${url.pathname}${query ? `?${query}` : ''}`;
+  return absolute ? `${url.origin}${rest}` : rest;
+}
+
+// beforeSend hook for the Vercel Web Analytics and Speed Insights widgets, so they
+// send the same redacted URL that the GA4 page_view carries.
+export function redactEventUrl<T extends { url: string }>(event: T): T {
+  return { ...event, url: redactUrlForAnalytics(event.url) };
+}

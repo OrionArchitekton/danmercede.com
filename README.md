@@ -48,7 +48,7 @@ No test or lint scripts are defined. CI runs `npm ci` followed by `npm run build
 
 None are required to run, build, or deploy the site.
 
-`vite.config.ts` still defines `process.env.API_KEY` and `process.env.GEMINI_API_KEY` from a `GEMINI_API_KEY` env var. This is unused leftover scaffolding from the project's Google AI Studio origin — no code reads either value. It can be removed without affecting behavior.
+The unused `GEMINI_API_KEY` / `process.env.API_KEY` defines left over from the project's Google AI Studio origin were removed on 2026-09-29; no code read them.
 
 ---
 
@@ -85,7 +85,7 @@ Content highlights:
 
 - **Thoughts** — a dated writing feed (posts in `constants.ts`).
 - **Ecosystem** — ventures Dan is involved in, including links out to Orion Intelligence Agency and other sites.
-- **Proof** — openly downloadable PDFs, DOCX, and PPTX (executive deck, speaking one-sheet, case studies). All proof assets are open; there is no capture gate. Source files live in `public/assets/`.
+- **Proof**: openly downloadable PDFs and DOCX (speaking one-sheet, engagement sheet, reference architectures, case-study template). All proof assets are open; there is no capture gate. Source files live in `public/assets/`.
 - **Calls to action** — e.g. "Book a Runtime Governance Readiness Scan," linking to orionintelligenceagency.com.
 
 This is a marketing, portfolio, and lead-generation site. Contact runs through a static `mailto:` link; there is no form handler or backend.

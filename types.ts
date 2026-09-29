@@ -90,6 +90,8 @@ export interface Resource {
   artifactType: 'evidence-pack' | 'blueprint' | 'template' | 'one-sheet' | 'diagram' | 'deck';
   fileType: 'pdf' | 'docx' | 'pptx';
   fileSize: string;
+  // Plain label shown on /proof (e.g. "Speaker one-sheet"); says what the file is.
+  downloadLabel?: string;
 }
 
 export interface CaseStudyMetric {

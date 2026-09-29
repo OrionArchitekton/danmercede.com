@@ -25,10 +25,10 @@ import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 // Lowercased; matched against the lowercased baked body. The first set is the
 // generic CTA vocabulary ported from the danielmercede-info guard
 // (['book a', '/book', 'readiness scan'] + common conversion verbs); the last
-// two — 'initiate protocol' and 'engage with dan' — are pulled VERBATIM from the
-// hub's promotional /connect route (ROUTE_META['/connect']: h1 "Connect", lead
-// "Initiate protocol.", body "Engage with Dan Mercede on governed AI
-// architecture…"). They are the load-bearing signal that genuinely separates
+// two, 'contact dan' and 'hiring or team roles', are pulled VERBATIM from the
+// hub's promotional /connect route (ROUTE_META['/connect']: h1 "Contact Dan",
+// first intent "Hiring or team roles"). Re-grounded 2026-09-29 when the site
+// audit replaced the old "Initiate protocol" copy. They are the load-bearing signal that genuinely separates
 // promotional copy from identity copy on THIS site, which is why the negative
 // control below renders /connect and proves the detector flags exactly them.
 //
@@ -50,8 +50,8 @@ const FORBIDDEN_NEEDLES = [
   'book a call',
   'request a demo',
   'subscribe',
-  'initiate protocol',
-  'engage with dan',
+  'contact dan',
+  'hiring or team roles',
 ];
 
 // The detector: return every forbidden needle present in a lowercased body.
@@ -86,10 +86,10 @@ for (const route of IDENTITY_ROUTES) {
 }
 
 // --- Negative control: prove the detector actually fires. -------------------
-// `/connect` is the hub's promotional route (h1 "Connect", lead "Initiate
-// protocol.", body "Engage with Dan Mercede…"). If the detector is sound AND the
+// `/connect` is the hub's promotional route (h1 "Contact Dan", intents starting
+// with "Hiring or team roles"). If the detector is sound AND the
 // needles genuinely distinguish promotional from identity copy, rendering
-// /connect MUST flag 'initiate protocol' and 'engage with dan'. This is a
+// /connect MUST flag 'contact dan' and 'hiring or team roles'. This is a
 // strong, repo-native negative control: it runs against the real promotional
 // route, not a fixture, so it simultaneously proves (a) the detector works and
 // (b) the two load-bearing needles are real promotional copy on THIS site. If a
@@ -100,14 +100,14 @@ test('negative control: detector FLAGS the promotional /connect route', () => {
   const connectBody = renderBodyBlock('/connect', ROUTE_META['/connect']).toLowerCase();
   const leaked = leakedNeedles(connectBody);
   assert.ok(
-    leaked.includes('initiate protocol'),
-    `detector failed to flag 'initiate protocol' on the promotional /connect route — ` +
+    leaked.includes('contact dan'),
+    `detector failed to flag 'contact dan' on the promotional /connect route; ` +
       `either the detector is inert or /connect no longer carries that promotional copy. ` +
       `Got: ${JSON.stringify(leaked)}`,
   );
   assert.ok(
-    leaked.includes('engage with dan'),
-    `detector failed to flag 'engage with dan' on the promotional /connect route — ` +
+    leaked.includes('hiring or team roles'),
+    `detector failed to flag 'hiring or team roles' on the promotional /connect route; ` +
       `either the detector is inert or /connect no longer carries that promotional copy. ` +
       `Got: ${JSON.stringify(leaked)}`,
   );

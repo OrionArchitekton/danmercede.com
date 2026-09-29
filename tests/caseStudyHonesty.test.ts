@@ -345,3 +345,36 @@ test('metric VALUES that assert an outcome without a digit-and-unit are caught',
     'architectural prose using "zero" descriptively must not be flagged'
   );
 });
+
+// 2026-09-29 site audit: the DOCX downloads open by saying they are illustrative,
+// but a visitor landing on /case-studies/<slug> from search never saw that. The
+// qualification must lead both the React page and the no-JS prerender body.
+test('every reference-architecture page leads with the illustrative-not-client notice', async () => {
+  const { REFERENCE_ARCHITECTURE_NOTICE } = await import('../constants');
+  const { caseStudyMeta } = await import('../seoMeta');
+  assert.match(REFERENCE_ARCHITECTURE_NOTICE, /not a client implementation/i);
+  assert.ok(CASE_STUDIES.length > 0, 'expected case studies to check');
+  for (const study of CASE_STUDIES) {
+    const body = caseStudyMeta(study.slug).body;
+    assert.equal(
+      body?.paragraphs?.[0],
+      REFERENCE_ARCHITECTURE_NOTICE,
+      `${study.slug}: the baked prerender body must open with the notice`,
+    );
+  }
+  const app = fs.readFileSync(path.join(projectRoot, 'App.tsx'), 'utf8');
+  const page = app.slice(app.indexOf('const CaseStudyPage'), app.indexOf('const CaseStudyPage') + 4000);
+  assert.match(page, /\{REFERENCE_ARCHITECTURE_NOTICE\}/, 'CaseStudyPage must render the notice');
+});
+
+// 2026-09-29 review: the notice must also reach the search snippet and the
+// Article JSON-LD, not only the hidden prerender body.
+test('reference-architecture meta and Article descriptions lead with the notice', async () => {
+  const { REFERENCE_ARCHITECTURE_NOTICE } = await import('../constants');
+  const { caseStudyMeta } = await import('../seoMeta');
+  for (const study of CASE_STUDIES) {
+    const meta = caseStudyMeta(study.slug);
+    assert.ok(meta.description?.startsWith(REFERENCE_ARCHITECTURE_NOTICE.slice(0, 40)), `${study.slug}: meta description must lead with the notice`);
+    assert.ok(meta.articleDescription?.startsWith(REFERENCE_ARCHITECTURE_NOTICE), `${study.slug}: Article description must lead with the notice`);
+  }
+});
