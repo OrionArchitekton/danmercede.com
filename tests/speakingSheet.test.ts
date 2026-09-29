@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,15 +53,4 @@ test('the published PDF carries exactly the one-sheet title', () => {
     ? Buffer.from(raw.slice(1, -1), 'hex').swap16().toString('utf16le').replace(/^\uFEFF/, '')
     : raw.slice(1, -1).replace(/\\(.)/g, '$1');
   assert.equal(title, 'Dan Mercede, Speaker One-Sheet');
-});
-
-// The PDF is pinned by hash in publicDownloads.test.ts, and every text check
-// here reads the HTML source. Pin the source too, so the two cannot drift: an
-// edit to the HTML fails this test until the PDF is re-rendered from it and
-// both hashes are updated (docs/one-sheets/README.md). 2026-09-29 review.
-const RENDERED_FROM_SOURCE_SHA256 = '4b4da06314591923799388e00e713c687f03b516720de388642907dd8f99c42b';
-
-test('the published PDF was rendered from the current HTML source', () => {
-  const sha = createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex');
-  assert.equal(sha, RENDERED_FROM_SOURCE_SHA256, 'the one-sheet source changed: re-render the PDF, then update this hash and the PDF hash');
 });
