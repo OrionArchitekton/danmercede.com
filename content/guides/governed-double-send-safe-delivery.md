@@ -51,6 +51,8 @@ The lease is what makes crash recovery safe, and the reaper is where the real de
 
 That is the whole trick. A visible stuck task beats an invisible double-send. You trade an automatic recovery you cannot prove is safe for a manual one a human can resolve in seconds by checking whether the message actually went out. Internal, side-effect-free tasks stay auto-requeueable; only the actions that touch the outside world are stranded. Encode the action type in the task and let the reaper branch on it; do not rely on a human remembering the distinction.
 
+One gap stays open even with the reaper. A lease assumes the worker that lost it has actually stopped. A worker that was paused rather than dead (a long garbage-collection stall, a network partition) can wake up after its task was stranded and finish the send anyway, and if a human already re-sent the message, the customer gets two. Re-checking the lease immediately before the send narrows that window; passing the provider an idempotency key it enforces closes it. Without one of them, "at most once" holds for workers that die, not for workers that stall.
+
 ![The double-send-safe reaper: a worker claims a task under a lease and dies mid-send; when the lease expires the reaper branches on action type, requeuing internal tasks but stranding external sends for human reconciliation to avoid a duplicate customer send.](/assets/guides/governed-double-send-safe-delivery/double-send-safe-reaper.webp "The recovery path branches on action type: internal tasks requeue, external sends strand for a human.")
 
 ---

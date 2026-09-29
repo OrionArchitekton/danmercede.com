@@ -79,11 +79,16 @@ test('the review-stamp checker flags each bad case and accepts a new guide', () 
 const EXACTLY_ONCE = /\bexactly[\s-]+once\b/i;
 const QUALIFIER = /\bat[\s-]+(most|least)[\s-]+once\b/i;
 
-// Lines first (list items, headings), then sentences, then semicolon clauses.
+// Split the way a reader sees it: paragraphs (blank lines), then list items and
+// headings, with soft-wrapped lines joined back together (Markdown renders a single
+// newline as a space) and emphasis markers removed (so **exactly** once still reads
+// as the phrase), then sentences, then semicolon clauses.
 function splitUnits(text: string): string[] {
   return text
-    .split(/\n/)
-    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
+    .split(/\n\s*\n/)
+    .flatMap((block) => block.split(/\n(?=\s*(?:[-*+]|\d+\.|#{1,6})\s)/))
+    .map((unit) => unit.replace(/\s*\n\s*/g, ' ').replace(/\*\*|__|\*|`/g, ''))
+    .flatMap((unit) => unit.split(/(?<=[.!?])\s+/))
     .flatMap((sentence) => sentence.split(/;\s*/))
     .filter((u) => u.trim());
 }
@@ -120,6 +125,9 @@ test('the exactly-once checker flags a bare claim and passes a qualified one', (
   // A sibling list item or a neighbouring clause must not launder the claim.
   assert.equal(unqualifiedExactlyOnce('fixture', splitUnits('1. Send exactly once.\n2. Retries are at least once.')).length, 1);
   assert.equal(unqualifiedExactlyOnce('fixture', splitUnits('The audit runs at least once daily; customer delivery is exactly once.')).length, 1);
+  // Markdown shapes that render as the bare phrase: a soft-wrapped line and emphasis.
+  assert.equal(unqualifiedExactlyOnce('fixture', splitUnits('Each email is sent exactly\nonce to the customer.')).length, 1);
+  assert.equal(unqualifiedExactlyOnce('fixture', splitUnits('Each email is sent **exactly** once.')).length, 1);
   assert.deepEqual(
     unqualifiedExactlyOnce('fixture', [
       'Not exactly once: at most once, with ambiguous sends held for a human.',
