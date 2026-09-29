@@ -149,7 +149,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center">
       <div className="mb-8 md:mb-0">
         <img src="/dm-mark.svg" alt="" aria-hidden="true" className="h-8 w-8 mb-3" />
-        <h4 className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</h4>
+        <p className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</p>
         <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
         <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
       </div>
