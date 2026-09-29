@@ -77,5 +77,7 @@ test('the priced engagement sheet is retired and Proof points commercial inquiri
   const bake = renderBodyBlock('/proof', ROUTE_META['/proof']);
   assert.doesNotMatch(bake, /engagement sheet/i, 'the /proof bake must not promise the sheet');
   assert.doesNotMatch(proofPage, /Service and speaking documents/, 'no service document remains');
-  assert.match(proofPage, /to="\/connect"/, 'the commercial section must route inquiries to Contact');
+  const commercial = proofPage.slice(proofPage.indexOf('id="commercial"'));
+  assert.ok(commercial.length < proofPage.length, 'expected the commercial section (positive control)');
+  assert.match(commercial, /to="\/connect"/, 'the commercial section must route inquiries to Contact');
 });
