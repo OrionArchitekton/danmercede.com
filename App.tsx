@@ -5,7 +5,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, TARGET_AUDIENCE, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, PILLARS, BUILD_AREAS, SIGNALS, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -234,7 +234,7 @@ const HomePage = () => {
               <img
                 src="/dan-mercede-founder-headshot-hero.webp"
                 alt={getImageMeta("/dan-mercede-founder-headshot-hero.webp").alt}
-                title="Dan Mercede, Founder of Cosmocrat"
+                title="Dan Mercede"
                 width="1200"
                 height="1500"
                 fetchPriority="high"
@@ -372,25 +372,29 @@ const AboutPage = () => {
     <Section>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8">
-          <SectionHeader as="h1" title="The Throughline" subtitle="Canonical Narrative" />
+          <SectionHeader as="h1" title="About Dan Mercede" subtitle="Operator, then builder" />
           <div className="prose prose-invert prose-lg text-slate-400">
-            <p className="text-xl text-white font-light mb-4">
-              From operations to architecture: <span className="text-copper-400">build systems operators can own and run.</span>
-            </p>
-            <p className="text-lg text-white/90 font-normal mb-8 leading-relaxed">
-              I help teams turn AI from experiments into owned workflows. Strategy and facilitation first. Build when the path is clear. Hand off ownership so day two is real.
-            </p>
-            <p className="mb-6">
-              Governance and reliability are how the work holds under pressure. They are proof depth, not the front-door pitch. My path runs from complex human operations to the digital systems that automate them.
-            </p>
-            <div className="flex items-center space-x-4 my-12 p-6 border border-copper-500/20 bg-copper-500/5 rounded-sm">
-              <Shield className="w-12 h-12 text-copper-500 flex-shrink-0" />
-              <div>
-                <h4 className="text-white font-bold uppercase tracking-wide text-sm">Core Philosophy</h4>
-                <p className="text-sm text-slate-300 mt-1">
-                  Governance is the seatbelt. Execution is the engine. Without constraints, intelligence becomes liability.
-                </p>
+            <p className="text-xl text-white font-light mb-10 leading-relaxed">{ABOUT_BIO.lead}</p>
+            {ABOUT_BIO.sections.map((section) => (
+              <div key={section.heading} className="mb-10">
+                <h2 className="text-2xl font-bold text-white mb-4">{section.heading}</h2>
+                {section.paragraphs.map((paragraph, idx) => (
+                  <p key={idx} className="mb-4 leading-relaxed">{paragraph}</p>
+                ))}
               </div>
+            ))}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold text-white mb-4">Recognition and speaking</h2>
+              <ul className="space-y-3 list-none pl-0">
+                {ABOUT_BIO.recognition.map((item) => (
+                  <li key={item.href} className="pl-0">
+                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 inline-flex items-start gap-2">
+                      <span>{item.label}</span>
+                      <ExternalLink className="w-4 h-4 mt-1 flex-shrink-0" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
@@ -417,7 +421,7 @@ const AboutPage = () => {
             <img
               src="/dan-mercede-founder-working-portrait.png"
               alt={getImageMeta("/dan-mercede-founder-working-portrait.png").alt}
-              title="Dan Mercede, Founder of Cosmocrat"
+              title="Dan Mercede"
               width="1200"
               height="1500"
               className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 contrast-125"
@@ -2139,45 +2143,49 @@ const ConnectPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader as="h1" title="Connect" subtitle="Initiate Protocol" />
+      <SectionHeader as="h1" title="Contact Dan" subtitle="Email and LinkedIn" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="space-y-8">
+        <div className="space-y-6">
           <p className="text-xl text-white">
-            I engage with builders, operators, and practice owners turning one high-friction workflow into an AI-assisted system their team can own.
+            Email reaches me directly. Pick the reason that fits and the subject line fills in.
           </p>
-
-          <div className="space-y-4">
-            <h4 className="text-copper-500 font-mono text-xs uppercase tracking-widest">Who should reach out</h4>
-            <ul className="space-y-2">
-              {TARGET_AUDIENCE.map((target, idx) => (
-                <li key={idx} className="flex items-center text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-slate-400 mr-3" />
-                  {target}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="text-slate-400">
+            Or write to <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent(window, 'generate_lead', { method: 'email' })} className="text-copper-400 hover:text-copper-300">{CONTACT_EMAIL}</a> with anything else.
+          </p>
+          <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(window, 'connect_click', { method: 'linkedin' })} className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
+            <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
+            <div>
+              <span className="block text-xs text-slate-400 uppercase tracking-wider">LinkedIn</span>
+              <span className="text-white">linkedin.com/in/danmercede</span>
+            </div>
+          </a>
         </div>
 
-        <div className="bg-slate-900/50 p-8 border border-white/5">
-          <div className="space-y-6">
-            <a href="mailto:contact@danmercede.com" onClick={() => trackEvent(window, 'generate_lead', { method: 'email' })} className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
-              <Mail className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
-              <div>
-                <span className="block text-xs text-slate-400 uppercase tracking-wider">Email</span>
-                <span className="text-white">Direct Contact</span>
-              </div>
-            </a>
-
-            <a href="https://www.linkedin.com/in/danmercede/" target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(window, 'connect_click', { method: 'linkedin' })} className="flex items-center group p-4 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950">
-              <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-500 mr-4" />
-              <div>
-                <span className="block text-xs text-slate-400 uppercase tracking-wider">Social</span>
-                <span className="text-white">LinkedIn</span>
-              </div>
-            </a>
-          </div>
+        <div className="space-y-4">
+          {CONTACT_INTENTS.map((intent) => {
+            const external = Boolean(intent.href);
+            const href = intent.href ?? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(intent.subject ?? '')}`;
+            return (
+              <a
+                key={intent.id}
+                href={href}
+                {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                onClick={external ? undefined : () => trackEvent(window, 'generate_lead', { method: 'email', intent: intent.id })}
+                className="flex items-start group p-5 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950"
+              >
+                {external ? (
+                  <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 flex-shrink-0" />
+                ) : (
+                  <Mail className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 flex-shrink-0" />
+                )}
+                <div>
+                  <span className="block text-white font-semibold">{intent.label}</span>
+                  <span className="block text-sm text-slate-400 mt-1">{intent.detail}</span>
+                </div>
+              </a>
+            );
+          })}
         </div>
       </div>
     </Section>

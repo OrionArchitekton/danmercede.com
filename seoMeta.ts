@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -151,14 +151,16 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/about': {
     title: 'About: Dan Mercede',
     description:
-      'Operator and systems builder helping teams turn AI from experiments into owned workflows. Governance as proof depth, not the pitch.',
+      'Former General Manager with full P&L ownership, now building AI workflows with clear ownership, a private AI control plane, and open-source tools.',
     schemaType: 'ProfilePage',
+    // The full biography from ABOUT_BIO, the same source AboutPage renders, so the
+    // no-JS body matches what visitors read (tests/frontDoor.test.ts).
     body: {
-      h1: 'The Throughline',
-      lead: 'From operations to architecture: build systems operators can own and run.',
+      h1: 'About Dan Mercede',
+      lead: ABOUT_BIO.lead,
       paragraphs: [
-        'I help teams turn AI from experiments into owned workflows. Strategy and facilitation first. Build when the path is clear. Hand off ownership so day two is real.',
-        'Governance and reliability are how the work holds under pressure. They are proof depth, not the front-door pitch. My path runs from complex human operations to the digital systems that automate them.',
+        ...ABOUT_BIO.sections.flatMap((s) => s.paragraphs),
+        ...ABOUT_BIO.recognition.map((r) => r.label),
       ],
     },
   },
@@ -251,14 +253,15 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/connect': {
-    title: 'Connect: Initiate Protocol | Dan Mercede',
+    title: 'Contact: Roles, Speaking, and Collaboration | Dan Mercede',
     description:
-      'Engage with Dan Mercede on operator-led AI systems, workflow ownership, and SMB AI strategy consulting through OIA.',
+      'Contact Dan Mercede about hiring or team roles, speaking, open-source collaboration, or AI implementation work through Orion Intelligence Agency.',
     body: {
-      h1: 'Connect',
-      lead: 'Initiate protocol.',
+      h1: 'Contact Dan',
+      lead: 'Email reaches me directly. Pick the reason that fits.',
       paragraphs: [
-        'Engage with Dan Mercede on operator-led AI systems, one-workflow ownership, and SMB AI strategy consulting through Orion Intelligence Agency.',
+        ...CONTACT_INTENTS.map((i) => `${i.label}: ${i.detail}`),
+        'LinkedIn: linkedin.com/in/danmercede',
       ],
     },
   },

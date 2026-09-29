@@ -278,8 +278,82 @@ export const INTENT_ROUTES = [
 
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
 
-export const TARGET_AUDIENCE = [
-  "Builders", "Operators", "Investors", "Practice Owners"
+// /about: the factual operating biography (2026-09-29 site audit). /about is an
+// identity-only surface (tests/contentBoundary.test.ts): who Dan is and what he
+// has done, never call-to-action copy. Operating facts mirror the Dan-confirmed
+// master profile in dan-mercede-careers; recognition reuses the verified SPEAKING
+// entry and the UiPath finalist source already cited on /proof.
+export const ABOUT_BIO = {
+  lead: "Operator first, then builder. I build AI workflows with clear ownership: the first working version, then the tools, controls, and handoffs that keep it running.",
+  sections: [
+    {
+      heading: "Operating background",
+      paragraphs: [
+        "From 2021 to 2025 I was General Manager at 24 Hour Fitness in Carlsbad, California, with full P&L ownership of a business doing more than $3M a year and a team of about 20. I built the KPI dashboards and CRM automation the club ran on, and it finished above target four years in a row. I received Sales and GM of the Year awards in 2022, 2023, and 2024.",
+        "Before that I spent fifteen years in sales and financial operations at Apple, Diageo, and Nestl\u00e9 USA: strategic accounts at Apple, quota-carrying field sales at Diageo, and financial reporting and analysis at Nestl\u00e9 USA. I hold a B.A. in Economics from Queen's University.",
+      ],
+    },
+    {
+      heading: "What I build now",
+      paragraphs: [
+        "Running a business showed me where automation breaks: nobody owns the workflow, so nobody notices when it drifts. I started building AI systems around that problem while still running the club, and have done it full time since 2025.",
+        "I operate a private AI control plane (a decision kernel, an immutable receipt store, policy evaluation, and tracing) that has run continuously for months on a self-managed multi-node cluster. The reusable parts ship as open-source tools, including failclosed (merge admission for AI-written code), schemafit (structured-output schema linting, on PyPI), and mcp-context-budget (MCP tool-surface budget checks, on PyPI).",
+        "I also work as a contract architect on shared AI infrastructure for a multi-venture AI studio.",
+      ],
+    },
+    {
+      heading: "How I work",
+      paragraphs: [
+        "Operating responsibility taught me to measure what a system does, not what it promises. So I build the first version fast, put checks where a mistake would cost real money or trust, and hand the workflow to the people who run it.",
+      ],
+    },
+  ],
+  recognition: [
+    {
+      label: `Speaker, ${SPEAKING.event} (${SPEAKING.date}): ${SPEAKING.title}`,
+      href: SPEAKING.href,
+    },
+    {
+      label: "Finalist, UiPath AgentHack 2026 (Track 3, UiPath Test Cloud), for Proctor",
+      href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
+    },
+  ],
+};
+
+// /connect: the reasons to get in touch (2026-09-29 site audit). Email intents
+// prefill a subject line; implementation work routes to OIA, the commercial path.
+export const CONTACT_EMAIL = "contact@danmercede.com";
+export const CONTACT_INTENTS: {
+  id: "employment" | "speaking" | "collaboration" | "implementation";
+  label: string;
+  detail: string;
+  subject?: string;
+  href?: string;
+}[] = [
+  {
+    id: "employment",
+    label: "Hiring or team roles",
+    detail: "Full-time or contract roles in AI systems, platform, or forward-deployed engineering.",
+    subject: "Role inquiry",
+  },
+  {
+    id: "speaking",
+    label: "Speaking",
+    detail: "Conference talks, meetups, and podcasts on running AI systems in production.",
+    subject: "Speaking inquiry",
+  },
+  {
+    id: "collaboration",
+    label: "Open source and collaboration",
+    detail: "Issues, pull requests, and joint work on the open-source tools.",
+    subject: "Collaboration",
+  },
+  {
+    id: "implementation",
+    label: "AI implementation for your business",
+    detail: "Scoped workflow projects run through Orion Intelligence Agency.",
+    href: "https://www.orionintelligenceagency.com",
+  },
 ];
 
 export const FOOTER_DATA = {
