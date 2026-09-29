@@ -55,6 +55,16 @@ test('every rendered route ships its page render, stamped, with no crawl block',
   }
 });
 
+// Vercel serves /about/ from the same file as /about, and the client hydrates
+// it there. The page must render identically at the slashed path, or hydration
+// on /about/ would not match the shipped markup.
+test('every rendered route renders identically with a trailing slash', async () => {
+  const render = await loadRender();
+  for (const route of RENDERED_ROUTES) {
+    assert.equal(render(`${route}/`), render(route), `${route}/ renders differently from ${route}`);
+  }
+});
+
 test('/about shows the real biography before any script runs', () => {
   const { inner } = rootOf(fs.readFileSync(fileFor('/about'), 'utf8'));
   const text = decode(inner);
