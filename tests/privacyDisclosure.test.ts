@@ -141,7 +141,17 @@ test('the stated choices match which tools they actually stop', () => {
   assert.ok(choices, 'expected a Your Choices section');
   const component = read('components/Analytics.tsx');
   if (/@vercel\/analytics|@vercel\/speed-insights/.test(component)) {
-    assert.match(choices!.body, /does not stop Vercel/i, 'say that cookie controls leave the Vercel tools running');
+    assert.match(choices!.body, /do(es)? not stop Vercel/i, 'say that cookie controls leave the Vercel tools running');
     assert.match(choices!.body, /blocks analytics scripts/i, 'name a choice that stops every tool');
   }
+  // 2026-09-29 final review: blocking or deleting cookies resets GA's identifiers, but
+  // gtag still sends page views, so no sentence may say a cookie control stops GA.
+  const sentences = choices!.body.split(/(?<=\.)\s+/);
+  for (const sentence of sentences.filter((x) => /stops Google Analytics/i.test(x))) {
+    assert.doesNotMatch(sentence, /cookies/i, `cookie controls do not stop GA: "${sentence}"`);
+  }
+  assert.ok(
+    sentences.some((x) => /opt-out add-on/i.test(x) && /stops Google Analytics/i.test(x)),
+    'name the choice that does stop Google Analytics',
+  );
 });

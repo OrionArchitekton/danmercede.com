@@ -1212,6 +1212,6 @@ export const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: '4. Your Choices',
-    body: 'Blocking or deleting cookies in your browser, or installing the Google Analytics opt-out add-on (tools.google.com/dlpage/gaoptout), stops Google Analytics. It does not stop Vercel Web Analytics or Vercel Speed Insights, which do not rely on those cookies; a browser extension that blocks analytics scripts stops all three. Blocking analytics does not change how the site works. Questions: contact@danmercede.com.',
+    body: 'Installing the Google Analytics opt-out add-on (tools.google.com/dlpage/gaoptout) stops Google Analytics. Blocking or deleting cookies in your browser only keeps Google Analytics from recognizing repeat visits; page views are still counted. These choices do not stop Vercel Web Analytics or Vercel Speed Insights, which do not rely on those cookies; a browser extension that blocks analytics scripts stops all three. Blocking analytics does not change how the site works. Questions: contact@danmercede.com.',
   },
 ];

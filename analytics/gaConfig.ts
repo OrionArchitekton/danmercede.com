@@ -88,9 +88,16 @@ export function redactUrlForAnalytics(href: string): string {
   const url = new URL(href, 'https://www.danmercede.com');
   const kept = new URLSearchParams();
   url.searchParams.forEach((value, key) => {
-    if (CAMPAIGN_PARAMS.has(key)) kept.append(key, value);
+    // Campaign values are free text; one carrying an email address is dropped too.
+    if (CAMPAIGN_PARAMS.has(key) && !value.includes('@')) kept.append(key, value);
   });
   const query = kept.toString();
   const rest = `${url.pathname}${query ? `?${query}` : ''}`;
   return absolute ? `${url.origin}${rest}` : rest;
+}
+
+// beforeSend hook for the Vercel Web Analytics and Speed Insights widgets, so they
+// send the same redacted URL that the GA4 page_view carries.
+export function redactEventUrl<T extends { url: string }>(event: T): T {
+  return { ...event, url: redactUrlForAnalytics(event.url) };
 }
