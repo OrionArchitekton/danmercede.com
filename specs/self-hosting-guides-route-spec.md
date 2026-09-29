@@ -19,8 +19,9 @@ serves only non-indexable `/#slug` fragments and would bury an SEO asset.
   `constants.guides.generated.ts` by `scripts/compileGuides.mjs`. No substrate, no
   `substrate-verify` gate. (Decision: mirror the static `WORKS` model, not substrate-sourced
   `THOUGHTS`, for speed + reversibility.)
-- **Dep-free Markdown rendering.** The repo deliberately stays lean (React externalized via
-  esm.sh importmap; no markdown library). Guide bodies render through an in-house
+- **Dep-free Markdown rendering.** The repo deliberately stays lean (no markdown library;
+  the original "React externalized via esm.sh" premise was wrong, see
+  `specs/visible-initial-html-spec.md`). Guide bodies render through an in-house
   `components/Markdown.tsx` (bounded subset: headings, fenced code, inline code/bold/italic/
   links, ordered/unordered lists with nested blocks, tables, blockquotes, rules, and
   `![alt](src "caption")` figures).

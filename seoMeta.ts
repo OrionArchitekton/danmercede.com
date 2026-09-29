@@ -704,8 +704,7 @@ export function typeScopedMetaTags(
 }
 
 // Render the static <head> SEO tag block for a route. Deterministic; never
-// executes React or touches a DOM, safe in a Node build even though React is
-// externalized via the esm.sh importmap.
+// executes React or touches a DOM, so it is safe in a Node build.
 export function renderSeoBlock(path: string, m: RouteMeta): string {
   const r = resolveMeta(m);
   const canonical = new URL(path, SITE_ORIGIN).toString();
