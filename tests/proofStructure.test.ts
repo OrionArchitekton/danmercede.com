@@ -56,3 +56,10 @@ test('the /proof prerender names the three kinds of material', () => {
     assert.ok(body.includes(phrase), `the /proof prerender should mention "${phrase}"`);
   }
 });
+
+test('no download is marked gated, because DownloadCard has no gated path', () => {
+  // DownloadCard always links the file. Gating a resource without first adding a
+  // gated branch to DownloadCard would silently serve it anyway.
+  const gated = RESOURCES.filter((r) => r.gated).map((r) => r.fileName);
+  assert.deepEqual(gated, [], 'add a gated branch to DownloadCard before marking a resource gated');
+});
