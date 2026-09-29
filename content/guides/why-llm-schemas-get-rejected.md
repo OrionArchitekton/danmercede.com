@@ -2,6 +2,7 @@
 title: "Why 88% of Real LLM Schemas Get Rejected (and the `additionalProperties` Trap Behind It)"
 slug: why-llm-schemas-get-rejected
 date: 2026-06-28
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "I ran a JSON-Schema linter across 50 real LLM tool and structured-output schemas from the OpenAI/Anthropic cookbooks, popular agent frameworks, and official MCP servers. 88% would be rejected by at least one provider. Here's the one field behind most of it, and how to catch it in CI instead of production."
 lead: "A schema that works on OpenAI 400s on Anthropic. One that works on Anthropic warns on Gemini. I measured it on 50 real schemas: 88% break somewhere, and one field is behind most of the OpenAI failures."

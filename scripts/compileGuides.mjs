@@ -52,6 +52,10 @@ function parse(raw, file) {
     title: meta.title,
     slug: meta.slug,
     date: meta.date,
+    // Optional review stamp (last full reread). Emitted only when present, so the
+    // bundle carries no empty key; tests/guidesPrecision.test.ts requires it on every
+    // published guide and checks it is a real day on or after `date`.
+    ...(meta.reviewed ? { reviewed: meta.reviewed } : {}),
     category: meta.category,
     description: meta.description,
     lead: meta.lead,

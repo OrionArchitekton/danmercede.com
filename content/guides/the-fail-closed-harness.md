@@ -2,6 +2,7 @@
 title: "The Fail-Closed Harness: Why a Safe Agent's Default Is Refusal"
 slug: the-fail-closed-harness
 date: 2026-07-23
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "The safety of an agent harness is not the list of things it can do. It is what the harness does by default when a required check cannot be satisfied. This guide builds the guardrails half of harness engineering that most write-ups name and skip: a fail-closed default, a trajectory model for when to refuse, and an honest account of what a command matcher can and cannot enforce."
 lead: "While I was writing this guide, my own harness refused me over and over. Not once because a command was dangerous, but because a required check had not been satisfied yet. None of those gates was a wall, and understanding why is the whole discipline."

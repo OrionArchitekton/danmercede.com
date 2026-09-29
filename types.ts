@@ -42,6 +42,7 @@ export interface Guide {
   title: string;
   slug: string;          // /guides/<slug> routing + sitemap parity
   date: string;          // YYYY-MM-DD (publish date; drives sitemap lastmod)
+  reviewed?: string;     // YYYY-MM-DD of the last full reread for accuracy; a reread stamp, NOT a "last tested" claim
   category: string;      // surface label, e.g. "Self-Hosting"
   description: string;   // meta description (head + JSON-LD)
   lead: string;          // positioning line rendered under the H1

@@ -2,6 +2,7 @@
 title: "The Reviewer Blessed the Bug: Why Agent-Written Code Needs Layered Review"
 slug: why-agent-code-needs-layered-review
 date: 2026-07-04
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "I put one 20-line log-scrubbing function through four independent review layers while hardening a self-hosted LLM-observability backup. Each layer caught a real defect the others missed, and one layer reproduced a secret leak that an earlier layer had explicitly certified as safe. The case for layered review of AI-written code, with the five bugs and the fixes."
 lead: "A security reviewer read my diff and certified the exact property that was broken: no overlap mis-redaction. One layer later, a different reviewer reproduced a partial secret in the logs. Same code, opposite verdict. That gap is the whole argument."
