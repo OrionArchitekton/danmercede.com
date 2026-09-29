@@ -11,7 +11,8 @@ google-chrome --headless=new --disable-gpu --no-pdf-header-footer \
 sha256sum public/assets/Speaking_One_Sheet.pdf
 ```
 
-Then update the `Speaking_One_Sheet.pdf` entry in `tests/publicDownloads.test.ts`
+Then update `RENDERED_FROM_SOURCE_SHA256` in `tests/speakingSheet.test.ts` with
+`sha256sum docs/one-sheets/speaking-one-sheet.html`, and the `Speaking_One_Sheet.pdf` entry in `tests/publicDownloads.test.ts`
 (`REVIEWED_UNSCANNED`) with the new sha256 and a one-line review of what the file
 now says. The PDF is served but no test can read its text, so the hash pins the
 reviewed bytes.
