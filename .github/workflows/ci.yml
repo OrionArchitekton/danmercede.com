@@ -92,6 +92,12 @@ jobs:
           fi
           echo "R9 OK: all asserted built pages carry a non-empty crawlable body."
 
+      # Visible initial HTML spec, slice S0: the built client chunks import only
+      # files from this build and no page ships an importmap or a CDN module URL.
+      # Reads build/, so it runs after the Build step, not inside `npm test`.
+      - name: Assert built client output
+        run: npm run test:built
+
   # A2 — passage-extractability linter as a first-class fail-closed REQUIRED
   # check. It emits a check-run NAMED `extractability`, which
   # required-checks-fail-closed.yml lists in BASE_REQUIRED_CHECKS so a red

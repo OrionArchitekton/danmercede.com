@@ -9,9 +9,9 @@
 //   1. <head> meta  (title/og/twitter/canonical)        — renderSeoBlock
 //   2. JSON-LD      (Article/ProfilePage + BreadcrumbList) — renderRouteJsonLd (W4)
 //   3. <body> copy  (h1 + paragraphs, crawlable)          — renderBodyBlock (W1)
-// served by Vercel filesystem precedence (before the SPA catch-all rewrite) —
-// no server, no framework, and no React executed in Node (so it is unaffected
-// by the esm.sh importmap that externalizes React).
+// served by Vercel from the filesystem (an unknown path gets build/404.html).
+// No server and no framework. React runs in Node only to render essay markdown
+// (renderToStaticMarkup below), from the same bundled React the client uses.
 //
 // Routing: emits build/<route>/index.html (directory-index), which Vercel
 // serves for /<route> via filesystem precedence. No vercel.json change needed.

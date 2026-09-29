@@ -8,6 +8,10 @@ is set at runtime by `usePageMeta` **after hydration**. No-JS crawlers and socia
 brand surface with the gap — the other four are single-page with static meta.
 
 ## Approach (chosen)
+> **Correction (2026-09-29):** React was bundled by Vite, not externalized; the esm.sh
+> importmap was inert and was removed. See `specs/visible-initial-html-spec.md`
+> ("Premise correction"), which revisits the SSR decision on the corrected premise.
+
 A browserless, build-time **meta injector** — not a prerender framework. React is externalized
 via the esm.sh importmap (not bundled), which rules out Node-SSR/SSG tools (vite-react-ssg, Vike)
 and makes a puppeteer snapshot heavy/flaky. The injector **never executes React**, so it is

@@ -38,6 +38,10 @@ that coexists with the "Vercel never recompiles content" guard. Extend it:
 4. The injector writes per-route `build/<route>/index.html` with all three
    blocks (head meta + JSON-LD + body), served by Vercel filesystem precedence.
 
+> **Correction (2026-09-29):** React was bundled by Vite, not externalized; the esm.sh
+> importmap was inert and was removed. See `specs/visible-initial-html-spec.md`
+> ("Premise correction"), which revisits the SSR decision on the corrected premise.
+
 React is externalized via the esm.sh importmap and never executes in Node, so
 the injector is importmap-agnostic. Deploy topology: Vercel runs
 `npm run build` (`vite build && tsx scripts/injectRouteMeta.ts`) on deploy, so this
