@@ -87,16 +87,29 @@ test('the privacy claims about GA4 settings match gaConfig.ts', () => {
 
 // Each GA event the site sends, and the phrase that discloses it.
 const EVENT_DISCLOSURES: Record<string, RegExp> = {
+  page_view: /page views/,
   generate_lead: /clicking the email link/,
   connect_click: /clicking the LinkedIn link/,
 };
 
+// Every first-party source file, not a hand-picked list: an event sent from a
+// file the scan skipped would ship undisclosed.
+function sourceFiles(dir = projectRoot): string[] {
+  const skip = new Set(['node_modules', 'tests', 'build', 'dist', '.git', 'public', 'vendor']);
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    if (e.isDirectory()) return skip.has(e.name) ? [] : sourceFiles(path.join(dir, e.name));
+    return /\.(ts|tsx)$/.test(e.name) && !/\.generated\.ts$/.test(e.name) ? [path.join(dir, e.name)] : [];
+  });
+}
+
 test('every analytics event the site sends is disclosed', () => {
-  const sources = ['App.tsx', ...fs.readdirSync(path.join(projectRoot, 'components')).map((f) => `components/${f}`)];
-  const names = new Set(
-    sources.flatMap((rel) => [...read(rel).matchAll(/trackEvent\([^,]+,\s*'([a-z_]+)'/g)].map((m) => m[1])),
-  );
-  assert.ok(names.has('generate_lead'), 'expected to find the email-click event (positive control)');
+  const names = new Set<string>();
+  for (const file of sourceFiles()) {
+    const src = fs.readFileSync(file, 'utf8');
+    for (const m of src.matchAll(/trackEvent\([^,]+,\s*['"]([a-z_]+)['"]/g)) names.add(m[1]);
+    for (const m of src.matchAll(/gtag\??\.?\(\s*['"]event['"],\s*['"]([a-z_]+)['"]/g)) names.add(m[1]);
+  }
+  assert.ok(names.has('generate_lead') && names.has('page_view'), 'expected the known events (positive control)');
   const text = policyText();
   for (const name of names) {
     const phrase = EVENT_DISCLOSURES[name];
