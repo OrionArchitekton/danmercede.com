@@ -502,7 +502,7 @@ export const RESOURCES: Resource[] = [
   // L4: Gated Substrate
   {
     title: "Speaking One-Sheet",
-    description: "Credential and topic mapping for CIO, CTO, CISO audiences. Talk tracks anchored to enforcement stack layers, substrate isolation mechanics, and quantified enterprise risk reduction. Architectural authority positioning.",
+    description: "One page for event organizers: bio, the NODES 2026 talk, the UiPath AgentHack finalist result, four talk topics, and a direct speaking contact.",
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
     downloadLabel: "Speaker one-sheet",

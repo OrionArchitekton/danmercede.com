@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dan Mercede, Speaker One-Sheet</title>
+<meta name="author" content="Dan Mercede">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<!--
+  Source for /assets/Speaking_One_Sheet.pdf. Facts must agree with the SPEAKING,
+  ABOUT_BIO, and CONTACT_INTENTS entries in constants.ts (tests/speakingSheet.test.ts).
+  Render: see docs/one-sheets/README.md.
+-->
+<style>
+  @page { size: Letter; margin: 0; }
+  :root { --ink: #0b1224; --muted: #475569; --copper: #c2632c; --rule: #e2e8f0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, Helvetica, Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.45; }
+  .page { width: 8.5in; height: 11in; padding: 0.6in 0.7in; display: flex; flex-direction: column; }
+  header { border-bottom: 3px solid var(--copper); padding-bottom: 14px; margin-bottom: 18px; }
+  .kicker { font-family: "JetBrains Mono", monospace; font-size: 8.5pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--copper); }
+  h1 { font-size: 28pt; margin: 4px 0 2px; letter-spacing: -0.02em; }
+  .tagline { font-size: 12.5pt; color: var(--muted); margin: 0; }
+  h2 { font-family: "JetBrains Mono", monospace; font-size: 8.5pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--copper); margin: 18px 0 6px; }
+  p { margin: 0 0 8px; }
+  .grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 28px; }
+  .upcoming { border: 1px solid var(--rule); border-left: 3px solid var(--copper); padding: 10px 14px; margin: 4px 0 6px; }
+  .upcoming .event { font-weight: 700; font-size: 11.5pt; }
+  .upcoming .title { font-style: italic; margin-top: 2px; }
+  ul { margin: 0; padding-left: 16px; }
+  li { margin-bottom: 7px; }
+  li strong { display: block; }
+  .topic-note { color: var(--muted); font-size: 9.5pt; }
+  footer { margin-top: auto; border-top: 1px solid var(--rule); padding-top: 12px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 9.5pt; }
+  footer a { color: var(--ink); text-decoration: none; }
+  .cta { font-weight: 700; color: var(--copper) !important; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="kicker">Speaker one-sheet</div>
+    <h1>Dan Mercede</h1>
+    <p class="tagline">Operator first, then builder. AI workflows with clear ownership, from the first working version to the checks that keep them running.</p>
+  </header>
+
+  <div class="grid">
+    <div>
+      <h2>Bio</h2>
+      <p>Dan Mercede spent four years as a General Manager with full P&amp;L ownership, and fifteen years before that in sales and financial operations at Apple, Diageo, and Nestl&eacute; USA. Running a business showed him where automation breaks: nobody owns the workflow, so nobody notices when it drifts.</p>
+      <p>He now builds AI systems around that problem. He operates a private AI control plane that has run continuously for months on a self-managed cluster, and publishes the reusable parts as open-source tools, including failclosed, schemafit, and mcp-context-budget.</p>
+
+      <h2>Upcoming</h2>
+      <div class="upcoming">
+        <div class="event">NODES 2026 by Neo4j &middot; November 12, 2026</div>
+        <div class="title">Don't Flatten the Tree: Ingesting Branched Conversations into a Knowledge Graph</div>
+        <div class="topic-note">Speaker page: https://neo4j.com/nodes/speakers/dan-mercede/</div>
+      </div>
+
+      <h2>Recognition</h2>
+      <p>Finalist, UiPath AgentHack 2026 (Track 3, UiPath Test Cloud), for Proctor, behavioral regression testing for AI agents.</p>
+    </div>
+
+    <div>
+      <h2>Talks</h2>
+      <ul>
+        <li><strong>Who owns the workflow?</strong><span class="topic-note">Why AI pilots stall after a good demo, and five tests that separate a demo from a workflow a business can depend on.</span></li>
+        <li><strong>Fail closed by default</strong><span class="topic-note">Merge admission for AI-written code: distrust the reviewer's output, refuse to merge on anything ambiguous, and prove the gate fires.</span></li>
+        <li><strong>Don't flatten the tree</strong><span class="topic-note">Ingesting branched LLM conversation history into a production knowledge graph without losing branch identity.</span></li>
+        <li><strong>Agents inside a context budget</strong><span class="topic-note">Keeping tool surfaces and web access from eating a coding agent's context window.</span></li>
+      </ul>
+
+      <h2>Formats</h2>
+      <p>Conference talks, meetups, podcasts, and virtual sessions. Screen-share demos of running systems where the format allows.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div>
+      <div><a class="cta" href="mailto:contact@danmercede.com?subject=Speaking%20inquiry">contact@danmercede.com</a> &middot; subject: Speaking inquiry</div>
+      <div><a href="https://www.danmercede.com/about">danmercede.com/about</a> &middot; <a href="https://www.linkedin.com/in/danmercede/">linkedin.com/in/danmercede</a></div>
+    </div>
+    <div class="kicker">danmercede.com</div>
+  </footer>
+</div>
+</body>
+</html>
