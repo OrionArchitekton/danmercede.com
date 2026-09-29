@@ -30,6 +30,18 @@ test('the client resolves every built route to the metadata the build baked', ()
   assert.equal(routeMetaFor('/thoughts/no-such-essay'), null, 'an unknown slug has no page');
 });
 
+// The build escapes <, >, &, U+2028, and U+2029 as JSON unicode escapes (\u003c,
+// ...), not HTML entities, so the same text is valid JSON whether it is parsed
+// from the served HTML or set as a script's textContent. Review, 2026-09-29.
+test('the inserted text is valid JSON with no HTML entities, for every route', () => {
+  for (const { path: route, meta } of collectRoutes()) {
+    const text = routeJsonLdText(route, meta);
+    const doc = JSON.parse(text) as { '@graph'?: unknown[] };
+    assert.ok(Array.isArray(doc['@graph']) && doc['@graph'].length > 0, `${route}: expected a route graph`);
+    assert.doesNotMatch(text, /&(?:amp|lt|gt|quot|#\d+);/, `${route}: HTML entities would survive textContent literally`);
+  }
+});
+
 test('the client inserts exactly the JSON the build bakes', () => {
   for (const { path: route, meta } of collectRoutes()) {
     assert.ok(renderRouteJsonLd(route, meta).includes(`\n${routeJsonLdText(route, meta)}\n`), route);
@@ -102,6 +114,15 @@ test('syncRouteJsonLd leaves an already-current block untouched, and clears it f
   assert.deepEqual(routeScripts(head), [baked], 'first load: no DOM churn');
   syncRouteJsonLd(head as unknown as HTMLHeadElement, null);
   assert.deepEqual(routeScripts(head), [], 'a noindex page carries no route graph');
+});
+
+test('syncRouteJsonLd collapses several route scripts into one current block', () => {
+  const { head } = headWithRouteBlock('{"home":true}');
+  const end = head.childNodes.findIndex((n) => n instanceof FakeComment && n.data === '/ROUTE_JSONLD');
+  head.insertBefore(script('{"stray":true}'), head.childNodes[end]);
+  syncRouteJsonLd(head as unknown as HTMLHeadElement, '{"about":true}');
+  assert.deepEqual(routeScripts(head).map((s) => s.textContent), ['{"about":true}']);
+  assert.ok(head.childNodes.some((n) => n instanceof FakeComment && n.data === '/ROUTE_JSONLD'), 'the end anchor stays');
 });
 
 test('syncRouteJsonLd does nothing when the anchors are missing', () => {
