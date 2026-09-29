@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
+import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 
 // Round-2 R10 — content-boundary guard (identity-only surface carries NO
 // promotional / CTA copy).
@@ -37,22 +38,6 @@ import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 // dropped. Governance product vocabulary that legitimately belongs to Dan's
 // identity (e.g. "governed AI operating systems", "runtime", "Cosmocrat") is
 // deliberately NOT forbidden — it is identity context, not a CTA.
-const FORBIDDEN_NEEDLES = [
-  'book a',
-  '/book',
-  'readiness scan',
-  'buy now',
-  'sign up',
-  'get started',
-  'schedule a call',
-  'contact us',
-  'hire me',
-  'book a call',
-  'request a demo',
-  'subscribe',
-  'contact dan',
-  'hiring or team roles',
-];
 
 // The detector: return every forbidden needle present in a lowercased body.
 // Pure substring match (same posture as the reference guard) — robust to markup
@@ -67,7 +52,12 @@ function leakedNeedles(bodyLower: string): string[] {
 // identity/bio and (verified) contains none of the needles, so it is guarded
 // too: a conservative addition, since a regression that smeared CTA copy onto
 // the homepage body is exactly the class this guard exists to catch.
-const IDENTITY_ROUTES = ['/about', '/'];
+// `/` was guarded too while its no-JS body was a crawl block with no call to
+// action. Since the first 2026-09-29 audit the homepage is the front door, with
+// direct contact ("Contact Dan") and contact lanes, and since visible-HTML S2 it
+// ships that real page; it is not an identity-only surface. The served /about
+// render is checked in tests/builtPageRender.test.ts.
+const IDENTITY_ROUTES = ['/about'];
 
 for (const route of IDENTITY_ROUTES) {
   test(`identity-only route ${route} bakes NO promotional/CTA copy`, () => {

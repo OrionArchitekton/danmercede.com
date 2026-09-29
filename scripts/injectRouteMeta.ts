@@ -69,7 +69,15 @@ const BUILD_DIR = path.resolve(process.cwd(), 'build');
 // Visible initial HTML (specs/visible-initial-html-spec.md): routes whose initial
 // HTML carries the real page render inside #root instead of the hidden crawl
 // block. It grows slice by slice; emptying it restores the baseline output.
-export const RENDERED_ROUTES: ReadonlySet<string> = new Set(['/about']);
+export const RENDERED_ROUTES: ReadonlySet<string> = new Set([
+  '/about',
+  // S2: the re-audit's priority pages and the writing indexes.
+  '/',
+  '/works',
+  '/connect',
+  '/thoughts',
+  '/guides',
+]);
 
 // The build-time render bundle (`vite build --ssr entry-server.tsx`), written
 // outside the deployed build/ directory.
@@ -222,6 +230,14 @@ async function main() {
     await fs.mkdir(outDir, { recursive: true });
     await fs.writeFile(path.join(outDir, 'index.html'), html, 'utf8');
     written++;
+  }
+
+  // The homepage is build/index.html itself, so it is not in collectRoutes. Its
+  // head and JSON-LD are already the homepage's (the template is the homepage);
+  // only the page render goes in. baseHtml stays the empty template in memory,
+  // so the not-found file below never inherits the homepage render.
+  if (renderPage && RENDERED_ROUTES.has('/')) {
+    await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
   }
 
   await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');

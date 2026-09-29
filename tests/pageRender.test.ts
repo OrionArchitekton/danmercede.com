@@ -21,8 +21,10 @@ const template = [
   '</body>',
 ].join('\n');
 
-test('the rendered-route set is /about only in this slice', () => {
-  assert.deepEqual([...RENDERED_ROUTES], ['/about']);
+// Slice S2 adds the re-audit's priority pages (homepage, Works, Contact) and the
+// writing indexes whose rendered headings already pass the extractability check.
+test('the rendered-route set is the S2 set', () => {
+  assert.deepEqual([...RENDERED_ROUTES].sort(), ['/', '/about', '/connect', '/guides', '/thoughts', '/works']);
 });
 
 test('a rendered route carries its page render in a stamped #root and drops the crawl block', () => {
