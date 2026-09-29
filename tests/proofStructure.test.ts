@@ -40,7 +40,6 @@ test('every download lands in exactly one plainly labeled group', () => {
     assert.ok(['resources', 'commercial'].includes(group), `${r.title}: unexpected group ${group}`);
   }
   assert.equal(proofGroupFor(RESOURCES.find((r) => r.fileName === 'Speaking_One_Sheet.pdf')!), 'commercial');
-  assert.equal(proofGroupFor(RESOURCES.find((r) => r.fileName === 'What_We_Deliver.pdf')!), 'commercial');
   assert.equal(proofGroupFor(RESOURCES.find((r) => r.fileName === 'Case_Study_Template.docx')!), 'resources');
 });
 
@@ -68,4 +67,15 @@ test('the homepage card for /proof describes the page as it now is', () => {
   const card = INTENT_ROUTES.find((r) => r.href === '/proof');
   assert.ok(card, 'expected a homepage intent card for /proof');
   assert.doesNotMatch(`${card!.prompt} ${card!.description}`, /enforcement artifacts|production proof/i);
+});
+
+// 2026-09-29, audit item 1.4 (Dan): the priced engagement sheet is retired from this
+// site. Implementation inquiries go through the Contact intents instead.
+test('the priced engagement sheet is retired and Proof points commercial inquiries at Contact', () => {
+  assert.ok(!RESOURCES.some((r) => /What_We_Deliver/i.test(r.fileName)), 'no download entry');
+  assert.ok(!fs.existsSync(path.join(root, 'public/assets/What_We_Deliver.pdf')), 'no served file');
+  const bake = renderBodyBlock('/proof', ROUTE_META['/proof']);
+  assert.doesNotMatch(bake, /engagement sheet/i, 'the /proof bake must not promise the sheet');
+  assert.doesNotMatch(proofPage, /Service and speaking documents/, 'no service document remains');
+  assert.match(proofPage, /to="\/connect"/, 'the commercial section must route inquiries to Contact');
 });

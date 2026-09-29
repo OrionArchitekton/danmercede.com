@@ -43,10 +43,6 @@ const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string }> = {
     sha256: 'e9b789ab8852c686fdd9152210319ec3a48d80e54cb4206dc560a94771944d01',
     review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html. Bio, NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
   },
-  'What_We_Deliver.pdf': {
-    sha256: 'c7635540b31ecdf90ceaece4a4c8be67083fff28ccc6db211db17fa1b91deb7c',
-    review: '2026-09-29: engagement tiers with published prices, no outcome figures. Keep-or-retire tracked by audit item 1.4.',
-  },
 };
 
 // Source files that can carry an href to a downloadable document.
