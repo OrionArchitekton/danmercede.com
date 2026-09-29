@@ -133,3 +133,15 @@ test('the automatic page-view hit is disclosed', () => {
   assert.match(component, /'page_view'/, 'expected Analytics.tsx to send page_view (positive control)');
   assert.match(policyText(), /page views/, 'Analytics.tsx sends page_view on every route change; the policy must say so');
 });
+
+// 2026-09-29 review: the choices section must not imply that cookie controls stop
+// every analytics tool when the Vercel tools keep running without those cookies.
+test('the stated choices match which tools they actually stop', () => {
+  const choices = PRIVACY_SECTIONS.find((s) => /choices/i.test(s.heading));
+  assert.ok(choices, 'expected a Your Choices section');
+  const component = read('components/Analytics.tsx');
+  if (/@vercel\/analytics|@vercel\/speed-insights/.test(component)) {
+    assert.match(choices!.body, /does not stop Vercel/i, 'say that cookie controls leave the Vercel tools running');
+    assert.match(choices!.body, /blocks analytics scripts/i, 'name a choice that stops every tool');
+  }
+});
