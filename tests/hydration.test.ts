@@ -55,3 +55,17 @@ test('ScrollToTop does not scroll on first mount', () => {
   const block = app.slice(app.indexOf('const ScrollToTop'), app.indexOf('const App'));
   assert.match(block, /firstMount\.current/, 'a visitor who scrolled before hydration must not be sent back to the top');
 });
+
+// Visible initial HTML spec, slice S4 (headings), first part. The footer sits
+// on every page, and its brand name was an <h4>: straight after a page's H1 or
+// H2 that is a heading-level skip, which fails the extractability heading
+// check on every page that renders at build time. It is a label, not a
+// section heading, so it is a paragraph with the same classes (Tailwind's
+// preflight resets both elements alike, so nothing moves visually).
+test('the footer carries no heading element', () => {
+  const app = read('App.tsx');
+  const start = app.indexOf('const Footer');
+  const footer = app.slice(start, app.indexOf('\nconst ', start + 1));
+  assert.ok(footer.includes('Dan Mercede'), 'expected the footer component (positive control)');
+  assert.doesNotMatch(footer, /<h[1-6]\b/, 'footer labels must not enter the page outline');
+});
