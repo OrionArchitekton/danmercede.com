@@ -51,7 +51,12 @@ tutorials), dev-lane — distinct from `/thoughts` (terse substrate doctrine) an
 `/works` (link-out index). STATIC + in-repo, **NOT** substrate-sourced.
 
 - **Source of truth:** `content/guides/<slug>.md` (frontmatter: `title`, `slug`,
-  `date`, `category`, `description`, `lead`, then the markdown body).
+  `date`, `reviewed`, `category`, `description`, `lead`, then the markdown body).
+  `reviewed` (YYYY-MM-DD) is the day of the last full reread for accuracy, shown as
+  "Reviewed <date>" beside the publish date; set it to `date` on a new guide and move
+  it forward only after rereading the whole guide. It is a reread stamp, never a
+  "last tested" claim. `tests/guidesPrecision.test.ts` requires it on every guide and
+  also rejects an unqualified "exactly once" delivery claim.
 - **Compile:** `npm run compile:guides` (`scripts/compileGuides.mjs`) regenerates
   the COMMITTED `constants.guides.generated.ts` (`GUIDES: Guide[]`, body embedded as
   a JSON-safe string so backticks/`${}` survive). **Edit the `.md`, then regenerate

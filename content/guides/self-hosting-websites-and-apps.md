@@ -2,6 +2,7 @@
 title: "Self-Hosting Many Apps on One Box: A Beginner's Guide to the Two-Plane Architecture"
 slug: self-hosting-websites-and-apps
 date: 2026-06-25
+reviewed: 2026-09-29
 category: Self-Hosting
 description: "Run many websites and apps on one server safely: the two-plane architecture with Cloudflare Tunnel, Traefik, and Tailscale, zero public inbound ports, a private admin mesh."
 lead: "Run a dashboard, a wiki, an API, and a metrics stack on one box, with zero public inbound ports and a clean split between what the world reaches and what only you do."

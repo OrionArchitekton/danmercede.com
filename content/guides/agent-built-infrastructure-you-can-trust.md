@@ -2,6 +2,7 @@
 title: "The Recon Refuted the Task: Building Infrastructure With an Agent You Can Trust"
 slug: agent-built-infrastructure-you-can-trust
 date: 2026-07-11
+reviewed: 2026-09-29
 category: Agent Engineering
 description: "I asked a coding agent to build a monitor for my self-hosted servers, and its first move was to prove I did not need one: five watchers already existed. This guide is the anatomy of the trust that let an agent ship production monitoring anyway, the five checkpoints where a wrong assumption gets caught by something other than the model's own judgment."
 lead: "I asked an agent to build a detector that watches my servers. It came back and told me not to build it, because five watchers already existed and the thing I was missing was not detection. That refusal is the most valuable thing it did, and it is the reason I trust what got built instead."
@@ -46,7 +47,7 @@ Before any implementation, the recon collapsed nineteen candidate work-items int
 
 There is a strong pull toward letting an agent run start to finish and reviewing the pull request at the end. For infrastructure, that is the most expensive possible place to learn the plan was wrong. By the time a diff exists, the agent has committed to an architecture, and your choices are approve-with-misgivings or throw away real work. Reviewing a plan costs minutes. Reviewing and then unwinding a wrong build costs a day.
 
-So the arc has one hard human gate, between research and implementation, and it is the only step that requires me. The agent produces a map: what it will build, what it deliberately will not, every prior decision it reconciled against, and a short list of the forks it genuinely cannot resolve alone. I answer the forks. Everything already settled is asserted plainly so it does not get re-litigated, and only the real decisions reach me. This is also where scope discipline lives. Nineteen items were dispositioned explicitly, each exactly once, so nothing was silently dropped and nothing raced work already running elsewhere. The plan is the artifact you can still change cheaply. Gate there, not at the end.
+So the arc has one hard human gate, between research and implementation, and it is the only step that requires me. The agent produces a map: what it will build, what it deliberately will not, every prior decision it reconciled against, and a short list of the forks it genuinely cannot resolve alone. I answer the forks. Everything already settled is asserted plainly so it does not get re-litigated, and only the real decisions reach me. This is also where scope discipline lives. Nineteen items were dispositioned explicitly, one disposition apiece, so nothing was silently dropped and nothing raced work already running elsewhere. The plan is the artifact you can still change cheaply. Gate there, not at the end.
 
 ![A rising cost-of-correction curve across five project stages: recon, plan, implement, review, deploy. The cost of fixing a wrong decision climbs from a tenth of a unit at recon to a hundred times at production. A diamond marks plan approval as the cheapest place to disagree, and a crossed-out marker at the finished-code and production end warns against approving there.](/assets/guides/agent-infra-trust/gate-cost-curve.webp "Review the architecture while disagreement is still cheap. The earlier you gate the plan, the smaller the blast radius of a wrong decision.")
 
@@ -62,7 +63,7 @@ The same shape repeats up the stack. The layer that suggests a fix writes the su
 
 ## Why isn't "armed and green" the same as working?
 
-Every control that shipped was accepted by firing it, never by watching it sit healthy. We injected a synthetic fault and watched it travel the whole path to a chat thread. We ran one real triage cycle end to end and read the verdict it produced. We handed the refusal paths a case they should reject and confirmed they rejected it. A monitor that is armed and green has told you nothing at all until you have made it catch something.
+No control that shipped was accepted by watching it sit healthy. All but one were fired during the project, and the exception, a heartbeat, is covered below. We injected a synthetic fault and watched it travel the whole path to a chat thread. We ran one real triage cycle end to end and read the verdict it produced. We handed the refusal paths a case they should reject and confirmed they rejected it. A monitor that is armed and green has told you nothing at all until you have made it catch something.
 
 The most seductive lie in operations is the green dashboard. An alerting rule with no alert, a remediation daemon with a healthy badge, a heartbeat that has never missed: all of them look identical whether they work or are quietly dead. "Armed and green" is a claim about a control's own status, not about whether it does its job. I have been burned by a reaper that reported healthy for weeks while reaping nothing, because nothing had ever forced it to act and reveal that it could not.
 
