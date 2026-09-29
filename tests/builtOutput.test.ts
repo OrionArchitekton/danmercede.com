@@ -16,7 +16,8 @@ const buildDir = path.join(root, 'build');
  * Visible initial HTML spec, slice S0: React is bundled by Vite. The esm.sh
  * importmap in index.html resolved nothing at runtime, and once the page is
  * rendered at build time a live importmap could load a second, mismatched
- * React. The built output must stay self-contained.
+ * React. The built output must stay self-contained: every module a page or
+ * chunk loads is a file inside build/.
  */
 
 function walk(dir: string, ext: string): string[] {
@@ -27,44 +28,80 @@ function walk(dir: string, ext: string): string[] {
   });
 }
 
-// Static (`import x from "y"`, `import "y"`) and dynamic (`import("y")`) specifiers.
-const IMPORT_SPECIFIER = /\bimport\s*(?:[\w$*{},\s]+?\s*from\s*)?["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
+// Static imports, side-effect imports, re-exports, and dynamic imports.
+const SPECIFIER =
+  /\b(?:import|export)\s*(?:[\w$*{},\s]+?\s*from\s*)?["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
 
-// Every specifier that is not a file inside this build: bare names and remote URLs.
-function nonLocalSpecifiers(code: string): string[] {
-  return [...code.matchAll(IMPORT_SPECIFIER)]
-    .map((m) => m[1] ?? m[2])
-    .filter((spec) => !/^(\.{1,2})?\//.test(spec));
+function moduleSpecifiers(code: string): string[] {
+  return [...code.matchAll(SPECIFIER)].map((m) => m[1] ?? m[2]);
 }
 
-test('the specifier scan finds bare and remote imports (positive control)', () => {
+// Module references in HTML: every <script src> and every modulepreload link.
+function pageModuleRefs(html: string): string[] {
+  const scripts = [...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
+  const preloads = [...html.matchAll(/<link\b(?=[^>]*\brel=["']modulepreload["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
+  return [...scripts, ...preloads];
+}
+
+// The file inside build/ that a reference names, or null for a package name, a
+// URL (including a protocol-relative //host), or a path that leaves build/.
+function resolveInBuild(ref: string, fromFile: string): string | null {
+  const clean = ref.split(/[?#]/)[0];
+  let target: string;
+  if (/^\.{1,2}\//.test(clean)) target = path.resolve(path.dirname(fromFile), clean);
+  else if (/^\/(?!\/)/.test(clean)) target = path.join(buildDir, clean);
+  else return null;
+  return target.startsWith(buildDir + path.sep) ? target : null;
+}
+
+function unresolved(refs: string[], fromFile: string): string[] {
+  return refs.filter((ref) => {
+    const target = resolveInBuild(ref, fromFile);
+    return target === null || !fs.existsSync(target);
+  });
+}
+
+test('the scanners find every import form and module tag (positive control)', () => {
   assert.deepEqual(
-    nonLocalSpecifiers('import{a as b}from"react";import"./local.js";import("./chunk.js");import("https://esm.sh/d3")'),
-    ['react', 'https://esm.sh/d3'],
+    moduleSpecifiers('import{a as b}from"react";import"./x.js";export*from"pkg";export{c}from"./c.js";import("./d.js")'),
+    ['react', './x.js', 'pkg', './c.js', './d.js'],
   );
+  assert.deepEqual(
+    pageModuleRefs('<script type="module" src="https://cdn.example/m.js"></script><link rel="modulepreload" href="//cdn.example/p.js">'),
+    ['https://cdn.example/m.js', '//cdn.example/p.js'],
+  );
+});
+
+test('only files inside build/ count as local (positive control)', () => {
+  const chunk = path.join(buildDir, 'assets', 'index.js');
+  for (const ref of ['react', '//cdn.example/m.js', 'https://cdn.jsdelivr.net/npm/react', '../../outside.js']) {
+    assert.equal(resolveInBuild(ref, chunk), null, `${ref} must not resolve inside build/`);
+  }
+  assert.equal(resolveInBuild('./chunk.js', chunk), path.join(buildDir, 'assets', 'chunk.js'));
+  assert.equal(resolveInBuild('/assets/a.js?v=1', chunk), path.join(buildDir, 'assets', 'a.js'));
 });
 
 test('the build output exists', () => {
   assert.ok(fs.existsSync(path.join(buildDir, 'index.html')), 'run `npm run build` first; this test reads build/');
-  assert.ok(walk(path.join(buildDir, 'assets'), '.js').length > 0, 'expected at least one client chunk');
+  assert.ok(walk(buildDir, '.js').length > 0, 'expected at least one client chunk');
 });
 
 test('client chunks import only files from this build', () => {
-  for (const file of walk(path.join(buildDir, 'assets'), '.js')) {
-    const code = fs.readFileSync(file, 'utf8');
-    const rel = path.relative(root, file);
-    assert.deepEqual(nonLocalSpecifiers(code), [], `${rel} imports a module the build does not contain`);
-    assert.doesNotMatch(code, /esm\.sh/, `${rel} references esm.sh`);
+  for (const file of walk(buildDir, '.js')) {
+    const refs = moduleSpecifiers(fs.readFileSync(file, 'utf8'));
+    assert.deepEqual(unresolved(refs, file), [], `${path.relative(root, file)} loads a module the build does not contain`);
   }
 });
 
-test('no built page carries an importmap or an esm.sh URL', () => {
+test('no built page ships an importmap or loads a module from outside the build', () => {
   const pages = walk(buildDir, '.html');
   assert.ok(pages.length > 50, `expected every baked route, found ${pages.length}`);
   for (const page of pages) {
     const html = fs.readFileSync(page, 'utf8');
     const rel = path.relative(root, page);
     assert.doesNotMatch(html, /type=["']importmap["']/, `${rel} ships an importmap`);
-    assert.doesNotMatch(html, /esm\.sh/, `${rel} references esm.sh`);
+    const refs = pageModuleRefs(html);
+    assert.ok(refs.length > 0, `${rel}: expected the client entry script (positive control)`);
+    assert.deepEqual(unresolved(refs, page), [], `${rel} loads a module the build does not contain`);
   }
 });

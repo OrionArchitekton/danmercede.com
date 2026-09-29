@@ -42,8 +42,9 @@ that coexists with the "Vercel never recompiles content" guard. Extend it:
 > importmap was inert and was removed. See `specs/visible-initial-html-spec.md`
 > ("Premise correction"), which revisits the SSR decision on the corrected premise.
 
-React is externalized via the esm.sh importmap and never executes in Node, so
-the injector is importmap-agnostic. Deploy topology: Vercel runs
+This spec assumed React was externalized via the esm.sh importmap and never
+executed in Node. Both were wrong (see the correction above): React was bundled,
+and the injector renders essay markdown with `react-dom/server`. Deploy topology: Vercel runs
 `npm run build` (`vite build && tsx scripts/injectRouteMeta.ts`) on deploy, so this
 source change reaches production without a committed-bundle regen.
 
