@@ -652,7 +652,7 @@ export function truncateForMeta(text: string, max: number = META_DESCRIPTION_MAX
   return `${body.replace(/[\s,;:.]+$/, '')}...`;
 }
 
-function escapeAttr(s: string): string {
+export function escapeAttr(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

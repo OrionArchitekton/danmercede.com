@@ -145,9 +145,10 @@ export function lintExtractability(html: string): LintResult {
   const noCode = stripCode(html);
   // A #root stamped with data-rendered-path carries the real page render in the
   // initial HTML (specs/visible-initial-html-spec.md), so a no-JS crawler reads
-  // it; only an unstamped #root is script-only.
+  // it. An unstamped or empty-stamped #root is script-only.
   const rootTag = /<div\b[^>]*\bid=["']root["'][^>]*>/i.exec(noCode)?.[0] ?? '';
-  const { rootInner, jsOff } = /\bdata-rendered-path=/.test(rootTag) ? { rootInner: '', jsOff: noCode } : splitRoot(noCode);
+  const stamped = /\bdata-rendered-path=["'][^"']+["']/.test(rootTag);
+  const { rootInner, jsOff } = stamped ? { rootInner: '', jsOff: noCode } : splitRoot(noCode);
 
   // check 1 — token budget on the answer-first passage
   const answer = answerFirstText(jsOff);

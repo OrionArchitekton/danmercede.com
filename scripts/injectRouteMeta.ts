@@ -37,6 +37,7 @@ import {
   renderBodyBlock,
   renderRouteJsonLd,
   injectBlock,
+  escapeAttr,
   SEO_BLOCK_START,
   BODY_BLOCK_START,
   BODY_BLOCK_END,
@@ -84,7 +85,7 @@ export function injectPageRender(html: string, routePath: string, markup: string
   if (roots !== 1) throw new Error(`expected exactly one empty #root in the template, found ${roots}`);
   const withoutCrawlBlock = injectBlock(html, BODY_BLOCK_START, BODY_BLOCK_END, '', '  ');
   // A replacer function, so `$&` or `$1` in the markup is inserted verbatim.
-  return withoutCrawlBlock.replace(EMPTY_ROOT, () => `<div id="root" data-rendered-path="${routePath}">${markup}</div>`);
+  return withoutCrawlBlock.replace(EMPTY_ROOT, () => `<div id="root" data-rendered-path="${escapeAttr(routePath)}">${markup}</div>`);
 }
 
 async function loadPageRenderer(): Promise<(url: string) => string> {

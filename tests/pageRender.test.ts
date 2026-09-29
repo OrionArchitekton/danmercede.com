@@ -35,6 +35,11 @@ test('a rendered route carries its page render in a stamped #root and drops the 
   assert.ok(out.includes(BODY_BLOCK_START) && out.includes(BODY_BLOCK_END), 'the block anchors stay in place');
 });
 
+test('the route stamp is attribute-escaped', () => {
+  const out = injectPageRender(template, '/a"b<c', '<p>x</p>');
+  assert.ok(out.includes('<div id="root" data-rendered-path="/a&quot;b&lt;c"><p>x</p></div>'));
+});
+
 test('injectPageRender refuses a template without exactly one empty #root', () => {
   assert.throws(() => injectPageRender(template.replace('<div id="root"></div>', ''), '/about', '<h1>x</h1>'), /#root/);
   assert.throws(() => injectPageRender(`${template}\n<div id="root"></div>`, '/about', '<h1>x</h1>'), /#root/);
@@ -48,4 +53,6 @@ test('the linter reads a stamped #root as crawlable, and an unstamped one as scr
   assert.equal(ok.findings.find((f) => f.check === 'heading-hierarchy')!.ok, true);
   const scriptOnly = lintExtractability(rendered.replace(' data-rendered-path="/about"', ''));
   assert.equal(scriptOnly.findings.find((f) => f.check === 'js-off-readable')!.ok, false, 'positive control');
+  const emptyStamp = lintExtractability(rendered.replace('data-rendered-path="/about"', 'data-rendered-path=""'));
+  assert.equal(emptyStamp.findings.find((f) => f.check === 'js-off-readable')!.ok, false, 'an empty stamp is not a rendered route');
 });
