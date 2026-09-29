@@ -179,17 +179,19 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
   },
   '/proof': {
-    title: 'Reliability and Governance Archive | Dan Mercede',
+    title: 'Proof: Evidence, Approach, and Resources | Dan Mercede',
     description:
-      'The reliability and governance archive: downloadable enforcement artifacts mapped to the four-layer governance stack (Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate). Proof depth, not the front-door pitch.',
+      'Evidence first: checkable claims, each paired with the check that confirms it. Then how the systems are built, illustrative reference architectures, and commercial and speaking material, each labeled for what it is.',
     schemaType: 'Article',
     body: {
       h1: 'Proof',
-      lead: 'Reliability and governance archive: proof depth, not the pitch.',
+      lead: 'Evidence, approach, and resources, each labeled for what it is.',
       paragraphs: [
-        'Governance is enforced at four deterministic boundaries: Authority, Attestation, Behavioral Constraint, and Physical Isolation.',
-        'Downloadable enforcement artifacts map to the four-layer governance stack, Authority Gate, Immutable Receipts, Drift Guard, and Gated Substrate, structured for SOC 2 AI, ISO 42001, and EU AI Act readiness.',
+        'Evidence: checkable claims, each paired with the check that confirms it.',
         ...evidenceBakeParagraphs(),
+        'Approach: architecture diagrams that explain how the systems are built, with governance enforced at four deterministic boundaries (Authority, Attestation, Behavioral Constraint, Physical Isolation). They describe the design, not measured outcomes.',
+        'Reference architectures and templates: illustrative patterns and a blank template, not client engagements.',
+        'Commercial and speaking: the engagement sheet and the speaker one-sheet.',
       ],
       links: evidenceBakeLinks(),
     },

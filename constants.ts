@@ -471,6 +471,7 @@ export const RESOURCES: Resource[] = [
     description: "Engagement deliverable map linking control-plane gap analysis, failure-mode heatmaps, and evidence checklists to enforcement layers. Risk-bounded pricing tiers anchored to audit defensibility outcomes.",
     category: "sales-collateral",
     fileName: "What_We_Deliver.pdf",
+    downloadLabel: "Engagement sheet",
     filePath: "/assets/What_We_Deliver.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 1,
@@ -487,6 +488,7 @@ export const RESOURCES: Resource[] = [
     description: "Structured engagement template mapping findings to enforcement stack layers. Captures enforcement points deployed, behavioral drift metrics, containment thresholds, and quantified risk reduction tied to operational blast radius.",
     category: "template",
     fileName: "Case_Study_Template.docx",
+    downloadLabel: "Blank template",
     filePath: "/assets/Case_Study_Template.docx",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 3,
@@ -503,6 +505,7 @@ export const RESOURCES: Resource[] = [
     description: "Credential and topic mapping for CIO, CTO, CISO audiences. Talk tracks anchored to enforcement stack layers, substrate isolation mechanics, and quantified enterprise risk reduction. Architectural authority positioning.",
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
+    downloadLabel: "Speaker one-sheet",
     filePath: "/assets/Speaking_One_Sheet.pdf",
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 4,
@@ -514,6 +517,13 @@ export const RESOURCES: Resource[] = [
     fileSize: "4 KB",
   },
 ];
+
+// /proof groups (2026-09-29 site audit): commercial and speaking material is
+// kept apart from evidence and reference resources, so a sales sheet never reads
+// as a proof artifact. tests/proofStructure.test.ts pins the mapping.
+export function proofGroupFor(resource: Resource): 'resources' | 'commercial' {
+  return resource.category === 'sales-collateral' ? 'commercial' : 'resources';
+}
 
 // Leads every /case-studies/<slug> page (React render and prerender body) so a
 // visitor landing from search sees the status before any architecture detail.

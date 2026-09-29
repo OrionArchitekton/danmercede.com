@@ -141,7 +141,7 @@ test('a claim presented as checkable ships a runnable check and a source', () =>
 test('proof checks preserve command whitespace and name repeated source links', () => {
   const appSource = readFileSync(new URL('../App.tsx', import.meta.url), 'utf8');
   const sectionStart = appSource.indexOf('const EvidenceSection');
-  const sectionEnd = appSource.indexOf('const ProofArtifactCard');
+  const sectionEnd = appSource.indexOf('const DownloadCard');
   assert.ok(sectionStart >= 0 && sectionEnd > sectionStart, 'EvidenceSection source boundary must exist');
   const evidenceSource = appSource.slice(sectionStart, sectionEnd);
   assert.ok(
