@@ -309,8 +309,10 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     // title matches the on-page framing and the download filename. Splitting the
     // claim across surfaces is what the 2026-07-26 honesty pass exists to stop.
     title: `${study.title}: Reference Architecture | Dan Mercede`,
-    description: truncateForMeta(study.description),
-    articleDescription: study.description,
+    // The notice leads the snippet and the Article node too, so a search result or
+    // a structured-data consumer sees the status before any architecture detail.
+    description: truncateForMeta(`${REFERENCE_ARCHITECTURE_NOTICE} ${study.description}`),
+    articleDescription: `${REFERENCE_ARCHITECTURE_NOTICE} ${study.description}`,
     headline: study.title,
     // CaseStudy carries no date, so the dateless article branch applies:
     // article:published_time is omitted and the JSON-LD node carries no dates.

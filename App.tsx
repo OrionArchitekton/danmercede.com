@@ -1068,6 +1068,10 @@ const removeMetaByProperty = (property: string) => {
     .forEach((tag) => tag.remove());
 };
 
+const removeCanonical = () => {
+  document.head.querySelectorAll('link[rel="canonical"]').forEach((el) => el.remove());
+};
+
 const upsertCanonical = (href: string) => {
   const tag = ensureSingleHeadTag(`link[rel="canonical"]`, () => {
     const link = document.createElement("link");
@@ -1113,13 +1117,20 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
 
     document.title = title;
     upsertMetaByName("description", description);
-    upsertCanonical(canonicalUrl);
+    // A noindex page (404, unknown detail slug) must not claim a canonical URL:
+    // the 404 document answers arbitrary paths. Drop both instead of writing them.
+    if (noindex) {
+      removeCanonical();
+      removeMetaByProperty("og:url");
+    } else {
+      upsertCanonical(canonicalUrl);
+      upsertMetaByProperty("og:url", canonicalUrl);
+    }
 
     upsertMetaByProperty("og:type", ogType);
     upsertMetaByProperty("og:site_name", "Dan Mercede");
     upsertMetaByProperty("og:title", title);
     upsertMetaByProperty("og:description", description);
-    upsertMetaByProperty("og:url", canonicalUrl);
     upsertMetaByProperty("og:image", ogImageUrl);
 
     // Type-scoped properties, from the SAME helper the static renderer uses, so
