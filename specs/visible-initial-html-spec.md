@@ -229,6 +229,19 @@ demoable on its Vercel preview deploy.
 Estimate: 6 PRs (S0 to S5). S1 carries most of the plumbing; S2 and S3 are mostly
 set membership plus test retargeting.
 
+**Rollout as shipped (2026-09-29).** The 2026-09-29 re-audit asked for the homepage,
+Works, and Contact first, so the slices were reordered:
+- S0 (#177) and S1 (#178, /about) as planned.
+- S4a (#183): the footer's brand-name h4 became a paragraph; it was the heading skip on
+  most pages.
+- S2 (#184): `/`, `/works`, `/connect`, `/thoughts`, `/guides`, the routes whose render
+  already passed the heading check. The content contracts the crawl-block tests carried
+  now also bind the served render of these routes (post-build).
+- S4b (#185): the remaining page-level skips (/proof, /diagrams, /ecosystem, /imprint,
+  case studies); every published route now renders with a clean outline.
+- S3 then adds every remaining route; S5 still waits two weeks without
+  `hydration_error` events.
+
 ## Test seams (decision)
 
 The hub has no DOM test harness (`tests/routeCoverage.test.ts:8-11`). Choose the
