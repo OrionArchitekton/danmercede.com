@@ -61,4 +61,12 @@ test('the client build registers the plugin', async () => {
   const config = await (viteConfig as (env: { command: 'build'; mode: string }) => { plugins?: unknown[] })({ command: 'build', mode: 'production' });
   const names = (config.plugins ?? []).flat(Infinity).map((p) => (p as { name?: string } | null)?.name);
   assert.ok(names.includes('self-contained-bundle'), `plugins: ${names.join(', ')}`);
+  // The build-time render bundle runs in Node and may import Node built-ins.
+  const ssr = await (viteConfig as (env: { command: 'build'; mode: string; isSsrBuild: boolean }) => { plugins?: unknown[] })({
+    command: 'build',
+    mode: 'production',
+    isSsrBuild: true,
+  });
+  const ssrNames = (ssr.plugins ?? []).flat(Infinity).map((p) => (p as { name?: string } | null)?.name);
+  assert.ok(!ssrNames.includes('self-contained-bundle'), 'the SSR build must not carry the client-only check');
 });

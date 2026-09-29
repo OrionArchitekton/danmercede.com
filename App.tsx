@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { normalizePath } from './hydration';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
@@ -91,7 +92,7 @@ const Navigation = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`text-sm font-medium uppercase tracking-wider hover:text-copper-500 transition-colors ${location.pathname === item.path ? 'text-copper-500' : 'text-slate-400'
+              className={`text-sm font-medium uppercase tracking-wider hover:text-copper-500 transition-colors ${normalizePath(location.pathname) === item.path ? 'text-copper-500' : 'text-slate-400'
                 }`}
             >
               {item.label}
@@ -2290,15 +2291,25 @@ const NotFoundPage = () => {
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  // Skip the first mount: a route rendered at build time is readable before the
+  // scripts load, and a visitor who has already scrolled must not be sent back
+  // to the top when it hydrates. Later navigations still start at the top.
+  const firstMount = React.useRef(true);
   React.useEffect(() => {
+    if (firstMount.current) {
+      firstMount.current = false;
+      return;
+    }
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 };
 
+// The router is chosen by the caller: BrowserRouter in the client entry
+// (index.tsx), StaticRouter in the build-time render (entry-server.tsx).
 const App: React.FC = () => {
   return (
-    <Router>
+    <>
       <ScrollToTop />
       <Analytics />
       <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-white overflow-hidden">
@@ -2344,7 +2355,7 @@ const App: React.FC = () => {
 
         <Footer />
       </div>
-    </Router>
+    </>
   );
 };
 
