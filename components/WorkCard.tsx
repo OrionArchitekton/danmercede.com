@@ -1,10 +1,33 @@
-import { ExternalLink } from 'lucide-react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Work } from '../types';
 
 // One /works card, shared by the "Open Source & Tooling" and "Applied Agent Projects"
 // sections. It deliberately shows no ship date: the page is ordered by importance
 // (WORKS_PRIORITY), and dates made it read as a publishing calendar. Structured data
 // still carries datePublished (seoMeta.ts).
+// Same-site pages (including the /works/<slug>/ microsites served on this origin)
+// open in place; only off-site links open a new tab (2026-09-29 site audit).
+const SITE_ORIGINS = new Set(['https://www.danmercede.com', 'https://danmercede.com']);
+
+export function linkTargetProps(href: string): { target?: string; rel?: string } {
+  // Resolve against the site so a protocol-relative "//host/..." is judged by its
+  // real origin, not by its leading slash.
+  let sameSite = false;
+  try {
+    sameSite = SITE_ORIGINS.has(new URL(href, 'https://www.danmercede.com').origin);
+  } catch {
+    sameSite = false;
+  }
+  return sameSite ? {} : { target: '_blank', rel: 'noopener noreferrer' };
+}
+
+const LinkIcon = ({ href }: { href: string }) =>
+  linkTargetProps(href).target ? (
+    <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+  ) : (
+    <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+  );
+
 export const WorkCard = ({ work }: { work: Work }) => (
   <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
     <div className="mb-4">
@@ -19,18 +42,16 @@ export const WorkCard = ({ work }: { work: Work }) => (
     <div className="mt-5 flex flex-wrap items-center gap-4">
       <a
         href={work.link || work.repo}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...linkTargetProps(work.link || work.repo)}
         aria-label={`${work.link && work.link !== work.repo ? 'View project' : 'Repository'}: ${work.title}`}
         className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
       >
-        {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+        {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <LinkIcon href={work.link || work.repo} />
       </a>
       {work.gist && (
         <a
           href={work.gist}
-          target="_blank"
-          rel="noopener noreferrer"
+          {...linkTargetProps(work.gist)}
           aria-label={`Code sample for ${work.title}`}
           className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
         >
@@ -40,8 +61,7 @@ export const WorkCard = ({ work }: { work: Work }) => (
       {work.video && (
         <a
           href={work.video}
-          target="_blank"
-          rel="noopener noreferrer"
+          {...linkTargetProps(work.video)}
           aria-label={`Demo video for ${work.title}`}
           className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
         >
