@@ -1,6 +1,8 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { selfContainedBundle } from './scripts/selfContainedBundle';
 
 export default defineConfig(({ isSsrBuild }) => {
     return {
@@ -19,10 +21,12 @@ export default defineConfig(({ isSsrBuild }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react()],
+      // Fails the client build if any chunk imports a module from outside it.
+      // The SSR bundle runs in Node at build time and may import Node built-ins.
+      plugins: [react(), ...(isSsrBuild ? [] : [selfContainedBundle()])],
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          '@': path.dirname(fileURLToPath(import.meta.url)),
         }
       }
     };
