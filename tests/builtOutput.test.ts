@@ -28,7 +28,10 @@ function walk(dir: string, ext: string): string[] {
   });
 }
 
-// Static imports, side-effect imports, re-exports, and dynamic imports.
+// Static imports, side-effect imports, re-exports, and dynamic imports with a
+// literal specifier. A dynamic import of a computed value cannot be resolved
+// statically; the bundle carries one (react-router's route-module loader, dead
+// code in this app's declarative routing), so it is not flagged.
 const SPECIFIER =
   /\b(?:import|export)\s*(?:[\w$*{},\s]+?\s*from\s*)?["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
 
@@ -36,11 +39,24 @@ function moduleSpecifiers(code: string): string[] {
   return [...code.matchAll(SPECIFIER)].map((m) => m[1] ?? m[2]);
 }
 
-// Module references in HTML: every <script src> and every modulepreload link.
+// An HTML attribute value: double-quoted, single-quoted, or unquoted.
+const VALUE = String.raw`(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`;
+const valueOf = (m: RegExpMatchArray) => m[1] ?? m[2] ?? m[3];
+
+// Module references in HTML, matched case-insensitively with any attribute
+// quoting: every <script src>, every link whose rel includes modulepreload, and
+// every specifier inside an inline <script type="module">.
 function pageModuleRefs(html: string): string[] {
-  const scripts = [...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
-  const preloads = [...html.matchAll(/<link\b(?=[^>]*\brel=["']modulepreload["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/g)].map((m) => m[1]);
-  return [...scripts, ...preloads];
+  const scripts = [...html.matchAll(new RegExp(String.raw`<script\b[^>]*?\bsrc\s*=\s*${VALUE}[^>]*>`, 'gi'))].map(valueOf);
+  const preloads = [
+    ...html.matchAll(
+      new RegExp(String.raw`<link\b(?=[^>]*\brel\s*=\s*(?:"[^"]*\bmodulepreload\b[^"]*"|'[^']*\bmodulepreload\b[^']*'|modulepreload\b))[^>]*?\bhref\s*=\s*${VALUE}[^>]*>`, 'gi'),
+    ),
+  ].map(valueOf);
+  const inline = [...html.matchAll(/<script\b(?=[^>]*\btype\s*=\s*["']?module\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)].flatMap((m) =>
+    moduleSpecifiers(m[1]),
+  );
+  return [...scripts, ...preloads, ...inline];
 }
 
 // The file inside build/ that a reference names, or null for a package name, a
@@ -67,8 +83,12 @@ test('the scanners find every import form and module tag (positive control)', ()
     ['react', './x.js', 'pkg', './c.js', './d.js'],
   );
   assert.deepEqual(
-    pageModuleRefs('<script type="module" src="https://cdn.example/m.js"></script><link rel="modulepreload" href="//cdn.example/p.js">'),
-    ['https://cdn.example/m.js', '//cdn.example/p.js'],
+    pageModuleRefs(
+      '<SCRIPT TYPE=module SRC=https://cdn.example/m.js></SCRIPT>' +
+        "<link rel='preload modulepreload' href=//cdn.example/p.js>" +
+        '<script type="module">import "https://cdn.example/inline.js";</script>',
+    ),
+    ['https://cdn.example/m.js', '//cdn.example/p.js', 'https://cdn.example/inline.js'],
   );
 });
 
@@ -99,7 +119,7 @@ test('no built page ships an importmap or loads a module from outside the build'
   for (const page of pages) {
     const html = fs.readFileSync(page, 'utf8');
     const rel = path.relative(root, page);
-    assert.doesNotMatch(html, /type=["']importmap["']/, `${rel} ships an importmap`);
+    assert.doesNotMatch(html, /<script\b[^>]*\btype\s*=\s*["']?importmap\b/i, `${rel} ships an importmap`);
     const refs = pageModuleRefs(html);
     assert.ok(refs.length > 0, `${rel}: expected the client entry script (positive control)`);
     assert.deepEqual(unresolved(refs, page), [], `${rel} loads a module the build does not contain`);
