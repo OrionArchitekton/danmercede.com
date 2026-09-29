@@ -244,9 +244,10 @@ fewest, highest seams, all existing in kind:
 3. **Hydration check (new, browser).** A headless-browser pass over the top routes
    with the React development build, failing on any hydration warning or
    recoverable error, with `/about/` and one unknown URL as positive controls.
-   S1 runs it as an operator step against the preview deploy; a CI job needs a
-   browser dev dependency (open question 4). In production, recoverable hydration
-   errors are reported to analytics as a `hydration_error` event.
+   Every slice runs it as an operator step against its preview deploy (decided:
+   no browser dev dependency, open question 4). In production, recoverable
+   hydration errors are reported to analytics as a `hydration_error` event, which
+   the privacy policy must then disclose (the policy test enforces it).
 
 ## Acceptance criteria
 
@@ -318,16 +319,17 @@ fewest, highest seams, all existing in kind:
   build re-emits the baseline crawl block for them. S5 deletes that fallback, so it
   ships last, after two weeks without `hydration_error` events.
 
-## Open questions for Dan
+## Open questions for Dan (all resolved)
 
-1. Approve approach A over B (cheaper, keeps drift) and C (framework migration)?
+1. ~~Approach~~ Resolved 2026-09-29 (Dan): approach A, render the real page
+   components at build time and hydrate.
 2. ~~Unknown URLs: empty shell file or a separate homepage file?~~ Resolved: the
    audit P0 change (#165) removed the catch-all and serves a not-found file with
    HTTP 404 (constraint 4).
-3. Heading fixes (S4) change the semantic outline of shared chrome. Fold them into
-   this arc, or relax the heading check to the main content region first?
-4. Add a headless-browser dev dependency so the hydration check gates CI, or keep
-   it an operator step per preview deploy?
+3. ~~Heading fixes~~ Resolved 2026-09-29 (Dan): fold the heading fixes into this
+   arc as S4; do not relax the heading check.
+4. ~~Hydration check in CI~~ Resolved 2026-09-29 (Dan): keep the headless
+   hydration check an operator step per preview deploy; no new dev dependency.
 5. ~~Sequencing~~ Resolved 2026-09-29: #162 merged 2026-09-28, and the audit PRs
    merge as one train; S0 starts after that train lands on main.
 
