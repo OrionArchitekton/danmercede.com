@@ -112,6 +112,21 @@ test('every published route renders at build time, deterministically', async () 
   }
 });
 
+// Slice S4 (headings): every published route's page render must pass the
+// extractability checks as if it were already in the rendered-route set, so a
+// route can join the set without a heading fix of its own. Rendered-route files
+// are also linted as built, above.
+test('every published route renders with a clean heading outline', async () => {
+  const render = await loadRender();
+  const failing: string[] = [];
+  for (const route of ['/', ...collectRoutes().map((r) => r.path)]) {
+    const html = `<!doctype html><html><body><div id="root" data-rendered-path="${route}">${render(route)}</div></body></html>`;
+    const bad = lintExtractability(html).findings.filter((f) => !f.ok);
+    if (bad.length) failing.push(`${route}: ${bad.map((f) => f.detail).join('; ')}`);
+  }
+  assert.deepEqual(failing, []);
+});
+
 // The content contracts the crawl-block tests assert (homepage.test.ts,
 // worksHub.test.ts, frontDoor.test.ts, contentBoundary.test.ts) bind the hidden
 // crawl block, which a rendered route no longer ships. These bind the render the
