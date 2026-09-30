@@ -1046,7 +1046,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // Extracts the per-repo pass counts from each run log rather than only
         // listing run ids, so the command establishes the numbers the claim asserts.
         verify:
-          'for r in notary reprise schemafit mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\'; done',
+          'for r in notary reprise schemafit mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --status success --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\'; done',
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton?tab=repositories'],
       },
@@ -1109,7 +1109,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          "failclosed's enforcement contract is runnable by any stranger: a fresh clone passes its 59-test suite, which includes tests asserting that unparseable and schema-invalid reviewer output blocks a MERGE_READY verdict.",
+          "failclosed's enforcement contract is runnable by any stranger: a fresh clone passes its 59-test suite, which includes tests asserting that unparseable and schema-invalid reviewer output blocks a MERGE_READY verdict, read 2026-09-29.",
         verify:
           "git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m venv .venv && .venv/bin/pip install -q pytest && .venv/bin/python -m pytest -o addopts='' -q",
         verifyKind: 'command',

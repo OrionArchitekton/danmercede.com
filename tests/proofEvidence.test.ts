@@ -33,7 +33,7 @@ const PLACEHOLDER = /<[a-z][a-z0-9_-]*>/i;
 // refreshed claims (counts read 2026-09-29). The digest makes any claim, command,
 // or source change fail until a person re-runs the checks; it does not run them.
 const EXPECTED_COMMAND_CONTRACT_DIGEST =
-  '5cfd804902ed6f0835d151b05bd7afaeb151c13ced8e89fe8a734f8962add6b2';
+  '9e17f89d10120c84a2e42a5deddb98c229d1521765cd7e1b49192b0edc1c491e';
 const commandContractDigest = (claims: typeof commandClaims): string => {
   const contract = claims
     .map((c) => ({
