@@ -1017,7 +1017,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'A pull request authored by OrionArchitekton is merged into Arize-ai/openinference, a public repository with 1,113 stars.',
+          'A pull request authored by OrionArchitekton is merged into Arize-ai/openinference, a public repository with 1,238 stars, read 2026-09-29.',
         verify:
           'gh api repos/Arize-ai/openinference/pulls/3238 --jq \'{merged,author:.user.login}\' && gh api repos/Arize-ai/openinference --jq .stargazers_count',
         verifyKind: 'command',
@@ -1026,7 +1026,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'A pull request authored by OrionArchitekton is merged into punkpeye/fastmcp, a public repository with 3,236 stars.',
+          'A pull request authored by OrionArchitekton is merged into punkpeye/fastmcp, a public repository with 3,272 stars, read 2026-09-29.',
         verify:
           'gh api repos/punkpeye/fastmcp/pulls/275 --jq \'{merged,author:.user.login}\' && gh api repos/punkpeye/fastmcp --jq .stargazers_count',
         verifyKind: 'command',
@@ -1037,16 +1037,16 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
   {
     id: 'reproducible',
     title: 'Publicly reproducible',
-    note: 'My own CI and releases. The claim is that you can re-run every check yourself, not that a third party audited it.',
+    note: 'My own CI and releases. The claim is that you can re-run every check yourself, not that a third party audited it. Counts are dated readings; a check run later returns the current count.',
     claims: [
       {
         kind: 'check',
         claim:
-          '552 tests pass in CI across 8 public repositories: notary 159, reprise 92, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, orion-skills 2.',
+          '661 tests pass in CI across 8 public repositories: notary 159, reprise 105, orion-skills 98, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, read 2026-09-29. failclosed runs pytest quietly, so its count is the number of passing-test dots.',
         // Extracts the per-repo pass counts from each run log rather than only
         // listing run ids, so the command establishes the numbers the claim asserts.
         verify:
-          'for r in notary reprise schemafit failclosed mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\'; done',
+          'for r in notary reprise schemafit failclosed mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\' || gh run view $id -R OrionArchitekton/$r --log | grep -a \'\\[100%\\]\' | sed \'s/.*Z //\' | tr -cd . | wc -c; done',
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton?tab=repositories'],
       },
@@ -1118,7 +1118,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'The orion-skills library publicly catalogs 26 agent skills as individually readable SKILL.md files, read 2026-07-27.',
+          'The orion-skills library publicly catalogs 27 agent skills as individually readable SKILL.md files, read 2026-09-29.',
         verify:
           'curl -s "https://api.github.com/repos/OrionArchitekton/orion-skills/git/trees/main?recursive=1" | grep -oE \'"skills/[^"]*/SKILL.md"\' | wc -l',
         verifyKind: 'command',
@@ -1145,12 +1145,12 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
   {
     id: 'published',
     title: 'Published work and live surfaces',
-    note: 'Self-published and self-hosted. These establish volume, recency, and that the systems serve live. None of it is reach, endorsement, or third-party review.',
+    note: 'Self-published and self-hosted. These establish volume, recency, and that the systems serve live. None of it is reach, endorsement, or third-party review. Counts are dated readings; a check run later returns the current count.',
     claims: [
       {
         kind: 'check',
         claim:
-          '43 individually addressable articles are self-published on danmercede.com: 34 essays under /thoughts and 9 long-form guides under /guides, each enumerated in the public sitemap, read 2026-07-27.',
+          '51 individually addressable articles are self-published on danmercede.com: 42 essays under /thoughts and 9 long-form guides under /guides, each enumerated in the public sitemap, read 2026-09-29.',
         verify:
           "curl -s https://www.danmercede.com/sitemap.xml | grep -oE 'danmercede.com/(thoughts|guides)/' | sort | uniq -c",
         verifyKind: 'command',
@@ -1161,7 +1161,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // The command reproduces every number in the claim: the count, both
         // dates, and how many articles declare a hub canonical.
         claim:
-          '40 articles are published on dev.to under the danmercede account, dated 2026-06-20 through 2026-07-24, and 37 of the 40 declare a rel=canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
+          '53 articles are published on dev.to under the danmercede account, dated 2026-06-20 through 2026-08-03, and 50 of the 53 declare a rel=canonical URL pointing back to danmercede.com or danmercede.online, read 2026-09-29.',
         verify:
           'curl -s "https://dev.to/api/articles?username=danmercede&per_page=200" | python3 -c "import json,sys;a=json.load(sys.stdin);print(len(a),min(x[\'published_at\'][:10] for x in a),max(x[\'published_at\'][:10] for x in a),sum(1 for x in a if str(x.get(\'canonical_url\')).startswith((\'https://www.danmercede.com/\',\'https://www.danmercede.online/\'))))"',
         verifyKind: 'command',
@@ -1172,7 +1172,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         // The homepage does not display a post count, so the check queries
         // Hashnode's public GraphQL API, which needs no token for reads.
         claim:
-          'The Hashnode publication danmercede.hashnode.dev carries 32 published posts, and all 32 declare a canonical URL pointing back to danmercede.com or danmercede.online, read 2026-07-27.',
+          'The Hashnode publication danmercede.hashnode.dev carries 36 published posts, and all 36 declare a canonical URL pointing back to danmercede.com or danmercede.online, read 2026-09-29.',
         verify:
           'curl -s -X POST https://gql-beta.hashnode.com -H \'Content-Type: application/json\' -d \'{"query":"query{publication(host:\\"danmercede.hashnode.dev\\"){posts(first:50){totalDocuments edges{node{canonicalUrl}}}}}"}\' | python3 -c "import json,sys;p=json.load(sys.stdin)[\'data\'][\'publication\'][\'posts\'];print(p[\'totalDocuments\'],sum(1 for e in p[\'edges\'] if str(e[\'node\'][\'canonicalUrl\']).startswith((\'https://www.danmercede.com/\',\'https://www.danmercede.online/\'))))"',
         verifyKind: 'command',
@@ -1200,7 +1200,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'danmercede.online, the public raw working log, lists 117 dated entries in its sitemap, read 2026-07-27.',
+          'danmercede.online, the public raw working log, lists 149 dated entries in its sitemap, read 2026-09-29.',
         verify:
           "curl -sL https://www.danmercede.online/sitemap.xml | grep -cE '/[0-9]{4}-[0-9]{2}-[0-9]{2}-'",
         verifyKind: 'command',
@@ -1225,7 +1225,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          'Orion Intelligence Agency, the consulting lane I operate, publishes 15 individually addressable insight articles on its live site, each listed in the public sitemap, read 2026-07-27.',
+          'Orion Intelligence Agency, the consulting lane I operate, publishes 23 individually addressable insight articles on its live site, each listed in the public sitemap, read 2026-09-29.',
         verify:
           "curl -s https://www.orionintelligenceagency.com/sitemap-0.xml | grep -c 'insights/'",
         verifyKind: 'command',
