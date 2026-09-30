@@ -20,10 +20,19 @@ export const NAV_ITEMS = [
   { label: 'Contact', path: '/connect' },
 ];
 
+// The weekly newsletter, published on LinkedIn (URL verified 2026-09-29 from a
+// published edition's newsletter link).
+export const NEWSLETTER = {
+  name: 'Fail-Closed Notes',
+  href: 'https://www.linkedin.com/newsletters/fail-closed-notes-7477834312608866304',
+};
+
 export const FOOTER_LINKS: { label: string; href: string }[] = [
   { label: 'Ecosystem', href: '/ecosystem' },
   { label: 'Diagrams', href: '/diagrams' },
   { label: 'RSS', href: '/feed.xml' },
+  // "Newsletter", not "Subscribe": the footer also renders on the identity-only /about.
+  { label: 'Newsletter', href: NEWSLETTER.href },
 ];
 
 export const HERO_CONTENT = {
