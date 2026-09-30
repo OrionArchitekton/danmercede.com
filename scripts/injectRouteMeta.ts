@@ -201,6 +201,7 @@ async function main() {
   let baseHtml: string;
   if (isEmptyTemplate(builtIndex)) {
     baseHtml = builtIndex;
+    await fs.mkdir(path.dirname(TEMPLATE_COPY), { recursive: true });
     await fs.writeFile(`${TEMPLATE_COPY}.tmp`, baseHtml, 'utf8');
     await fs.rename(`${TEMPLATE_COPY}.tmp`, TEMPLATE_COPY);
   } else {
