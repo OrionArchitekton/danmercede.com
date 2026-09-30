@@ -1042,11 +1042,11 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'check',
         claim:
-          '661 tests pass in CI across 8 public repositories: notary 159, reprise 105, orion-skills 98, schemafit 90, failclosed 59, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, read 2026-09-29. failclosed runs pytest quietly, so its count is the number of passing-test dots.',
+          '602 tests pass in CI across 7 public repositories: notary 159, reprise 105, orion-skills 98, schemafit 90, mcp-context-budget 56, standing-questions 55, fork-around-find-out 39, read 2026-09-29.',
         // Extracts the per-repo pass counts from each run log rather than only
         // listing run ids, so the command establishes the numbers the claim asserts.
         verify:
-          'for r in notary reprise schemafit failclosed mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\' || gh run view $id -R OrionArchitekton/$r --log | grep -a \'\\[100%\\]\' | sed \'s/.*Z //\' | tr -cd . | wc -c; done',
+          'for r in notary reprise schemafit mcp-context-budget standing-questions fork-around-find-out orion-skills; do id=$(gh run list -R OrionArchitekton/$r --branch main --limit 1 --json databaseId --jq \'.[0].databaseId\'); echo "== $r"; gh run view $id -R OrionArchitekton/$r --log | grep -aE \'[0-9]+ passed|Tests [0-9]+ passed|Ran [0-9]+ test\'; done',
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton?tab=repositories'],
       },
@@ -1111,7 +1111,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           "failclosed's enforcement contract is runnable by any stranger: a fresh clone passes its 59-test suite, which includes tests asserting that unparseable and schema-invalid reviewer output blocks a MERGE_READY verdict.",
         verify:
-          'git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m pytest -q',
+          "git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m pytest -o addopts='' -q",
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton/failclosed'],
       },

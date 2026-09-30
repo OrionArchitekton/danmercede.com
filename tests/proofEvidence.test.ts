@@ -30,9 +30,10 @@ const commandClaims = checks.filter((c) => c.verifyKind === 'command');
 // the specific shape that slipped through the first version of this test.
 const PLACEHOLDER = /<[a-z][a-z0-9_-]*>/i;
 // Re-pinned 2026-09-29 after re-running all 21 command checks against their
-// refreshed claims (counts read 2026-09-29; failclosed count reads its CI dots).
+// refreshed claims (counts read 2026-09-29). The digest makes any claim, command,
+// or source change fail until a person re-runs the checks; it does not run them.
 const EXPECTED_COMMAND_CONTRACT_DIGEST =
-  '6c6072a19b7dd469a0004bc97cebbff6d9cd45a31d1cd5431e2aa4558ca69d50';
+  '6ec5a5cdf2b08fd4790f48adb51962473491f53eaa72cf3e1d32fe4228866c5e';
 const commandContractDigest = (claims: typeof commandClaims): string => {
   const contract = claims
     .map((c) => ({
