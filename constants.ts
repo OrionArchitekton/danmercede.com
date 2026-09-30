@@ -252,9 +252,9 @@ export const SELECTED_WORK: {
   {
     title: "Production knowledge graph",
     status: "Personal production",
-    summary: "Ingests branched LLM conversation history into a production Neo4j knowledge graph, keeping each branch's identity and staying idempotent and re-runnable.",
+    summary: "Ingests branched LLM conversation history into a Neo4j knowledge graph with each branch's identity intact, kept advisory by design. The case covers what six months of measured use changed.",
     evidence: `Selected talk at ${SPEAKING.event}, ${SPEAKING.date}.`,
-    href: SPEAKING.href,
+    href: "/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
   },
 ];
 

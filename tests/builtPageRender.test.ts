@@ -135,6 +135,19 @@ test('every published route renders with a clean heading outline', async () => {
 // worksHub.test.ts, frontDoor.test.ts, contentBoundary.test.ts) bind the hidden
 // crawl block, which a rendered route no longer ships. These bind the render the
 // build does ship for the same routes. Review of #184, 2026-09-29.
+test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {
+  const home = (await loadRender())('/');
+  const essayCards = SELECTED_WORK.filter((w) => w.href.startsWith('/thoughts/'));
+  assert.ok(essayCards.length > 0, 'expected at least one selected-work card linking an essay');
+  for (const w of essayCards) {
+    const start = home.indexOf(`<a href="${w.href}"`);
+    assert.ok(start >= 0, `homepage: no card anchor for ${w.href}`);
+    const card = home.slice(start, home.indexOf('</a>', start));
+    assert.doesNotMatch(card.slice(0, card.indexOf('>')), /target=/, `${w.title}: an essay link opens in the same tab`);
+    assert.ok(decode(card).includes('Read the case'), `${w.title}: CTA should read "Read the case"`);
+  }
+});
+
 test('rendered routes keep the content contracts their crawl blocks carried', async () => {
   const render = await loadRender();
   const home = render('/');

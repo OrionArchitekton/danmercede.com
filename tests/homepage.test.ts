@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SELECTED_WORK, VALIDATION, WORK_STATUSES, WORKS, INTENT_ROUTES } from '../constants';
+import { SELECTED_WORK, VALIDATION, WORK_STATUSES, WORKS, INTENT_ROUTES, THOUGHTS } from '../constants';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,15 +21,24 @@ const homePage = appSrc.slice(appSrc.indexOf('const HomePage = '), appSrc.indexO
 test('the homepage features exactly three selected works, each with an honest status and a real link', () => {
   assert.equal(SELECTED_WORK.length, 3, 'the audit asks for three complementary selected works');
   const workLinks = new Set(WORKS.map((w) => w.link));
+  const thoughtSlugs = new Set(THOUGHTS.map((t) => t.slug));
   for (const w of SELECTED_WORK) {
     assert.ok((WORK_STATUSES as readonly string[]).includes(w.status), `${w.title}: status "${w.status}" is not in the status vocabulary`);
     assert.ok(w.summary.trim() && w.evidence.trim(), `${w.title}: needs a summary and an evidence line`);
     if (w.href.startsWith('/works/')) {
       assert.ok(workLinks.has(`https://www.danmercede.com${w.href}`), `${w.title}: ${w.href} is not a published /works page`);
+    } else if (w.href.startsWith('/thoughts/')) {
+      assert.ok(thoughtSlugs.has(w.href.slice('/thoughts/'.length)), `${w.title}: ${w.href} is not a published essay`);
     } else {
       assert.match(w.href, /^https:\/\//, `${w.title}: an off-site link must be https`);
     }
   }
+});
+
+test('the knowledge-graph card opens its own case narrative, not an off-site page', () => {
+  const kg = SELECTED_WORK.find((w) => w.title === 'Production knowledge graph');
+  assert.ok(kg, 'the knowledge-graph card is still selected');
+  assert.equal(kg.href, '/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking');
 });
 
 test('every validation item links an external source', () => {
