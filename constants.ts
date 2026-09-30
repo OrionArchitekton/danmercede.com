@@ -254,7 +254,7 @@ export const SELECTED_WORK: {
     status: "Personal production",
     summary: "Ingests branched LLM conversation history into a production Neo4j knowledge graph, keeping each branch's identity and staying idempotent and re-runnable.",
     evidence: `Selected talk at ${SPEAKING.event}, ${SPEAKING.date}.`,
-    href: SPEAKING.href,
+    href: "/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
   },
 ];
 

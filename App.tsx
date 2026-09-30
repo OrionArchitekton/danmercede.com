@@ -302,7 +302,7 @@ const HomePage = () => {
                 <p className="text-slate-300 leading-relaxed mb-4 flex-grow">{work.summary}</p>
                 <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
                 <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
-                  {external ? 'Source' : 'Project page'}
+                  {external ? 'Source' : work.href.startsWith('/thoughts/') ? 'Read the case' : 'Project page'}
                   {external ? <ExternalLink className="w-4 h-4 ml-2" /> : <ArrowRight className="w-4 h-4 ml-2" />}
                 </span>
               </a>
