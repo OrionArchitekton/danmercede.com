@@ -29,8 +29,11 @@ const commandClaims = checks.filter((c) => c.verifyKind === 'command');
 // A verify a reader cannot literally run. `<repo>` / `<id>` style templates are
 // the specific shape that slipped through the first version of this test.
 const PLACEHOLDER = /<[a-z][a-z0-9_-]*>/i;
+// Re-pinned 2026-09-29 after re-running all 21 command checks against their
+// refreshed claims (counts read 2026-09-29). The digest makes any claim, command,
+// or source change fail until a person re-runs the checks; it does not run them.
 const EXPECTED_COMMAND_CONTRACT_DIGEST =
-  '8f01c661e37af4c8af8e58140fcf755c085c1f5b1649bf1f3752fff9aeabd435';
+  '9e17f89d10120c84a2e42a5deddb98c229d1521765cd7e1b49192b0edc1c491e';
 const commandContractDigest = (claims: typeof commandClaims): string => {
   const contract = claims
     .map((c) => ({
