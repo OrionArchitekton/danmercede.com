@@ -1111,7 +1111,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
         claim:
           "failclosed's enforcement contract is runnable by any stranger: a fresh clone passes its 59-test suite, which includes tests asserting that unparseable and schema-invalid reviewer output blocks a MERGE_READY verdict.",
         verify:
-          "git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m pytest -o addopts='' -q",
+          "git clone --depth 1 https://github.com/OrionArchitekton/failclosed && cd failclosed && python3 -m venv .venv && .venv/bin/pip install -q pytest && .venv/bin/python -m pytest -o addopts='' -q",
         verifyKind: 'command',
         sources: ['https://github.com/OrionArchitekton/failclosed'],
       },
