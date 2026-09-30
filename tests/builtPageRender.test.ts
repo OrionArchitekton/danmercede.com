@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, NEWSLETTER, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -173,6 +173,17 @@ test('rendered routes keep the content contracts their crawl blocks carried', as
 // Every published essay and guide route is checked (a missing file or body
 // fails). The rendered root must carry most of the source's words (markdown
 // syntax and figure captions make an exact comparison brittle, so the bar is 80%).
+// 2026-09-29 re-audit P2: the newsletter link must reach the rendered page as a
+// plain off-site anchor that opens in a new tab: once in the Writing body and
+// once in the footer, and only the footer copy on other pages.
+test('the newsletter renders as an off-site link on Writing and in the footer', () => {
+  const escaped = NEWSLETTER.href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const anchor = new RegExp(`<a href="${escaped}" target="_blank" rel="noopener noreferrer"`, 'g');
+  const count = (route: string) => (rootOf(fs.readFileSync(fileFor(route), 'utf8')).inner.match(anchor) ?? []).length;
+  assert.equal(count('/thoughts'), 2, 'Writing links the newsletter beside RSS and in the footer');
+  assert.equal(count('/about'), 1, 'every page carries the footer link');
+});
+
 test('every essay and guide ships its full text in the initial HTML', () => {
   const words = (text: string) => text.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
   const bodies = new Map<string, string | undefined>([
