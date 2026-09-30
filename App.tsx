@@ -7,7 +7,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -156,8 +156,8 @@ const Footer = () => (
       <div className="flex flex-col items-start md:items-end gap-3 text-slate-400">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           {FOOTER_LINKS.map((l) =>
-            l.href.endsWith('.xml') ? (
-              <a key={l.href} href={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</a>
+            l.href.endsWith('.xml') || /^https?:\/\//.test(l.href) ? (
+              <a key={l.href} href={l.href} {...linkTargetProps(l.href)} className="text-xs hover:text-copper-500 transition-colors">{l.label}</a>
             ) : (
               <Link key={l.href} to={l.href} className="text-xs hover:text-copper-500 transition-colors">{l.label}</Link>
             ),
@@ -1581,7 +1581,10 @@ const ThoughtsPage = () => {
         <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mb-10 max-w-4xl">
           <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
             <h2 className="text-xl font-bold text-white">Start here</h2>
-            <a href="/feed.xml" className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Follow via RSS</a>
+            <div className="flex flex-wrap gap-4">
+              <a href={NEWSLETTER.href} {...linkTargetProps(NEWSLETTER.href)} className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Subscribe to {NEWSLETTER.name}</a>
+              <a href="/feed.xml" className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Follow via RSS</a>
+            </div>
           </div>
           <ul className="space-y-4">
             {START_HERE.map((item) => {

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { NAV_ITEMS, FOOTER_LINKS, START_HERE, GUIDES, THOUGHTS } from '../constants';
+import { NAV_ITEMS, FOOTER_LINKS, START_HERE, GUIDES, THOUGHTS, NEWSLETTER } from '../constants';
 import { ROUTE_META } from '../seoMeta';
 import { linkTargetProps } from '../components/WorkCard';
 
@@ -61,4 +61,18 @@ test('Writing has a curated Start here list that resolves to real guides and ess
   const page = appSrc.slice(appSrc.indexOf('const ThoughtsPage'), appSrc.indexOf('const ThoughtDetailPage'));
   assert.match(page, /START_HERE\.map\(/, 'the Writing page must render START_HERE');
   assert.match(page, /href="\/feed\.xml"/, 'the Writing page must expose the RSS feed');
+});
+
+// 2026-09-29 re-audit P2: Writing had RSS but no email-newsletter route. The
+// newsletter is Fail-Closed Notes on LinkedIn (URL verified from a published
+// edition). Writing links it beside RSS; the footer names it "Newsletter",
+// not "Subscribe", because the footer also renders on the identity-only /about.
+test('the newsletter is linked from Writing and the footer', () => {
+  assert.match(NEWSLETTER.href, /^https:\/\/www\.linkedin\.com\/newsletters\/fail-closed-notes-\d+$/);
+  const page = appSrc.slice(appSrc.indexOf('const ThoughtsPage'), appSrc.indexOf('const ThoughtDetailPage'));
+  assert.match(page, /href=\{NEWSLETTER\.href\}/, 'Writing must link the newsletter');
+  assert.match(page, /\{\.\.\.linkTargetProps\(NEWSLETTER\.href\)\}/, 'an off-site link opens in a new tab');
+  const footer = FOOTER_LINKS.find((l) => l.href === NEWSLETTER.href);
+  assert.ok(footer, 'the footer links the newsletter');
+  assert.doesNotMatch(footer!.label, /subscribe/i, 'the footer renders on the identity-only /about');
 });
