@@ -332,9 +332,11 @@ fewest, highest seams, all existing in kind:
   HTML, run the browser check) before merge.
 - **Monitoring and validation:** `hydration_error` events in GA4 after each merge;
   `curl` production /about after S1; Search Console URL inspection after S1, S2.
-- **Rollback:** replace the rendered-route set with an empty Set (one-line revert);
-  the build re-emits the crawl block for every route. The S4 heading fixes are
-  independent of the set and stay. S5 deletes that fallback, so it
+- **Rollback:** set `VISIBLE_HTML_ROLLBACK=1` in the build environment (a Vercel
+  environment variable, no code change) or replace the rendered-route set with an
+  empty Set; the build re-emits the crawl block for every route. A post-build test
+  exercises the switch in both directions. The S4 heading fixes are independent of
+  the set and stay. S5 deletes that fallback, so it
   ships last, after two weeks without `hydration_error` events.
 
 ## Open questions for Dan (all resolved)

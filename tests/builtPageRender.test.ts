@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
@@ -169,24 +170,25 @@ test('rendered routes keep the content contracts their crawl blocks carried', as
 });
 
 // S3: essays and guides ship their full text in the initial HTML, not a shell.
-// The rendered root must carry most of the source's words (markdown syntax and
-// figure captions make an exact comparison brittle, so the bar is 80%).
+// Every published essay and guide route is checked (a missing file or body
+// fails). The rendered root must carry most of the source's words (markdown
+// syntax and figure captions make an exact comparison brittle, so the bar is 80%).
 test('every essay and guide ships its full text in the initial HTML', () => {
   const words = (text: string) => text.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
+  const bodies = new Map<string, string | undefined>([
+    ...THOUGHTS.map((t) => [`/thoughts/${t.slug}`, (t as { body?: string }).body] as [string, string | undefined]),
+    ...GUIDES.map((g) => [`/guides/${g.slug}`, (g as { body?: string }).body] as [string, string | undefined]),
+  ]);
+  const routes = collectRoutes().map((r) => r.path).filter((p) => /^\/(thoughts|guides)\/./.test(p));
+  assert.ok(routes.length > 40, `expected every published essay and guide, found ${routes.length}`);
   const short: string[] = [];
-  let checked = 0;
-  for (const [family, items] of [['thoughts', THOUGHTS], ['guides', GUIDES]] as const) {
-    for (const item of items as ReadonlyArray<{ slug: string; body?: string }>) {
-      if (!item.body) continue;
-      const file = fileFor(`/${family}/${item.slug}`);
-      if (!fs.existsSync(file)) continue;
-      const root = decode(rootOf(fs.readFileSync(file, 'utf8')).inner.replace(/<[^>]+>/g, ' '));
-      const source = words(item.body.replace(/[#*_`>\[\]()!-]/g, ' '));
-      checked++;
-      if (words(root) < source * 0.8) short.push(`/${family}/${item.slug}: ${words(root)} of ~${source} words`);
-    }
+  for (const route of routes) {
+    const body = bodies.get(route);
+    assert.ok(body && body.trim(), `${route}: published without a body`);
+    const root = decode(rootOf(fs.readFileSync(fileFor(route), 'utf8')).inner.replace(/<[^>]+>/g, ' '));
+    const source = words(body.replace(/[#*_`>\[\]()!-]/g, ' '));
+    if (words(root) < source * 0.8) short.push(`${route}: ${words(root)} of ~${source} words`);
   }
-  assert.ok(checked > 40, `expected every published essay and guide, checked ${checked}`);
   assert.deepEqual(short, []);
 });
 
@@ -212,3 +214,47 @@ function* walkFiles(dir: string): Generator<string> {
     else yield full;
   }
 }
+
+// Rollback (spec criterion 9): VISIBLE_HTML_ROLLBACK=1 empties the rendered-route
+// set without a code change. Re-run the injector in a scratch copy of the built
+// inputs: in rollback mode every page must ship the crawl-block output with an
+// empty #root and the homepage must be the empty template again; a normal re-run
+// must then restore exactly the rendered output this build shipped.
+test('the rollback switch restores the crawl-block output, and a normal run restores the renders', () => {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'visible-html-rollback-'));
+  try {
+    fs.mkdirSync(path.join(scratch, 'build'));
+    fs.mkdirSync(path.join(scratch, 'public'));
+    fs.copyFileSync(path.join(buildDir, 'index.html'), path.join(scratch, 'build', 'index.html'));
+    fs.cpSync(path.join(root, 'build-ssr'), path.join(scratch, 'build-ssr'), { recursive: true });
+    fs.copyFileSync(path.join(root, 'public', 'sitemap.xml'), path.join(scratch, 'public', 'sitemap.xml'));
+    const inject = (env: Record<string, string>) =>
+      spawnSync('npx', ['tsx', path.join(root, 'scripts', 'injectRouteMeta.ts')], {
+        cwd: scratch,
+        env: { ...process.env, ...env },
+        encoding: 'utf8',
+      });
+
+    const rolledBack = inject({ VISIBLE_HTML_ROLLBACK: '1' });
+    assert.equal(rolledBack.status, 0, rolledBack.stderr);
+    const template = fs.readFileSync(path.join(scratch, 'build-ssr', 'index.template.html'), 'utf8');
+    assert.equal(fs.readFileSync(path.join(scratch, 'build', 'index.html'), 'utf8'), template, 'the homepage is the empty template again');
+    const pages = [...walkFiles(path.join(scratch, 'build'))].filter((f) => f.endsWith('.html'));
+    assert.ok(pages.length > 80, `expected every route file, found ${pages.length}`);
+    for (const page of pages) {
+      const html = fs.readFileSync(page, 'utf8');
+      assert.ok(html.includes('<div id="root"></div>'), `${page}: #root must be empty in rollback`);
+      assert.doesNotMatch(html, /data-rendered-path/, `${page}: no page render in rollback`);
+      assert.match(html, /id="prerender-content"/, `${page}: the crawl block is back`);
+    }
+
+    const restored = inject({ VISIBLE_HTML_ROLLBACK: '' });
+    assert.equal(restored.status, 0, restored.stderr);
+    for (const page of [...walkFiles(path.join(scratch, 'build'))].filter((f) => f.endsWith('.html'))) {
+      const rel = path.relative(path.join(scratch, 'build'), page);
+      assert.equal(fs.readFileSync(page, 'utf8'), fs.readFileSync(path.join(buildDir, rel), 'utf8'), `${rel}: a normal run restores the shipped render`);
+    }
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
+});

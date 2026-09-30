@@ -70,8 +70,11 @@ const BUILD_DIR = path.resolve(process.cwd(), 'build');
 // HTML carries the real page render inside #root instead of the hidden crawl
 // block. It grows slice by slice; emptying it restores the baseline output.
 // S3: every published route (the homepage plus everything collectRoutes emits).
-// Rollback: replace with an empty Set, and the build emits the baseline output.
-export const RENDERED_ROUTES: ReadonlySet<string> = new Set(['/', ...collectRoutes().map((r) => r.path)]);
+// Rollback without a code change: build with VISIBLE_HTML_ROLLBACK=1 (for
+// example as a Vercel environment variable) and the set is empty, so every
+// route ships the crawl-block output again.
+export const RENDERED_ROUTES: ReadonlySet<string> =
+  process.env.VISIBLE_HTML_ROLLBACK === '1' ? new Set() : new Set(['/', ...collectRoutes().map((r) => r.path)]);
 
 // The build-time render bundle (`vite build --ssr entry-server.tsx`), written
 // outside the deployed build/ directory.
@@ -192,13 +195,19 @@ async function main() {
   // Keep the pristine template beside the SSR bundle (outside the deployed
   // build/) and read it back when the injector is re-run without a new
   // `vite build`, so a re-run produces the same output instead of failing.
+  // Only the untouched vite output counts as the template: an empty #root and
+  // no page render anywhere in the file. The copy is written atomically.
+  const isEmptyTemplate = (html: string) => html.includes(EMPTY_ROOT) && !html.includes('data-rendered-path');
   let baseHtml: string;
-  if (builtIndex.includes(EMPTY_ROOT)) {
+  if (isEmptyTemplate(builtIndex)) {
     baseHtml = builtIndex;
-    await fs.writeFile(TEMPLATE_COPY, baseHtml, 'utf8');
+    await fs.writeFile(`${TEMPLATE_COPY}.tmp`, baseHtml, 'utf8');
+    await fs.rename(`${TEMPLATE_COPY}.tmp`, TEMPLATE_COPY);
   } else {
-    baseHtml = await fs.readFile(TEMPLATE_COPY, 'utf8').catch(() => '');
-    if (!baseHtml.includes(EMPTY_ROOT)) {
+    baseHtml = await fs.readFile(TEMPLATE_COPY, 'utf8').catch((err: NodeJS.ErrnoException) => {
+      throw new Error(`${indexPath} is already rendered and ${TEMPLATE_COPY} cannot be read (${err.code}); run \`vite build\` first.`);
+    });
+    if (!isEmptyTemplate(baseHtml)) {
       throw new Error(`${indexPath} is already rendered and ${TEMPLATE_COPY} is not an empty template; run \`vite build\` first.`);
     }
   }
@@ -250,6 +259,10 @@ async function main() {
   // so the not-found file below never inherits the homepage render.
   if (renderPage && RENDERED_ROUTES.has('/')) {
     await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
+  } else if (builtIndex !== baseHtml) {
+    // A re-run after a rendered build, with the homepage now outside the set
+    // (a rollback): put the empty template back.
+    await fs.writeFile(indexPath, baseHtml, 'utf8');
   }
 
   await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');
