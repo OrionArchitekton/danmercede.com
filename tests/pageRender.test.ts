@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { injectPageRender, RENDERED_ROUTES } from '../scripts/injectRouteMeta';
+import { collectRoutes, injectPageRender, RENDERED_ROUTES } from '../scripts/injectRouteMeta';
 import { lintExtractability } from '../extractability';
 import { BODY_BLOCK_START, BODY_BLOCK_END } from '../seoMeta';
 
@@ -21,10 +21,11 @@ const template = [
   '</body>',
 ].join('\n');
 
-// Slice S2 adds the re-audit's priority pages (homepage, Works, Contact) and the
-// writing indexes whose rendered headings already pass the extractability check.
-test('the rendered-route set is the S2 set', () => {
-  assert.deepEqual([...RENDERED_ROUTES].sort(), ['/', '/about', '/connect', '/guides', '/thoughts', '/works']);
+// Slice S3: every published route ships its page render.
+test('the rendered-route set covers every published route', () => {
+  const published = ['/', ...collectRoutes().map((r) => r.path)].sort();
+  assert.deepEqual([...RENDERED_ROUTES].sort(), published);
+  assert.ok(published.length > 80);
 });
 
 test('a rendered route carries its page render in a stamped #root and drops the crawl block', () => {

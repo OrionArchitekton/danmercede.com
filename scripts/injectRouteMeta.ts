@@ -69,21 +69,21 @@ const BUILD_DIR = path.resolve(process.cwd(), 'build');
 // Visible initial HTML (specs/visible-initial-html-spec.md): routes whose initial
 // HTML carries the real page render inside #root instead of the hidden crawl
 // block. It grows slice by slice; emptying it restores the baseline output.
-export const RENDERED_ROUTES: ReadonlySet<string> = new Set([
-  '/about',
-  // S2: the re-audit's priority pages and the writing indexes.
-  '/',
-  '/works',
-  '/connect',
-  '/thoughts',
-  '/guides',
-]);
+// S3: every published route (the homepage plus everything collectRoutes emits).
+// Rollback without a code change: build with VISIBLE_HTML_ROLLBACK=1 (for
+// example as a Vercel environment variable) and the set is empty, so every
+// route ships the crawl-block output again.
+export const RENDERED_ROUTES: ReadonlySet<string> =
+  process.env.VISIBLE_HTML_ROLLBACK === '1' ? new Set() : new Set(['/', ...collectRoutes().map((r) => r.path)]);
 
 // The build-time render bundle (`vite build --ssr entry-server.tsx`), written
 // outside the deployed build/ directory.
 const SSR_ENTRY = path.resolve(process.cwd(), 'build-ssr', 'entry-server.js');
 
 const EMPTY_ROOT = '<div id="root"></div>';
+
+// The empty template vite emits, saved for injector re-runs (see main()).
+const TEMPLATE_COPY = path.resolve(process.cwd(), 'build-ssr', 'index.template.html');
 
 // Put a route's page render inside #root, stamped with the path it was rendered
 // for (the client hydrates only on that path), and drop the crawl block so the
@@ -187,9 +187,31 @@ export function renderNotFoundHtml(baseHtml: string): string {
 
 async function main() {
   const indexPath = path.join(BUILD_DIR, 'index.html');
-  const baseHtml = await fs.readFile(indexPath, 'utf8').catch(() => {
+  const builtIndex = await fs.readFile(indexPath, 'utf8').catch(() => {
     throw new Error(`${indexPath} not found — run \`vite build\` first.`);
   });
+  // The homepage render is written into build/index.html itself, so after one
+  // run that file is no longer the empty template every route derives from.
+  // Keep the pristine template beside the SSR bundle (outside the deployed
+  // build/) and read it back when the injector is re-run without a new
+  // `vite build`, so a re-run produces the same output instead of failing.
+  // Only the untouched vite output counts as the template: an empty #root and
+  // no page render anywhere in the file. The copy is written atomically.
+  const isEmptyTemplate = (html: string) => html.includes(EMPTY_ROOT) && !html.includes('data-rendered-path');
+  let baseHtml: string;
+  if (isEmptyTemplate(builtIndex)) {
+    baseHtml = builtIndex;
+    await fs.mkdir(path.dirname(TEMPLATE_COPY), { recursive: true });
+    await fs.writeFile(`${TEMPLATE_COPY}.tmp`, baseHtml, 'utf8');
+    await fs.rename(`${TEMPLATE_COPY}.tmp`, TEMPLATE_COPY);
+  } else {
+    baseHtml = await fs.readFile(TEMPLATE_COPY, 'utf8').catch((err: NodeJS.ErrnoException) => {
+      throw new Error(`${indexPath} is already rendered and ${TEMPLATE_COPY} cannot be read (${err.code}); run \`vite build\` first.`);
+    });
+    if (!isEmptyTemplate(baseHtml)) {
+      throw new Error(`${indexPath} is already rendered and ${TEMPLATE_COPY} is not an empty template; run \`vite build\` first.`);
+    }
+  }
   for (const anchor of [SEO_BLOCK_START, BODY_BLOCK_START, JSONLD_BLOCK_START]) {
     if (!baseHtml.includes(anchor)) {
       throw new Error(
@@ -238,6 +260,10 @@ async function main() {
   // so the not-found file below never inherits the homepage render.
   if (renderPage && RENDERED_ROUTES.has('/')) {
     await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
+  } else if (builtIndex !== baseHtml) {
+    // A re-run after a rendered build, with the homepage now outside the set
+    // (a rollback): put the empty template back.
+    await fs.writeFile(indexPath, baseHtml, 'utf8');
   }
 
   await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');
@@ -246,11 +272,13 @@ async function main() {
   // served sitemap is always in lockstep with the THOUGHTS corpus. The committed
   // public/sitemap.xml (copied to build/ by Vite) carries only static + case-study
   // routes; a substrate-sync that changes THOUGHTS needs no sitemap edit.
+  // Read the committed source, not the built copy: after a previous run the built
+  // copy already carries the injected entries, and re-reading it would add them
+  // twice. Vite copies public/sitemap.xml verbatim, so the output is the same.
   const sitemapPath = path.join(BUILD_DIR, 'sitemap.xml');
-  const sitemapXml = await fs.readFile(sitemapPath, 'utf8').catch(() => {
-    throw new Error(
-      `${sitemapPath} not found — public/sitemap.xml must ship so Vite copies it to build/.`,
-    );
+  const sitemapSource = path.resolve(process.cwd(), 'public', 'sitemap.xml');
+  const sitemapXml = await fs.readFile(sitemapSource, 'utf8').catch(() => {
+    throw new Error(`${sitemapSource} not found; the hub ships a committed sitemap for Vite to copy.`);
   });
   const closeTag = '</urlset>';
   if (!sitemapXml.includes(closeTag)) {

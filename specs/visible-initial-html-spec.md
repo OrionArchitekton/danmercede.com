@@ -239,8 +239,10 @@ Works, and Contact first, so the slices were reordered:
   now also bind the served render of these routes (post-build).
 - S4b (#185): the remaining page-level skips (/proof, /diagrams, /ecosystem, /imprint,
   case studies); every published route now renders with a clean outline.
-- S3 then adds every remaining route; S5 still waits two weeks without
-  `hydration_error` events.
+- S3 (#186): every published route (essays, guides, diagrams, case studies, and the
+  remaining static pages). Essays and guides ship their full text. The injector is
+  re-runnable again (it keeps the empty template beside the SSR bundle and reads the
+  committed sitemap). S5 still waits two weeks without `hydration_error` events.
 
 ## Test seams (decision)
 
@@ -280,8 +282,10 @@ fewest, highest seams, all existing in kind:
 7. Head meta, JSON-LD, sitemap and feed output are byte-identical to the baseline
    output for every route.
 8. Routes outside the rendered-route set produce byte-identical initial HTML to
-   the baseline output (S1 to S3).
-9. Emptying the rendered-route set restores the baseline output for every route.
+   the baseline output (S1 to S3), apart from the client bundle's content hash,
+   which changes with any client code change, and the S4 heading fixes.
+9. Emptying the rendered-route set restores the crawl-block output for every route.
+   The S4 heading fixes and the bundle hash do not depend on the set, so they stay.
 10. After S4, the `extractability` gate lints every built route file and passes.
 11. After S5, no hand-written per-route body copy exists; the page components are
     the only source of visible route content.
@@ -328,8 +332,11 @@ fewest, highest seams, all existing in kind:
   HTML, run the browser check) before merge.
 - **Monitoring and validation:** `hydration_error` events in GA4 after each merge;
   `curl` production /about after S1; Search Console URL inspection after S1, S2.
-- **Rollback:** remove routes from the rendered-route set (one-line revert); the
-  build re-emits the baseline crawl block for them. S5 deletes that fallback, so it
+- **Rollback:** set `VISIBLE_HTML_ROLLBACK=1` in the build environment (a Vercel
+  environment variable, no code change) or replace the rendered-route set with an
+  empty Set; the build re-emits the crawl block for every route. A post-build test
+  exercises the switch in both directions. The S4 heading fixes are independent of
+  the set and stay. S5 deletes that fallback, so it
   ships last, after two weeks without `hydration_error` events.
 
 ## Open questions for Dan (all resolved)
