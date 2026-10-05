@@ -970,6 +970,11 @@ test('HUB_ESSAY_ALLOWLIST contains the Edition 10 release slug exactly once', ()
   assert.equal(HUB_ESSAY_ALLOWLIST.filter((s) => s === slug).length, 1);
 });
 
+test('HUB_ESSAY_ALLOWLIST contains the Edition 11 release slug exactly once', () => {
+  const slug = '2026-09-28-the-alert-fired-nobody-was-there';
+  assert.equal(HUB_ESSAY_ALLOWLIST.filter((s) => s === slug).length, 1);
+});
+
 test('mapSubstrateToEntry admits an allowlisted slug whose surface_targets exclude danmercede.com', () => {
   const slug = HUB_ESSAY_ALLOWLIST[0];
   const data = {
