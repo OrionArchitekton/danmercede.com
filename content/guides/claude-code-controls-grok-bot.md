@@ -67,6 +67,21 @@ agent-browser --session grokbot get value @e12 | tr -d '\r\n' \
   | doppler secrets set GROKBOT_WEBHOOK_KEY --silent >/dev/null
 ```
 
+The two scripts are dependency-free Python. Put them on your PATH, create the outbox on the machine that runs the desktop app, and tell them where it is:
+
+```bash
+git clone https://github.com/OrionArchitekton/orion-skills
+ln -s "$PWD/orion-skills/skills/grokbot/scripts/grokbot-send" ~/.local/bin/
+ln -s "$PWD/orion-skills/skills/grokbot/scripts/grokbot-read" ~/.local/bin/
+
+mkdir -p /mnt/c/Users/<you>/grokbot-outbox                        # from WSL; any folder the app can reach
+export GROKBOT_OUTBOX_DIR=/mnt/c/Users/<you>/grokbot-outbox       # where the agent reads
+export GROKBOT_OUTBOX_BOT_DIR='C:\Users\<you>\grokbot-outbox'    # the same folder as the app sees it (WSL or VM only)
+export GROKBOT_STORE="/mnt/c/Users/<you>/AppData/Roaming/Grok Bot/sand-client-persistence"  # for grokbot-read under WSL
+```
+
+`GROKBOT_WEBHOOK_URL` and `GROKBOT_WEBHOOK_KEY` come from the secret manager at call time, never from a shell profile: `doppler run -- grokbot-send ...`, or your manager's equivalent.
+
 From then on, handing off work is one command:
 
 ```bash
