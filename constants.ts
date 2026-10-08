@@ -949,6 +949,7 @@ export const GUIDE_LENSES = [
       'off-budget-subagents-under-claude-code',
       'giving-your-agent-web-access',
       'why-llm-schemas-get-rejected',
+      'claude-code-controls-grok-bot',
     ] as readonly string[],
   },
   {
