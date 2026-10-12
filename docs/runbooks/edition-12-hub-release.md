@@ -21,13 +21,23 @@ The substrate canonical is on main via
 merge `6453900e0c68bc21228054e3dc1f4a2021e3ef7a`.
 The main review manifest records Dan's exact-draft firsthand attestation and
 acceptance of the three images on October 5. Do not re-author or re-tag this
-immutable canonical. This PR changes only consumer admission, adds its regression
-test, and records this release procedure. The committed bundle stays untouched.
+immutable canonical. Admission PR #197 changed only consumer admission, added its
+regression test and recorded this procedure. Content-sync PR #198 separately
+landed the generated body and referenced assets after its own review checkpoint.
 
 The separate browser-pool guide PR #196 and the held lane lock-bump work are
 outside this release. No dev.to/Hashnode send is authorized or implied here.
 
-## Checkout authentication repaired; content release still pending
+## E12 is live; authentication history
+
+Dan merged [content-sync PR #198](https://github.com/OrionArchitekton/danmercede.com/pull/198)
+at 22:13:55Z on October 12 as `c6dc97b9ae3f5a93879168b773b80208a0f4a654`.
+The production deployment bound to that SHA succeeded at 22:14:25Z. At
+22:16:53Z, public consumer checks verified the exact complete E12 initial
+render, both source-identical images, CTA, index, canonical, sitemap, RSS/Atom
+and an invalid-slug HTTP 404 negative control. See
+[the production verification](../reviews/2026-10-12-edition-12-production-verification.md).
+This establishes E12's hub release, not the separate PR-writer repair.
 
 The [October 12 scheduled sync](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38270302649)
 failed before compilation, while fetching the private substrate:
@@ -51,21 +61,40 @@ it normally tolerates fetch failure, so inspect the actual checkout step.
 The approved post-merge strict dispatch
 [38310461084](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38310461084)
 passed private checkout, strict compile, optimization and drift detection, then
-failed at PR creation with authenticated Git fetch exit 128. The separate
-`SUBSTRATE_SYNC_PR_TOKEN` has not been repaired; its exact rejection cause is
-unconfirmed. Weekly automated PR creation therefore remains unhealthy.
-Do not replace that separate secret without authority. See the reusable
-[authentication recovery procedure](private-substrate-checkout-authentication.md).
+failed at PR creation with authenticated Git fetch and push errors; the terminal
+failure was the push to `codex/substrate-sync`, exit 128. The separate
+`SUBSTRATE_SYNC_PR_TOKEN` was separately replaced under Dan's explicit authority
+at 22:28:34Z. Its replacement passed positive Contents-write and Pull-requests-write
+checks, creating real documentation [PR #199](https://github.com/OrionArchitekton/danmercede.com/pull/199),
+and correctly denied private-substrate access. The old credential's exact
+expiry/revocation/scope cause remains unconfirmed. The replacement selects only
+this hub, Contents and Pull requests read/write plus Metadata read-only,
+expiring January 10, 2027. No read-token scope or merge protection changed.
 
-For this release, the same merged-main compiler and pinned substrate source were
+[Strict main sync 38316883924](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38316883924)
+succeeded at 22:29:26Z: private checkout, strict nonempty compile, optimization
+and drift comparison passed. No drift was found, so the Actions PR-writing step
+was skipped. The direct write checks establish replacement-token capability;
+they do not establish a complete Actions Git-push/PR-creation canary. Observe
+the next genuine content-drift sync rather than fabricate drift or rerun a stale
+pre-release main. See the reusable [read-token recovery procedure](private-substrate-checkout-authentication.md)
+and [PR-writer recovery procedure](substrate-sync-pr-authentication.md).
+
+To prepare the release, the same merged-main compiler and pinned substrate source were
 run in dedicated clean worktrees, without hand-editing the generated output.
-The existing authenticated CLI delivers the resulting review PR; it must pass
-the normal base-code trusted verifier and separate content-merge checkpoint.
+The existing authenticated CLI delivered content PR #198; it passed the normal
+base-code trusted verifier and Dan's separate content-merge checkpoint.
 Exact pins, generated diff and local consumer proof are recorded in
 [the content-sync evidence](../reviews/2026-10-12-edition-12-content-sync.md).
-This fallback does not repair the weekly PR writer or relax any merge gate.
+That fallback did not itself repair the weekly PR writer or relax any merge gate;
+the separately authorized replacement and its verification are recorded above.
 
-## Rollout (human merge gates)
+## Completed rollout (historical procedure; do not repeat)
+
+Admission #197, content #198 and the production consumer verification are
+complete. The checklist below preserves the procedure and its human gates;
+it is not a queue of remaining release actions. Only the next genuine
+content-drift writer canary remains unobserved, as described above.
 
 1. Restore and verify the existing private-substrate checkout access under
    credential authority. Review fresh checks and merge this admission PR only

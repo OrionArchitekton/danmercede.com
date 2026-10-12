@@ -13,7 +13,7 @@ symptoms:
   - Trusted verification can appear green while its substrate fetch fails
 root_cause: expired-fine-grained-substrate-read-token
 resolution_type: credential-replacement
-operational_status: checkout-repair-verified-content-release-pending
+operational_status: checkout-repair-verified
 related_components: [substrate-sync, substrate-verify]
 tags: [github-actions, substrate, authentication, token-expiry]
 ---
@@ -40,7 +40,9 @@ encrypted `gh secret set` stdin, never chat, disk, command arguments or commits.
 The generated-token page was cleared and the browser released. Secret metadata
 changed from July 8 to `2026-10-12T20:34:42Z`.
 
-The separate PR-writing credential was not rotated or assumed healthy.
+The separate PR-writing credential was not rotated or assumed healthy during
+this read-token repair. Its later, separately authorized replacement is recorded
+in [the writer incident](2026-10-12-substrate-sync-pr-credential.md).
 
 ## Independent verification and limit
 
@@ -51,8 +53,9 @@ Earlier green checks were not recovery proof: this verifier permits checkout
 failure and can compare an unchanged base bundle instead.
 
 This does not establish strict-sync success, PR-creation credential health,
-generated-content merge, production deployment or E12 publication. Those remain
-the distinct steps in the [E12 release runbook](../runbooks/edition-12-hub-release.md).
+generated-content merge, production deployment or E12 publication. Those are
+distinct steps, subsequently observed and recorded in the
+[E12 release runbook](../runbooks/edition-12-hub-release.md).
 
 ## Prevention and rollback
 
