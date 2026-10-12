@@ -578,6 +578,17 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-browser',
+    description:
+      'A local Chrome pool for cooperative AI agents. Each identity gets a persistent profile and virtual screen; each agent leases a browser, connects its existing CDP driver, and releases it when finished. CLI and MCP tools coordinate ownership and session handoff on a trusted Linux host.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-browser-oss',
+    link: 'https://www.danmercede.com/works/orion-browser/',
+    license: 'MIT',
+    date: '2026-10-12',
+    slug: 'orion-browser',
+  },
+  {
     title: 'Fork Around & Find Out',
     description:
       "A fail-closed decision gateway for agent tool-calls. Instead of reading a proposed action and guessing whether it is dangerous, it runs the action in a disposable Daytona sandbox, measures the actual blast radius (files touched, network egress, honeytoken reads even when the secret leaves in a request body), and returns ALLOW, QUARANTINE, or BLOCK. If the run cannot be measured, the action is blocked. Built solo at Daytona HackSprint #5.",
@@ -816,6 +827,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   // Open Source & Tooling
   'failclosed',
   'orion-skills',
+  'orion-browser',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
@@ -946,6 +958,7 @@ export const GUIDE_LENSES = [
     label: 'Agent systems',
     description: 'Models, tools, schemas, context, and orchestration.',
     slugs: [
+      'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
       'giving-your-agent-web-access',
       'why-llm-schemas-get-rejected',
