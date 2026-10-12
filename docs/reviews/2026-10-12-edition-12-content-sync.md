@@ -1,5 +1,13 @@
 # Edition 12 content-sync evidence
 
+Historical checkpoint for **content PR #198**, not documentation PR #199.
+Dan merged #198 at 22:13:55Z on October 12; the
+[production verification](2026-10-12-edition-12-production-verification.md)
+records the subsequent live release. Statements below about pending authority
+and the unrepaired writer describe the pre-merge #198 checkpoint. The later
+separately authorized writer replacement and its positive #199 PR-write test
+are recorded in [the writer incident](../solutions/2026-10-12-substrate-sync-pr-credential.md).
+
 ## Scope and exact inputs
 
 This is the separate content checkpoint after admission
@@ -16,7 +24,7 @@ images its accepted body references. No source copy or artwork was changed.
   Seven full days elapsed before this October 12 preparation. The canonical's
   09:00 frontmatter timestamp is not evidence of actual publication time.
 
-## Why this PR uses the authenticated CLI
+## Why content PR #198 used the authenticated CLI
 
 The approved main dispatch
 [38310461084](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38310461084)

@@ -89,7 +89,12 @@ Exact pins, generated diff and local consumer proof are recorded in
 That fallback did not itself repair the weekly PR writer or relax any merge gate;
 the separately authorized replacement and its verification are recorded above.
 
-## Rollout (human merge gates)
+## Completed rollout (historical procedure; do not repeat)
+
+Admission #197, content #198 and the production consumer verification are
+complete. The checklist below preserves the procedure and its human gates;
+it is not a queue of remaining release actions. Only the next genuine
+content-drift writer canary remains unobserved, as described above.
 
 1. Restore and verify the existing private-substrate checkout access under
    credential authority. Review fresh checks and merge this admission PR only

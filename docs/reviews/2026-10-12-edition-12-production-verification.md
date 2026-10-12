@@ -39,8 +39,14 @@ At **2026-10-12T22:16:53.952Z**, unauthenticated production reads passed:
 
 This establishes the hub release at its public consumer. It does not certify
 analytics, received leads, dev.to/Hashnode syndication, native LinkedIn scheduling
-or the separate automated PR-writer credential. No such action was performed.
+or the separate automated PR-writer credential. No such action was performed
+as part of this public consumer check.
 
-The credential repair has its own verification boundary. A clean main sync
-after this release should have no content drift and may skip its PR-writing
-step; that alone cannot establish writer recovery.
+The later credential repair has its own
+[verification record](../solutions/2026-10-12-substrate-sync-pr-credential.md).
+Unlike content PR #198 (existing CLI authentication), documentation PR #199
+was created by a direct REST request using the new writer credential itself,
+before that credential was installed as the secret. Its HTTP 201 response
+establishes direct PR-write capability, not the full Actions Git-push/PR path.
+The subsequent strict main sync passed without drift and skipped PR writing;
+the next genuine drift remains the full Actions canary.
