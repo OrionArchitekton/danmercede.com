@@ -48,9 +48,22 @@ independently passed the private substrate checkout, base-code compile and bundl
 comparison with the replacement. This establishes checkout recovery, not E12
 release or strict-sync/PR-token health. A green verifier alone is insufficient:
 it normally tolerates fetch failure, so inspect the actual checkout step.
-Strict `substrate-sync` and its generated PR remain pending. Do not replace the
-separate `SUBSTRATE_SYNC_PR_TOKEN` preemptively. See the reusable
+The approved post-merge strict dispatch
+[38310461084](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38310461084)
+passed private checkout, strict compile, optimization and drift detection, then
+failed at PR creation with authenticated Git fetch exit 128. The separate
+`SUBSTRATE_SYNC_PR_TOKEN` has not been repaired; its exact rejection cause is
+unconfirmed. Weekly automated PR creation therefore remains unhealthy.
+Do not replace that separate secret without authority. See the reusable
 [authentication recovery procedure](private-substrate-checkout-authentication.md).
+
+For this release, the same merged-main compiler and pinned substrate source were
+run in dedicated clean worktrees, without hand-editing the generated output.
+The existing authenticated CLI delivers the resulting review PR; it must pass
+the normal base-code trusted verifier and separate content-merge checkpoint.
+Exact pins, generated diff and local consumer proof are recorded in
+[the content-sync evidence](../reviews/2026-10-12-edition-12-content-sync.md).
+This fallback does not repair the weekly PR writer or relax any merge gate.
 
 ## Rollout (human merge gates)
 
@@ -65,6 +78,12 @@ separate `SUBSTRATE_SYNC_PR_TOKEN` preemptively. See the reusable
    from substrate without unexpected removals or unrelated changes. Do not
    hand-edit the generated bundle or combine it with this compiler-change PR:
    trusted verification executes the base compiler.
+   If the automated PR writer alone fails, inspect its failed step first. An
+   in-scope fallback may run the identical base compiler in a fresh task worktree
+   against pinned accepted substrate main, then submit the generated outputs
+   through existing working CLI authentication. Keep strict flags, the pinned
+   diagram optimizer, bundle comparison, asset parity and human merge gates.
+   Never hand-edit the bundle or rotate a second credential implicitly.
 4. Run/observe `build`, `gitleaks`, `required-checks-fail-closed`, and
    `substrate-verify` on that exact sync head. Dan reviews and authorizes its
    merge separately; no auto-merge or bypass is implied.
