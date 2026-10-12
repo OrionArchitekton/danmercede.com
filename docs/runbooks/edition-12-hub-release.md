@@ -1,0 +1,95 @@
+---
+verified: 2026-10-12
+review_after: 2026-10-19
+topics: [newsletter, hub-release, edition-12]
+references:
+  - scripts/compileContent.ts
+  - .github/workflows/substrate-sync.yml
+  - .github/workflows/substrate-verify.yml
+  - docs/runbooks/private-substrate-checkout-authentication.md
+---
+
+# Edition 12 hub release
+
+## Evidence and scope
+
+Release `2026-10-05-the-assistant-was-only-supposed-to-read` to the hub after
+its LinkedIn-exclusive week. The [public edition](https://www.linkedin.com/pulse/assistant-only-supposed-read-dan-mercede-jpmtc)
+was published October 5. Its seven-day anniversary has passed on October 12.
+The substrate canonical is on main via
+[PR #92](https://github.com/OrionArchitekton/dan-mercede-substrate/pull/92),
+merge `6453900e0c68bc21228054e3dc1f4a2021e3ef7a`.
+The main review manifest records Dan's exact-draft firsthand attestation and
+acceptance of the three images on October 5. Do not re-author or re-tag this
+immutable canonical. This PR changes only consumer admission, adds its regression
+test, and records this release procedure. The committed bundle stays untouched.
+
+The separate browser-pool guide PR #196 and the held lane lock-bump work are
+outside this release. No dev.to/Hashnode send is authorized or implied here.
+
+## Checkout authentication repaired; content release still pending
+
+The [October 12 scheduled sync](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38270302649)
+failed before compilation, while fetching the private substrate:
+`fatal: could not read Username for 'https://github.com': terminal prompts disabled`
+(three attempts, exit 128). Native GitHub account inspection on October 12
+additionally shows the fine-grained PAT named `SUBSTRATE_READ_TOKEN` has expired.
+Dan authorized this exact repair, signed in and completed native token generation
+after GitHub rejected the automated generation click. The replacement grants only
+`dan-mercede-substrate` Contents read-only plus mandatory Metadata read-only,
+expiring January 10, 2027. It passed a private file read, then was transferred
+in memory through `gh secret set` stdin to this repository's exact
+`SUBSTRATE_READ_TOKEN` secret. Metadata confirms update at 20:34:42Z on October 12.
+No value entered chat, files, argv or commits; the token page was cleared and the
+browser released.
+
+[Trusted verification run 38298024701, attempt 2](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38298024701/attempts/2)
+independently passed the private substrate checkout, base-code compile and bundle
+comparison with the replacement. This establishes checkout recovery, not E12
+release or strict-sync/PR-token health. A green verifier alone is insufficient:
+it normally tolerates fetch failure, so inspect the actual checkout step.
+Strict `substrate-sync` and its generated PR remain pending. Do not replace the
+separate `SUBSTRATE_SYNC_PR_TOKEN` preemptively. See the reusable
+[authentication recovery procedure](private-substrate-checkout-authentication.md).
+
+## Rollout (human merge gates)
+
+1. Restore and verify the existing private-substrate checkout access under
+   credential authority. Review fresh checks and merge this admission PR only
+   with Dan's merge authority; never bypass a failed trusted verification.
+2. The normal sync already failed today before this admission existed. After
+   the merge, dispatch `substrate-sync.yml` on **main** in this repository,
+   rather than waiting another week. Confirm the dispatch is authorized at the same
+   checkpoint as the admission merge.
+3. Inspect the generated sync PR. It must add the E12 body and referenced assets
+   from substrate without unexpected removals or unrelated changes. Do not
+   hand-edit the generated bundle or combine it with this compiler-change PR:
+   trusted verification executes the base compiler.
+4. Run/observe `build`, `gitleaks`, `required-checks-fail-closed`, and
+   `substrate-verify` on that exact sync head. Dan reviews and authorizes its
+   merge separately; no auto-merge or bypass is implied.
+5. Observe the production deployment and consumer checks below. An admission
+   merge, dispatch, sync PR, or successful build alone is not publication proof.
+
+## Validation and monitoring
+
+- Regression: the E12 slug occurs exactly once in the allowlist; an E12-specific
+  mapper test admits its actual LinkedIn-only target and preserves title/date/body.
+  Existing mapper tests preserve status/type/date checks and reject unlisted essays.
+- Before admission merge, full tests and build must pass with the committed
+  generated bundle unchanged.
+- After sync merge, fetch
+  `/thoughts/2026-10-05-the-assistant-was-only-supposed-to-read` on danmercede.com.
+  Verify the real E12 title, opening and closing body anchors, CTA destination,
+  referenced assets, canonical URL, sitemap and feed entries. Compare an invalid
+  slug so a generic SPA HTTP 200 or corpus-wide text match cannot pass as E12.
+- Check the thoughts index links to this edition. Record the observed deployment
+  and URL only after the rendered consumer contains the essay.
+
+## Rollback
+
+Before the sync PR merges, revert admission through a reviewed PR and discard
+the unmerged sync change. After release, removing admission alone does not remove
+the already committed body: revert admission, regenerate through the trusted
+sync flow, review and merge the removal, and verify the deployed consumer.
+Never edit the substrate canonical or the generated constants by hand.

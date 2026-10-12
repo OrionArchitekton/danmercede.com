@@ -975,6 +975,32 @@ test('HUB_ESSAY_ALLOWLIST contains the Edition 11 release slug exactly once', ()
   assert.equal(HUB_ESSAY_ALLOWLIST.filter((s) => s === slug).length, 1);
 });
 
+test('HUB_ESSAY_ALLOWLIST contains the Edition 12 release slug exactly once', () => {
+  const slug = '2026-10-05-the-assistant-was-only-supposed-to-read';
+  assert.equal(HUB_ESSAY_ALLOWLIST.filter((s) => s === slug).length, 1);
+});
+
+test('mapSubstrateToEntry admits Edition 12 with its LinkedIn-only target', () => {
+  const slug = '2026-10-05-the-assistant-was-only-supposed-to-read';
+  const body = 'Opening paragraph.\n\nClosing paragraph with the approved CTA.';
+  const data = {
+    slug,
+    title: 'The Assistant Was Only Supposed to Read',
+    date: '2026-10-05T09:00:00-07:00',
+    claim: 'A claim.',
+    status: 'canonical',
+    type: 'essay-long',
+    layer: 'authority-gate',
+    surface_targets: ['linkedin'],
+  };
+  const entry = mapSubstrateToEntry(data, body, `${slug}.md`);
+  assert.ok(entry, 'Edition 12 must be admitted without retagging the canonical');
+  assert.equal(entry.slug, slug);
+  assert.equal(entry.title, data.title);
+  assert.equal(entry.date, '2026-10-05');
+  assert.equal(entry.body, body);
+});
+
 test('mapSubstrateToEntry admits an allowlisted slug whose surface_targets exclude danmercede.com', () => {
   const slug = HUB_ESSAY_ALLOWLIST[0];
   const data = {
