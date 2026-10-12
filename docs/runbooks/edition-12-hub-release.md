@@ -63,10 +63,22 @@ The approved post-merge strict dispatch
 passed private checkout, strict compile, optimization and drift detection, then
 failed at PR creation with authenticated Git fetch and push errors; the terminal
 failure was the push to `codex/substrate-sync`, exit 128. The separate
-`SUBSTRATE_SYNC_PR_TOKEN` has not been repaired; its exact rejection cause is
-unconfirmed. Weekly automated PR creation therefore remains unhealthy.
-Do not replace that separate secret without authority. See the reusable
-[authentication recovery procedure](private-substrate-checkout-authentication.md).
+`SUBSTRATE_SYNC_PR_TOKEN` was separately replaced under Dan's explicit authority
+at 22:28:34Z. Its replacement passed positive Contents-write and Pull-requests-write
+checks, creating real documentation [PR #199](https://github.com/OrionArchitekton/danmercede.com/pull/199),
+and correctly denied private-substrate access. The old credential's exact
+expiry/revocation/scope cause remains unconfirmed. The replacement selects only
+this hub, Contents and Pull requests read/write plus Metadata read-only,
+expiring January 10, 2027. No read-token scope or merge protection changed.
+
+[Strict main sync 38316883924](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38316883924)
+succeeded at 22:29:26Z: private checkout, strict nonempty compile, optimization
+and drift comparison passed. No drift was found, so the Actions PR-writing step
+was skipped. The direct write checks establish replacement-token capability;
+they do not establish a complete Actions Git-push/PR-creation canary. Observe
+the next genuine content-drift sync rather than fabricate drift or rerun a stale
+pre-release main. See the reusable [read-token recovery procedure](private-substrate-checkout-authentication.md)
+and [PR-writer recovery procedure](substrate-sync-pr-authentication.md).
 
 To prepare the release, the same merged-main compiler and pinned substrate source were
 run in dedicated clean worktrees, without hand-editing the generated output.
@@ -74,7 +86,8 @@ The existing authenticated CLI delivered content PR #198; it passed the normal
 base-code trusted verifier and Dan's separate content-merge checkpoint.
 Exact pins, generated diff and local consumer proof are recorded in
 [the content-sync evidence](../reviews/2026-10-12-edition-12-content-sync.md).
-This fallback does not repair the weekly PR writer or relax any merge gate.
+That fallback did not itself repair the weekly PR writer or relax any merge gate;
+the separately authorized replacement and its verification are recorded above.
 
 ## Rollout (human merge gates)
 

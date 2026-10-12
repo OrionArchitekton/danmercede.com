@@ -39,6 +39,8 @@ fail-loud and opens no PR after failed fetch or zero matches.
 5. Under separate dispatch/release authority, run strict sync and inspect its
    checkout, nonempty compile and generated review PR. The PR-writing token is
    separate; do not rotate it preemptively or claim it works from a read-token test.
+   For that separately authorized repair, use
+   [the writer recovery procedure](substrate-sync-pr-authentication.md).
 
 ## Failure and rollback
 
