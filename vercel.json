@@ -2,6 +2,11 @@
   "outputDirectory": "build",
   "redirects": [
     {
+      "source": "/works/orion-browser",
+      "destination": "/works/orion-browser/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
@@ -181,6 +186,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/orion-browser/",
+      "destination": "https://orion-browser-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-browser/:path*",
+      "destination": "https://orion-browser-site.vercel.app/:path*"
+    },
     {
       "source": "/works/fork-around-find-out/",
       "destination": "https://fork-around-find-out-site.vercel.app/"
