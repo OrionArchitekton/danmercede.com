@@ -21,8 +21,10 @@ images its accepted body references. No source copy or artwork was changed.
 The approved main dispatch
 [38310461084](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38310461084)
 passed private substrate checkout, strict compilation, diagram optimization
-and drift detection. Opening its review PR failed at authenticated Git fetch
-with exit 128 after the action selected the separate PR-writer credential.
+and drift detection. Opening its review PR encountered authenticated Git fetch
+failure and then terminated at the push to `codex/substrate-sync`, exit 128,
+after the action selected the separate PR-writer credential. This clarifies the
+earlier shorthand that identified only the fetch error; both are in the job log.
 No automated PR was created. The precise reason that credential is rejected
 is not established; expiration must not be assumed.
 
