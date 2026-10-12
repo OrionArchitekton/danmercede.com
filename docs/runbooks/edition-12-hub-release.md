@@ -6,6 +6,7 @@ references:
   - scripts/compileContent.ts
   - .github/workflows/substrate-sync.yml
   - .github/workflows/substrate-verify.yml
+  - docs/runbooks/private-substrate-checkout-authentication.md
 ---
 
 # Edition 12 hub release
@@ -26,29 +27,30 @@ test, and records this release procedure. The committed bundle stays untouched.
 The separate browser-pool guide PR #196 and the held lane lock-bump work are
 outside this release. No dev.to/Hashnode send is authorized or implied here.
 
-## Current prerequisite: sync checkout authentication
+## Checkout authentication repaired; content release still pending
 
 The [October 12 scheduled sync](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38270302649)
 failed before compilation, while fetching the private substrate:
 `fatal: could not read Username for 'https://github.com': terminal prompts disabled`
 (three attempts, exit 128). Native GitHub account inspection on October 12
 additionally shows the fine-grained PAT named `SUBSTRATE_READ_TOKEN` has expired.
-Dan authorized this exact token repair in the current session and signed into
-the ops browser by hand. A replacement form is prepared for only
-`dan-mercede-substrate`, Contents read-only plus mandatory Metadata read-only,
-with January 10, 2027 expiry. GitHub rejects generation with "You can't perform
-that action at this time"; native operator generation/verification is pending.
-No token value has been printed, persisted or installed, and the repository
-secret's metadata still shows its July 8 update. Do not call the repair complete.
+Dan authorized this exact repair, signed in and completed native token generation
+after GitHub rejected the automated generation click. The replacement grants only
+`dan-mercede-substrate` Contents read-only plus mandatory Metadata read-only,
+expiring January 10, 2027. It passed a private file read, then was transferred
+in memory through `gh secret set` stdin to this repository's exact
+`SUBSTRATE_READ_TOKEN` secret. Metadata confirms update at 20:34:42Z on October 12.
+No value entered chat, files, argv or commits; the token page was cleared and the
+browser released.
 
-After native generation, transfer the value in memory to the exact repository
-secret through encrypted `gh secret set` stdin, never chat, files or argv. Verify
-a private source read before installation and the actual Actions checkout after
-installation. The existing `substrate-verify` check tolerates fetch failure and
-compares the unchanged bundle as a fallback; its green status is NOT proof of
-token recovery. Strict `substrate-sync` checkout/compile must succeed. A retry
-without restored access is not a release plan. `SUBSTRATE_SYNC_PR_TOKEN` has not
-been exercised by this failed run; do not claim it works or replace it preemptively.
+[Trusted verification run 38298024701, attempt 2](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38298024701/attempts/2)
+independently passed the private substrate checkout, base-code compile and bundle
+comparison with the replacement. This establishes checkout recovery, not E12
+release or strict-sync/PR-token health. A green verifier alone is insufficient:
+it normally tolerates fetch failure, so inspect the actual checkout step.
+Strict `substrate-sync` and its generated PR remain pending. Do not replace the
+separate `SUBSTRATE_SYNC_PR_TOKEN` preemptively. See the reusable
+[authentication recovery procedure](private-substrate-checkout-authentication.md).
 
 ## Rollout (human merge gates)
 
@@ -71,8 +73,9 @@ been exercised by this failed run; do not claim it works or replace it preemptiv
 
 ## Validation and monitoring
 
-- Regression: the E12 slug occurs exactly once in the allowlist; the existing
-  mapper tests preserve status/type/date validation and reject unlisted essays.
+- Regression: the E12 slug occurs exactly once in the allowlist; an E12-specific
+  mapper test admits its actual LinkedIn-only target and preserves title/date/body.
+  Existing mapper tests preserve status/type/date checks and reject unlisted essays.
 - Before admission merge, full tests and build must pass with the committed
   generated bundle unchanged.
 - After sync merge, fetch
