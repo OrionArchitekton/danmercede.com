@@ -31,10 +31,22 @@ outside this release. No dev.to/Hashnode send is authorized or implied here.
 The [October 12 scheduled sync](https://github.com/OrionArchitekton/danmercede.com/actions/runs/38270302649)
 failed before compilation, while fetching the private substrate:
 `fatal: could not read Username for 'https://github.com': terminal prompts disabled`
-(three attempts, exit 128). This proves checkout authentication failed, not
-whether the token is missing, expired, revoked or insufficiently scoped.
-Do not print or inspect token values. Restoring the existing repository secret
-`SUBSTRATE_READ_TOKEN`/its access needs separate credential authority. A retry
+(three attempts, exit 128). Native GitHub account inspection on October 12
+additionally shows the fine-grained PAT named `SUBSTRATE_READ_TOKEN` has expired.
+Dan authorized this exact token repair in the current session and signed into
+the ops browser by hand. A replacement form is prepared for only
+`dan-mercede-substrate`, Contents read-only plus mandatory Metadata read-only,
+with January 10, 2027 expiry. GitHub rejects generation with "You can't perform
+that action at this time"; native operator generation/verification is pending.
+No token value has been printed, persisted or installed, and the repository
+secret's metadata still shows its July 8 update. Do not call the repair complete.
+
+After native generation, transfer the value in memory to the exact repository
+secret through encrypted `gh secret set` stdin, never chat, files or argv. Verify
+a private source read before installation and the actual Actions checkout after
+installation. The existing `substrate-verify` check tolerates fetch failure and
+compares the unchanged bundle as a fallback; its green status is NOT proof of
+token recovery. Strict `substrate-sync` checkout/compile must succeed. A retry
 without restored access is not a release plan. `SUBSTRATE_SYNC_PR_TOKEN` has not
 been exercised by this failed run; do not claim it works or replace it preemptively.
 
