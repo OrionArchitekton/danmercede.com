@@ -137,8 +137,11 @@ test('every published route renders with a clean heading outline', async () => {
 // build does ship for the same routes. Review of #184, 2026-09-29.
 test('the homepage speaking block renders the speaker page and the tracked NODES registration link', async () => {
   const home = (await loadRender())('/');
-  assert.ok(home.includes(`href="${SPEAKING.href}"`), 'homepage: the credential-proof link to the speaker page');
-  assert.ok(home.includes(`href="${SPEAKING.registerHref.replace(/&/g, '&amp;')}"`), 'homepage: the tracked registration link');
+  const at = home.indexOf(`>${SPEAKING.event}<`);
+  assert.ok(at >= 0, 'homepage: expected the speaking block heading');
+  const block = home.slice(home.lastIndexOf('<section', at), home.indexOf('</section>', at));
+  assert.ok(block.includes(`href="${SPEAKING.href}"`), 'speaking block: the credential-proof link to the speaker page');
+  assert.ok(block.includes(`href="${SPEAKING.registerHref.replace(/&/g, '&amp;')}"`), 'speaking block: the tracked registration link');
 });
 
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {

@@ -68,7 +68,9 @@ test('the speaking block keeps the speaker page as proof and adds the tracked re
   assert.equal(SPEAKING.href, 'https://neo4j.com/nodes/speakers/dan-mercede/', 'the credential-proof link stays the speaker page');
   assert.equal(SPEAKING.registerHref, NODES_CONTEST_URL);
   const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
-  const homePage = app.slice(app.indexOf('const HomePage = '), app.indexOf('const AboutPage = '));
-  assert.ok(homePage.includes('href={SPEAKING.href}'), 'the homepage speaking block links the speaker page');
-  assert.ok(homePage.includes('href={SPEAKING.registerHref}'), 'the homepage speaking block links the tracked registration URL');
+  const start = app.indexOf('{/* Upcoming Speaking');
+  assert.ok(start >= 0, 'expected the homepage speaking block');
+  const block = app.slice(start, app.indexOf('</Section>', start));
+  assert.ok(block.includes('href={SPEAKING.href}'), 'the speaking block links the speaker page');
+  assert.ok(block.includes('href={SPEAKING.registerHref}'), 'the speaking block links the tracked registration URL');
 });
