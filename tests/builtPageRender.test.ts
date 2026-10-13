@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, NEWSLETTER, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, NEWSLETTER, SELECTED_WORK, SPEAKING, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -135,6 +135,15 @@ test('every published route renders with a clean heading outline', async () => {
 // worksHub.test.ts, frontDoor.test.ts, contentBoundary.test.ts) bind the hidden
 // crawl block, which a rendered route no longer ships. These bind the render the
 // build does ship for the same routes. Review of #184, 2026-09-29.
+test('the homepage speaking block renders the speaker page and the tracked NODES registration link', async () => {
+  const home = (await loadRender())('/');
+  const at = home.indexOf(`>${SPEAKING.event}<`);
+  assert.ok(at >= 0, 'homepage: expected the speaking block heading');
+  const block = home.slice(home.lastIndexOf('<section', at), home.indexOf('</section>', at));
+  assert.ok(block.includes(`href="${SPEAKING.href}"`), 'speaking block: the credential-proof link to the speaker page');
+  assert.ok(block.includes(`href="${SPEAKING.registerHref.replace(/&/g, '&amp;')}"`), 'speaking block: the tracked registration link');
+});
+
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {
   const home = (await loadRender())('/');
   const essayCards = SELECTED_WORK.filter((w) => w.href.startsWith('/thoughts/'));

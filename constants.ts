@@ -57,6 +57,16 @@ export const SPEAKING = {
   // Mirrored into Person.sameAs in index.html per docs/identity-contract.md.
   href: "https://neo4j.com/nodes/speakers/dan-mercede/",
   cta: "Speaker profile",
+  // NODES 2026 speaker contest: Dan's personalized registration URL, exactly as Neo4j's
+  // generator emits it (dev.assets.neo4j.com/nodes-sc-2026.html, generated 2026-10-13).
+  // Known generator quirk: it joins first and last name with a raw "&", so a parser reads
+  // utm_campaign=Dan plus a stray "Mercede" key. Kept verbatim on purpose: Neo4j's contest
+  // tracking reads what its own generator emits, and the quirk has been reported to the
+  // organizer. Re-encode only once Neo4j confirms a different form.
+  // It lands on the general NODES page, so it sits beside the proof link above and
+  // never replaces it.
+  registerHref: "https://www.neo4j.com/nodes?utm_source=SpeakerContest&utm_campaign=Dan&Mercede",
+  registerCta: "Register free",
 };
 
 export const BELIEFS: Belief[] = [

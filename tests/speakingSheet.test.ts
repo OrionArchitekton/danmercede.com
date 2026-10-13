@@ -54,3 +54,23 @@ test('the published PDF carries exactly the one-sheet title', () => {
     : raw.slice(1, -1).replace(/\\(.)/g, '$1');
   assert.equal(title, 'Dan Mercede, Speaker One-Sheet');
 });
+
+/**
+ * NODES 2026 speaker contest (2026-10-13): Neo4j tracks each speaker's referrals
+ * by a personalized registration URL. The homepage speaking block keeps the
+ * Neo4j speaker page as its credential-proof link (neo4j.com/nodes/ itself never
+ * names Dan) and adds a free-registration link carrying the tracked URL exactly
+ * as Neo4j's generator emits it.
+ */
+const NODES_CONTEST_URL = 'https://www.neo4j.com/nodes?utm_source=SpeakerContest&utm_campaign=Dan&Mercede';
+
+test('the speaking block keeps the speaker page as proof and adds the tracked registration link', () => {
+  assert.equal(SPEAKING.href, 'https://neo4j.com/nodes/speakers/dan-mercede/', 'the credential-proof link stays the speaker page');
+  assert.equal(SPEAKING.registerHref, NODES_CONTEST_URL);
+  const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
+  const start = app.indexOf('{/* Upcoming Speaking');
+  assert.ok(start >= 0, 'expected the homepage speaking block');
+  const block = app.slice(start, app.indexOf('</Section>', start));
+  assert.ok(block.includes('href={SPEAKING.href}'), 'the speaking block links the speaker page');
+  assert.ok(block.includes('href={SPEAKING.registerHref}'), 'the speaking block links the tracked registration URL');
+});
