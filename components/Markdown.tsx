@@ -6,9 +6,8 @@ import React from 'react';
 // blockquotes, horizontal rules, and image figures `![alt](src "caption")`
 // rendered as a responsive <figure> with a 768w/1536w srcset.
 //
-// This is the VISIBLE render. The crawlable answer-engine body is baked separately
-// as plain text (seoMeta.renderBodyBlock + guideBodyToParagraphs), so this renderer
-// never has to be Node/SSR-safe. NOT a general CommonMark parser by design — the
+// This renderer runs in the browser and in the build-time page render (the SSR
+// bundle), so it stays free of window/document reads. NOT a general CommonMark parser by design: the
 // repo deliberately avoids a markdown dependency (see the /guides design note).
 
 type Key = string | number;

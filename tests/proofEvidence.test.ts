@@ -5,7 +5,6 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { PROOF_EVIDENCE } from '../constants';
-import { ROUTE_META, renderBodyBlock, evidenceBakeParagraphs, evidenceBakeLinks } from '../seoMeta';
 
 /**
  * Integrity guard for the /proof evidence surface.
@@ -237,67 +236,4 @@ test('tier ids are unique and anchor-safe', () => {
   const ids = PROOF_EVIDENCE.map((t) => t.id);
   assert.deepEqual(ids, [...new Set(ids)], `duplicate tier ids collide as anchors: ${ids}`);
   for (const id of ids) assert.match(id, /^[a-z0-9-]+$/, `tier id "${id}" is not anchor-safe`);
-});
-
-test('PARITY: every published claim reaches the no-JS crawl body for /proof', () => {
-  // The whole arc exists because answer engines could not retrieve the evidence.
-  // EvidenceSection renders client-side only, so without the bake a crawler sees
-  // the old generic Proof copy and none of this. Three separate reviewers caught
-  // that; this test is what stops it regressing.
-  const baked = renderBodyBlock('/proof', ROUTE_META['/proof']);
-  assert.ok(baked.length > 0, 'the /proof route must bake a body block');
-
-  // renderBodyBlock escapes & < > so an ampersand in a claim ("Fork Around & Find
-  // Out") will never match verbatim. Decode before comparing rather than dodging
-  // the characters, so the test keeps covering claims that contain them.
-  const bakedText = baked
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-
-  for (const c of allClaims) {
-    // Compare on a distinctive slice: renderBodyBlock escapes entities, so the
-    // full sentence will not match verbatim once it contains & or quotes.
-    const probe = c.claim.split(/[.,]/)[0].slice(0, 45);
-    assert.ok(
-      bakedText.includes(probe),
-      `claim is invisible to no-JS crawlers: "${probe}"`
-    );
-  }
-
-  // Sources must be real anchors, not URL text a crawler has to parse out of prose.
-  for (const c of checks) {
-    for (const src of c.sources ?? []) {
-      assert.ok(
-        bakedText.includes(`href="${src}"`),
-        `source is not baked as a crawlable anchor: ${src}`
-      );
-    }
-  }
-});
-
-test('the bake helper emits a lead line per tier plus one line per claim', () => {
-  const paras = evidenceBakeParagraphs();
-  const expected = PROOF_EVIDENCE.length + allClaims.length;
-  assert.equal(
-    paras.length,
-    expected,
-    `expected ${expected} baked paragraphs (one lead per tier plus one per claim), got ${paras.length}`
-  );
-  assert.ok(
-    paras.every((p) => p.trim().length > 0),
-    'no baked paragraph may be empty'
-  );
-});
-
-test('every evidence source is baked as a link, one per source', () => {
-  const links = evidenceBakeLinks();
-  const expected = PROOF_EVIDENCE.flatMap((t) => t.claims.flatMap((c) => c.sources ?? [])).length;
-  assert.equal(links.length, expected, `expected ${expected} baked source links, got ${links.length}`);
-  for (const l of links) {
-    assert.ok(isUsableHttpsUrl(l.href), `baked link must be usable https: ${l.href}`);
-    assert.ok(l.text.trim().length > 0, 'baked link needs anchor text');
-  }
 });

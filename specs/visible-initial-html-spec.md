@@ -243,6 +243,13 @@ Works, and Contact first, so the slices were reordered:
   remaining static pages). Essays and guides ship their full text. The injector is
   re-runnable again (it keeps the empty template beside the SSR bundle and reads the
   committed sitemap). S5 still waits two weeks without `hydration_error` events.
+- S5 (2026-10-13): retired the crawl block. Removed `renderBodyBlock`, the per-route
+  `body` copy in `seoMeta.ts` (and the essay and guide paragraph helpers), the
+  `BODY_BLOCK` anchors and homepage copy in `index.html`, the `#prerender-content`
+  removal in `index.tsx`, and the `VISIBLE_HTML_ROLLBACK` switch with its test. The
+  content contracts the crawl-block tests carried now bind the render in
+  `tests/builtPageRender.test.ts`. Kept: head meta, route JSON-LD, sitemap, feed, the
+  not-found file (empty `#root`, noindex), and `RENDERED_ROUTES`.
 
 ## Test seams (decision)
 
@@ -284,8 +291,9 @@ fewest, highest seams, all existing in kind:
 8. Routes outside the rendered-route set produce byte-identical initial HTML to
    the baseline output (S1 to S3), apart from the client bundle's content hash,
    which changes with any client code change, and the S4 heading fixes.
-9. Emptying the rendered-route set restores the crawl-block output for every route.
-   The S4 heading fixes and the bundle hash do not depend on the set, so they stay.
+9. (Retired in S5.) Until S5, emptying the rendered-route set restored the
+   crawl-block output for every route. S5 deleted that fallback; rollback is a
+   `git revert` of the S5 PR.
 10. After S4, the `extractability` gate lints every built route file and passes.
 11. After S5, no hand-written per-route body copy exists; the page components are
     the only source of visible route content.
@@ -332,12 +340,10 @@ fewest, highest seams, all existing in kind:
   HTML, run the browser check) before merge.
 - **Monitoring and validation:** `hydration_error` events in GA4 after each merge;
   `curl` production /about after S1; Search Console URL inspection after S1, S2.
-- **Rollback:** set `VISIBLE_HTML_ROLLBACK=1` in the build environment (a Vercel
-  environment variable, no code change) or replace the rendered-route set with an
-  empty Set; the build re-emits the crawl block for every route. A post-build test
-  exercises the switch in both directions. The S4 heading fixes are independent of
-  the set and stay. S5 deletes that fallback, so it
-  ships last, after two weeks without `hydration_error` events.
+- **Rollback:** after S5 there is no switch and no fallback output. Rollback is a
+  `git revert` of the S5 PR, which restores the crawl block and the
+  `VISIBLE_HTML_ROLLBACK` switch. The S4 heading fixes are independent and stay. S5
+  shipped last, after two weeks without `hydration_error` events.
 
 ## Open questions for Dan (all resolved)
 

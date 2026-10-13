@@ -1,5 +1,5 @@
 // Promotional / call-to-action phrases that must never appear on an identity-only
-// surface. Shared by tests/contentBoundary.test.ts (the crawl-block fallback) and
+// surface. Shared by tests/contentBoundary.test.ts (the detector) and
 // tests/builtPageRender.test.ts (the page render the build ships). Not a test file.
 export const FORBIDDEN_NEEDLES = [
   'book a',
