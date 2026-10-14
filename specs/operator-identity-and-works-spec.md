@@ -37,7 +37,7 @@ and essay and guide bodies. Add no public pages or dependencies.
 
 Use the existing route render and built-output seams to exercise the visible
 home and Works pages, footer links, metadata, and shared Person schema together.
-Keep the identity-contract and Works prerender parity checks aligned with the
+Keep the identity-contract and built Works render checks aligned with the
 new copy. Run the existing tests, extractability lint, typecheck, build, and built
 tests. Verify hydrated project-card clicks reach the existing microsites. Confirm
 the home page and Works from the production domain after deploy.

@@ -33,9 +33,9 @@ complete answer from raw HTML. It runs as a **first-class fail-closed REQUIRED c
   (`MAX_ANSWER_TOKENS` = 227 heuristic tokens). Tighten the lead into an answer-first summary;
   put depth in later paragraphs.
 - `js-off-readable` — the answer regressed into the React `#root` mount (invisible to no-JS
-  crawlers). Ensure the copy is baked into the prerender block (`renderBodyBlock`), not
-  React-only.
-- `heading-hierarchy` — not exactly one H1, or a heading level skip. Fix the baked body's
+  crawlers). Ensure the route is in the rendered-route set so its page render ships inside
+  the stamped `#root` (`RENDERED_ROUTES` in `scripts/injectRouteMeta.ts`), not React-only.
+- `heading-hierarchy`: not exactly one H1, or a heading level skip. Fix the page's
   heading structure.
 
 ## Rollback / disarm (deliberate, reviewed)

@@ -5,7 +5,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { RESOURCES, proofGroupFor, INTENT_ROUTES } from '../constants';
-import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appSrc = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
@@ -49,13 +48,6 @@ test('downloads no longer wear enforcement-layer labels', () => {
   assert.match(proofPage, /<DownloadCard /);
 });
 
-test('the /proof prerender names the three kinds of material', () => {
-  const body = renderBodyBlock('/proof', ROUTE_META['/proof']);
-  for (const phrase of ['Evidence', 'Approach', 'Commercial and speaking']) {
-    assert.ok(body.includes(phrase), `the /proof prerender should mention "${phrase}"`);
-  }
-});
-
 test('no download is marked gated, because DownloadCard has no gated path', () => {
   // DownloadCard always links the file. Gating a resource without first adding a
   // gated branch to DownloadCard would silently serve it anyway.
@@ -74,8 +66,6 @@ test('the homepage card for /proof describes the page as it now is', () => {
 test('the priced engagement sheet is retired and Proof points commercial inquiries at Contact', () => {
   assert.ok(!RESOURCES.some((r) => /What_We_Deliver/i.test(r.fileName)), 'no download entry');
   assert.ok(!fs.existsSync(path.join(root, 'public/assets/What_We_Deliver.pdf')), 'no served file');
-  const bake = renderBodyBlock('/proof', ROUTE_META['/proof']);
-  assert.doesNotMatch(bake, /engagement sheet/i, 'the /proof bake must not promise the sheet');
   assert.doesNotMatch(proofPage, /Service and speaking documents/, 'no service document remains');
   const commercial = proofPage.slice(proofPage.indexOf('id="commercial"'));
   assert.ok(commercial.length < proofPage.length, 'expected the commercial section (positive control)');

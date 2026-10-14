@@ -44,13 +44,10 @@ test('renderDiagramSitemapEntries emits a <url> with an <image:image> child', ()
   assert.match(xml, /<image:caption>The architecture divide, stated plainly\.<\/image:caption>/);
 });
 
-test('diagramMeta builds title/description/body from a diagram (via injected corpus)', () => {
+test('diagramMeta builds title/description from a diagram (via injected corpus)', () => {
   const m = diagramMeta(d.slug, [d]);
   assert.match(m.title, /Monitoring vs Enforcement Architecture: Diagram \| Dan Mercede/);
   assert.equal(m.description, d.caption);
-  assert.equal(m.body?.h1, d.title);
-  // The alt text is baked as crawlable prose so no-JS answer engines read it.
-  assert.ok(m.body?.paragraphs.some((p) => p.includes('evaluates intent before')));
 });
 
 test('renderRouteJsonLd emits an ImageObject backref-ing #person for a diagram route', () => {

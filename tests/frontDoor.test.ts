@@ -4,8 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, contactHref } from '../constants';
-import { ROUTE_META, renderBodyBlock } from '../seoMeta';
+import { ABOUT_BIO, CONTACT_INTENTS } from '../constants';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -57,17 +56,6 @@ test('biography facts match the record Dan settled on 2026-09-29', () => {
   assert.match(sheet, /representing Apple as a field sales rep with Mosaic Sales Solutions/);
 });
 
-test('the /about prerender carries the full biography', () => {
-  const body = renderBodyBlock('/about', ROUTE_META['/about']);
-  const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  for (const p of ABOUT_BIO.sections.flatMap((s) => s.paragraphs)) {
-    assert.ok(body.includes(escape(p)), `the /about prerender is missing: ${p.slice(0, 60)}`);
-  }
-  for (const r of ABOUT_BIO.recognition) {
-    assert.ok(body.includes(escape(r.label)), `the /about prerender is missing recognition: ${r.label}`);
-  }
-});
-
 test('AboutPage renders ABOUT_BIO and drops the retired founder caption', () => {
   const app = read('App.tsx');
   const page = app.slice(app.indexOf('const AboutPage'), app.indexOf('const EcosystemPage'));
@@ -85,10 +73,6 @@ test('/connect names every reason to reach out, and each one has a working route
     } else {
       assert.match((intent as { href?: string }).href ?? '', /^https:\/\//, `${intent.id}: needs a subject or an https href`);
     }
-  }
-  const body = renderBodyBlock('/connect', ROUTE_META['/connect']);
-  for (const intent of CONTACT_INTENTS) {
-    assert.ok(body.includes(intent.label), `the /connect prerender is missing "${intent.label}"`);
   }
 });
 
@@ -109,18 +93,8 @@ test('the new front-door copy follows the house voice', () => {
   }
 });
 
-test('the no-JS bakes carry real links, not just labels', () => {
-  const about = renderBodyBlock('/about', ROUTE_META['/about']);
-  for (const r of ABOUT_BIO.recognition) {
-    assert.ok(about.includes(`href="${r.href}"`), `/about prerender must link ${r.href}`);
-  }
-  const connect = renderBodyBlock('/connect', ROUTE_META['/connect']);
-  assert.ok(connect.includes(CONTACT_EMAIL), '/connect prerender must show the email address');
-  for (const intent of CONTACT_INTENTS) {
-    const href = contactHref(intent).replace(/&/g, '&amp;');
-    assert.ok(connect.includes(`href="${href}"`), `/connect prerender must link ${intent.id}: ${href}`);
-  }
+test('ConnectPage builds its links with the shared contactHref', () => {
   const app = read('App.tsx');
   const page = app.slice(app.indexOf('const ConnectPage'), app.indexOf('const LegalPage'));
-  assert.match(page, /contactHref\(intent\)/, 'ConnectPage and the prerender must share contactHref');
+  assert.match(page, /contactHref\(intent\)/, 'ConnectPage must build its links with contactHref');
 });

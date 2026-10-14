@@ -3,39 +3,31 @@ import assert from 'node:assert/strict';
 
 import { collectRoutes, injectPageRender, RENDERED_ROUTES } from '../scripts/injectRouteMeta';
 import { lintExtractability } from '../extractability';
-import { BODY_BLOCK_START, BODY_BLOCK_END } from '../seoMeta';
 
 /**
- * Visible initial HTML spec, slice S1. A route in the rendered-route set ships
- * the real page render inside #root, stamped with its path, and drops the
- * hidden crawl block so the page text appears once. Every other route keeps
- * today's empty #root and crawl block.
+ * Visible initial HTML spec. A route in the rendered-route set ships the real
+ * page render inside #root, stamped with its path.
  */
 
 const template = [
   '<body>',
-  `  ${BODY_BLOCK_START}`,
-  '  <div id="prerender-content" aria-hidden="true"><h1>Crawl copy</h1></div>',
-  `  ${BODY_BLOCK_END}`,
   '  <div id="root"></div>',
   '</body>',
 ].join('\n');
 
-// Slice S3: every published route ships its page render.
+// Every published route ships its page render.
 test('the rendered-route set covers every published route', () => {
   const published = ['/', ...collectRoutes().map((r) => r.path)].sort();
   assert.deepEqual([...RENDERED_ROUTES].sort(), published);
   assert.ok(published.length > 80);
 });
 
-test('a rendered route carries its page render in a stamped #root and drops the crawl block', () => {
+test('a rendered route carries its page render in a stamped #root', () => {
   const out = injectPageRender(template, '/about', '<h1>About</h1><p>Costs $&amp; $1 nothing.</p>');
   assert.ok(
     out.includes('<div id="root" data-rendered-path="/about"><h1>About</h1><p>Costs $&amp; $1 nothing.</p></div>'),
     'markup is inserted verbatim, with no replacement-pattern expansion',
   );
-  assert.doesNotMatch(out, /prerender-content|Crawl copy/);
-  assert.ok(out.includes(BODY_BLOCK_START) && out.includes(BODY_BLOCK_END), 'the block anchors stay in place');
 });
 
 test('the route stamp is attribute-escaped', () => {

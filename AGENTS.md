@@ -36,13 +36,12 @@ These two surfaces have separate, non-overlapping jobs — keep them that way.
   `3 ≤ FEATURED_ESSAY_SLUGS.length ≤ 5`) — it is the guardrail that stops `/works`
   drifting into a second `/thoughts`. To change the featured set, edit
   `FEATURED_ESSAY_SLUGS` in `constants.ts` (stay within the cap).
-- **Dual-render parity.** Every crawl-relevant element on `/works` (the availability
-  line, the featured deep-links, the outbound rail) is baked into the
-  `renderBodyBlock` prerender block in `seoMeta.ts` so no-JS answer engines read it.
-  The React `WorksPage` and the bake both read the SAME `featuredEssays()` /
-  `WORKS_HUB` constants — a parity test asserts the baked set equals
-  `featuredEssays()`, so the visible and crawler renders cannot drift. This is
-  prerender fallback, not cloaking.
+- **One render.** Every crawl-relevant element on `/works` (the availability line,
+  the featured deep-links, the outbound rail) ships in the build-time page render
+  inside `#root`, so no-JS answer engines read the same markup visitors see.
+  `tests/builtPageRender.test.ts` binds the featured set to `featuredEssays()` and
+  the pilot, availability, and outbound links to `WORKS_HUB`. There is no separate
+  crawler copy.
 
 ## Guides surface (`/guides`)
 
@@ -64,8 +63,7 @@ tutorials), dev-lane — distinct from `/thoughts` (terse substrate doctrine) an
   stale relative to its `.md` source.
 - **Render:** `components/Markdown.tsx` — a dep-free Markdown renderer (no markdown
   library, consistent with the lean / externalized-React build). `GuideDetailPage`
-  renders the body; `seoMeta.guideBodyToParagraphs` bakes a clean-prose crawl body
-  (code/tables/figures dropped) for no-JS answer engines.
+  renders the body, in the browser and in the build-time page render.
 - **Index lenses:** the `/guides` index theme filters are hub-side curation:
   `GUIDE_LENSES` in `constants.ts`, explicit slug membership per lens (mirrors
   `FEATURED_ESSAY_SLUGS`; never keyword inference). `tests/guidesLenses.test.ts`
@@ -428,7 +426,7 @@ tests; an unchanged count means the new guard is not running.
 
 ### Keep rendered pages hydratable
 
-Some routes ship their real page render in the initial HTML and the browser
+Every published route ships its real page render in the initial HTML and the browser
 hydrates it (the rendered-route set; `specs/visible-initial-html-spec.md`). A
 component must not read `window`, `document`, the clock, or randomness while it
 renders: do that in an effect. A render-time read either breaks the build-time

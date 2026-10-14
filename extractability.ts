@@ -88,8 +88,8 @@ function toText(html: string): string {
  * Split the React mount (#root) subtree out of the document. Text inside #root
  * is rendered only after JS hydration, so it is NOT visible to a no-JS crawler.
  * Balanced <div> scan so nested divs inside #root are handled correctly. The
- * real hub ships an EMPTY #root (content is baked into a sibling prerender
- * block, seoMeta.ts renderBodyBlock), so a well-baked page yields rootInner=''.
+ * hub's route files ship the page render inside a stamped #root (the stamp is
+ * checked by the caller); the not-found file ships an empty one.
  */
 function splitRoot(html: string): { rootInner: string; jsOff: string } {
   const open = /<div\b[^>]*\bid=["']root["'][^>]*>/i.exec(html);

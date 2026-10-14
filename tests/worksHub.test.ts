@@ -2,9 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, WORKS_START_HERE, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
+import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
 import { WorkCard } from '../components/WorkCard';
-import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 // ---------------------------------------------------------------------------
 // AC1 — the curated-pointer hard cap is code-enforced (load-bearing)
@@ -65,79 +64,6 @@ test('WORKS_HUB.pilot adds a second qualifier without touching the roles line', 
   for (const dash of ['—', '–', '―']) {
     assert.ok(!WORKS_HUB.pilot.includes(dash), `pilot copy must not contain a long dash (${dash})`);
   }
-});
-
-test('the /works baked body contains the pilot line, so visible and baked cannot drift', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  assert.ok(block.includes(WORKS_HUB.pilot), 'pilot line baked as crawlable text');
-});
-
-// ---------------------------------------------------------------------------
-// AC3 — the crawler bake carries availability text + featured deep-links + outbound
-// ---------------------------------------------------------------------------
-
-test('the /works baked body contains the availability line as crawlable text', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  assert.ok(block.includes(WORKS_HUB.availability), 'availability line baked as text');
-});
-
-test('the /works baked body bakes each featured essay as an escaped /thoughts/<slug> <a>', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  for (const e of featuredEssays()) {
-    assert.match(
-      block,
-      new RegExp(`<a href="/thoughts/${e.slug}">`),
-      `featured deep-link to /thoughts/${e.slug} baked`,
-    );
-  }
-});
-
-test('the /works baked body bakes the outbound rail (signal + GitHub)', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  assert.ok(block.includes(`href="${WORKS_HUB.signalUrl}"`), 'signal outbound baked');
-  assert.ok(block.includes(`href="${WORKS_HUB.githubUrl}"`), 'GitHub outbound baked');
-});
-
-// Parity — the baked featured set CANNOT drift from featuredEssays(); the React
-// WorksPage reads the same starting pointers and featuredEssays().
-test('the baked /works essay links equal the starting pointers plus featuredEssays()', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  const bakedSlugs = [...block.matchAll(/<a href="\/thoughts\/([^"/]+)">/g)].map((m) => m[1]);
-  const expected = [
-    ...WORKS_START_HERE.filter((item) => item.href.startsWith('/thoughts/')).map((item) => item.href.slice('/thoughts/'.length)),
-    ...featuredEssays().map((e) => e.slug),
-  ];
-  assert.deepEqual(bakedSlugs, expected, 'baked featured deep-links must equal featuredEssays() exactly');
-});
-
-test('the baked /works featured links carry the resolved TITLES too (parity defense-in-depth)', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  const baked = [...block.matchAll(/<a href="\/thoughts\/([^"/]+)">([^<]+)<\/a>/g)].map((m) => ({
-    slug: m[1],
-    title: m[2],
-  }));
-  // featuredEssays() returns RAW titles; the bake escapes < > & via escapeText —
-  // apply the same escaping to the expected side so the comparison is robust to a
-  // future title containing those chars (today's 5 titles contain none).
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const expected = [
-    ...WORKS_START_HERE.filter((item) => item.href.startsWith('/thoughts/')).map((item) => ({ slug: item.href.slice('/thoughts/'.length), title: esc(item.title) })),
-    ...featuredEssays().map((e) => ({ slug: e.slug, title: esc(e.title) })),
-  ];
-  assert.deepEqual(baked, expected, 'baked featured slug+title must equal featuredEssays() exactly');
-});
-
-// AC4 — /works is a pointer, not a library: NO essay bodies leak into the bake.
-test('the /works baked body hosts NO essay bodies (short framing copy and starting pointers only)', () => {
-  const block = renderBodyBlock('/works', ROUTE_META['/works']);
-  const paras = (block.match(/<p>/g) || []).length;
-  assert.ok(paras <= 6, `/works must stay a pointer (max 6 <p> including Start here), got ${paras}. Did an essay body leak in?`);
-  // Raising the count cap for the pilot CTA line would weaken this guard on its own,
-  // because a leaked essay body is ONE very long paragraph and would still pass a count
-  // check. Assert shape as well, so the cap increase cannot mask the hazard the test
-  // actually exists to catch. Longest legitimate paragraph today is 149 chars.
-  const longest = Math.max(0, ...(block.match(/<p>[\s\S]*?<\/p>/g) || []).map((p) => p.length));
-  assert.ok(longest <= 400, `no /works paragraph may run essay-length, longest is ${longest} chars`);
 });
 
 // ---------------------------------------------------------------------------

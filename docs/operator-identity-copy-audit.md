@@ -90,9 +90,9 @@ No new metrics or pages were added.
 | `index.html:170` | Governed AI Architect | Replaced with Dan Mercede: Operator and Systems Builder. | perator, Systems Builder, and Governed AI Architect", |
 | `public/llms.txt:11` | Cosmocrat | Replaced navigation summary with independent ventures, their roles, and shared ownership architecture. | tem): The Orion entity stack (Cosmocrat, Orion Intelligence Agency, and supporting ventures) under |
 | `seoMeta.ts:16` | Governed AI Architect | Replaced with Dan Mercede: Operator and Systems Builder. | perator, Systems Builder, and Governed AI Architect'; |
-| `seoMeta.ts:177` | Cosmocrat | Preserved: Ecosystem page body copy, not shared metadata or identity. | 'Cosmocrat is the Governed AI Operating System that serves as the cont |
-| `seoMeta.ts:177` | Governed AI Operating System | Preserved: Ecosystem page body copy, not shared metadata or identity. | 'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligen |
-| `seoMeta.ts:178` | Orion Apex Capital | Preserved: Ecosystem page body copy, not shared metadata or identity. | 'Orion Apex Capital originates, owns, and governs the ecosystem. Orion Intellig |
+| `seoMeta.ts:177` | Cosmocrat | Upstream PR #200 retired this duplicate crawler body; visible Ecosystem content remains in the single page render. | 'Cosmocrat is the Governed AI Operating System that serves as the cont |
+| `seoMeta.ts:177` | Governed AI Operating System | Upstream PR #200 retired this duplicate crawler body; visible Ecosystem content remains in the single page render. | 'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligen |
+| `seoMeta.ts:178` | Orion Apex Capital | Upstream PR #200 retired this duplicate crawler body; visible Ecosystem content remains in the single page render. | 'Orion Apex Capital originates, owns, and governs the ecosystem. Orion Intellig |
 | `specs/2026-07-08-homepage-intent-router-spec.md:23` | Orion Apex Capital | Preserved: documentation or test reference, not served identity copy. | and Orion Apex Capital. |
 | `specs/visible-initial-html-spec.md:93` | cosmocrat | Preserved: documentation or test reference, not served identity copy. | e case study) plus /ecosystem#cosmocrat hydrated with |
 | `tests/builtPageRender.test.ts:158` | Orion Apex Capital | Preserved: documentation or test reference, not served identity copy. | ssert.doesNotMatch(homeMain, /Orion Apex Capital/, 'homepage: entity-structure copy belongs on /ecosystem'); |
@@ -113,7 +113,7 @@ Total: 75 occurrences.
 
 No requested legacy-identity search terms occur in the committed essay bundle,
 guide bundle, or guide Markdown sources. Those files remain byte-identical to
-baseline. Existing ecosystem venture descriptions and their prerender body,
+baseline. Existing ecosystem venture descriptions in the single React page render,
 legal ownership copy, and imprint company details are content and are retained.
 The spelling `governed AI architecture` in the Diagrams introduction is a subject
 label, not the exact identity phrase `Governed AI Architect`, and is retained.
@@ -123,8 +123,11 @@ removed. Sitemap generation continues to derive URLs from the unchanged routes.
 
 ## Validation and release
 
-Local validation passes: 457 existing tests; TypeScript (`npx tsc --noEmit`);
-15 extractability lint checks; production build; 19 built-output tests. An
+Before integrating current main: 457 existing tests and 19 built-output tests
+passed. After the merge with PR #200's single-render cleanup: 427 tests and
+17 built-output tests pass, plus TypeScript, extractability lint, and the
+production build. The upstream change removed 30 obsolete crawl-block tests
+and two retired fallback/rollback tests. An
 existing default-description assertion was updated for the requested copy.
 Direct built-HTML assertions verify all three exact titles/descriptions, hero
 identity, both rendered footers and six profile/newsletter links, Works card
@@ -161,13 +164,30 @@ release commit via PR and redeploy the prior main revision.
 
 - `App.tsx`: footer role, shared role badge, and the three Works cards.
 - `constants.ts`: exact identity, existing social URLs, starting pointers, portrait metadata.
-- `seoMeta.ts`: default metadata, shared image alt, and crawler pointers.
-- `index.html`: source metadata, Person/WebSite/ProfilePage schema, fallback identity.
+- `seoMeta.ts`: default metadata and shared image alt.
+- `index.html`: source metadata and Person/WebSite/ProfilePage schema.
 - `metadata.json`: matching project name and description.
 - `public/llms.txt`: matching identity and generic ecosystem navigation summary.
 - `tests/identityCanonical.test.ts`: requested operator identity schema contract.
 - `tests/injectRouteMeta.test.ts`: requested default description expectation.
-- `tests/worksHub.test.ts`: parity for added starting pointers, preserving essay cap.
+- `tests/builtPageRender.test.ts`: starting-card target/title/description parity and a native-document-link regression guard with a router-link positive control.
 - `docs/identity-contract.md`: canonical operator job title and association boundary.
 - `specs/operator-identity-and-works-spec.md`: scoped behavior and validation seam.
 - `docs/operator-identity-copy-audit.md`: every search hit, before/after, evidence, rollback.
+
+## Integration with current main
+
+PR #200 merged while this copy change was awaiting approval. Its retirement of
+the separate hidden crawl block conflicted with the old fallback identity and
+Works parity tests. The resolution retains the upstream single-render approach,
+keeps the requested copy and cards in that render, and moves the starting-card
+checks to the existing built-page test. It checks all three targets, titles,
+descriptions, and the absence of router interception, with the primary nav as a
+positive control for React Router's intercepted-link marker. No public page or
+body content was removed by this PR.
+
+Both Codex review passes approved the application implementation. The test
+coverage recommendation is addressed at the current built-render seam plus the
+recorded JavaScript click checks. The local-model claim that `featuredEssays`
+returns an empty array for a missing slug is false: it throws before the array
+can be indexed. Its fail-loud behavior is retained; no fallback was added.

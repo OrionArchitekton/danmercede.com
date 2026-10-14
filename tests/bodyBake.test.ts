@@ -9,11 +9,10 @@ import {
   caseStudyPaths,
   thoughtMeta,
   thoughtPaths,
-  renderBodyBlock,
   renderRouteJsonLd,
   injectBlock,
-  BODY_BLOCK_START,
-  BODY_BLOCK_END,
+  SEO_BLOCK_START,
+  SEO_BLOCK_END,
   JSONLD_BLOCK_START,
   JSONLD_BLOCK_END,
   PERSON_ID,
@@ -31,94 +30,11 @@ function blockBetween(html: string, start: string, end: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// W1 — body bake
-// ---------------------------------------------------------------------------
-
-test('renderBodyBlock emits an h1 and at least one paragraph of real text', () => {
-  const block = renderBodyBlock('/proof', ROUTE_META['/proof']);
-  const h1 = (block.match(/<h1>/g) || []).length;
-  const p = (block.match(/<p>/g) || []).length;
-  assert.equal(h1, 1, 'exactly one <h1> per route');
-  assert.ok(p >= 1, 'at least one <p>');
-  assert.match(block, /<h1>Proof<\/h1>/);
-  // Real copy, not the empty root shell.
-  assert.match(block, /four deterministic boundaries/);
-});
-
-test('renderBodyBlock escapes < > & in copy (no breakout)', () => {
-  const block = renderBodyBlock('/x', {
-    title: 'x',
-    body: { h1: 'A & B', paragraphs: ['<script>x</script> & more'] },
-  });
-  assert.match(block, /<h1>A &amp; B<\/h1>/);
-  assert.match(block, /&lt;script&gt;x&lt;\/script&gt; &amp; more/);
-  assert.doesNotMatch(block, /<script>x<\/script>/);
-});
-
-test('renderBodyBlock falls back to title+description when a route omits body', () => {
-  const block = renderBodyBlock('/y', { title: 'Fallback Title', description: 'Fallback desc.' });
-  assert.match(block, /<h1>Fallback Title<\/h1>/);
-  assert.match(block, /<p>Fallback desc\.<\/p>/);
-});
-
-test('every static ROUTE_META route renders a non-empty body block', () => {
-  for (const [routePath, meta] of Object.entries(ROUTE_META)) {
-    const block = renderBodyBlock(routePath, meta);
-    assert.match(block, /<h1>.+<\/h1>/, `${routePath} must have an h1`);
-    assert.match(block, /<p>.+<\/p>/, `${routePath} must have a paragraph`);
-  }
-});
-
-test('every case-study route renders a non-empty body block', () => {
-  for (const csPath of caseStudyPaths()) {
-    const slug = csPath.split('/').pop();
-    const block = renderBodyBlock(csPath, caseStudyMeta(slug));
-    assert.match(block, /<h1>.+<\/h1>/, `${csPath} must have an h1`);
-    assert.match(block, /<p>.+<\/p>/, `${csPath} must have a paragraph`);
-  }
-});
-
-// ---------------------------------------------------------------------------
-// R1 — full essay-body corpus bake (per-thought routes)
+// Per-thought routes (JSON-LD)
 // ---------------------------------------------------------------------------
 
 test('R1: there is at least one published thought route to bake', () => {
   assert.ok(thoughtPaths().length > 0, 'expected the THOUGHTS corpus to be non-empty');
-});
-
-test('R1: a per-thought route bakes the FULL essay body (h1 + many paragraphs, not just a preview)', () => {
-  // Pick a thought whose canonical carries a multi-paragraph essay body.
-  const tPath = thoughtPaths()[0];
-  const slug = tPath.split('/').pop();
-  const meta = thoughtMeta(slug);
-  const block = renderBodyBlock(tPath, meta);
-  const h1 = (block.match(/<h1>/g) || []).length;
-  const p = (block.match(/<p>/g) || []).length;
-  assert.equal(h1, 1, 'exactly one <h1> per thought route');
-  // Lead (the claim) + at least 2 body paragraphs = the full essay, not a
-  // single preview line. The round-1 regression served only the 1-line preview.
-  assert.ok(p >= 3, `expected the full essay (>=3 <p>), got ${p} on ${tPath}`);
-});
-
-test('R1: EVERY published thought route bakes an h1 and at least one full body paragraph', () => {
-  for (const tPath of thoughtPaths()) {
-    const slug = tPath.split('/').pop();
-    const block = renderBodyBlock(tPath, thoughtMeta(slug));
-    assert.match(block, /<h1>.+<\/h1>/, `${tPath} must have an h1`);
-    assert.match(block, /<p>.+<\/p>/, `${tPath} must have at least one body paragraph`);
-  }
-});
-
-test('R1: across the corpus, at least one thought bakes a genuinely multi-paragraph essay', () => {
-  // Guards against a corpus that silently degraded to preview-only bodies.
-  const maxParas = Math.max(
-    ...thoughtPaths().map((tPath) => {
-      const slug = tPath.split('/').pop();
-      const block = renderBodyBlock(tPath, thoughtMeta(slug));
-      return (block.match(/<p>/g) || []).length;
-    }),
-  );
-  assert.ok(maxParas >= 3, `expected at least one multi-paragraph essay body, max was ${maxParas}`);
 });
 
 test('R1/W4: a per-thought route emits an Article authored by the canonical #person (no competing Person, no FAQPage)', () => {
@@ -145,25 +61,6 @@ test('R2: a per-thought breadcrumb chains Home > Thoughts > Title', () => {
   const crumb = doc['@graph'].find((n: { '@type': string }) => n['@type'] === 'BreadcrumbList');
   const names = crumb.itemListElement.map((i: { name: string }) => i.name);
   assert.deepEqual(names.slice(0, 2), ['Home', 'Thoughts']);
-});
-
-test('the prerendered body block lives OUTSIDE #root so React never collides with it', () => {
-  const block = renderBodyBlock('/', ROUTE_META['/']);
-  // DOM placement: prerender content is a sibling of #root, never inside it.
-  assert.match(block, /id="prerender-content"/);
-  assert.doesNotMatch(block, /id="root"/);
-  // Accessibility/visibility contract: hidden from users, still crawlable. A
-  // refactor that drops aria-hidden or the visually-hidden style would expose
-  // duplicate content to sighted users + AT — lock all three.
-  assert.match(block, /aria-hidden="true"/);
-  assert.match(block, /data-prerender="true"/);
-  assert.match(block, /style="[^"]*position:absolute[^"]*"/);
-});
-
-test('index.html BODY_BLOCK equals renderBodyBlock("/") (no homepage body drift)', () => {
-  const html = indexHtml();
-  const block = blockBetween(html, BODY_BLOCK_START, BODY_BLOCK_END);
-  assert.equal(block, renderBodyBlock('/', ROUTE_META['/']).trim());
 });
 
 // ---------------------------------------------------------------------------
@@ -284,24 +181,24 @@ test('index.html ROUTE_JSONLD block equals renderRouteJsonLd("/") (no homepage s
 // ---------------------------------------------------------------------------
 
 test('injectBlock replaces only the anchored region and is idempotent', () => {
-  const html = `<head>${BODY_BLOCK_START}\nOLD\n${BODY_BLOCK_END}</head>`;
-  const once = injectBlock(html, BODY_BLOCK_START, BODY_BLOCK_END, 'NEW');
+  const html = `<head>${SEO_BLOCK_START}\nOLD\n${SEO_BLOCK_END}</head>`;
+  const once = injectBlock(html, SEO_BLOCK_START, SEO_BLOCK_END, 'NEW');
   assert.match(once, /NEW/);
   assert.doesNotMatch(once, /OLD/);
-  const twice = injectBlock(once, BODY_BLOCK_START, BODY_BLOCK_END, 'NEW');
+  const twice = injectBlock(once, SEO_BLOCK_START, SEO_BLOCK_END, 'NEW');
   assert.equal(once, twice, 'second injection is a no-op (markers survive)');
 });
 
 test('injectBlock throws when markers are missing', () => {
-  assert.throws(() => injectBlock('<head></head>', BODY_BLOCK_START, BODY_BLOCK_END, 'x'), /markers not found/);
+  assert.throws(() => injectBlock('<head></head>', SEO_BLOCK_START, SEO_BLOCK_END, 'x'), /markers not found/);
 });
 
 // ---------------------------------------------------------------------------
-// End-to-end: the injector bakes head + JSON-LD + body for a deep route
+// End-to-end: the injector bakes head + JSON-LD for a deep route
 // ---------------------------------------------------------------------------
 
-test('a deep route gets its own title, Article JSON-LD, and crawlable body (end-to-end)', () => {
-  // Minimal index.html template carrying all three anchors.
+test('a deep route gets its own title and Article JSON-LD (end-to-end)', () => {
+  // Minimal index.html template carrying both anchors.
   const template = [
     '<head>',
     '  <!--SEO_BLOCK-->',
@@ -311,26 +208,19 @@ test('a deep route gets its own title, Article JSON-LD, and crawlable body (end-
     '  <!--/ROUTE_JSONLD-->',
     '</head>',
     '<body>',
-    '  <!--BODY_BLOCK-->',
-    '  <!--/BODY_BLOCK-->',
     '  <div id="root"></div>',
     '</body>',
   ].join('\n');
 
   const meta = ROUTE_META['/proof'];
-  let html = injectBlock(template, '<!--SEO_BLOCK-->', '<!--/SEO_BLOCK-->', '  <title>Proof — Runtime Governance Enforcement Artifacts | Dan Mercede</title>', '  ');
+  let html = injectBlock(template, SEO_BLOCK_START, SEO_BLOCK_END, '  <title>Proof | Dan Mercede</title>', '  ');
   html = injectBlock(html, JSONLD_BLOCK_START, JSONLD_BLOCK_END, renderRouteJsonLd('/proof', meta), '  ');
-  html = injectBlock(html, BODY_BLOCK_START, BODY_BLOCK_END, renderBodyBlock('/proof', meta), '  ');
 
   // Route title replaced the homepage default.
-  assert.match(html, /<title>Proof — Runtime Governance/);
+  assert.match(html, /<title>Proof \| Dan Mercede<\/title>/);
   assert.doesNotMatch(html, /<title>HOME<\/title>/);
   // Article JSON-LD present in head.
   assert.match(html, /"@type": "Article"/);
-  // Crawlable body present and outside #root.
-  const bodySection = html.slice(html.indexOf('<body>'));
-  assert.match(bodySection, /<h1>Proof<\/h1>/);
-  assert.match(bodySection, /<div id="root"><\/div>/);
-  // h1 sits before the empty root shell.
-  assert.ok(bodySection.indexOf('<h1>Proof') < bodySection.indexOf('id="root"'));
+  // The root shell is untouched; the page render is injected separately.
+  assert.match(html, /<div id="root"><\/div>/);
 });
