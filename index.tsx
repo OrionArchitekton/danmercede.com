@@ -11,13 +11,6 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Remove the build-time prerendered crawl content (W1 body-bake) once the SPA
-// takes over — it is a sibling of #root that exists only for raw-HTML crawlers.
-// It is already visually hidden + aria-hidden; removing it on hydration keeps
-// the DOM clean and prevents any duplicate-content reading by assistive tech.
-// Routes rendered at build time ship no crawl block at all.
-document.getElementById('prerender-content')?.remove();
-
 const app = (
   <React.StrictMode>
     <BrowserRouter>

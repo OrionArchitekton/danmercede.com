@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, HERO_CONTENT, SELECTED_WORK, CONTACT_EMAIL, contactHref } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -20,13 +20,6 @@ export const DEFAULT_TITLE =
 export const SEO_BLOCK_START = '<!--SEO_BLOCK-->';
 export const SEO_BLOCK_END = '<!--/SEO_BLOCK-->';
 
-// Anchors delimiting the crawlable body block injected INTO <body>. The SPA
-// hydrates over `#root`; this static block is a sibling so it is visible to
-// raw-HTML crawlers (ChatGPT/Perplexity/Claude, none execute JS) and replaced
-// by React on hydration (it lives outside #root and is removed at runtime).
-export const BODY_BLOCK_START = '<!--BODY_BLOCK-->';
-export const BODY_BLOCK_END = '<!--/BODY_BLOCK-->';
-
 // Anchors delimiting the per-route JSON-LD block injected into <head>. The
 // homepage entity graph (Person/WebSite/ImageObject) stays static below this
 // block; content routes get an additional Article/ProfilePage + BreadcrumbList.
@@ -42,26 +35,10 @@ export const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
 const OG_IMAGE_ALT =
   'Dan Mercede, founder, operator, and systems builder';
 
-// Crawlable body copy for a route: one H1 and one or more paragraphs. Sourced
-// from the rendered page copy so the static body and the hydrated body agree.
-export interface RouteBody {
-  h1: string;
-  // Lead positioning line, rendered as the first paragraph after the H1.
-  lead?: string;
-  paragraphs: string[];
-  // Crawlable links baked into the prerender block (W1 deep-link bake). Used by
-  // /works to concentrate crawl authority on the flagship essays + outbound rail.
-  // Mirrors the visible React render (prerender parity), NOT crawler-only content.
-  links?: { href: string; text: string }[];
-}
-
 export interface RouteMeta {
   title: string;
   description?: string;
   ogImage?: string;
-  // Crawlable body content baked into <body> at build time (W1). Optional:
-  // routes without it fall back to a minimal title+description body.
-  body?: RouteBody;
   // JSON-LD primary @type for the route's content node (W4). One of
   // 'Article' | 'ProfilePage' | 'CollectionPage'. Omitted routes get no
   // per-route content node (only the homepage entity graph + a BreadcrumbList).
@@ -92,153 +69,47 @@ export interface RouteMeta {
   articleDescription?: string;
 }
 
-// Build the /works crawlable link set: the featured-essay deep-links (in lockstep
-// with featuredEssays() so the baked block can't drift from the visible render),
-// the bare full-archive link, then the outbound rail. Evaluated at module load , 
-// featuredEssays() throws here if a featured slug is unresolved, failing the build
-// loud (the desired fail-closed behavior). Used only by ROUTE_META['/works'].body.
-function worksBodyLinks(): { href: string; text: string }[] {
-  return [
-    ...featuredEssays().map((e) => ({ href: `/thoughts/${e.slug}`, text: e.title })),
-    { href: '/thoughts', text: 'Full archive' },
-    { href: WORKS_HUB.signalUrl, text: 'Live signal log' },
-    { href: WORKS_HUB.githubUrl, text: 'GitHub' },
-  ];
-}
-
 // Static routes (mirrors the <Route> table in App.tsx). The homepage entry is
 // the default that lives un-injected in index.html.
-
-// The /proof evidence surface must reach no-JS answer engines, not just React.
-// EvidenceSection renders client-side only, so without this the crawlable body
-// carried none of the claims, checks, or links, which defeats the whole point of
-// publishing them. tests/proofEvidence.test.ts asserts parity between the two.
-export function evidenceBakeParagraphs(): string[] {
-  return PROOF_EVIDENCE.flatMap((tier) => [
-    `${tier.title}. ${tier.note}`,
-    ...tier.claims.map((c) => (c.verify ? `${c.claim} Verify: ${c.verify}` : c.claim)),
-  ]);
-}
-
-// Evidence sources baked as real anchors. RouteBody.links renders escaped
-// <a href> elements, so a crawler receives navigable citations rather than URL
-// text it has to parse out of a paragraph.
-export function evidenceBakeLinks(): { href: string; text: string }[] {
-  return PROOF_EVIDENCE.flatMap((tier) =>
-    tier.claims.flatMap((c) =>
-      (c.sources ?? []).map((href) => ({
-        href,
-        text: `Source: ${c.claim.split(/[.,]/)[0].slice(0, 60)}`,
-      }))
-    )
-  );
-}
 
 export const ROUTE_META: Record<string, RouteMeta> = {
   '/': {
     title: DEFAULT_TITLE,
     schemaType: 'ProfilePage',
-    body: {
-      h1: 'Dan Mercede',
-      lead: 'AI systems fail when nobody owns the workflow.',
-      // Same sources the React homepage renders: the hero line and the three
-      // selected works, so the no-JS body carries the evidence, not only the pitch.
-      paragraphs: [
-        HERO_CONTENT.philosophy,
-        HERO_CONTENT.wedge,
-        ...SELECTED_WORK.map((w) => `${w.title} (${w.status}): ${w.summary} ${w.evidence}`),
-      ],
-    },
   },
   '/about': {
     title: 'About: Dan Mercede',
     description:
       'Former General Manager with full P&L ownership, now building AI workflows with clear ownership, a private AI control plane, and open-source tools.',
     schemaType: 'ProfilePage',
-    // The full biography from ABOUT_BIO, the same source AboutPage renders, so the
-    // no-JS body matches what visitors read (tests/frontDoor.test.ts).
-    body: {
-      h1: 'About Dan Mercede',
-      lead: ABOUT_BIO.lead,
-      paragraphs: [
-        ...ABOUT_BIO.sections.flatMap((s) => s.paragraphs),
-        ...ABOUT_BIO.recognition.map((r) => r.label),
-      ],
-      links: ABOUT_BIO.recognition.map((r) => ({ href: r.href, text: r.label })),
-    },
   },
   '/ecosystem': {
     title: 'Ecosystem: Orion Ventures | Dan Mercede',
     schemaType: 'ProfilePage',
-    body: {
-      h1: 'Ecosystem',
-      lead: 'Orion Ventures: independent entities under shared ownership architecture.',
-      paragraphs: [
-        'Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligence, governing how AI systems remember, decide, execute, and are audited over time.',
-        'Orion Apex Capital originates, owns, and governs the ecosystem. Orion Intelligence Agency is the SMB AI strategy consulting arm that builds and deploys with operators. ReplyBy, Apex Trading Systems, and Path of Life Hub operate as domain applications under the same ownership architecture.',
-      ],
-    },
   },
   '/proof': {
     title: 'Proof: Evidence, Approach, and Resources | Dan Mercede',
     description:
       'Evidence first: checkable claims, each paired with the check that confirms it. Then how the systems are built, illustrative reference architectures, and commercial and speaking material, each labeled for what it is.',
     schemaType: 'Article',
-    body: {
-      h1: 'Proof',
-      lead: 'Evidence, approach, and resources, each labeled for what it is.',
-      paragraphs: [
-        'Evidence: checkable claims, each paired with the check that confirms it.',
-        ...evidenceBakeParagraphs(),
-        'Approach: architecture diagrams that explain how the systems are built, with governance enforced at four deterministic boundaries (Authority, Attestation, Behavioral Constraint, Physical Isolation). They describe the design, not measured outcomes.',
-        'Reference architectures and templates: illustrative patterns and a blank template, not client engagements.',
-        'Commercial and speaking: the speaker one-sheet. Hiring, collaboration, and implementation inquiries go through the Contact page.',
-      ],
-      links: evidenceBakeLinks(),
-    },
   },
   '/thoughts': {
     title: 'Thoughts: Notes from the Operating Layer | Dan Mercede',
     description:
       'Essays on governed AI, workflow ownership, operator-led automation, and the failure modes that show up when systems meet reality.',
     schemaType: 'Article',
-    body: {
-      h1: 'Thought Direction',
-      lead: 'Notes from the operating layer.',
-      paragraphs: [
-        'Essays on governed AI, workflow ownership, operator-led automation, and execution discipline, plus the failure modes that show up when systems meet reality.',
-      ],
-    },
   },
   '/works': {
     title: 'Works: Build, Selected Essays & Signal | Dan Mercede',
     description:
       'Open-source tooling and field-tested patterns from shipping governed agentic systems in production, with selected essays on the doctrine behind the build.',
     schemaType: 'CollectionPage',
-    body: {
-      h1: 'Works',
-      lead: 'Open-source tooling and field-tested patterns from shipping governed agentic systems in production.',
-      paragraphs: [
-        'Build, open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
-        'Selected essays point to the doctrine behind the build; the full archive lives at /thoughts.',
-        WORKS_HUB.availability,
-        WORKS_HUB.pilot,
-      ],
-      links: worksBodyLinks(),
-    },
   },
   '/guides': {
     title: 'Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede',
     description:
       'Long-form technical guides on governed AI: build agents that can act and prove what happened. Multi-agent pipelines, layered review, fail-closed execution, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
-    body: {
-      h1: 'Guides',
-      lead: 'Field notes on governed AI: practical, field-tested walkthroughs.',
-      paragraphs: [
-        'Long-form, field-tested guides for building agents that can act and prove what happened: agent systems and orchestration, layered review and verification, governed delivery, and self-hosting with secure ingress on infrastructure you control.',
-      ],
-    },
   },
   // The '/diagrams' INDEX route. Held out of PR-com-1 (empty allowlist would have made
   // this a thin, sitemap-advertised, content-less page); restored here in the admission
@@ -249,63 +120,26 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     description:
       'Architecture and systems diagrams for operator-led AI, workflow ownership, and the patterns that keep reliability intact under load.',
     schemaType: 'Article',
-    body: {
-      h1: 'Diagrams',
-      lead: 'Architecture and agentic-systems diagrams.',
-      paragraphs: [
-        'Visual explainers for operator-led AI architecture, two-plane topology, request lifecycle, and the systems patterns that keep ownership and reliability intact under load.',
-      ],
-    },
   },
   '/connect': {
     title: 'Contact: Roles, Speaking, and Collaboration | Dan Mercede',
     description:
       'Contact Dan Mercede about hiring or team roles, speaking, open-source collaboration, or AI implementation work through Orion Intelligence Agency.',
-    body: {
-      h1: 'Contact Dan',
-      lead: `Email reaches me directly at ${CONTACT_EMAIL}. Pick the reason that fits.`,
-      paragraphs: [
-        ...CONTACT_INTENTS.map((i) => `${i.label}: ${i.detail}`),
-        'LinkedIn: linkedin.com/in/danmercede',
-      ],
-      links: [
-        ...CONTACT_INTENTS.map((i) => ({ href: contactHref(i), text: i.label })),
-        { href: 'https://www.linkedin.com/in/danmercede/', text: 'LinkedIn' },
-      ],
-    },
   },
   '/legal': {
     title: 'Legal Notice | Dan Mercede',
     description:
       'Terms and conditions for danmercede.com, intellectual property, limitation of liability, and usage terms.',
-    body: {
-      h1: 'Legal Notice',
-      paragraphs: [
-        'Terms and conditions for danmercede.com, intellectual property, limitation of liability, and usage terms.',
-      ],
-    },
   },
   '/privacy': {
     title: 'Privacy Policy: Data Governance | Dan Mercede',
     description:
       'Privacy policy for danmercede.com, data collection, cookies, and tracking practices.',
-    body: {
-      h1: 'Privacy Policy',
-      // The full policy, from the same source the React page renders, so no-JS
-      // visitors and crawlers get the actual disclosures (privacyDisclosure.test.ts).
-      paragraphs: PRIVACY_SECTIONS.map((s) => `${s.heading}: ${s.body}`),
-    },
   },
   '/imprint': {
     title: 'Imprint: Entity Details | Dan Mercede',
     description:
       'Imprint and entity information for danmercede.com, operating entity, responsible person, jurisdiction.',
-    body: {
-      h1: 'Imprint',
-      paragraphs: [
-        'Imprint and entity information for danmercede.com, operating entity, responsible person, jurisdiction.',
-      ],
-    },
   },
 };
 
@@ -330,11 +164,6 @@ export function caseStudyMeta(slug: string | undefined): RouteMeta {
     // article:published_time is omitted and the JSON-LD node carries no dates.
     ogType: 'article',
     schemaType: 'Article',
-    body: {
-      h1: study.title,
-      lead: study.industry,
-      paragraphs: [REFERENCE_ARCHITECTURE_NOTICE, study.description],
-    },
   };
 }
 
@@ -368,29 +197,15 @@ export function worksMicrositePaths(): string[] {
     .filter((p): p is string => p !== null);
 }
 
-// Split a substrate essay body into crawlable paragraphs. The body is stored
-// as a single newline-escaped string (compileContent's generateOutput) with
-// blank lines separating paragraphs; split on one-or-more blank lines and drop
-// empties so each paragraph becomes its own baked <p> (R1 full-body bake).
-export function bodyToParagraphs(body: string): string[] {
-  return body
-    .split(/\n\s*\n/)
-    .map((p) => p.replace(/\s+/g, ' ').trim())
-    .filter((p) => p.length > 0);
-}
-
 // Dynamic per-thought meta (round-2 R1/R2). The title FORMAT lives here only so
 // the runtime (ThoughtDetailPage) and the prerender injector emit identical
-// strings. The baked body carries the FULL essay (every paragraph of the
-// substrate canonical), not just the preview, that is the corpus bake. JSON-LD
-// is an Article authored/published by the canonical #person (never a competing
-// Person node, never FAQPage).
+// strings. JSON-LD is an Article authored/published by the canonical #person
+// (never a competing Person node, never FAQPage).
 export function thoughtMeta(slug: string | undefined): RouteMeta {
   const thought = THOUGHTS.find((t) => t.slug === slug);
   if (!thought) {
     return { title: 'Thought Not Found | Dan Mercede' };
   }
-  const paragraphs = bodyToParagraphs(thought.body);
   return {
     // No ": Thought" infix: the kind is already carried by the /thoughts/ path
     // and the Article schema, and the redundant token only eats title budget.
@@ -404,14 +219,6 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
     ogType: 'article',
     datePublished: thought.date,
     schemaType: 'Article',
-    body: {
-      h1: thought.title,
-      // Lead = the thesis claim; the full essay paragraphs follow it.
-      lead: thought.preview,
-      // Fall back to the preview if a canonical ever has an empty body, so the
-      // route never bakes an h1 with zero paragraphs.
-      paragraphs: paragraphs.length > 0 ? paragraphs : [thought.preview],
-    },
   };
 }
 
@@ -448,79 +255,12 @@ export function renderThoughtSitemapEntries(): string {
   );
 }
 
-// Flatten a guide's markdown body into clean crawlable prose paragraphs for the
-// answer-engine body-bake (W1). Unlike a thought (plain prose), a guide body
-// carries fenced code, tables, and image figures, none of which belong in the
-// hidden text block, so those are dropped and inline syntax is stripped to text.
-function guideInlineToText(s: string): string {
-  return s
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/\s+/g, ' ');
-}
-
-export function guideBodyToParagraphs(body: string): string[] {
-  const lines = body.replace(/\r\n/g, '\n').split('\n');
-  const paras: string[] = [];
-  let buf: string[] = [];
-  let inFence = false;
-  const flush = () => {
-    if (buf.length) {
-      const text = guideInlineToText(buf.join(' ')).trim();
-      if (text) paras.push(text);
-    }
-    buf = [];
-  };
-  for (const line of lines) {
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      flush();
-      continue;
-    }
-    if (inFence) continue; // drop fenced code
-    if (line.trim() === '') {
-      flush();
-      continue;
-    }
-    if (/^!\[.*\]\(.*\)\s*$/.test(line)) {
-      flush();
-      continue;
-    } // drop image figures
-    if (line.trim().startsWith('|')) continue; // drop table rows
-    if (/^\s*---+\s*$/.test(line)) {
-      flush();
-      continue;
-    } // drop horizontal rules
-    // Each structural element (heading, blockquote, list item) starts its own
-    // paragraph, matching how the visible renderer splits blocks even without a
-    // blank line between them, keeps the crawl body and rendered body in parity.
-    const isHeading = /^#{1,6}\s+/.test(line);
-    const isQuote = /^\s*>/.test(line);
-    const isList = /^\s*[-*]\s+/.test(line) || /^\s*\d+\.\s+/.test(line);
-    if (isHeading || isQuote || isList) flush();
-    const stripped = line
-      .replace(/^#{1,6}\s+/, '') // heading marker
-      .replace(/^\s*>\s?/, '') // blockquote marker
-      .replace(/^\s*[-*]\s+/, '') // unordered marker
-      .replace(/^\s*\d+\.\s+/, ''); // ordered marker
-    buf.push(stripped);
-    if (isHeading) flush(); // a heading stands alone as its own paragraph
-  }
-  flush();
-  return paras;
-}
-
-// Dynamic per-guide meta (mirrors thoughtMeta). The baked body carries the full
-// guide prose (every paragraph), so no-JS answer engines read the whole guide.
-// JSON-LD is an Article authored/published by the canonical #person.
+// Dynamic per-guide meta (mirrors thoughtMeta). JSON-LD is an Article authored/published by the canonical #person.
 export function guideMeta(slug: string | undefined): RouteMeta {
   const guide = GUIDES.find((g) => g.slug === slug);
   if (!guide) {
     return { title: 'Guide Not Found | Dan Mercede' };
   }
-  const paragraphs = guideBodyToParagraphs(guide.body);
   return {
     // No ": Guide" infix: the kind is already carried by the /guides/ path and
     // the Article schema, and the redundant token only eats SERP title budget.
@@ -531,11 +271,6 @@ export function guideMeta(slug: string | undefined): RouteMeta {
     ogType: 'article',
     datePublished: guide.date,
     schemaType: 'Article',
-    body: {
-      h1: guide.title,
-      lead: guide.lead,
-      paragraphs: paragraphs.length > 0 ? paragraphs : [guide.lead],
-    },
   };
 }
 
@@ -566,10 +301,8 @@ export function renderGuideSitemapEntries(): string {
   );
 }
 
-// Dynamic per-diagram meta (mirrors guideMeta). schemaType ImageObject; the body
-// bakes the caption (lead) + the alt text (paragraph) as crawlable prose so no-JS
-// answer engines read the figure's meaning. Corpus is injectable for testing , 
-// the in-repo DIAGRAMS is empty until the substrate-sync regen.
+// Dynamic per-diagram meta (mirrors guideMeta). schemaType ImageObject. Corpus is
+// injectable for testing; the in-repo DIAGRAMS is empty until the substrate-sync regen.
 export function diagramMeta(slug: string | undefined, corpus: Diagram[] = DIAGRAMS): RouteMeta {
   const diagram = corpus.find((d) => d.slug === slug);
   if (!diagram) {
@@ -581,11 +314,6 @@ export function diagramMeta(slug: string | undefined, corpus: Diagram[] = DIAGRA
     schemaType: 'ImageObject',
     diagramSrc: new URL(diagram.src, SITE_ORIGIN).toString(),
     diagramAlt: diagram.alt,
-    body: {
-      h1: diagram.title,
-      lead: diagram.caption,
-      paragraphs: [diagram.alt],
-    },
   };
 }
 
@@ -784,49 +512,11 @@ function escapeText(s: string | null | undefined): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Render the crawlable <body> block for a route (W1 body-bake). Emits a real
-// <h1> + <p> set wrapped in a hidden-but-crawlable container. The block lives
-// OUTSIDE #root, so React's render into #root never collides with it; we also
-// remove it on hydration (see index.tsx) to avoid duplicate content for users.
-// Deterministic, browserless, no React, safe in the Node build.
-export function renderBodyBlock(path: string, m: RouteMeta, renderedHtml?: string): string {
-  const r = resolveMeta(m);
-  // Fallback body when a route omits `body`: title + description. resolveMeta
-  // always yields a non-empty description, but guard anyway so a future shape
-  // change can never inject `undefined` into the paragraph list.
-  const b: RouteBody = m.body ?? { h1: r.title, paragraphs: r.description ? [r.description] : [] };
-  const parts: string[] = [
-    `  <div id="prerender-content" data-prerender="true" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;">`,
-    `    <h1>${escapeText(b.h1)}</h1>`,
-  ];
-  if (b.lead) {
-    parts.push(`    <p>${escapeText(b.lead)}</p>`);
-  }
-  if (renderedHtml) {
-    // Build-generated markup from the site's own Markdown component (the
-    // injector renders essay bodies node-side so the baked body carries real
-    // <h2>/<pre>/<figure> markup instead of escaped literal markdown). Trusted
-    // build output, inserted verbatim; NEVER pass user/runtime input here.
-    parts.push(`    ${renderedHtml}`);
-  } else {
-    for (const p of b.paragraphs) {
-      parts.push(`    <p>${escapeText(p)}</p>`);
-    }
-  }
-  if (b.links) {
-    for (const link of b.links) {
-      parts.push(`    <a href="${escapeAttr(link.href)}">${escapeText(link.text)}</a>`);
-    }
-  }
-  parts.push(`  </div>`);
-  return parts.join('\n');
-}
-
 // Escape a serialized JSON string for safe embedding inside an HTML
 // <script type="application/ld+json"> element. JSON.stringify alone leaves a
 // literal `</script>` (e.g. inside a title/description) able to close the tag
 // early and inject markup. We escape the full `< > &` set (acceptance
-// criterion 5 \u2014 the baked body and JSON-LD are both escaped for `< > &`) plus
+// criterion 5) plus
 // the U+2028/U+2029 line/para separators for strict JS parsers. `\uXXXX`
 // escapes keep the JSON byte-for-byte equivalent (JSON.parse decodes them back
 // to the original string) while making any markup breakout impossible.

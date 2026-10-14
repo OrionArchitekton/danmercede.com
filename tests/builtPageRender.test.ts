@@ -1,13 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CONTACT_EMAIL, CONTACT_INTENTS, GUIDES, NEWSLETTER, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -19,10 +18,9 @@ const ssrEntry = path.join(root, 'build-ssr', 'entry-server.js');
 /**
  * Reads the BUILT output (run after `npm run build`, via `npm run test:built`).
  *
- * Visible initial HTML spec, slice S1. Seam 1: the built route files. A route
- * in the rendered-route set ships the real page render inside a stamped #root
- * and no crawl block; every other route keeps an empty #root and its crawl
- * block. Seam 2: the build's render function, called directly.
+ * Visible initial HTML spec. Seam 1: the built route files. Every published
+ * route ships the real page render inside a stamped #root; the not-found file
+ * keeps an empty #root. Seam 2: the build's render function, called directly.
  */
 
 const fileFor = (route: string) =>
@@ -44,7 +42,7 @@ async function loadRender(): Promise<(url: string) => string> {
   return ((await import(pathToFileURL(ssrEntry).href)) as { render: (url: string) => string }).render;
 }
 
-test('every rendered route ships its page render, stamped, with no crawl block', async () => {
+test('every rendered route ships its page render, stamped', async () => {
   const render = await loadRender();
   assert.ok(RENDERED_ROUTES.size > 0);
   for (const route of RENDERED_ROUTES) {
@@ -52,7 +50,6 @@ test('every rendered route ships its page render, stamped, with no crawl block',
     const { tag, inner } = rootOf(html);
     assert.equal(tag, `<div id="root" data-rendered-path="${route}">`);
     assert.equal(inner, render(route), `${route}: the file must carry exactly the build render`);
-    assert.doesNotMatch(html, /prerender-content/, `${route}: the crawl block would repeat the page text`);
     assert.equal(html.match(/<h1\b/g)?.length, 1, `${route}: exactly one H1 in the initial HTML`);
     const lint = lintExtractability(html);
     assert.ok(lint.ok, `${route}: ${lint.findings.filter((f) => !f.ok).map((f) => f.detail).join('; ')}`);
@@ -91,20 +88,8 @@ test('the not-found file derives from the empty template, never the rendered hom
   const notFound = fs.readFileSync(path.join(buildDir, '404.html'), 'utf8');
   assert.ok(notFound.includes('<div id="root"></div>'));
   assert.doesNotMatch(notFound, /data-rendered-path/);
+  assert.match(notFound, /<meta name="robots" content="noindex/, 'the not-found file is noindex');
   assert.match(fs.readFileSync(fileFor('/'), 'utf8'), /<div id="root" data-rendered-path="\/">/, 'the homepage itself is rendered');
-});
-
-test('routes outside the rendered set keep an empty #root and their crawl block', () => {
-  // Since S3 every published route is rendered, so this set is empty; it guards
-  // the rollback path (an emptied or partial set keeps the baseline output).
-  const others = collectRoutes().filter((r) => !RENDERED_ROUTES.has(r.path));
-  for (const { path: route } of others) {
-    const html = fs.readFileSync(fileFor(route), 'utf8');
-    assert.ok(html.includes('<div id="root"></div>'), `${route}: #root must stay empty`);
-    assert.match(html, /id="prerender-content"/, `${route}: the crawl block must stay`);
-  }
-  const notFound = fs.readFileSync(path.join(buildDir, '404.html'), 'utf8');
-  assert.ok(notFound.includes('<div id="root"></div>'), 'the not-found file never carries a page render');
 });
 
 test('every published route renders at build time, deterministically', async () => {
@@ -131,10 +116,10 @@ test('every published route renders with a clean heading outline', async () => {
   assert.deepEqual(failing, []);
 });
 
-// The content contracts the crawl-block tests assert (homepage.test.ts,
-// worksHub.test.ts, frontDoor.test.ts, contentBoundary.test.ts) bind the hidden
-// crawl block, which a rendered route no longer ships. These bind the render the
-// build does ship for the same routes. Review of #184, 2026-09-29.
+// The content contracts that once bound the hidden crawl block (homepage,
+// works hub, front door, content boundary, proof, privacy, case studies,
+// diagrams) bind the render the build ships. Review of #184, 2026-09-29;
+// the crawl block itself was retired in S5.
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {
   const home = (await loadRender())('/');
   const essayCards = SELECTED_WORK.filter((w) => w.href.startsWith('/thoughts/'));
@@ -148,7 +133,7 @@ test('a selected-work card that opens an essay stays in-site and reads "Read the
   }
 });
 
-test('rendered routes keep the content contracts their crawl blocks carried', async () => {
+test('rendered routes keep the content contracts the retired crawl block carried', async () => {
   const render = await loadRender();
   const home = render('/');
   for (const w of SELECTED_WORK) assert.ok(decode(home).includes(w.title), `homepage: selected work ${w.title}`);
@@ -160,7 +145,17 @@ test('rendered routes keep the content contracts their crawl blocks carried', as
   const works = render('/works');
   assert.ok(decode(works).includes(WORKS_HUB.pilot), '/works: pilot line');
   assert.ok(decode(works).includes(WORKS_HUB.availability), '/works: availability line');
-  for (const e of featuredEssays()) assert.ok(works.includes(`href="/thoughts/${e.slug}"`), `/works: featured essay ${e.slug}`);
+  for (const e of featuredEssays()) {
+    assert.ok(works.includes(`href="/thoughts/${e.slug}"`), `/works: featured essay ${e.slug}`);
+    assert.ok(decode(works).includes(e.title), `/works: featured essay title ${e.title}`);
+  }
+  // /works is a pointer, not a library: no essay paragraph may run on it.
+  const worksText = decode(works.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
+  for (const t of THOUGHTS) {
+    for (const para of t.body.split(/\n\s*\n/).map((x) => x.replace(/\s+/g, ' ').trim()).filter((x) => x.length >= 120)) {
+      assert.ok(!worksText.includes(para.slice(0, 120)), `/works must not host the body of ${t.slug}`);
+    }
+  }
   assert.ok(works.includes(`href="${WORKS_HUB.signalUrl}"`), '/works: signal link');
   assert.ok(works.includes(`href="${WORKS_HUB.githubUrl}"`), '/works: GitHub link');
 
@@ -172,9 +167,45 @@ test('rendered routes keep the content contracts their crawl blocks carried', as
   }
 
   const about = render('/about');
-  for (const r of ABOUT_BIO.recognition) assert.ok(about.includes(`href="${r.href}"`), `/about: recognition link ${r.href}`);
+  for (const r of ABOUT_BIO.recognition) {
+    assert.ok(about.includes(`href="${r.href}"`), `/about: recognition link ${r.href}`);
+    assert.ok(decode(about).includes(r.label), `/about: recognition label ${r.label}`);
+  }
   const aboutText = decode(about.replace(/<[^>]+>/g, ' ')).toLowerCase();
   assert.deepEqual(FORBIDDEN_NEEDLES.filter((n) => aboutText.includes(n)), [], '/about is identity-only: no call-to-action copy');
+  // Negative control: the same detector must flag the promotional /connect render,
+  // so the /about check above cannot be an always-pass no-op.
+  const connectText = decode(connect.replace(/<[^>]+>/g, ' ')).toLowerCase();
+  const flagged = FORBIDDEN_NEEDLES.filter((n) => connectText.includes(n));
+  assert.ok(flagged.includes('contact dan') && flagged.includes('hiring or team roles'), `detector must flag /connect, got ${JSON.stringify(flagged)}`);
+
+  const proof = render('/proof');
+  const proofText = decode(proof);
+  for (const phrase of ['Evidence', 'Approach', 'Commercial and speaking']) assert.ok(proofText.includes(phrase), `/proof: "${phrase}"`);
+  assert.doesNotMatch(proofText, /engagement sheet/i, '/proof must not promise the retired sheet');
+  for (const tier of PROOF_EVIDENCE) {
+    for (const c of tier.claims) {
+      const probe = c.claim.split(/[.,]/)[0].slice(0, 45);
+      assert.ok(proofText.includes(probe), `/proof: claim "${probe}"`);
+      for (const src of c.sources ?? []) assert.ok(proof.includes(`href="${src}"`), `/proof: source link ${src}`);
+    }
+  }
+
+  const privacy = decode(render('/privacy'));
+  for (const sec of PRIVACY_SECTIONS) assert.ok(privacy.includes(sec.body), `/privacy: section "${sec.heading}"`);
+
+  assert.ok(CASE_STUDIES.length > 0, 'expected case studies to check');
+  for (const study of CASE_STUDIES) {
+    const page = decode(render(`/case-studies/${study.slug}`));
+    const noticeAt = page.indexOf(REFERENCE_ARCHITECTURE_NOTICE);
+    assert.ok(noticeAt >= 0, `${study.slug}: the illustrative-not-client notice`);
+    const descriptionAt = page.indexOf(study.description);
+    assert.ok(descriptionAt < 0 || noticeAt < descriptionAt, `${study.slug}: the notice must precede the case-study description`);
+  }
+  for (const d of DIAGRAMS) {
+    const page = decode(render(`/diagrams/${d.slug}`));
+    assert.ok(page.includes(d.caption) && page.includes(d.alt), `/diagrams/${d.slug}: caption and alt text`);
+  }
 
   const thoughts = decode(render('/thoughts'));
   assert.deepEqual(THOUGHTS.filter((t) => !thoughts.includes(t.title)).map((t) => t.slug), [], '/thoughts lists every essay');
@@ -238,47 +269,3 @@ function* walkFiles(dir: string): Generator<string> {
     else yield full;
   }
 }
-
-// Rollback (spec criterion 9): VISIBLE_HTML_ROLLBACK=1 empties the rendered-route
-// set without a code change. Re-run the injector in a scratch copy of the built
-// inputs: in rollback mode every page must ship the crawl-block output with an
-// empty #root and the homepage must be the empty template again; a normal re-run
-// must then restore exactly the rendered output this build shipped.
-test('the rollback switch restores the crawl-block output, and a normal run restores the renders', () => {
-  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'visible-html-rollback-'));
-  try {
-    fs.mkdirSync(path.join(scratch, 'build'));
-    fs.mkdirSync(path.join(scratch, 'public'));
-    fs.copyFileSync(path.join(buildDir, 'index.html'), path.join(scratch, 'build', 'index.html'));
-    fs.cpSync(path.join(root, 'build-ssr'), path.join(scratch, 'build-ssr'), { recursive: true });
-    fs.copyFileSync(path.join(root, 'public', 'sitemap.xml'), path.join(scratch, 'public', 'sitemap.xml'));
-    const inject = (env: Record<string, string>) =>
-      spawnSync('npx', ['tsx', path.join(root, 'scripts', 'injectRouteMeta.ts')], {
-        cwd: scratch,
-        env: { ...process.env, ...env },
-        encoding: 'utf8',
-      });
-
-    const rolledBack = inject({ VISIBLE_HTML_ROLLBACK: '1' });
-    assert.equal(rolledBack.status, 0, rolledBack.stderr);
-    const template = fs.readFileSync(path.join(scratch, 'build-ssr', 'index.template.html'), 'utf8');
-    assert.equal(fs.readFileSync(path.join(scratch, 'build', 'index.html'), 'utf8'), template, 'the homepage is the empty template again');
-    const pages = [...walkFiles(path.join(scratch, 'build'))].filter((f) => f.endsWith('.html'));
-    assert.ok(pages.length > 80, `expected every route file, found ${pages.length}`);
-    for (const page of pages) {
-      const html = fs.readFileSync(page, 'utf8');
-      assert.ok(html.includes('<div id="root"></div>'), `${page}: #root must be empty in rollback`);
-      assert.doesNotMatch(html, /data-rendered-path/, `${page}: no page render in rollback`);
-      assert.match(html, /id="prerender-content"/, `${page}: the crawl block is back`);
-    }
-
-    const restored = inject({ VISIBLE_HTML_ROLLBACK: '' });
-    assert.equal(restored.status, 0, restored.stderr);
-    for (const page of [...walkFiles(path.join(scratch, 'build'))].filter((f) => f.endsWith('.html'))) {
-      const rel = path.relative(path.join(scratch, 'build'), page);
-      assert.equal(fs.readFileSync(page, 'utf8'), fs.readFileSync(path.join(buildDir, rel), 'utf8'), `${rel}: a normal run restores the shipped render`);
-    }
-  } finally {
-    fs.rmSync(scratch, { recursive: true, force: true });
-  }
-});

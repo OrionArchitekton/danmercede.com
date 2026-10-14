@@ -5,7 +5,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SELECTED_WORK, VALIDATION, WORK_STATUSES, WORKS, INTENT_ROUTES, THOUGHTS } from '../constants';
-import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appSrc = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
@@ -67,14 +66,6 @@ test('the hero leads with work and direct contact; OIA stays available but secon
   assert.ok(seeWork >= 0, 'hero needs a "See selected work" action');
   assert.ok(contact >= 0, 'hero needs a "Contact Dan" action');
   assert.ok(oia > seeWork && oia > contact, 'the OIA link must come after the two primary actions');
-});
-
-test('the homepage prerender names the selected work', () => {
-  const body = renderBodyBlock('/', ROUTE_META['/']);
-  for (const w of SELECTED_WORK) {
-    assert.ok(body.includes(w.title), `the homepage prerender is missing ${w.title}`);
-  }
-  assert.doesNotMatch(body, /Orion Apex Capital/, 'entity-structure copy belongs on /ecosystem, not the homepage body');
 });
 
 test('the intent router offers a hiring path and no investor lane', () => {

@@ -6,7 +6,6 @@ import {
   MAX_ANSWER_TOKENS,
   MIN_JS_OFF_RATIO,
 } from '../extractability';
-import { renderBodyBlock } from '../seoMeta';
 import { collectRoutes } from '../scripts/injectRouteMeta';
 
 // ---------------------------------------------------------------------------
@@ -187,22 +186,8 @@ test('numeric HTML entities are treated as separators (token budget counts real 
   assert.equal(tb!.ok, false, 'a 300-word nbsp-joined lead must exceed the budget (entities are separators)');
 });
 
-// -- real-content binding: the gate has a LIVE subject, not a fixture no-op ---
-
-test('every PUBLISHED route baked body is extractability-clean (binds the gate to the FULL prerender set, not just static routes)', () => {
-  // collectRoutes() is the same enumerator the build prerenders with: static
-  // ROUTE_META + generated case-study / thought / guide / diagram detail pages.
-  // Binding here (not just ROUTE_META) makes the gate cover the real published
-  // corpus — the bulk of the site's answer-engine surface.
-  const routes = collectRoutes();
-  assert.ok(routes.length > 12, 'collectRoutes must include static + generated detail routes, not just the ~12 static ones');
-  for (const { path, meta } of routes) {
-    const body = renderBodyBlock(path, meta);
-    const html = `<!doctype html><html><body>${body}<div id="root"></div></body></html>`;
-    const r = lintExtractability(html);
-    assert.equal(r.ok, true, `${path} baked body must be extractability-clean: ${JSON.stringify(r.findings.filter((f) => !f.ok))}`);
-  }
-});
+// -- real-content binding: every published route's page render is linted as
+// built, in tests/builtPageRender.test.ts (the gate has a LIVE subject there).
 
 test('MIN_JS_OFF_RATIO and MAX_ANSWER_TOKENS are the doctrine-anchored thresholds', () => {
   assert.equal(MAX_ANSWER_TOKENS, 227); // ceil(170 words * 4/3)

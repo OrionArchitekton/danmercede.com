@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SEO_BLOCK_START, SEO_BLOCK_END, BODY_BLOCK_START, BODY_BLOCK_END, JSONLD_BLOCK_START, JSONLD_BLOCK_END } from '../seoMeta';
+import { SEO_BLOCK_START, SEO_BLOCK_END, JSONLD_BLOCK_START, JSONLD_BLOCK_END } from '../seoMeta';
 import { collectRoutes, renderNotFoundHtml } from '../scripts/injectRouteMeta';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,9 +58,6 @@ test('renderNotFoundHtml marks the page noindex, drops the canonical, and keeps 
     `  ${JSONLD_BLOCK_END}`,
     '  <script type="application/ld+json">{"@type":"WebSite"}</script>',
     '</head><body>',
-    `  ${BODY_BLOCK_START}`,
-    '  <h1>DAN MERCEDE</h1>',
-    `  ${BODY_BLOCK_END}`,
     '  <div id="root"></div><script type="module" src="/assets/index.js"></script>',
     '</body></html>',
   ].join('\n');
@@ -71,7 +68,6 @@ test('renderNotFoundHtml marks the page noindex, drops the canonical, and keeps 
   assert.doesNotMatch(html, /rel="canonical"/, 'a 404 served at any path must not claim a canonical URL');
   assert.doesNotMatch(html, /"@type":"Person"/, 'the homepage route JSON-LD must not ride on the 404');
   assert.doesNotMatch(html, /application\/ld\+json/, 'no structured data at all: a 404 describes no entity');
-  assert.doesNotMatch(html, /<h1>DAN MERCEDE<\/h1>/, 'the homepage body must not ride on the 404');
   assert.match(html, /<div id="root"><\/div><script type="module" src="\/assets\/index.js"><\/script>/);
 });
 

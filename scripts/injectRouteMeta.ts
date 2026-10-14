@@ -1,17 +1,16 @@
-// Build-time per-route prerender injector (head + JSON-LD + body).
+// Build-time per-route prerender injector (head + JSON-LD + page render).
 //
 // Why this exists: danmercede.com is a react-router SPA whose per-route <head>
 // meta, structured data, and body are produced at runtime (post-hydration).
-// No-JS crawlers — including ChatGPT/Perplexity/Claude, which execute no JS —
-// hitting a deep link (/about, /proof, /case-studies/:slug) therefore read the
+// No-JS crawlers (ChatGPT, Perplexity, Claude, which execute no JS) hitting a
+// deep link (/about, /proof, /case-studies/:slug) would therefore read the
 // homepage's head and an empty <div id="root"> body. This postbuild step emits
 // one static HTML file per route carrying that route's:
-//   1. <head> meta  (title/og/twitter/canonical)        — renderSeoBlock
-//   2. JSON-LD      (Article/ProfilePage + BreadcrumbList) — renderRouteJsonLd (W4)
-//   3. <body> copy  (h1 + paragraphs, crawlable)          — renderBodyBlock (W1)
+//   1. <head> meta  (title/og/twitter/canonical)        : renderSeoBlock
+//   2. JSON-LD      (Article/ProfilePage + BreadcrumbList) : renderRouteJsonLd (W4)
+//   3. page render  (the real page components inside #root) : the SSR bundle
 // served by Vercel from the filesystem (an unknown path gets build/404.html).
-// No server and no framework. React runs in Node only to render essay markdown
-// (renderToStaticMarkup below), from the same bundled React the client uses.
+// No server and no framework.
 //
 // Routing: emits build/<route>/index.html (directory-index), which Vercel
 // serves for /<route> via filesystem precedence. No vercel.json change needed.
@@ -34,47 +33,24 @@ import {
   renderDiagramSitemapEntries,
   renderSeoBlock,
   injectSeoBlock,
-  renderBodyBlock,
   renderRouteJsonLd,
   injectBlock,
   escapeAttr,
   SEO_BLOCK_START,
-  BODY_BLOCK_START,
-  BODY_BLOCK_END,
   JSONLD_BLOCK_START,
   JSONLD_BLOCK_END,
   type RouteMeta,
 } from '../seoMeta';
 import { DIAGRAMS, THOUGHTS } from '../constants';
 import type { Diagram } from '../types';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import Markdown from '../components/Markdown';
-
-// Essay bodies are authored markdown; the hydrated page renders them with the
-// Markdown component (App.tsx ThoughtDetailPage), so the baked body must carry
-// the SAME rendered markup (real <h2>/<pre>/<figure>), not escaped literal
-// markdown. Node-side render here keeps react-dom/server out of the browser
-// bundle. Returns undefined for non-thought routes (paragraph bake unchanged).
-export function renderedThoughtBody(routePath: string): string | undefined {
-  if (!routePath.startsWith('/thoughts/')) return undefined;
-  const slug = routePath.slice('/thoughts/'.length);
-  const thought = THOUGHTS.find((t) => t.slug === slug);
-  if (!thought || !thought.body) return undefined;
-  return renderToStaticMarkup(React.createElement(Markdown, { source: thought.body }));
-}
 
 const BUILD_DIR = path.resolve(process.cwd(), 'build');
 
 // Visible initial HTML (specs/visible-initial-html-spec.md): routes whose initial
-// HTML carries the real page render inside #root instead of the hidden crawl
-// block. It grows slice by slice; emptying it restores the baseline output.
-// S3: every published route (the homepage plus everything collectRoutes emits).
-// Rollback without a code change: build with VISIBLE_HTML_ROLLBACK=1 (for
-// example as a Vercel environment variable) and the set is empty, so every
-// route ships the crawl-block output again.
-export const RENDERED_ROUTES: ReadonlySet<string> =
-  process.env.VISIBLE_HTML_ROLLBACK === '1' ? new Set() : new Set(['/', ...collectRoutes().map((r) => r.path)]);
+// HTML carries the real page render inside #root. Every published route (the
+// homepage plus everything collectRoutes emits). The not-found file is not in
+// the set and keeps an empty #root.
+export const RENDERED_ROUTES: ReadonlySet<string> = new Set(['/', ...collectRoutes().map((r) => r.path)]);
 
 // The build-time render bundle (`vite build --ssr entry-server.tsx`), written
 // outside the deployed build/ directory.
@@ -86,14 +62,12 @@ const EMPTY_ROOT = '<div id="root"></div>';
 const TEMPLATE_COPY = path.resolve(process.cwd(), 'build-ssr', 'index.template.html');
 
 // Put a route's page render inside #root, stamped with the path it was rendered
-// for (the client hydrates only on that path), and drop the crawl block so the
-// page text appears once. The block anchors stay in place.
+// for (the client hydrates only on that path).
 export function injectPageRender(html: string, routePath: string, markup: string): string {
   const roots = html.split(EMPTY_ROOT).length - 1;
   if (roots !== 1) throw new Error(`expected exactly one empty #root in the template, found ${roots}`);
-  const withoutCrawlBlock = injectBlock(html, BODY_BLOCK_START, BODY_BLOCK_END, '', '  ');
   // A replacer function, so `$&` or `$1` in the markup is inserted verbatim.
-  return withoutCrawlBlock.replace(EMPTY_ROOT, () => `<div id="root" data-rendered-path="${escapeAttr(routePath)}">${markup}</div>`);
+  return html.replace(EMPTY_ROOT, () => `<div id="root" data-rendered-path="${escapeAttr(routePath)}">${markup}</div>`);
 }
 
 async function loadPageRenderer(): Promise<(url: string) => string> {
@@ -160,8 +134,8 @@ export function buildSitemapExtraEntries(diagrams: Diagram[] = DIAGRAMS): string
 
 // build/404.html: Vercel serves it with HTTP 404 for any path that matches no
 // file and no rewrite. It keeps the app shell so NotFoundPage still renders, but
-// the head is noindex with no canonical (the file answers arbitrary URLs), and the
-// homepage prerender body is replaced and all structured data is removed.
+// the head is noindex with no canonical (the file answers arbitrary URLs), #root
+// stays empty, and all structured data is removed.
 export function renderNotFoundHtml(baseHtml: string): string {
   const seo = [
     '  <title>Page Not Found | Dan Mercede</title>',
@@ -170,16 +144,6 @@ export function renderNotFoundHtml(baseHtml: string): string {
   ].join('\n');
   let html = injectSeoBlock(baseHtml, seo);
   html = injectBlock(html, JSONLD_BLOCK_START, JSONLD_BLOCK_END, '', '  ');
-  html = injectBlock(
-    html,
-    BODY_BLOCK_START,
-    BODY_BLOCK_END,
-    renderBodyBlock('/404', {
-      title: 'Page Not Found | Dan Mercede',
-      body: { h1: 'Page Not Found', paragraphs: ['This page does not exist. Start from the homepage or browse selected work at /works.'] },
-    }),
-    '  ',
-  );
   // The site-wide entity graph (Person / WebSite / ImageObject) lives outside the
   // anchors in index.html; a 404 describes no entity, so drop every JSON-LD block.
   return html.replace(/[ \t]*<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
@@ -212,7 +176,7 @@ async function main() {
       throw new Error(`${indexPath} is already rendered and ${TEMPLATE_COPY} is not an empty template; run \`vite build\` first.`);
     }
   }
-  for (const anchor of [SEO_BLOCK_START, BODY_BLOCK_START, JSONLD_BLOCK_START]) {
+  for (const anchor of [SEO_BLOCK_START, JSONLD_BLOCK_START]) {
     if (!baseHtml.includes(anchor)) {
       throw new Error(
         `injector anchor (${anchor}) not found in build/index.html — did the index.html anchors survive the build?`,
@@ -221,7 +185,7 @@ async function main() {
   }
 
   const routes = collectRoutes();
-  const renderPage = RENDERED_ROUTES.size > 0 ? await loadPageRenderer() : null;
+  const renderPage = await loadPageRenderer();
 
   let written = 0;
   for (const { path: routePath, meta } of routes) {
@@ -235,17 +199,8 @@ async function main() {
       renderRouteJsonLd(routePath, meta),
       '  ',
     );
-    // 3) crawlable <body> content — W1 body-bake (thought routes carry the
-    // markdown-rendered body; everything else keeps the h1 + paragraph shape)
-    html = injectBlock(
-      html,
-      BODY_BLOCK_START,
-      BODY_BLOCK_END,
-      renderBodyBlock(routePath, meta, renderedThoughtBody(routePath)),
-      '  ',
-    );
-    // 4) the real page render inside #root, for the rendered-route set
-    if (renderPage && RENDERED_ROUTES.has(routePath)) {
+    // 3) the real page render inside #root
+    if (RENDERED_ROUTES.has(routePath)) {
       html = injectPageRender(html, routePath, renderPage(routePath));
     }
     const outDir = path.join(BUILD_DIR, routePath.replace(/^\//, ''));
@@ -258,13 +213,7 @@ async function main() {
   // head and JSON-LD are already the homepage's (the template is the homepage);
   // only the page render goes in. baseHtml stays the empty template in memory,
   // so the not-found file below never inherits the homepage render.
-  if (renderPage && RENDERED_ROUTES.has('/')) {
-    await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
-  } else if (builtIndex !== baseHtml) {
-    // A re-run after a rendered build, with the homepage now outside the set
-    // (a rollback): put the empty template back.
-    await fs.writeFile(indexPath, baseHtml, 'utf8');
-  }
+  await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
 
   await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');
 

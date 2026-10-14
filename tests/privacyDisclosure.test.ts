@@ -119,16 +119,6 @@ test('every analytics event the site sends is disclosed', () => {
   }
 });
 
-test('the no-JS /privacy prerender carries the full policy', () => {
-  const paragraphs = ROUTE_META['/privacy'].body?.paragraphs ?? [];
-  for (const s of PRIVACY_SECTIONS) {
-    assert.ok(
-      paragraphs.some((p) => p.includes(s.body)),
-      `the /privacy prerender body is missing section "${s.heading}"`,
-    );
-  }
-});
-
 test('the automatic page-view hit is disclosed', () => {
   const component = read('components/Analytics.tsx');
   assert.match(component, /'page_view'/, 'expected Analytics.tsx to send page_view (positive control)');
