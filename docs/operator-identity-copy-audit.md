@@ -134,12 +134,23 @@ byte-identical to baseline.
 
 The first local build discovered a stale sibling substrate checkout and
 regenerated unrelated corpus/assets. Those side effects were restored; the
-verified build uses an empty isolated substrate directory so the consumer keeps
-the committed bundle, matching production's fail-open consumer path. No compiler,
+final verified build uses the existing `VERCEL=1` guard so the consumer keeps
+the committed bundle, matching the Vercel production path. No compiler,
 workflow, dependency, or content changes were made. Vite retains its existing
 chunk-size warning; npm reports eight pre-existing dependency advisories
 (two moderate, six high), outside this copy-only scope.
 
+The first Vercel preview passed authenticated home/Works HTML checks. Review
+then caught that React Router intercepted the new microsite links: a hydrated
+browser click reproduced Page Not Found. The cards now use ordinary anchors
+so the request reaches the hosting rewrite. An agent-browser session clicked
+both corrected cards with JavaScript active and reached the actual production
+Proctor and failclosed pages with their expected H1s. The browser test server
+used the identical built client and redirected each document request to its
+production microsite; the pre-fix SPA click made no document request and failed. The fixed third starting pointer
+resolves via the existing essay resolver, failing the build if its target leaves
+the corpus. Dan explicitly requested that additional pointer and preservation
+of existing content, so the original capped five-item selection remains intact.
 Production verification and release receipt will be recorded after deployment.
 Rollout: release this scoped PR through the existing Vercel main-branch deploy.
 Monitor/validate: read production home metadata, Person JSON-LD, footer, Works

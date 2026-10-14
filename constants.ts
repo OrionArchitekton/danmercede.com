@@ -51,6 +51,7 @@ export const HERO_CONTENT = {
 };
 
 // Curated entry points; these link to existing content without changing the lists.
+const START_HERE_ESSAY = featuredEssays(['2026-09-30-the-knowledge-graph-my-agents-stopped-asking'])[0];
 export const WORKS_START_HERE: { title: string; href: string; description?: string }[] = [
   {
     title: 'Proctor',
@@ -63,8 +64,8 @@ export const WORKS_START_HERE: { title: string; href: string; description?: stri
     description: 'An LLM code reviewer that refuses to trust its own reviewer.',
   },
   {
-    title: 'The knowledge graph my agents stopped asking',
-    href: '/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking',
+    title: START_HERE_ESSAY.title,
+    href: `/thoughts/${START_HERE_ESSAY.slug}`,
   },
 ];
 

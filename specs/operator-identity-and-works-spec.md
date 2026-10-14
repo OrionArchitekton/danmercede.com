@@ -28,7 +28,10 @@ and essay and guide bodies. Add no public pages or dependencies.
    failclosed is an LLM code reviewer that refuses to trust its own reviewer.
    Publish only claims verified on the target pages. The Proctor page does not
    contain the proposed 31-of-203 count, so omit that count. Crawler and visible
-   renders expose the same pointers. Keep the existing capped essay selection.
+   renders expose the same pointers. Keep the existing capped essay selection. The explicitly requested fixed
+   Start here pointer is additional to that existing list; validate its essay
+   through the same resolver. Project links must make full document requests
+   so the hosting rewrites serve their existing microsites with JavaScript on.
 
 ## Validation seams
 
@@ -36,6 +39,7 @@ Use the existing route render and built-output seams to exercise the visible
 home and Works pages, footer links, metadata, and shared Person schema together.
 Keep the identity-contract and Works prerender parity checks aligned with the
 new copy. Run the existing tests, extractability lint, typecheck, build, and built
-tests. Confirm the home page and Works from the production domain after deploy.
+tests. Verify hydrated project-card clicks reach the existing microsites. Confirm
+the home page and Works from the production domain after deploy.
 Inventory every legacy-identity search hit, including preserved content, and
 verify the committed essay and guide bundles and sources remain byte-identical.

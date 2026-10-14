@@ -1441,10 +1441,10 @@ const WorksPage = () => {
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Start here</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {WORKS_START_HERE.map((item) => (
-            <Link key={item.href} to={item.href} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
+            <a key={item.href} href={item.href} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
               <h3 className="text-white font-semibold mb-3 group-hover:text-copper-400">{item.title}</h3>
               {item.description && <p className="text-slate-400 text-sm leading-relaxed">{item.description}</p>}
-            </Link>
+            </a>
           ))}
         </div>
 
