@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
+import { FEATURED_ESSAY_SLUGS, featuredEssays, WORKS_HUB, WORKS_START_HERE, THOUGHTS, WORKS, WORKS_PRIORITY, WORKS_SECTIONS, worksByPriority } from '../constants';
 import { WorkCard } from '../components/WorkCard';
 import { ROUTE_META, renderBodyBlock } from '../seoMeta';
 
@@ -99,11 +99,14 @@ test('the /works baked body bakes the outbound rail (signal + GitHub)', () => {
 });
 
 // Parity — the baked featured set CANNOT drift from featuredEssays(); the React
-// WorksPage reads the same featuredEssays(), so all three renders agree.
-test('the baked /works featured deep-links EQUAL featuredEssays() (no prerender drift)', () => {
+// WorksPage reads the same starting pointers and featuredEssays().
+test('the baked /works essay links equal the starting pointers plus featuredEssays()', () => {
   const block = renderBodyBlock('/works', ROUTE_META['/works']);
   const bakedSlugs = [...block.matchAll(/<a href="\/thoughts\/([^"/]+)">/g)].map((m) => m[1]);
-  const expected = featuredEssays().map((e) => e.slug);
+  const expected = [
+    ...WORKS_START_HERE.filter((item) => item.href.startsWith('/thoughts/')).map((item) => item.href.slice('/thoughts/'.length)),
+    ...featuredEssays().map((e) => e.slug),
+  ];
   assert.deepEqual(bakedSlugs, expected, 'baked featured deep-links must equal featuredEssays() exactly');
 });
 
@@ -117,15 +120,18 @@ test('the baked /works featured links carry the resolved TITLES too (parity defe
   // apply the same escaping to the expected side so the comparison is robust to a
   // future title containing those chars (today's 5 titles contain none).
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const expected = featuredEssays().map((e) => ({ slug: e.slug, title: esc(e.title) }));
+  const expected = [
+    ...WORKS_START_HERE.filter((item) => item.href.startsWith('/thoughts/')).map((item) => ({ slug: item.href.slice('/thoughts/'.length), title: esc(item.title) })),
+    ...featuredEssays().map((e) => ({ slug: e.slug, title: esc(e.title) })),
+  ];
   assert.deepEqual(baked, expected, 'baked featured slug+title must equal featuredEssays() exactly');
 });
 
 // AC4 — /works is a pointer, not a library: NO essay bodies leak into the bake.
-test('the /works baked body hosts NO essay bodies (stays a small pointer: lead + 3 framing paragraphs + the pilot CTA)', () => {
+test('the /works baked body hosts NO essay bodies (short framing copy and starting pointers only)', () => {
   const block = renderBodyBlock('/works', ROUTE_META['/works']);
   const paras = (block.match(/<p>/g) || []).length;
-  assert.ok(paras <= 5, `/works must stay a pointer (max 5 <p>), got ${paras}. Did an essay body leak in?`);
+  assert.ok(paras <= 6, `/works must stay a pointer (max 6 <p> including Start here), got ${paras}. Did an essay body leak in?`);
   // Raising the count cap for the pilot CTA line would weaken this guard on its own,
   // because a leaked essay body is ONE very long paragraph and would still pass a count
   // check. Assert shape as well, so the cap increase cannot mask the hazard the test

@@ -7,7 +7,7 @@ import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
+import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
 import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -150,8 +150,7 @@ const Footer = () => (
       <div className="mb-8 md:mb-0">
         <img src="/dm-mark.svg" alt="" aria-hidden="true" className="h-8 w-8 mb-3" />
         <p className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</p>
-        <p className="text-slate-400 text-xs font-mono mb-1">Founder & Systems Architect</p>
-        <p className="text-slate-400 text-xs">{FOOTER_DATA.entity}</p>
+        <p className="text-slate-400 text-xs font-mono mb-1">{FOOTER_DATA.role}</p>
       </div>
       <div className="flex flex-col items-start md:items-end gap-3 text-slate-400">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -217,7 +216,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">Operator and Systems Builder</span>
+                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">{FOOTER_DATA.role}</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
@@ -1437,6 +1436,17 @@ const WorksPage = () => {
         <p className="text-slate-400 text-lg max-w-3xl mb-16">
           Open-source tooling and field-tested patterns from shipping governed agentic systems in production.
         </p>
+
+        {/* Curated pointers to existing project pages and the knowledge-graph essay. */}
+        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Start here</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {WORKS_START_HERE.map((item) => (
+            <Link key={item.href} to={item.href} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
+              <h3 className="text-white font-semibold mb-3 group-hover:text-copper-400">{item.title}</h3>
+              {item.description && <p className="text-slate-400 text-sm leading-relaxed">{item.description}</p>}
+            </Link>
+          ))}
+        </div>
 
         {/* Build, open source & tooling */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build: Open Source &amp; Tooling</h2>

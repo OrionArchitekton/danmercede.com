@@ -32,7 +32,7 @@ Each spoke (`danmercede.info`, `danmercede.online`, `danielmercede.com`,
    `https://www.danmercede.com/#person` as the `mainEntity` of a `ProfilePage`
    (the doctrine-compatible enrichment — no local Person, see hub row W17).
 3. **Keep the canonical job title and name consistent** with the hub
-   (`Dan Mercede`, `Founder & AI Systems Architect`).
+   (`Dan Mercede`, `Operator and systems builder`).
 
 ## Hub obligations
 
@@ -41,7 +41,10 @@ The hub MUST:
 1. Keep `PERSON_ID` anchored to the `www` host
    (`https://www.danmercede.com/#person`).
 2. Keep `Person.sameAs` covering all four spokes + GitHub.
-3. Reference the canonical `#person` from every per-route `ProfilePage` /
+3. Keep shared Person identity focused on the operator role; do not position Dan
+   through holding-company or platform names in `worksFor` or affiliations.
+   Venture descriptions remain on the Ecosystem page.
+4. Reference the canonical `#person` from every per-route `ProfilePage` /
    `Article` / `CollectionPage` node (`mainEntity` / `author` / `creator`),
    never introduce a second Person. The `/works` `CollectionPage` and its nested
    `SoftwareSourceCode` items backref `#person` by `@id` (`creator`); they add no

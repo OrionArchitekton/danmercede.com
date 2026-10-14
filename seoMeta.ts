@@ -1,4 +1,4 @@
-import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, HERO_CONTENT, SELECTED_WORK, CONTACT_EMAIL, contactHref } from './constants';
+import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, PRIVACY_SECTIONS, ABOUT_BIO, CONTACT_INTENTS, HERO_CONTENT, SELECTED_WORK, CONTACT_EMAIL, contactHref } from './constants';
 import type { Diagram } from './types';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
@@ -11,9 +11,9 @@ export const SITE_ORIGIN = 'https://www.danmercede.com';
 // static-vs-runtime og:image mismatch onto one asset.
 export const DEFAULT_OG_IMAGE_PATH = '/dan-mercede-og-card.jpg';
 export const DEFAULT_META_DESCRIPTION =
-  'Dan Mercede is an operator and systems builder who helps teams turn AI from experiments into owned, governed workflows they can actually run. Governance and reliability are proof depth, not the pitch.';
+  'Dan Mercede is an operator and systems builder. He turns AI experiments into workflows teams can actually run, with builds, guides, and writing to show how.';
 export const DEFAULT_TITLE =
-  'Dan Mercede: Operator, Systems Builder, and Governed AI Architect';
+  'Dan Mercede: Operator and Systems Builder';
 
 // HTML comment anchors delimiting the swappable SEO block in index.html.
 // Verified to survive `vite build` (Vite preserves HTML comments).
@@ -40,7 +40,7 @@ export const PERSON_ID = `${SITE_ORIGIN}/#person`;
 export const WEBSITE_ID = `${SITE_ORIGIN}/#website`;
 
 const OG_IMAGE_ALT =
-  'Dan Mercede, founder, operator, and systems builder';
+  'Dan Mercede. Operator and systems builder. I turn AI experiments into workflows teams can actually run.';
 
 // Crawlable body copy for a route: one H1 and one or more paragraphs. Sourced
 // from the rendered page copy so the static body and the hydrated body agree.
@@ -99,6 +99,7 @@ export interface RouteMeta {
 // loud (the desired fail-closed behavior). Used only by ROUTE_META['/works'].body.
 function worksBodyLinks(): { href: string; text: string }[] {
   return [
+    ...WORKS_START_HERE.map((item) => ({ href: item.href, text: item.description ? `${item.title}: ${item.description}` : item.title })),
     ...featuredEssays().map((e) => ({ href: `/thoughts/${e.slug}`, text: e.title })),
     { href: '/thoughts', text: 'Full archive' },
     { href: WORKS_HUB.signalUrl, text: 'Live signal log' },
@@ -219,6 +220,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
       h1: 'Works',
       lead: 'Open-source tooling and field-tested patterns from shipping governed agentic systems in production.',
       paragraphs: [
+        'Start here.',
         'Build, open-source tools and Claude Code skills, cloneable and runnable from a fresh checkout.',
         'Selected essays point to the doctrine behind the build; the full archive lives at /thoughts.',
         WORKS_HUB.availability,
