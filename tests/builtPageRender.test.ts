@@ -196,7 +196,11 @@ test('rendered routes keep the content contracts the retired crawl block carried
 
   assert.ok(CASE_STUDIES.length > 0, 'expected case studies to check');
   for (const study of CASE_STUDIES) {
-    assert.ok(decode(render(`/case-studies/${study.slug}`)).includes(REFERENCE_ARCHITECTURE_NOTICE), `${study.slug}: the illustrative-not-client notice`);
+    const page = decode(render(`/case-studies/${study.slug}`));
+    const noticeAt = page.indexOf(REFERENCE_ARCHITECTURE_NOTICE);
+    assert.ok(noticeAt >= 0, `${study.slug}: the illustrative-not-client notice`);
+    const descriptionAt = page.indexOf(study.description);
+    assert.ok(descriptionAt < 0 || noticeAt < descriptionAt, `${study.slug}: the notice must precede the case-study description`);
   }
   for (const d of DIAGRAMS) {
     const page = decode(render(`/diagrams/${d.slug}`));
