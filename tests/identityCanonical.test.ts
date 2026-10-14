@@ -146,16 +146,14 @@ test('the Orion Intelligence Agency affiliation carries OIA’s canonical Organi
   );
 });
 
-test('worksFor and every @id-bearing affiliation use the exact Organization @id its site live-emits', () => {
+test('operator identity omits company/platform positioning and preserves other canonical affiliations', () => {
   // Spoke-cluster completion (follow-up to the OIA merge above): each org site
   // that emits its own Organization node gets referenced here by that EXACT
   // live-emitted @id so the graphs merge. Values verified against live JSON-LD
   // 2026-07-09; note Apex AI Trading emits a NON-www @id. Orion AI Media emits
   // no Organization @id, so its affiliation deliberately stays a bare name+url
   // reference (a dangling @id is worse than none).
-  const OAC_ORG_ID = 'https://www.orionapexcapital.com/#organization';
   const EXPECTED: Record<string, string | null> = {
-    'Orion Apex Capital': OAC_ORG_ID,
     'Orion Intelligence Agency': 'https://www.orionintelligenceagency.com/#organization',
     'Orion AI Media': null,
     'Apex AI Trading': 'https://apexaitrading.com/#organization',
@@ -163,12 +161,12 @@ test('worksFor and every @id-bearing affiliation use the exact Organization @id 
     // replychatai.com node lists ReplyBy as alternateName, so the hub asserts
     // the forward name and keeps the legacy name as the alias.
     'ReplyBy': 'https://www.replychatai.com/#organization',
-    'Cosmocrat': 'https://www.cosmocrat.ai/#organization',
   };
   const person = allNodes().find((n) => n['@type'] === 'Person');
   assert.ok(person, 'Person node must be declared');
-  const worksFor = person.worksFor as Record<string, unknown> | undefined;
-  assert.equal(worksFor?.['@id'], OAC_ORG_ID, 'worksFor must carry the OAC hub Organization @id');
+  assert.equal(person.jobTitle, 'Operator and systems builder');
+  assert.equal(person.worksFor, undefined, 'shared identity must not position Dan through the holding company');
+  assert.doesNotMatch(JSON.stringify(person), /Orion Apex Capital|Cosmocrat|Governed AI Architect|Founder & Systems Architect/i);
   const affiliations = (person.affiliation as Array<Record<string, unknown>>) || [];
   assert.equal(affiliations.length, Object.keys(EXPECTED).length, 'affiliation set drifted from the locked table');
   for (const [name, id] of Object.entries(EXPECTED)) {

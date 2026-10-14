@@ -27,10 +27,18 @@ export const NEWSLETTER = {
   href: 'https://www.linkedin.com/newsletters/fail-closed-notes-7477834312608866304',
 };
 
+export const IDENTITY_ROLE = "Operator and systems builder";
+export const IDENTITY_LINE = "Operator and systems builder. I turn AI experiments into workflows teams can actually run.";
+
 export const FOOTER_LINKS: { label: string; href: string }[] = [
   { label: 'Ecosystem', href: '/ecosystem' },
   { label: 'Diagrams', href: '/diagrams' },
   { label: 'RSS', href: '/feed.xml' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/danmercede/' },
+  { label: 'X (@danmercede)', href: 'https://x.com/danmercede' },
+  { label: 'GitHub (OrionArchitekton)', href: 'https://github.com/OrionArchitekton' },
+  { label: 'YouTube (@danmercede)', href: 'https://www.youtube.com/@danmercede' },
+  { label: 'Sessionize', href: 'https://sessionize.com/dan-mercede/' },
   // "Newsletter", not "Subscribe": the footer also renders on the identity-only /about.
   { label: 'Newsletter', href: NEWSLETTER.href },
 ];
@@ -38,9 +46,28 @@ export const FOOTER_LINKS: { label: string; href: string }[] = [
 export const HERO_CONTENT = {
   name: "DAN MERCEDE",
   positioning: "AI systems fail when nobody owns the workflow.",
-  philosophy: "I'm an operator and systems builder. I build AI workflows with clear ownership, from the first working version to the tools, controls, and handoffs that keep it running.",
+  philosophy: IDENTITY_LINE,
   wedge: "The teams that win with AI own the workflow, not just the model.",
 };
+
+// Curated entry points; these link to existing content without changing the lists.
+const START_HERE_ESSAY = featuredEssays(['2026-09-30-the-knowledge-graph-my-agents-stopped-asking'])[0];
+export const WORKS_START_HERE: { title: string; href: string; description?: string }[] = [
+  {
+    title: 'Proctor',
+    href: '/works/proctor/',
+    description: 'QA for non-deterministic AI automations. UiPath AgentHack 2026 finalist.',
+  },
+  {
+    title: 'failclosed',
+    href: '/works/failclosed/',
+    description: 'An LLM code reviewer that refuses to trust its own reviewer.',
+  },
+  {
+    title: START_HERE_ESSAY.title,
+    href: `/thoughts/${START_HERE_ESSAY.slug}`,
+  },
+];
 
 export const SPEAKING = {
   label: "Upcoming Speaking",
@@ -390,7 +417,7 @@ export function contactHref(intent: { subject?: string; href?: string }): string
 }
 
 export const FOOTER_DATA = {
-  entity: "Orion Apex Capital",
+  role: IDENTITY_ROLE,
   jurisdiction: "United States",
 };
 
@@ -399,68 +426,56 @@ export type ImageMeta = { alt: string; description?: string };
 export const IMAGE_METADATA = {
   // Executive / Authority Set
   "dan-mercede-executive-authority.png": {
-    alt: "Dan Mercede, Founder & Systems Architect of a governed AI operating system",
-    description:
-      "Executive portrait of Dan Mercede, founder and systems architect focused on governed AI systems and enterprise control planes.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-executive-outdoor.png": {
-    alt: "Dan Mercede, Founder & Systems Architect of a governed AI operating system",
-    description:
-      "Outdoor executive portrait of Dan Mercede, founder and systems architect specializing in governed AI and system control architecture.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-executive-relaxed.png": {
-    alt: "Dan Mercede, Founder & Systems Architect of a governed AI operating system",
-    description:
-      "Relaxed executive portrait of Dan Mercede, founder and systems architect working in governed AI and enterprise AI governance.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
 
   // Founder / Working Headshots
   "dan-mercede-founder-headshot.png": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Founder headshot of Dan Mercede, actively building and operating governed AI systems with a focus on execution and architecture.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-headshot-sm.png": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Scaled founder headshot of Dan Mercede focused on hands-on AI system design and governance.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-headshot-sm.webp": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Scaled founder headshot of Dan Mercede focused on hands-on AI system design and governance.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-headshot-hero.webp": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Homepage hero portrait of Dan Mercede, optimized for the initial page load while preserving the founder headshot composition.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-headshot-xs.png": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Compact founder headshot of Dan Mercede emphasizing hands-on work in governed AI systems.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
 
   // Founder / Social & Working Context
   "dan-mercede-founder-social-landscape.png": {
-    alt: "Dan Mercede, founder and systems architect in a working environment",
-    description:
-      "Landscape portrait of Dan Mercede in a casual working environment, representing hands-on leadership in governed AI systems.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-social-portrait.png": {
-    alt: "Dan Mercede, founder and systems architect in a working environment",
-    description:
-      "Portrait of Dan Mercede in a social working context, reflecting active system design and founder-led execution.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-working-landscape.png": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Landscape image of Dan Mercede actively working on governed AI system architecture and execution.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
   "dan-mercede-founder-working-portrait.png": {
-    alt: "Dan Mercede working as founder and systems architect on governed AI systems",
-    description:
-      "Portrait of Dan Mercede in a focused working setting, emphasizing hands-on system building and AI governance.",
+    alt: `Dan Mercede. ${IDENTITY_LINE}`,
+    description: `Portrait of Dan Mercede. ${IDENTITY_LINE}`,
   },
 } as const satisfies Record<string, ImageMeta>;
 

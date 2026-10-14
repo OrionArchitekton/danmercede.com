@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -143,6 +143,20 @@ test('rendered routes keep the content contracts the retired crawl block carried
   assert.doesNotMatch(homeMain, /Orion Apex Capital/, 'homepage: entity-structure copy belongs on /ecosystem');
 
   const works = render('/works');
+  const start = works.slice(works.indexOf('Start here'), works.indexOf('Build: Open Source'));
+  const startingLinks = [...start.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+  assert.equal(startingLinks.length, 3, '/works: three starting cards precede the existing lists');
+  WORKS_START_HERE.forEach((item, i) => {
+    assert.ok(startingLinks[i][1].includes(`href="${item.href}"`), `/works: starting target ${item.href}`);
+    assert.ok(decode(startingLinks[i][2]).includes(item.title), `/works: starting title ${item.title}`);
+    if (item.description) assert.ok(decode(startingLinks[i][2]).includes(item.description), `/works: starting description ${item.title}`);
+  });
+  // React Router marks its intercepted links with data-discover. Rewritten
+  // microsites require document navigation; the nav supplies a positive control
+  // so a router upgrade cannot silently make this regression detector vacuous.
+  const nav = works.slice(works.indexOf('<nav'), works.indexOf('</nav>'));
+  assert.match(nav, /data-discover=/, 'control: router-managed links remain identifiable');
+  assert.doesNotMatch(start, /data-discover=/, '/works: starting cards must make document requests');
   assert.ok(decode(works).includes(WORKS_HUB.pilot), '/works: pilot line');
   assert.ok(decode(works).includes(WORKS_HUB.availability), '/works: availability line');
   for (const e of featuredEssays()) {

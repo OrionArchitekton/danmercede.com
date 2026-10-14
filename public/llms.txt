@@ -1,14 +1,11 @@
 # Dan Mercede
 
-> Dan Mercede is an operator and systems builder. He helps teams turn AI from
-> experiments into owned, governed workflows they can actually run, with
-> fail-closed enforcement and audit-grade receipts kept as proof depth, not the
-> pitch. Canonical hub: https://www.danmercede.com/
+> Dan Mercede is an operator and systems builder. He turns AI experiments into workflows teams can actually run, with builds, guides, and writing to show how. Canonical hub: https://www.danmercede.com/
 
 ## About
 - [Dan Mercede, home](https://www.danmercede.com/): Positioning, philosophy, and turning AI from experiments into owned, governed workflows.
 - [The Throughline (About)](https://www.danmercede.com/about): Background, beliefs, and the operations-to-architecture arc.
-- [Ecosystem](https://www.danmercede.com/ecosystem): The Orion entity stack (Cosmocrat, Orion Intelligence Agency, and supporting ventures) under one governance framework.
+- [Ecosystem](https://www.danmercede.com/ecosystem): Independent ventures, their roles, and shared ownership architecture.
 - [Proof](https://www.danmercede.com/proof): Enforcement artifacts and illustrative reference architectures mapped to the four-layer control plane.
 
 ## Thoughts
