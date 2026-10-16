@@ -22,6 +22,11 @@ const OUT_FILE = path.join(ROOT, 'constants.guides.generated.ts');
 
 const FRONTMATTER_KEYS = ['title', 'slug', 'date', 'category', 'description', 'lead'];
 
+// Optional guide video (specs/guide-video-embed-spec.md): `youtube: <id>`, the
+// 11-character YouTube video id. Kept in step with YOUTUBE_ID_PATTERN in
+// components/GuideVideo.tsx; tests/guideVideo.test.ts feeds both the same ids.
+export const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+
 // Parse the leading --- frontmatter --- block. Values may be double-quoted (the
 // quotes are stripped); the title legitimately contains a colon, so we split on
 // the FIRST colon only.
@@ -31,7 +36,13 @@ function parse(raw, file) {
   if (!m) throw new Error(`${file}: missing or malformed frontmatter`);
   const [, fm, body] = m;
   const meta = {};
+  let youtubeLines = 0;
   for (const line of fm.split(/\r?\n/)) {
+    // `youtube :`, an indented `youtube:` or `YouTube:` would otherwise be skipped
+    // or stored under another key, shipping the guide with no player. Fail loud.
+    if (/^\s*youtube\s*:/i.test(line) && !/^youtube:/.test(line)) {
+      throw new Error(`${file}: frontmatter line ${JSON.stringify(line)} must be written exactly as "youtube: <id>"`);
+    }
     const mm = line.match(/^([A-Za-z_]+):\s*(.*)$/);
     if (!mm) continue;
     let [, key, value] = mm;
@@ -43,10 +54,24 @@ function parse(raw, file) {
     ) {
       value = value.slice(1, -1);
     }
+    if (key === 'youtube') youtubeLines += 1;
     meta[key] = value;
+  }
+  // A later line overwrites an earlier one, so a repeated `youtube:` would hide a
+  // malformed first value behind a valid second one. Refuse any repeat.
+  if (youtubeLines > 1) {
+    throw new Error(`${file}: frontmatter "youtube" appears ${youtubeLines} times; keep exactly one line`);
   }
   for (const k of FRONTMATTER_KEYS) {
     if (!meta[k]) throw new Error(`${file}: frontmatter missing required key "${k}"`);
+  }
+  // Present-but-invalid fails the compile (fail loud): a silently dropped video is
+  // worse than a red build. An absent key is fine and changes nothing.
+  if ('youtube' in meta && !YOUTUBE_ID.test(meta.youtube)) {
+    throw new Error(
+      `${file}: frontmatter "youtube" must be the 11-character YouTube video id ` +
+        `(the v= value of the watch URL: letters, digits, - and _), got ${JSON.stringify(meta.youtube)}`,
+    );
   }
   return {
     title: meta.title,
@@ -56,6 +81,9 @@ function parse(raw, file) {
     // bundle carries no empty key; tests/guidesPrecision.test.ts requires it on every
     // published guide and checks it is a real day on or after `date`.
     ...(meta.reviewed ? { reviewed: meta.reviewed } : {}),
+    // Optional guide video id. Emitted only when present, so a guide without a
+    // video keeps a byte-identical bundle entry.
+    ...(meta.youtube ? { youtube: meta.youtube } : {}),
     category: meta.category,
     description: meta.description,
     lead: meta.lead,
