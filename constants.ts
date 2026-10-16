@@ -618,7 +618,7 @@ export const WORKS: Work[] = [
     description:
       'Android phones (emulators) that AI agents drive through an MCP server or a CLI: Claude Code, Codex, or any MCP client. An agent leases a phone, reads its screen as text, taps, types and opens apps, and every action leaves an audit record with a screenshot. A phone in the locked tier does nothing until its owner unlocks it by hand, and orion-phone never sees the PIN. Linux and WSL2.',
     category: 'Open Source',
-    repo: 'https://github.com/OrionArchitekton/orion-phone',
+    repo: 'https://github.com/OrionArchitekton/orion-phone-oss',
     link: 'https://www.danmercede.com/works/orion-phone/',
     license: 'MIT',
     date: '2026-10-13',
