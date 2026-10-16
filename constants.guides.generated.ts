@@ -41,6 +41,7 @@ export const GUIDES: Guide[] = [
     "slug": "multi-agent-browser-pool",
     "date": "2026-10-12",
     "reviewed": "2026-10-12",
+    "youtube": "ggYDb2nDhDY",
     "category": "Agent Engineering",
     "description": "How to give cooperative agents persistent Chrome identities, exclusive leases, and independent screens with the MIT-licensed orion-browser CLI and MCP server.",
     "lead": "One shared browser becomes a shared cursor, shared focus, and shared sign-in state. We moved browser work into an identity-based pool: a persistent profile for each identity, a virtual screen for each browser, and a lease for the agent using it.",

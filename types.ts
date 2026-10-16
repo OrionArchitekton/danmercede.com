@@ -43,6 +43,7 @@ export interface Guide {
   slug: string;          // /guides/<slug> routing + sitemap parity
   date: string;          // YYYY-MM-DD (publish date; drives sitemap lastmod)
   reviewed?: string;     // YYYY-MM-DD of the last full reread for accuracy; a reread stamp, NOT a "last tested" claim
+  youtube?: string;      // optional 11-character YouTube video id; renders the click-to-load player (specs/guide-video-embed-spec.md)
   category: string;      // surface label, e.g. "Self-Hosting"
   description: string;   // meta description (head + JSON-LD)
   lead: string;          // positioning line rendered under the H1
