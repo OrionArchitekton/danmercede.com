@@ -984,6 +984,7 @@ export const GUIDE_LENSES = [
     label: 'Agent systems',
     description: 'Models, tools, schemas, context, and orchestration.',
     slugs: [
+      'operating-ai-agents-windows-wsl-linux',
       'coordinate-local-agents-with-orion-pm',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
