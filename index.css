@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @config "./tailwind.config.js";
 
+/* Retain the existing hover rules, including the prior touch-device behavior. */
+@custom-variant hover (&:hover);
+
 /* Scan authored UI only; private review fixtures never supply production classes. */
 @source "./index.html";
 @source "./index.tsx";
