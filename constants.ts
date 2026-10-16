@@ -593,6 +593,16 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-pm',
+    description: 'Local task coordination for cooperating agents: exclusive claims, generation guards, durable task revisions and scoped evidence. Use the CLI independently or compose it with tools that keep their own resource leases and action permissions.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-pm-oss',
+    link: 'https://www.danmercede.com/works/orion-pm/',
+    license: 'MIT',
+    date: '2026-10-15',
+    slug: 'orion-pm',
+  },
+  {
     title: 'orion-browser',
     description:
       'A local Chrome pool for cooperative AI agents. Each identity gets a persistent profile and virtual screen; each agent leases a browser, connects its existing CDP driver, and releases it when finished. CLI and MCP tools coordinate ownership and session handoff on a trusted Linux host.',
@@ -843,6 +853,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'failclosed',
   'orion-skills',
   'orion-browser',
+  'orion-pm',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
@@ -973,6 +984,7 @@ export const GUIDE_LENSES = [
     label: 'Agent systems',
     description: 'Models, tools, schemas, context, and orchestration.',
     slugs: [
+      'coordinate-local-agents-with-orion-pm',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
       'giving-your-agent-web-access',

@@ -80,7 +80,7 @@ export const GuideVideo = ({ id, title }: VideoProps) => {
             type="button"
             onClick={() => setPlayingId(id)}
             aria-label={`Play video: ${title}`}
-            className="group absolute inset-0 h-full w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper-500"
+            className="group absolute inset-0 h-full w-full cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper-500"
           >
             {/* hqdefault exists for every public video (480x360, letterboxed);
                 object-cover crops the letterbox bars inside the 16:9 frame. */}

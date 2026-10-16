@@ -36,3 +36,5 @@ vendor/
 *.njsproj
 *.sln
 *.sw?
+
+.private/

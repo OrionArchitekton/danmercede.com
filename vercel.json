@@ -2,6 +2,11 @@
   "outputDirectory": "build",
   "redirects": [
     {
+      "source": "/works/orion-pm",
+      "destination": "/works/orion-pm/",
+      "permanent": true
+    },
+    {
       "source": "/works/orion-browser",
       "destination": "/works/orion-browser/",
       "permanent": true
@@ -186,6 +191,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/orion-pm/",
+      "destination": "https://orion-pm-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-pm/:path*",
+      "destination": "https://orion-pm-site.vercel.app/:path*"
+    },
     {
       "source": "/works/orion-browser/",
       "destination": "https://orion-browser-site.vercel.app/"

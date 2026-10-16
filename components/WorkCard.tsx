@@ -38,7 +38,7 @@ export const WorkCard = ({ work }: { work: Work }) => (
     <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
       {work.title}
     </h3>
-    <p className="text-slate-400 text-sm leading-relaxed flex-grow">{work.description}</p>
+    <p className="text-slate-400 text-sm leading-relaxed grow">{work.description}</p>
     <div className="mt-5 flex flex-wrap items-center gap-4">
       <a
         href={work.link || work.repo}

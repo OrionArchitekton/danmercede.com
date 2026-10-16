@@ -148,7 +148,7 @@ test('the facade is a named play button over the preview image, with no YouTube 
     `Play video: ${TITLE}`,
     'the button carries the accessible name "Play video: <title>"',
   );
-  // A visible focus indicator, not just any focus-visible utility: focus:outline-none
+  // A visible focus indicator, not just any focus-visible utility: focus:outline-hidden
   // removes the browser outline, so the ring must replace it.
   const buttonClasses = (/class="([^"]*)"/.exec(button![0])?.[1] ?? '').split(/\s+/);
   assert.ok(buttonClasses.includes('focus-visible:ring-2'), 'keyboard focus draws a 2px ring');

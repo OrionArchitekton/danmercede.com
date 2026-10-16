@@ -74,7 +74,7 @@ function parseInline(text: string, keyPrefix: Key = 'i'): React.ReactNode[] {
     {
       re: /`([^`]+)`/,
       node: (m, k) => (
-        <code key={k} className="rounded bg-slate-800/70 px-1.5 py-0.5 font-mono text-[0.85em] text-copper-300">
+        <code key={k} className="rounded-sm bg-slate-800/70 px-1.5 py-0.5 font-mono text-[0.85em] text-copper-300">
           {m[1]}
         </code>
       ),

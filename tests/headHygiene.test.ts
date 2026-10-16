@@ -21,10 +21,9 @@ test('index.html does not load the Tailwind CDN <script> (W2)', () => {
 
 test('the Tailwind toolchain is committed (config + entry CSS) (W2)', () => {
   assert.doesNotThrow(() => read('tailwind.config.js'), 'tailwind.config.js present');
-  assert.doesNotThrow(() => read('postcss.config.js'), 'postcss.config.js present');
   const css = read('index.css');
-  assert.match(css, /@tailwind base;/);
-  assert.match(css, /@tailwind utilities;/);
+  assert.match(css, /@import ["']tailwindcss["']/);
+  assert.match(read('vite.config.ts'), /tailwindcss\(\)/);
 });
 
 test('index.tsx imports the bundled stylesheet (W2)', () => {
