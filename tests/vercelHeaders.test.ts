@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { WORKS } from '../constants';
 
 const __filename = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(__filename), '..');
@@ -24,8 +25,8 @@ const projectRoot = path.resolve(path.dirname(__filename), '..');
 type HeaderRule = { source: string; headers: { key: string; value: string }[] };
 type VercelConfig = {
   headers?: HeaderRule[];
-  redirects?: { source: string }[];
-  rewrites?: { source: string }[];
+  redirects?: { source: string; destination: string; permanent?: boolean }[];
+  rewrites?: { source: string; destination: string }[];
 };
 
 const config: VercelConfig = JSON.parse(
@@ -35,6 +36,24 @@ const config: VercelConfig = JSON.parse(
 function cacheControlOf(rule: HeaderRule): string | undefined {
   return rule.headers.find((h) => h.key.toLowerCase() === 'cache-control')?.value;
 }
+
+test('PM Works entry reaches the independent site through bare and stripped rewrites', () => {
+  const matches = WORKS.filter(work => work.slug === 'orion-pm');
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].link, 'https://www.danmercede.com/works/orion-pm/');
+  assert.equal(matches[0].repo, 'https://github.com/OrionArchitekton/orion-pm-oss');
+  assert.ok(config.redirects?.some(r => r.source === '/works/orion-pm' && r.destination === '/works/orion-pm/' && r.permanent));
+  for (const [source, destination] of [
+    ['/works/orion-pm/', 'https://orion-pm-site.vercel.app/'],
+    ['/works/orion-pm/:path*', 'https://orion-pm-site.vercel.app/:path*'],
+  ]) {
+    const index = config.rewrites?.findIndex(r => r.source === source) ?? -1;
+    assert.ok(index >= 0, source);
+    assert.equal(config.rewrites![index].destination, destination);
+    const catchAll = config.rewrites?.findIndex(r => r.source === '/(.*)') ?? -1;
+    assert.ok(catchAll < 0 || index < catchAll);
+  }
+});
 
 test('no source pattern ends with a literal $ (path-to-regexp never matches it)', () => {
   const offenders: string[] = [];
