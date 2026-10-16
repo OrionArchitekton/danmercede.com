@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { selfContainedBundle } from './scripts/selfContainedBundle';
 
 export default defineConfig(({ isSsrBuild }) => {
@@ -23,7 +24,7 @@ export default defineConfig(({ isSsrBuild }) => {
       },
       // Fails the client build if any chunk imports a module from outside it.
       // The SSR bundle runs in Node at build time and may import Node built-ins.
-      plugins: [react(), ...(isSsrBuild ? [] : [selfContainedBundle()])],
+      plugins: [react(), tailwindcss(), ...(isSsrBuild ? [] : [selfContainedBundle()])],
       resolve: {
         alias: {
           '@': path.dirname(fileURLToPath(import.meta.url)),

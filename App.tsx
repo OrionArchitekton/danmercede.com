@@ -187,7 +187,7 @@ const IntentRouter = () => (
           <>
             <p className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{route.audience}</p>
             <h3 className="text-white font-semibold mb-2">{route.prompt}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-grow">{route.description}</p>
+            <p className="text-slate-400 text-sm leading-relaxed mb-4 grow">{route.description}</p>
             <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400 transition-colors">
               {route.cta}
               {route.external
@@ -212,13 +212,13 @@ const HomePage = () => {
     <>
       {/* Hero */}
       <section className="min-h-[90vh] flex flex-col pt-20 relative">
-        <div className="flex-grow flex items-center my-12 md:my-0">
+        <div className="grow flex items-center my-12 md:my-0">
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
                 <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">{FOOTER_DATA.role}</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tighter">
+              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 mb-4 font-light">
@@ -251,7 +251,7 @@ const HomePage = () => {
             </div>
 
             {/* Image Placeholder */}
-            <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden group">
+            <div className="relative aspect-[4/5] bg-slate-900 border border-slate-800 rounded-xs overflow-hidden group">
               <img
                 src="/dan-mercede-founder-headshot-hero.webp"
                 alt={getImageMeta("/dan-mercede-founder-headshot-hero.webp").alt}
@@ -278,7 +278,7 @@ const HomePage = () => {
             <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
               The teams that win with AI own the workflow, not just the model.
             </span>
-            <div className="h-px flex-grow bg-white/5"></div>
+            <div className="h-px grow bg-white/5"></div>
           </div>
         </div>
       </section>
@@ -298,7 +298,7 @@ const HomePage = () => {
               >
                 <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>
                 <h3 className="text-2xl font-bold text-white mb-3">{work.title}</h3>
-                <p className="text-slate-300 leading-relaxed mb-4 flex-grow">{work.summary}</p>
+                <p className="text-slate-300 leading-relaxed mb-4 grow">{work.summary}</p>
                 <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
                 <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
                   {external ? 'Source' : work.href.startsWith('/thoughts/') ? 'Read the case' : 'Project page'}
@@ -373,7 +373,7 @@ const HomePage = () => {
           </a>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             {READINESS_SCAN.deliverables.map((d, i) => (
-              <span key={i} className="text-slate-400 text-xs font-mono border border-white/5 px-3 py-1 rounded-sm">{d}</span>
+              <span key={i} className="text-slate-400 text-xs font-mono border border-white/5 px-3 py-1 rounded-xs">{d}</span>
             ))}
           </div>
         </div>
@@ -407,7 +407,7 @@ const AboutPage = () => {
                   <li key={item.href} className="pl-0">
                     <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 inline-flex items-start gap-2">
                       <span>{item.label}</span>
-                      <ExternalLink className="w-4 h-4 mt-1 flex-shrink-0" />
+                      <ExternalLink className="w-4 h-4 mt-1 shrink-0" />
                     </a>
                   </li>
                 ))}
@@ -434,7 +434,7 @@ const AboutPage = () => {
 
         <div className="lg:col-span-4">
           {/* Secondary Portrait */}
-          <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 rounded-sm overflow-hidden">
+          <div className="sticky top-28 aspect-[3/4] bg-slate-900 border border-slate-800 rounded-xs overflow-hidden">
             <img
               src="/dan-mercede-founder-working-portrait.png"
               alt={getImageMeta("/dan-mercede-founder-working-portrait.png").alt}
@@ -566,7 +566,7 @@ const EcosystemPage = () => {
                   onClick={() => toggleExpand(venture.slug)}
                   onKeyDown={(e) => handleToggleKey(e, venture.slug)}
                   aria-expanded={isExpanded}
-                  className={`group relative border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500 ${isCosmocrat
+                  className={`group relative border p-8 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500 ${isCosmocrat
                     ? 'border-copper-500/30 bg-copper-500/5'
                     : isExpanded
                       ? 'border-copper-500/50 bg-slate-900/80'
@@ -584,14 +584,14 @@ const EcosystemPage = () => {
                         className="h-9 w-auto object-contain opacity-100"
                       />
                     </div>
-                    <span className={`text-[10px] font-mono px-2 py-1 rounded-sm uppercase tracking-widest ${isCosmocrat
+                    <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isCosmocrat
                       ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
                       : 'bg-emerald-500/10 text-emerald-500'
                       }`}>
                       {venture.status}
                     </span>
                   </div>
-                  <div className="flex-grow">
+                  <div className="grow">
                     <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isCosmocrat ? 'text-copper-500' : 'text-copper-400'}`}>
                       {venture.role}
                     </p>
@@ -647,7 +647,7 @@ const EcosystemPage = () => {
           onClick={() => setShowSecondary(!showSecondary)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowSecondary(!showSecondary); } }}
           aria-expanded={showSecondary}
-          className="cursor-pointer flex items-center justify-between mb-8 group focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500/50 rounded-sm"
+          className="cursor-pointer flex items-center justify-between mb-8 group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500/50 rounded-xs"
         >
           <div className="border-l-2 border-slate-700 pl-6">
             <h2 className="text-2xl font-bold text-slate-400 group-hover:text-slate-300 transition-colors tracking-tight">Extended Ecosystem</h2>
@@ -674,7 +674,7 @@ const EcosystemPage = () => {
                     onClick={() => toggleExpand(venture.slug)}
                     onKeyDown={(e) => handleToggleKey(e, venture.slug)}
                     aria-expanded={isExpanded}
-                    className={`group relative bg-slate-900/30 border p-6 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-copper-500 ${isExpanded
+                    className={`group relative bg-slate-900/30 border p-6 transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500 ${isExpanded
                       ? 'border-copper-500/50 bg-slate-900/80'
                       : 'border-white/5 hover:border-white/10 hover:bg-slate-800/30'
                       }`}
@@ -687,14 +687,14 @@ const EcosystemPage = () => {
                           className="h-7 w-auto object-contain opacity-70 group-hover:opacity-90 transition-all"
                         />
                       </div>
-                      <span className={`text-[10px] font-mono px-2 py-1 rounded-sm uppercase tracking-widest ${isLive
+                      <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isLive
                         ? 'bg-emerald-500/10 text-emerald-500'
                         : 'bg-amber-500/10 text-amber-500'
                         }`}>
                         {venture.status}
                       </span>
                     </div>
-                    <div className="flex-grow">
+                    <div className="grow">
                       <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-400">{venture.role}</p>
                       <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
                       <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
@@ -754,7 +754,7 @@ const ReadinessScanCTA = () => (
         href={READINESS_SCAN.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-mono rounded transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-mono rounded-sm transition-colors whitespace-nowrap"
       >
         {READINESS_SCAN.cta}
         <ArrowRight className="w-4 h-4" />
@@ -767,7 +767,7 @@ const RunnableProofCallout = () => (
   <div id="runnable-proof" className="mb-16">
     <div className="border border-copper-500/30 bg-gradient-to-br from-copper-500/[0.07] to-slate-900/40 rounded-lg p-8">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
           <Layers className="w-3 h-3" />
           L1: Authority Gate
         </span>
@@ -792,7 +792,7 @@ const RunnableProofCallout = () => (
           href="https://github.com/OrionArchitekton/failclosed"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded-sm transition-colors"
         >
           View on GitHub
           <ExternalLink className="w-4 h-4" />
@@ -904,7 +904,7 @@ const DownloadCard = ({ resource }: { resource: Resource }) => (
       {resource.downloadLabel ?? resource.title} · {resource.fileType.toUpperCase()}
     </span>
     <h3 className="text-lg font-semibold text-white mb-2">{resource.title}</h3>
-    <p className="text-sm text-slate-400 mb-5 leading-relaxed flex-grow">{resource.description}</p>
+    <p className="text-sm text-slate-400 mb-5 leading-relaxed grow">{resource.description}</p>
     <a
       href={resource.filePath}
       download={resource.fileName}
@@ -955,7 +955,7 @@ const LayerJumpBar = () => {
                 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
               }}
-              className={`whitespace-nowrap px-3 py-1.5 rounded text-xs font-mono uppercase tracking-widest transition-colors ${
+              className={`whitespace-nowrap px-3 py-1.5 rounded-sm text-xs font-mono uppercase tracking-widest transition-colors ${
                 active === id
                   ? 'bg-copper-500/15 text-copper-400 border border-copper-500/30'
                   : 'text-slate-400 hover:text-slate-300 border border-transparent'
@@ -1267,7 +1267,7 @@ const ResourcesPage = () => {
                 >
                   <div className="flex items-center gap-2 mb-3">
                     {study.enforcementLayers.map(l => (
-                      <span key={l} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono bg-copper-500/10 text-copper-400 border border-copper-500/20">
+                      <span key={l} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-mono bg-copper-500/10 text-copper-400 border border-copper-500/20">
                         L{l}
                       </span>
                     ))}
@@ -1278,7 +1278,7 @@ const ResourcesPage = () => {
                   </h3>
                   <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${study.metrics?.length ? 'mb-4' : ''}`}>
                     {(study.metrics ?? []).map((m, mi) => (
-                      <div key={mi} className="text-center p-3 rounded bg-slate-800/60 border border-copper-500/15">
+                      <div key={mi} className="text-center p-3 rounded-sm bg-slate-800/60 border border-copper-500/15">
                         <span className="text-xl font-bold text-copper-400 block tabular-nums">{m.value}</span>
                         <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">{m.label}</span>
                       </div>
@@ -1368,7 +1368,7 @@ const CaseStudyPage = () => {
             <div className="space-y-3">
               {study.layerNames.map((name, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-copper-400 bg-slate-800/60 px-2 py-0.5 rounded border border-white/5">
+                  <span className="text-xs font-mono text-copper-400 bg-slate-800/60 px-2 py-0.5 rounded-sm border border-white/5">
                     L{study.enforcementLayers[i]}
                   </span>
                   <span className="text-slate-300 text-sm">{name}</span>
@@ -1406,7 +1406,7 @@ const CaseStudyPage = () => {
           <a
             href={study.filePath}
             download={study.fileName}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-slate-950 rounded font-mono text-sm hover:bg-copper-400 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-copper-500 text-slate-950 rounded-sm font-mono text-sm hover:bg-copper-400 transition-colors"
           >
             <Download className="w-4 h-4" />
             Download Reference Architecture
@@ -1415,7 +1415,7 @@ const CaseStudyPage = () => {
             href={READINESS_SCAN.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-copper-500/30 text-copper-500 rounded font-mono text-sm hover:bg-copper-500/10 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-copper-500/30 text-copper-500 rounded-sm font-mono text-sm hover:bg-copper-500/10 transition-colors"
           >
             {READINESS_SCAN.cta}
           </a>
@@ -1649,9 +1649,9 @@ const ThoughtsPage = () => {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search title, category, or idea"
-              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-500"
             />
-            <kbd aria-hidden="true" className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
           </label>
         </div>
 
@@ -1842,12 +1842,12 @@ const GuidesPage = () => {
               <span className="h-2 w-2 rounded-full bg-copper-500 shadow-[0_0_16px_rgba(230,130,73,.8)]" aria-hidden="true" />
               Field notes on governed AI
             </p>
-            <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl lg:text-7xl">
+            <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none lg:text-7xl/none">
               Build agents that can act
               <span className="block text-copper-400">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
-              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
                 Long-form technical guides for AI systems that remain legible under pressure:
                 authority, evidence, observability, and fail-closed execution.
               </p>
@@ -1909,9 +1909,9 @@ const GuidesPage = () => {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search title, category, or idea"
-              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-500"
             />
-            <kbd aria-hidden="true" className="rounded border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
           </label>
         </div>
 
@@ -1940,7 +1940,7 @@ const GuidesPage = () => {
             >
               <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
               <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-500 md:block">{guide.category}</span>
-              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl">{guide.title}</span>
+              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">{guide.title}</span>
               <span className="hidden text-right font-mono text-[10px] text-slate-500 md:block">{guide.date}</span>
               <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
@@ -2035,8 +2035,8 @@ const GuideDetailPage = () => {
                 <span className="text-xs font-mono text-slate-400">Reviewed {guide.reviewed}</span>
               )}
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
-            <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
+            <p className="text-slate-300 text-lg md:text-xl/7 leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
             <Markdown source={guide.body} />
           </article>
         </div>
@@ -2122,7 +2122,7 @@ const DiagramDetailPage = () => {
               <span className="text-xs font-mono uppercase tracking-widest text-copper-400">Diagram</span>
               <span className="text-xs font-mono text-slate-400">{diagram.date}</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{diagram.title}</h1>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{diagram.title}</h1>
             <figure>
               <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden">
                 <img
@@ -2132,7 +2132,7 @@ const DiagramDetailPage = () => {
                   loading="eager"
                 />
               </div>
-              <figcaption className="text-slate-300 text-base md:text-lg leading-relaxed mt-5 border-l-2 border-copper-500 pl-5">
+              <figcaption className="text-slate-300 text-base md:text-lg/7 leading-relaxed mt-5 border-l-2 border-copper-500 pl-5">
                 {diagram.caption}
               </figcaption>
             </figure>
@@ -2180,9 +2180,9 @@ const ConnectPage = () => {
                 className="flex items-start group p-5 border border-slate-700 hover:border-copper-500 transition-colors bg-slate-950"
               >
                 {external ? (
-                  <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 flex-shrink-0" />
+                  <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 shrink-0" />
                 ) : (
-                  <Mail className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 flex-shrink-0" />
+                  <Mail className="w-5 h-5 text-slate-400 group-hover:text-copper-500 mr-4 mt-1 shrink-0" />
                 )}
                 <div>
                   <span className="block text-white font-semibold">{intent.label}</span>
@@ -2350,11 +2350,11 @@ const App: React.FC = () => {
               main.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
             }
           }}
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded-sm"
         >Skip to content</a>
         <Navigation />
 
-        <main id="main-content" tabIndex={-1} className="relative z-10 focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="relative z-10 focus:outline-hidden">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />

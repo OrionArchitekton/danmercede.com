@@ -33,3 +33,23 @@ normal hub review path; restore the prior independent site deployment if necessa
 Keep the core release and state ownership separate; a hub rollback does not
 migrate or roll back any user's task store. Stop the loopback preview to reverse
 private review; it installs no service, hook, timer or deployment.
+
+## Build-tool dependency maintenance
+
+The private review migrated the build to Tailwind 4.3.3 and its official Vite
+adapter because the Tailwind 3 dependency chain contains unpatched braces
+GHSA-vfj7-8cjw-p6xm. There are no advisory suppressions or package overrides.
+Authored UI sources are enumerated explicitly; private fixtures are not scanned.
+Brand tokens remain in the explicitly loaded configuration. Renamed utilities
+and base border/button/placeholder rules preserve the prior presentation.
+
+Run `npm ci`, `npm audit`, `npm audit --omit=dev`, build, tests and typecheck.
+Inspect desktop/mobile pages after every toolchain update. Tailwind 4 requires
+modern browsers: Safari 16.4+, Chrome 111+, Firefox 128+; this package's observed
+UI receipt covers the named Chrome version only. Other browsers remain untested.
+An audit result is point-in-time dependency evidence, not a security guarantee.
+The old private package is retained for comparison and reversal; no production
+migration has occurred.
+
+Upstream references: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm and
+https://tailwindcss.com/docs/upgrade-guide.
