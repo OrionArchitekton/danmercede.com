@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1430" viewBox="0 0 1536 1430" role="img" aria-labelledby="title desc">
+  <title id="title">Verify the returned result</title>
+  <desc id="desc">Keep a local request, send it over SSH for a bounded computation, retain the returned report, compare it independently with the request, and then inspect it in the Windows application that will consume it.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto"><path d="M2 2 10 6 2 10" fill="none" stroke="#dba77a" stroke-width="2"/></marker>
+  </defs>
+  <rect width="1536" height="1430" rx="28" fill="#111925"/>
+  <g font-family="DejaVu Sans, sans-serif" fill="#f0f3f7">
+    <text x="80" y="108" font-size="58" font-weight="700">Verify the returned result</text>
+    <rect x="110" y="170" width="1316" height="170" rx="18" fill="#253446"/>
+    <text x="155" y="237" font-size="46" font-weight="700">1. Retain the request in WSL</text>
+    <text x="155" y="297" font-size="38" fill="#cbd5e1">Job identity, input bytes, expected calculation</text>
+    <path d="M768 345 V410" stroke="#dba77a" stroke-width="5" marker-end="url(#arrow)"/>
+    <rect x="110" y="430" width="1316" height="170" rx="18" fill="#263d48" stroke="#71b7bd" stroke-width="3"/>
+    <text x="155" y="497" font-size="46" font-weight="700">2. Execute the bounded job over SSH</text>
+    <text x="155" y="557" font-size="38" fill="#cbd5e1">Remote Linux process; no remote output file</text>
+    <path d="M768 605 V670" stroke="#dba77a" stroke-width="5" marker-end="url(#arrow)"/>
+    <rect x="110" y="690" width="1316" height="170" rx="18" fill="#253446"/>
+    <text x="155" y="757" font-size="46" font-weight="700">3. Receive the report in WSL</text>
+    <text x="155" y="817" font-size="38" fill="#cbd5e1">Returned bytes are ready for verification</text>
+    <path d="M768 865 V930" stroke="#dba77a" stroke-width="5" marker-end="url(#arrow)"/>
+    <rect x="110" y="950" width="1316" height="170" rx="18" fill="#354034" stroke="#a9bb91" stroke-width="3"/>
+    <text x="155" y="1017" font-size="46" font-weight="700">4. Check against the original request</text>
+    <text x="155" y="1077" font-size="38" fill="#cbd5e1">Input hash, job identity, count, total, schema</text>
+    <path d="M768 1125 V1190" stroke="#dba77a" stroke-width="5" marker-end="url(#arrow)"/>
+    <rect x="110" y="1210" width="1316" height="140" rx="18" fill="#253446"/>
+    <text x="155" y="1297" font-size="46" font-weight="700">5. Open the verified artifact on Windows</text>
+    <text x="110" y="1400" font-size="30" fill="#b6c3d4">A matching hash binds bytes. Verification must also test the requested behavior.</text>
+  </g>
+</svg>
