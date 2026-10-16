@@ -2,7 +2,8 @@
 
 Status: in review · Owner-merge (merge deploys; Dan's gate) · Requested by Dan
 2026-10-15: each guide page carries its video in an inline player. First consumer:
-the multi-agent browser pool guide, whose video is not uploaded yet.
+the multi-agent browser pool guide, whose video (g01, ggYDb2nDhDY) went public on
+2026-10-15 at 20:15 PT; this change adds its id.
 
 ## Problem
 
@@ -75,7 +76,6 @@ on every guide page view, whether or not the reader ever watches.
 
 ## Non-goals
 
-- Adding the id to any guide in this change (the first video is not uploaded).
 - Video structured data (`VideoObject` JSON-LD). It needs an upload date and
   description per video; a follow-up once a video is live.
 - Self-hosting the preview image (would remove the at-rest request to YouTube's
