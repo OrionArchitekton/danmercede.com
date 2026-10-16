@@ -38,6 +38,11 @@ function parse(raw, file) {
   const meta = {};
   let youtubeLines = 0;
   for (const line of fm.split(/\r?\n/)) {
+    // `youtube :`, an indented `youtube:` or `YouTube:` would otherwise be skipped
+    // or stored under another key, shipping the guide with no player. Fail loud.
+    if (/^\s*youtube\s*:/i.test(line) && !/^youtube:/.test(line)) {
+      throw new Error(`${file}: frontmatter line ${JSON.stringify(line)} must be written exactly as "youtube: <id>"`);
+    }
     const mm = line.match(/^([A-Za-z_]+):\s*(.*)$/);
     if (!mm) continue;
     let [, key, value] = mm;

@@ -113,6 +113,26 @@ test('a repeated youtube line fails the compile, whichever occurrence is valid (
   }
 });
 
+test('a youtube line in a form the parser does not read fails the compile instead of dropping the video (AC2)', async () => {
+  const cases = [
+    [`youtube : ${GOOD_ID}`],
+    [` youtube: ${GOOD_ID}`],
+    [`YouTube: ${GOOD_ID}`],
+    [`youtube: ${GOOD_ID}`, `youtube : not-an-id`], // a malformed duplicate must not slip past the repeat guard
+  ];
+  for (const lines of cases) {
+    await assert.rejects(
+      compileOne(guideMd(lines.join('\n'))),
+      (err: Error) => {
+        assert.match(err.message, /test-guide\.md/, 'error names the guide file');
+        assert.match(err.message, /youtube/, 'error names the field');
+        return true;
+      },
+      `expected ${JSON.stringify(lines)} to be rejected`,
+    );
+  }
+});
+
 // Answers a review claim that `$` lets a trailing newline through: in JavaScript, `$`
 // without the m flag matches only at the end of the input. The compile path cannot
 // carry a newline in a value anyway (frontmatter is split into lines first), so this
@@ -158,6 +178,7 @@ test('the facade is a named play button over the preview image, with no YouTube 
   assert.match(img![0], new RegExp(`src="${YOUTUBE_THUMB_ORIGIN}/vi/${GOOD_ID}/hqdefault\\.jpg"`));
   assert.match(img![0], /loading="lazy"/);
   assert.match(img![0], /alt=""/, 'decorative image: the button already names the action');
+  assert.match(img![0], /referrerpolicy="no-referrer"/i, 'the privacy policy says the preview request does not carry the page address');
   assert.match(html, /aspect-video/, '16:9 area that scales with the column');
   assert.doesNotMatch(html, /<iframe/i, 'no frame at rest');
   assert.doesNotMatch(html, /<script/i, 'no script at rest');
