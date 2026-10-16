@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-// Bundled Tailwind config (W2) — replaces the production `cdn.tailwindcss.com`
-// in-browser JIT compiler. Mirrors the inline `tailwind.config` that previously
-// lived in index.html so the utility set and custom tokens are unchanged.
+// Brand tokens retained through the explicit @config import in index.css.
 export default {
-  content: ['./index.html', './index.tsx', './App.tsx', './constants.ts', './components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       fontFamily: {

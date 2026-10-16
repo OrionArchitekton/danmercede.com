@@ -1,11 +1,42 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source(none);
+@config "./tailwind.config.js";
+
+/* Retain the existing hover rules, including the prior touch-device behavior. */
+@custom-variant hover (&:hover);
+
+/* Scan authored UI only; private review fixtures never supply production classes. */
+@source "./index.html";
+@source "./index.tsx";
+@source "./App.tsx";
+@source "./constants.ts";
+@source "./components";
+
+/* Retain the existing palette while the build compiler moves to v4. */
+@theme {
+  --color-amber-500: #f59e0b;
+  --color-emerald-500: #10b981;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+}
 
 /* Base styles moved out of the inline index.html <style> when Tailwind was
    bundled (W2). The CDN JIT compiler is gone; these are emitted into the
    bundled stylesheet so the served page renders identically. */
 @layer base {
+  /* Preserve v3 border, placeholder and button defaults through the migration. */
+  *, ::before, ::after, ::backdrop, ::file-selector-button {
+    border-color: #e5e7eb;
+  }
+  input::placeholder, textarea::placeholder { color: #9ca3af; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+
   body {
     background-color: #020617;
     color: #e2e8f0;
