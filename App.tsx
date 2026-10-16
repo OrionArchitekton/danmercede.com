@@ -5,6 +5,7 @@ import { syncRouteJsonLd } from './routeJsonLd';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search } from 'lucide-react';
 import ConstellationBackground from './components/ConstellationBackground';
 import Markdown from './components/Markdown';
+import GuideVideo from './components/GuideVideo';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
 import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
@@ -2037,6 +2038,7 @@ const GuideDetailPage = () => {
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
             <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
+            {guide.youtube && <GuideVideo id={guide.youtube} title={guide.title} />}
             <Markdown source={guide.body} />
           </article>
         </div>

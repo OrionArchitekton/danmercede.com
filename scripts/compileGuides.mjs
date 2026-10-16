@@ -22,6 +22,11 @@ const OUT_FILE = path.join(ROOT, 'constants.guides.generated.ts');
 
 const FRONTMATTER_KEYS = ['title', 'slug', 'date', 'category', 'description', 'lead'];
 
+// Optional guide video (specs/guide-video-embed-spec.md): `youtube: <id>`, the
+// 11-character YouTube video id. Kept in step with YOUTUBE_ID_PATTERN in
+// components/GuideVideo.tsx; tests/guideVideo.test.ts feeds both the same ids.
+export const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+
 // Parse the leading --- frontmatter --- block. Values may be double-quoted (the
 // quotes are stripped); the title legitimately contains a colon, so we split on
 // the FIRST colon only.
@@ -48,6 +53,14 @@ function parse(raw, file) {
   for (const k of FRONTMATTER_KEYS) {
     if (!meta[k]) throw new Error(`${file}: frontmatter missing required key "${k}"`);
   }
+  // Present-but-invalid fails the compile (fail loud): a silently dropped video is
+  // worse than a red build. An absent key is fine and changes nothing.
+  if ('youtube' in meta && !YOUTUBE_ID.test(meta.youtube)) {
+    throw new Error(
+      `${file}: frontmatter "youtube" must be the 11-character YouTube video id ` +
+        `(the v= value of the watch URL: letters, digits, - and _), got ${JSON.stringify(meta.youtube)}`,
+    );
+  }
   return {
     title: meta.title,
     slug: meta.slug,
@@ -56,6 +69,9 @@ function parse(raw, file) {
     // bundle carries no empty key; tests/guidesPrecision.test.ts requires it on every
     // published guide and checks it is a real day on or after `date`.
     ...(meta.reviewed ? { reviewed: meta.reviewed } : {}),
+    // Optional guide video id. Emitted only when present, so a guide without a
+    // video keeps a byte-identical bundle entry.
+    ...(meta.youtube ? { youtube: meta.youtube } : {}),
     category: meta.category,
     description: meta.description,
     lead: meta.lead,
