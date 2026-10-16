@@ -261,6 +261,29 @@ test('every essay and guide ships its full text in the initial HTML', () => {
   assert.deepEqual(short, []);
 });
 
+// Guide video player (specs/guide-video-embed-spec.md, AC6). Data-driven from the
+// corpus, so it asserts the facade the day a guide gains a `youtube:` id. A guide
+// without one ships no YouTube host at all; a guide with one ships the facade for its
+// id and never the live player (that loads only on a press, in the browser).
+test('a guide page carries the video facade only when the guide declares a video', () => {
+  assert.ok(GUIDES.length > 0, 'guards against a vacuous pass: the guides corpus is empty');
+  for (const g of GUIDES) {
+    const route = `/guides/${g.slug}`;
+    const html = fs.readFileSync(fileFor(route), 'utf8');
+    const inner = rootOf(html).inner;
+    assert.ok(!html.includes('youtube-nocookie.com'), `${route}: the live player host must not be in the initial HTML`);
+    assert.doesNotMatch(inner, /<iframe\b/i, `${route}: no frame in the initial HTML`);
+    if (g.youtube) {
+      assert.ok(inner.includes(`src="https://i.ytimg.com/vi/${g.youtube}/hqdefault.jpg"`), `${route}: preview image for ${g.youtube}`);
+      assert.match(inner, /<button\b[^>]*aria-label="Play video: [^"]+"/, `${route}: a named play button`);
+      assert.ok(inner.includes(`href="https://www.youtube.com/watch?v=${g.youtube}"`), `${route}: the Watch on YouTube fallback link`);
+    } else {
+      assert.ok(!html.includes('i.ytimg.com'), `${route}: no video declared, so no YouTube image`);
+      assert.doesNotMatch(inner, /aria-label="Play video: /, `${route}: no video declared, so no player`);
+    }
+  }
+});
+
 // Re-running the injector without a new `vite build` must change nothing: the
 // homepage render lands in build/index.html itself, so the injector keeps the
 // empty template beside the SSR bundle, and it reads the committed sitemap

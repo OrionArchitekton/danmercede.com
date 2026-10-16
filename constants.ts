@@ -984,6 +984,7 @@ export const GUIDE_LENSES = [
     label: 'Agent systems',
     description: 'Models, tools, schemas, context, and orchestration.',
     slugs: [
+      'operating-ai-agents-windows-wsl-linux',
       'coordinate-local-agents-with-orion-pm',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
@@ -1386,5 +1387,9 @@ export const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   {
     heading: '4. Your Choices',
     body: 'Installing the Google Analytics opt-out add-on (tools.google.com/dlpage/gaoptout) stops Google Analytics. Blocking or deleting cookies in your browser only keeps Google Analytics from recognizing repeat visits; page views are still counted. These choices do not stop Vercel Web Analytics or Vercel Speed Insights, which do not rely on those cookies; a browser extension that blocks analytics scripts stops all three. Blocking analytics does not change how the site works. Questions: contact@danmercede.com.',
+  },
+  {
+    heading: '5. Embedded Videos',
+    body: "Some guide pages include a YouTube video. Until you press play, the page loads only a preview image from YouTube's image server (i.ytimg.com); like any image request, that shares your IP address and browser details with Google, but not the page address. Pressing play loads YouTube's player from youtube-nocookie.com, YouTube's privacy-enhanced mode. From then on, YouTube's privacy policy applies, and YouTube may store cookies or similar data in your browser. Pages without a video make no request to YouTube.",
   },
 ];

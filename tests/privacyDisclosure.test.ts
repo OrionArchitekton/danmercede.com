@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { PRIVACY_SECTIONS } from '../constants';
 import { resolveGaConfig } from '../analytics/gaConfig';
 import { ROUTE_META } from '../seoMeta';
+import { YOUTUBE_EMBED_ORIGIN, YOUTUBE_THUMB_ORIGIN } from '../components/GuideVideo';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => fs.readFileSync(path.join(projectRoot, rel), 'utf8');
@@ -145,4 +146,20 @@ test('the stated choices match which tools they actually stop', () => {
     sentences.some((x) => /opt-out add-on/i.test(x) && /stops Google Analytics/i.test(x)),
     'name the choice that does stop Google Analytics',
   );
+});
+
+// Guide video player (specs/guide-video-embed-spec.md, AC7). The hosts come from the
+// player's own constants, so moving the player to another host without updating the
+// policy fails here.
+test('the guide video player is disclosed, naming every YouTube host it contacts', () => {
+  const app = read('App.tsx');
+  assert.match(app, /<GuideVideo\b/, 'expected the guide page to mount the player (positive control)');
+  const text = policyText();
+  assert.match(text, /YouTube/);
+  for (const origin of [YOUTUBE_THUMB_ORIGIN, YOUTUBE_EMBED_ORIGIN]) {
+    const host = new URL(origin).hostname.replace(/^www\./, '');
+    assert.ok(text.includes(host), `the player contacts ${host}; the policy must name it`);
+  }
+  assert.match(text, /until you press play/i, 'the policy says the player loads only on a press');
+  assert.match(text, /preview image/i, 'the policy says what loads at rest');
 });
