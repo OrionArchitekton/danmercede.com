@@ -2,6 +2,23 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GUIDES } from '../constants.guides.generated';
 import { compileGuides } from '../scripts/compileGuides.mjs';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+
+test('PM tutorial is bound to its installed-artifact walkthrough receipt', () => {
+  const guide = readFileSync(new URL('../content/guides/coordinate-local-agents-with-orion-pm.md', import.meta.url));
+  const receipt = JSON.parse(readFileSync(new URL('../docs/releases/orion-pm-0.1.1-validation.json', import.meta.url), 'utf8'));
+  assert.equal(receipt.guide.source_sha256, createHash('sha256').update(guide).digest('hex'));
+  // The install fence pins the release manifest; it must be the manifest the receipt validated.
+  const pins = [...guide.toString('utf8').matchAll(/'([0-9a-f]{64}) {2}SHA256SUMS'/g)].map((m) => m[1]);
+  assert.deepEqual(pins, [receipt.core.manifest_sha256]);
+  assert.equal(receipt.core.version, '0.1.1');
+  assert.equal(receipt.core.anonymous_download_verified, true);
+  assert.deepEqual(receipt.walkthrough, {
+    bash_blocks_executed: 7, exit: 0, done_status: 'done', done_claim: 'absent',
+    unfinished_status: 'todo', unfinished_claim: 'absent', stale_refusal: 'stale_claim',
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Review stamp: every guide says when it was last reread in full

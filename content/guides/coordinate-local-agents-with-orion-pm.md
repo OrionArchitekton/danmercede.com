@@ -12,7 +12,7 @@ Separate chats do not create separate ownership. Two agents can read the same ta
 
 **Orion PM** is a small, local coordination CLI for cooperating agents. A worker claims a task before doing the work, keeps the exact claim generation and task revision, and uses those handles to attach evidence, finish, or hand the task back. A later worker receives a different generation, even when it reuses the same holder name.
 
-The core uses only the Python standard library at runtime and is prepared under MIT. The [Works overview](/works/orion-pm/) gives the short explanation. Download the v0.1.0 wheel and matching `SHA256SUMS` from the [GitHub release](https://github.com/OrionArchitekton/orion-pm-oss/releases/tag/v0.1.0). The [orion-pm-oss source](https://github.com/OrionArchitekton/orion-pm-oss) includes the core contract, examples and local-store runbook. You do not need a hosted PM service or a package-index download.
+The core uses only the Python standard library at runtime and is prepared under MIT. The [Works overview](/works/orion-pm/) gives the short explanation. Download the v0.1.1 wheel and matching `SHA256SUMS` from the [GitHub release](https://github.com/OrionArchitekton/orion-pm-oss/releases/tag/v0.1.1). The [orion-pm-oss source](https://github.com/OrionArchitekton/orion-pm-oss) includes the core contract, examples and local-store runbook. You do not need a hosted PM service or a package-index download.
 
 ## Three owners, three different jobs
 
@@ -28,15 +28,18 @@ That separation keeps the core useful on its own and lets it fit into a larger s
 
 The observed support row is CPython 3.11.14 on WSL2 Linux with ext4. The package accepts Python 3.11+, but other interpreter and operating-system combinations need their own installed-artifact validation. Native Windows/macOS, network or synchronized storage, cross-host fencing, and hostile processes running as the same OS user are outside the established support boundary.
 
-Place the reviewed `orion_pm-0.1.0-py3-none-any.whl` and its matching `SHA256SUMS` in an empty working folder. The first command checks the files present against that manifest; `--ignore-missing` lets the manifest list the other release assets too. It must report the wheel as `OK`. Stop on a failed check. A version label alone does not identify the artifact bytes.
+Place the reviewed `orion_pm-0.1.1-py3-none-any.whl` and its matching `SHA256SUMS` in an empty working folder. The first commands check the manifest against the recorded v0.1.1 digest, select its exact wheel entry, and verify the wheel bytes. A missing wheel entry or failed check stops the install before creating the environment. The check must report the wheel as `OK`; pip checks that selected digest again during installation. A version label alone does not identify the artifact bytes.
 
 Run the following commands in one shell, from that folder:
 
 ```bash
 umask 077
-sha256sum --check SHA256SUMS --ignore-missing &&
+printf '%s\n' '1aa321ef138359e8fe6cff11d9ed43c3950ca559a5bda91e854144a4908be92b  SHA256SUMS' | sha256sum --strict --check - &&
+awk '$2 == "orion_pm-0.1.1-py3-none-any.whl" {print; found=1} END {exit !found}' SHA256SUMS > wheel.sha256 &&
+sha256sum --strict --check wheel.sha256 &&
+awk '{print "./" $2 " --hash=sha256:" $1}' wheel.sha256 > wheel.requirements &&
 python3 -m venv .venv &&
-.venv/bin/python -m pip install --no-index --no-deps orion_pm-0.1.0-py3-none-any.whl
+.venv/bin/python -m pip install --no-index --no-deps --require-hashes -r wheel.requirements
 export PM_DEMO_HOME="$(mktemp -d)/pm-store"
 pm() { .venv/bin/orion-pm --json --home "$PM_DEMO_HOME" "$@"; }
 pm version
@@ -214,7 +217,7 @@ The composition order is:
 4. Release the browser through its own interface and establish cleanup.
 5. Attach narrowly scoped PM evidence, complete with current guards, and read back.
 
-The private v0.1 candidate check observed that sequence using the released orion-browser 0.1.0 wheel, agent-browser 0.25.4, Chrome 155.0.8059.39, and an empty anonymous profile on the tested Linux host. The page was `https://example.com/`; the result was its `Example Domain` title. The losing PM process made zero native browser calls. The winning process completed after a clean native release, and cleanup checks found no remaining profile process or live endpoint.
+The private PM core 0.1.0 candidate check observed that sequence using the released orion-browser 0.1.0 wheel, agent-browser 0.25.4, Chrome 155.0.8059.39, and an empty anonymous profile on the tested Linux host. The page was `https://example.com/`; the result was its `Example Domain` title. The losing PM process made zero native browser calls. The winning process completed after a clean native release, and cleanup checks found no remaining profile process or live endpoint.
 
 That proves one synthetic read, not signed-in platform workflows or other tool versions. The source package's browser composition note and starter example define the caller-supplied adapter seam. The Python callback names are example-local, not new browser API commands.
 

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "observed": "2026-10-15",
+  "guide": {
+    "slug": "coordinate-local-agents-with-orion-pm",
+    "source_sha256": "abc15e55c17750d6090454a208b7d3c9afdfed7a2609feaf4773b1ef8f2ddf5e"
+  },
+  "core": {
+    "version": "0.1.1",
+    "source_commit": "34ba59e156c03b95313a7a9e610ebfdc81eb45d7",
+    "release": "https://github.com/OrionArchitekton/orion-pm-oss/releases/tag/v0.1.1",
+    "wheel_sha256": "54f28272550054c32958c67fd84094b825bb387f91ad3efe3b342d463b9c16c7",
+    "manifest_sha256": "1aa321ef138359e8fe6cff11d9ed43c3950ca559a5bda91e854144a4908be92b",
+    "anonymous_download_verified": true
+  },
+  "environment": {
+    "python": "3.11.14",
+    "platform": "WSL2 Linux",
+    "filesystem": "ext4"
+  },
+  "walkthrough": {
+    "bash_blocks_executed": 7,
+    "exit": 0,
+    "done_status": "done",
+    "done_claim": "absent",
+    "unfinished_status": "todo",
+    "unfinished_claim": "absent",
+    "stale_refusal": "stale_claim"
+  },
+  "scope": "Synthetic installed-CLI walkthrough. This receipt does not establish other operating systems, cross-host fencing or signed-in browser workflows."
+}
