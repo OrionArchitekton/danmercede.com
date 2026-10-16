@@ -3,7 +3,7 @@
   "observed": "2026-10-15",
   "guide": {
     "slug": "coordinate-local-agents-with-orion-pm",
-    "source_sha256": "03594bae24ac8e2d815047a4e9fb3812569381fb91b8813a35b543a4a5542882"
+    "source_sha256": "91ec39bdf45792cf9d317b816524bd5f8078062a0b4ce5eed30366cadb137c1e"
   },
   "core": {
     "version": "0.1.1",

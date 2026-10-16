@@ -28,7 +28,7 @@ That separation keeps the core useful on its own and lets it fit into a larger s
 
 The observed support row is CPython 3.11.14 on WSL2 Linux with ext4. The package accepts Python 3.11+, but other interpreter and operating-system combinations need their own installed-artifact validation. Native Windows/macOS, network or synchronized storage, cross-host fencing, and hostile processes running as the same OS user are outside the established support boundary.
 
-Place the reviewed `orion_pm-0.1.1-py3-none-any.whl` and its matching `SHA256SUMS` in an empty working folder. The first commands select the exact wheel entry from that manifest and verify its bytes. A missing wheel entry or failed check stops the install before creating the environment. The check must report the wheel as `OK`. A version label alone does not identify the artifact bytes.
+Place the reviewed `orion_pm-0.1.1-py3-none-any.whl` and its matching `SHA256SUMS` in an empty working folder. The first commands select the exact wheel entry from that manifest and verify its bytes. A missing wheel entry or failed check stops the install before creating the environment. The check must report the wheel as `OK`; pip checks that selected digest again during installation. A version label alone does not identify the artifact bytes.
 
 Run the following commands in one shell, from that folder:
 
@@ -36,8 +36,9 @@ Run the following commands in one shell, from that folder:
 umask 077
 awk '$2 == "orion_pm-0.1.1-py3-none-any.whl" {print; found=1} END {exit !found}' SHA256SUMS > wheel.sha256 &&
 sha256sum --strict --check wheel.sha256 &&
+awk '{print "./" $2 " --hash=sha256:" $1}' wheel.sha256 > wheel.requirements &&
 python3 -m venv .venv &&
-.venv/bin/python -m pip install --no-index --no-deps orion_pm-0.1.1-py3-none-any.whl
+.venv/bin/python -m pip install --no-index --no-deps --require-hashes -r wheel.requirements
 export PM_DEMO_HOME="$(mktemp -d)/pm-store"
 pm() { .venv/bin/orion-pm --json --home "$PM_DEMO_HOME" "$@"; }
 pm version
