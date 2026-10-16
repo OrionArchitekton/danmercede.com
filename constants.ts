@@ -636,7 +636,7 @@ export const WORKS: Work[] = [
   {
     title: 'agent-demo-video',
     description:
-      'A headless pipeline that turns a Markdown DEMO_SCRIPT and a running web app into a finished, narrated, captioned MP4. Audio-first: narration is synthesised first and its per-character timing paces both the screen recording and the captions, so audio, video, and captions stay in sync with zero drift. Runs keyless with FAKE_TTS to iterate before spending any API quota.',
+      'A headless pipeline that turns a Markdown DEMO_SCRIPT and a running web app into a finished, narrated, captioned MP4, and a Claude Code plugin that drives it. Audio-first: narration is generated first and paces both the screen recording and the captions, so audio, video, and captions stay in sync. Narrate with ElevenLabs or your own text-to-speech, check every render, and iterate keyless with FAKE_TTS.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/agent-demo-video',
     link: 'https://www.danmercede.com/works/agent-demo-video/',
