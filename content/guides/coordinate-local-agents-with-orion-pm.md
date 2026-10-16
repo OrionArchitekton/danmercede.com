@@ -12,7 +12,7 @@ Separate chats do not create separate ownership. Two agents can read the same ta
 
 **Orion PM** is a small, local coordination CLI for cooperating agents. A worker claims a task before doing the work, keeps the exact claim generation and task revision, and uses those handles to attach evidence, finish, or hand the task back. A later worker receives a different generation, even when it reuses the same holder name.
 
-The core is prepared under MIT and uses only the Python standard library at runtime. The [Works overview](/works/orion-pm/) is the short explanation. This tutorial uses the v0.1.0 wheel supplied in the release package. The proposed source destination is [orion-pm-oss](https://github.com/OrionArchitekton/orion-pm-oss); that destination becomes usable only after the reviewed source is published. No PyPI installation or hosted PM service is assumed.
+The core uses only the Python standard library at runtime and is prepared under MIT. The [Works overview](/works/orion-pm/) gives the short explanation. This tutorial uses the v0.1.0 wheel and matching `SHA256SUMS` from the private review package. The selected source destination is [orion-pm-oss](https://github.com/OrionArchitekton/orion-pm-oss); it remains unpublished until release approval. You do not need a hosted PM service or a package-index download.
 
 ## Three owners, three different jobs
 
@@ -28,13 +28,14 @@ That separation keeps the core useful on its own and lets it fit into a larger s
 
 The observed support row is CPython 3.11.14 on WSL2 Linux with ext4. The package accepts Python 3.11+, but other interpreter and operating-system combinations need their own installed-artifact validation. Native Windows/macOS, network or synchronized storage, cross-host fencing, and hostile processes running as the same OS user are outside the established support boundary.
 
-Place the reviewed `orion_pm-0.1.0-py3-none-any.whl` in an empty working folder. Compare its SHA-256 with `SHA256SUMS` from the same review or release package before installing. The digest belongs to that exact artifact; a version label alone is insufficient.
+Place the reviewed `orion_pm-0.1.0-py3-none-any.whl` and its matching `SHA256SUMS` in an empty working folder. The first command checks the files present against that manifest; `--ignore-missing` lets the manifest list the other release assets too. It must report the wheel as `OK`. Stop on a failed check. A version label alone does not identify the artifact bytes.
 
 Run the following commands in one shell, from that folder:
 
 ```bash
 umask 077
-python3 -m venv .venv
+sha256sum --check SHA256SUMS --ignore-missing &&
+python3 -m venv .venv &&
 .venv/bin/python -m pip install --no-index --no-deps orion_pm-0.1.0-py3-none-any.whl
 export PM_DEMO_HOME="$(mktemp -d)/pm-store"
 pm() { .venv/bin/orion-pm --json --home "$PM_DEMO_HOME" "$@"; }
@@ -229,4 +230,4 @@ Uninstalling the package leaves user state for deliberate retention. Keep the pr
 
 At the end of this tutorial, `draft-guide` is done with an absent claim, and `handoff-example` is todo with an absent claim. The temporary store and local receipts are synthetic. Retain or remove that exact tutorial folder and store deliberately; do not run a broad cleanup against another board.
 
-The useful result is a shared task surface with truthful ownership and a small integration boundary. Agents can cooperate through it while browser lifecycle, request delivery, and action permission remain with the systems that actually own them.
+To connect another agent, use the installed JSON interface, retain its claim and revision handles, and read back the final task state. Keep browser lifecycle, request delivery, and action permission in the tool or caller that owns them.
