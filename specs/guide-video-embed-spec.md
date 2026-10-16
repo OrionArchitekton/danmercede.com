@@ -29,8 +29,10 @@ on every guide page view, whether or not the reader ever watches.
 2. **Fail loud on a bad id.** If the line is present, its value must be exactly a
    guide video id. Anything else (empty, a full URL, wrong length, other
    characters) fails the guide compile with an error naming the guide file and
-   showing the expected form. The bundle is not written. Rationale: guides are
-   operator-authored, and a silently dropped video is worse than a red build.
+   showing the expected form. A `youtube:` line that appears more than once also
+   fails the compile, even when one occurrence is valid, so a malformed line can
+   never hide behind a later good one. The bundle is not written. Rationale: guides
+   are operator-authored, and a silently dropped video is worse than a red build.
 3. **Placement.** The player sits under the guide's title and lead line, above
    the guide body, at the same width as the guide's figures.
 4. **Facade at rest.** The player is a 16:9 area that scales with the column. It
@@ -50,6 +52,10 @@ on every guide page view, whether or not the reader ever watches.
 7. **Hydration-safe.** The build-time page render and the browser's first render
    of a guide page with a player are identical (facade state); the swap happens
    only after a press.
+8. **One press per guide.** A press plays only the video it was made on. Moving
+   to another guide inside the site (client-side navigation, no page load) shows
+   that guide's facade; its player never loads without its own press, and coming
+   back to the first guide shows the facade again.
 8. **Privacy disclosure follows the code.** The /privacy policy states that some
    guide pages include a YouTube video, that at rest only the preview image loads
    from YouTube's image host, and that pressing play loads YouTube's player from
@@ -81,7 +87,8 @@ on every guide page view, whether or not the reader ever watches.
   that id; a guide without the line compiles to an entry with no video key (the
   existing bundle is byte-identical).
 - AC2: A present but invalid `youtube:` value (empty, URL, 10 or 12 characters,
-  disallowed characters) fails the compile with an error naming the file.
+  disallowed characters), or a repeated `youtube:` line, fails the compile with an
+  error naming the file.
 - AC3: The facade markup carries a button named "Play video: <title>", the
   preview image for that id, and a "Watch on YouTube" link, and carries no iframe
   and no `youtube-nocookie.com` URL.
@@ -92,15 +99,26 @@ on every guide page view, whether or not the reader ever watches.
   Built pages of existing guides are unchanged by this feature.
 - AC7: The privacy policy names both YouTube hosts the player uses and the
   press-to-play behavior.
+- AC8: After a press on one guide's video, showing another guide's video renders
+  that video's facade and no live player; returning to the first does too. The
+  guide page mounts a fresh player per guide.
+- AC9: After a press, the live player is on the page, the facade button is gone,
+  and keyboard focus is inside the live player.
 
 ## Test seams (decision)
 
-Three seams, highest available, existing ones preferred:
+Four seams, highest available, existing ones preferred:
 
 1. **Guide compile** (`compileGuides` over a temporary content folder): AC1, AC2.
    Plus the existing bundle drift guard, which proves AC1's byte-identical half.
 2. **Player render** (static render of the player component, the same seam the
    Markdown renderer's tests use): AC3, AC4, AC5.
+2b. **Player in a DOM** (the player mounted in jsdom and driven by presses): AC8,
+   AC9. A static render cannot press a button or hold focus, and the unit runner
+   has no DOM, so this seam adds `jsdom` as an exact-pinned dev dependency (test
+   only; never in the site bundle). jsdom fetches no subresources by default, so
+   no YouTube host is contacted. The guide page's per-guide key is checked in the
+   page source, since the whole app cannot render in the unit runner.
 3. **Built guide pages** (`npm run test:built`, which reads the real build
    output): AC6. Rendering the whole app in the unit runner is not available (the
    app reads build-time environment values only Vite provides), so the built

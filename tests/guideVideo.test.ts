@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { compileGuides } from '../scripts/compileGuides.mjs';
+import { compileGuides, YOUTUBE_ID } from '../scripts/compileGuides.mjs';
 import GuideVideo, {
   GuideVideoFrame,
   isYouTubeId,
@@ -94,6 +94,36 @@ test('a present but invalid youtube value fails the compile and names the file (
   }
 });
 
+test('a repeated youtube line fails the compile, whichever occurrence is valid (AC2)', async () => {
+  const cases = [
+    ['youtube: not-an-id', `youtube: ${GOOD_ID}`], // a malformed line must not be overwritten by a later valid one
+    [`youtube: ${GOOD_ID}`, 'youtube: not-an-id'],
+    [`youtube: ${GOOD_ID}`, `youtube: ${GOOD_ID}`], // even an identical repeat is ambiguous authoring
+  ];
+  for (const lines of cases) {
+    await assert.rejects(
+      compileOne(guideMd(lines.join('\n'))),
+      (err: Error) => {
+        assert.match(err.message, /test-guide\.md/, 'error names the guide file');
+        assert.match(err.message, /"youtube" appears 2 times/, 'error says the field is repeated');
+        return true;
+      },
+      `expected ${JSON.stringify(lines)} to be rejected`,
+    );
+  }
+});
+
+// Answers a review claim that `$` lets a trailing newline through: in JavaScript, `$`
+// without the m flag matches only at the end of the input. The compile path cannot
+// carry a newline in a value anyway (frontmatter is split into lines first), so this
+// pins both validators directly.
+test('an id with a trailing or leading newline is rejected by both validators', () => {
+  for (const v of [`${GOOD_ID}\n`, `${GOOD_ID}\r\n`, `${GOOD_ID}\r`, `\n${GOOD_ID}`]) {
+    assert.equal(YOUTUBE_ID.test(v), false, `compiler pattern rejects ${JSON.stringify(v)}`);
+    assert.equal(isYouTubeId(v), false, `player rejects ${JSON.stringify(v)}`);
+  }
+});
+
 test('the compiler accepts every well-formed id (AC5, compiler half)', async () => {
   for (const good of GOOD_IDS) {
     const g = await compileOne(guideMd(`youtube: ${good}`));
@@ -118,7 +148,11 @@ test('the facade is a named play button over the preview image, with no YouTube 
     `Play video: ${TITLE}`,
     'the button carries the accessible name "Play video: <title>"',
   );
-  assert.match(button![0], /focus-visible:/, 'a visible keyboard focus style');
+  // A visible focus indicator, not just any focus-visible utility: focus:outline-none
+  // removes the browser outline, so the ring must replace it.
+  const buttonClasses = (/class="([^"]*)"/.exec(button![0])?.[1] ?? '').split(/\s+/);
+  assert.ok(buttonClasses.includes('focus-visible:ring-2'), 'keyboard focus draws a 2px ring');
+  assert.ok(buttonClasses.includes('focus-visible:ring-copper-500'), 'in the site accent color');
   const img = /<img\b[^>]*>/.exec(html);
   assert.ok(img, 'a preview image');
   assert.match(img![0], new RegExp(`src="${YOUTUBE_THUMB_ORIGIN}/vi/${GOOD_ID}/hqdefault\\.jpg"`));

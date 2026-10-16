@@ -2038,7 +2038,7 @@ const GuideDetailPage = () => {
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
             <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
-            {guide.youtube && <GuideVideo id={guide.youtube} title={guide.title} />}
+            {guide.youtube && <GuideVideo key={guide.slug} id={guide.youtube} title={guide.title} />}
             <Markdown source={guide.body} />
           </article>
         </div>

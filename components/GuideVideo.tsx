@@ -29,12 +29,14 @@ interface VideoProps {
 
 // The live player. autoplay=1 so the one press on the facade starts playback.
 // YouTube refuses to play embeds that arrive without a referrer, so the frame
-// sends the page origin explicitly.
-export const GuideVideoFrame = ({ id, title, ref }: VideoProps & { ref?: React.Ref<HTMLIFrameElement> }) => {
+// sends the page origin explicitly. The ref travels as `frameRef`, a plain prop
+// handed to the <iframe>, so it reaches the element on any React version (a prop
+// literally named `ref` reaches a function component only from React 19 on).
+export const GuideVideoFrame = ({ id, title, frameRef }: VideoProps & { frameRef?: React.Ref<HTMLIFrameElement> }) => {
   if (!isYouTubeId(id)) return null;
   return (
     <iframe
-      ref={ref}
+      ref={frameRef}
       src={`${YOUTUBE_EMBED_ORIGIN}/embed/${id}?autoplay=1&rel=0`}
       title={`Video: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -46,8 +48,17 @@ export const GuideVideoFrame = ({ id, title, ref }: VideoProps & { ref?: React.R
 };
 
 export const GuideVideo = ({ id, title }: VideoProps) => {
-  const [playing, setPlaying] = useState(false);
+  // Which video the reader pressed play on. Playing is tied to the id, so a new
+  // video (client-side navigation to another guide) shows its facade at once, and
+  // the effect below forgets the press so returning to the first guide does not
+  // resume it either. The guide page also keys the player by guide slug.
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const playing = playingId === id;
   const frameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    setPlayingId(null);
+  }, [id]);
 
   // The button the keyboard user pressed is gone after the swap; hand focus to
   // the live player so they can keep controlling it.
@@ -63,11 +74,11 @@ export const GuideVideo = ({ id, title }: VideoProps) => {
     <div className="mb-10 lg:-mx-20 lg:w-[calc(100%+10rem)]">
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-slate-950">
         {playing ? (
-          <GuideVideoFrame ref={frameRef} id={id} title={title} />
+          <GuideVideoFrame frameRef={frameRef} id={id} title={title} />
         ) : (
           <button
             type="button"
-            onClick={() => setPlaying(true)}
+            onClick={() => setPlayingId(id)}
             aria-label={`Play video: ${title}`}
             className="group absolute inset-0 h-full w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper-500"
           >

@@ -36,6 +36,7 @@ function parse(raw, file) {
   if (!m) throw new Error(`${file}: missing or malformed frontmatter`);
   const [, fm, body] = m;
   const meta = {};
+  let youtubeLines = 0;
   for (const line of fm.split(/\r?\n/)) {
     const mm = line.match(/^([A-Za-z_]+):\s*(.*)$/);
     if (!mm) continue;
@@ -48,7 +49,13 @@ function parse(raw, file) {
     ) {
       value = value.slice(1, -1);
     }
+    if (key === 'youtube') youtubeLines += 1;
     meta[key] = value;
+  }
+  // A later line overwrites an earlier one, so a repeated `youtube:` would hide a
+  // malformed first value behind a valid second one. Refuse any repeat.
+  if (youtubeLines > 1) {
+    throw new Error(`${file}: frontmatter "youtube" appears ${youtubeLines} times; keep exactly one line`);
   }
   for (const k of FRONTMATTER_KEYS) {
     if (!meta[k]) throw new Error(`${file}: frontmatter missing required key "${k}"`);
