@@ -12,7 +12,7 @@ Separate chats do not create separate ownership. Two agents can read the same ta
 
 **Orion PM** is a small, local coordination CLI for cooperating agents. A worker claims a task before doing the work, keeps the exact claim generation and task revision, and uses those handles to attach evidence, finish, or hand the task back. A later worker receives a different generation, even when it reuses the same holder name.
 
-The core uses only the Python standard library at runtime and is prepared under MIT. The [Works overview](/works/orion-pm/) gives the short explanation. This tutorial uses the v0.1.0 wheel and matching `SHA256SUMS` from the private review package. The selected source destination is [orion-pm-oss](https://github.com/OrionArchitekton/orion-pm-oss); it remains unpublished until release approval. You do not need a hosted PM service or a package-index download.
+The core uses only the Python standard library at runtime and is prepared under MIT. The [Works overview](/works/orion-pm/) gives the short explanation. Download the v0.1.0 wheel and matching `SHA256SUMS` from the [GitHub release](https://github.com/OrionArchitekton/orion-pm-oss/releases/tag/v0.1.0). The [orion-pm-oss source](https://github.com/OrionArchitekton/orion-pm-oss) includes the core contract, examples and local-store runbook. You do not need a hosted PM service or a package-index download.
 
 ## Three owners, three different jobs
 

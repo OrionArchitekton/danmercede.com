@@ -5,7 +5,7 @@ topics: [orion-pm, guides, works-microsite, private-release-preparation]
 references: [content/guides/coordinate-local-agents-with-orion-pm.md, specs/orion-pm-launch-prep-spec.md, vercel.json, constants.ts]
 ---
 
-# Orion PM private release preparation
+# Orion PM release operation
 
 Regenerate the static guide bundle with npm run compile:guides, then run npm test,
 npm run build and npm run test:built. Preserve the unrelated substrate bundle.
@@ -15,9 +15,9 @@ new store. Compare guide source/asset digests with the exact compiled build.
 Inspect the microsite and full guide in a local loopback proxy, including mounted
 section links, guide-to-product navigation, Works entry, responsive figure and
 mobile overflow. The proxy may rebase the public brand origin for private local
-navigation; it proves no actual Vercel deployment. Keep patches and previews local.
+navigation; it proves no actual Vercel deployment. Preparation uses local patches and previews; publication follows the approval below.
 
-After Dan reviews the whole package, confirm the exact public core and site
+Dan approved the full package release on 2026-10-15. Confirm the exact public core and site
 repositories, their source-home/admission posture and independent site project.
 Publish only the approved set. First establish the exact public source/artifacts
 and independent microsite origin; then merge/deploy the reviewed hub guide and
@@ -48,8 +48,9 @@ Inspect desktop/mobile pages after every toolchain update. Tailwind 4 requires
 modern browsers: Safari 16.4+, Chrome 111+, Firefox 128+; this package's observed
 UI receipt covers the named Chrome version only. Other browsers remain untested.
 An audit result is point-in-time dependency evidence, not a security guarantee.
-The old private package is retained for comparison and reversal; no production
-migration has occurred.
+The old private package is retained for comparison and reversal. This release
+does not migrate the original PM runtime or stores. Record deployment and public
+consumer receipts separately from local build results.
 
 Upstream references: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm and
 https://tailwindcss.com/docs/upgrade-guide.
