@@ -4,7 +4,7 @@ slug: agent-android-phones
 date: 2026-10-15
 reviewed: 2026-10-15
 category: Agent Engineering
-description: "How to give AI agents Android phones of their own with the MIT-licensed orion-phone CLI and MCP server: one agent per phone, a screen read as text, an audit record of every action, and a locked tier only its owner can unlock."
+description: "How to give AI agents Android phones of their own with the MIT-licensed orion-phone CLI and MCP server: one agent per phone, a screen read as text, an audit record of every action, and a locked tier that waits for unlock on a trusted host."
 lead: "Agents that share one browser collide, and some apps only run on a phone. Handing an agent your own phone puts everything on it in reach. We gave agents emulated Android phones of their own: leased one agent at a time, read as text, and, for the sensitive ones, locked until the owner unlocks them by hand."
 ---
 
@@ -156,11 +156,11 @@ The health proof is positive evidence, not the absence of an error: `status` rep
 
 Leases run on the wall clock. A forward jump, such as a host suspend, ends leases early, which is safe: a holder still mid-action finishes before a takeover, and a locked phone whose lease ends shuts itself down.
 
-## How does the locked tier prove its owner unlocked it?
+## What does the locked tier observe before allowing actions?
 
-A locked phone in orion-phone 0.2.0 cold-boots for every session and uses a boot only after a look has seen its lock screen showing over a screen lock and then found the phone unlocked. Only the owner's PIN, password or pattern gets it from one to the other, and orion-phone never sees it.
+A locked phone in orion-phone 0.2.0 cold-boots for every session and uses a boot only after a look has seen its lock screen showing over a screen lock and then found the phone unlocked. The tool observes that transition without handling the credential. It does not attest who or what supplied it; local adb and host control remain outside the tool boundary.
 
-That rule is the reason the tier exists. Accounts that need a hard gate go on a locked phone; the phone itself enforces when an agent may act:
+Use the locked tier to require an unlock before cooperative tool callers can act on a trusted host. It is not a sandbox against host access:
 
 - It never starts on its own. A lease boots it, and the reply is `NEEDS_OPERATOR` with a state: `starting` or `booting` (lease again shortly, and do not unlock yet), `locked` (the owner unlocks it on its screen), `no-screen-lock` (the owner sets a PIN first), `restart-needed` (lease again, which restarts the phone), or `unknown` (its lock state could not be read: lease again).
 - It shuts down when its session is released, about 45 seconds after its lease lapses (later by up to 3 minutes if an action is still running), and at a hard session cap (`session_cap_minutes`, 120 in the example).
@@ -171,7 +171,9 @@ That rule is the reason the tier exists. Accounts that need a hard gate go on a 
 
 The first boot shows the rule at work. The first lease answers `starting`; lease again until the reply is `no-screen-lock`, because a new phone has no screen lock. The owner sets a PIN in the phone's own window. The next lease does not use that boot: that boot was already unlocked when the PIN was set, and it had previously been seen with no screen lock. It restarts the phone and answers `starting` again. Lease again until the reply is `locked`, and then the owner unlocks it by hand.
 
-The lock decides when an agent can act, not what it can read afterwards. A `ui` dump reads every screen's text, including one an app marks as secure and a screenshot shows black. Keep off a locked phone what you would not let the holder of an unlocked session read.
+Independent verification that credential-encrypted storage remains sealed before first unlock on the pinned image is still open as Q2. Android also has device-encrypted storage that can be available during Direct Boot. The synthetic lock-screen test proves tool refusals and transitions, not storage sealing. See the [Android encryption documentation](https://source.android.com/docs/security/features/encryption/file-based) and the tool's [security model](https://github.com/OrionArchitekton/orion-phone-oss/blob/main/SECURITY.md).
+
+The tool gates when a cooperative holder can act, not what it can read afterwards. A `ui` dump reads every screen's text, including one an app marks as secure and a screenshot shows black. Keep off a locked phone what you would not let the holder of an unlocked session read.
 
 ## What does every action leave behind?
 
@@ -185,7 +187,7 @@ The audit trail explains who held a phone and what they did. It does not judge w
 
 On 2026-10-07 we ran six fresh Claude Code sessions on Claude Opus 5.5, three per task, and published every run. Reading the Android version and storage used in Settings cost $0.20 to $0.38 a run; creating, checking and deleting a labeled alarm in Clock cost $0.33 to $0.46. All six succeeded.
 
-The batch was fixed in advance to be published whole, and an independent reviewer recounted every number from the session transcripts. The details that move the numbers:
+These are the six source measurements recorded on 2026-10-07, not results from the later synthetic acceptance test. The details that move the numbers:
 
 - Cost is the whole session as Claude Code reports it, its own system prompt and tool definitions included. The runs went back to back, so the prompt cache was warm; a run with a cold cache costs about $0.18 more.
 - Settings' About page shows a running uptime counter, so `ui` failed there in two of the three runs and the agent switched to `shot`, about 25 seconds per failed call.
@@ -222,7 +224,7 @@ Real Android devices, iPhone and macOS hosts are on the roadmap, and open to con
 
 ## How do you verify a setup before giving it real work?
 
-From a checkout, `pip install -e '.[dev]'` and then `python -m pytest -q` run the full suite, over 2,500 tests in 0.2.0, against fake adb and systemd: no emulator, no accounts. Then prove each phone end to end with one small task, and read its audit record afterwards.
+From a checkout, create and activate a Python 3.11+ virtual environment. Run `python -m pip install --require-hashes --force-reinstall -r bootstrap-requirements.txt`, then `python -m pip install -e '.[dev]'` and `python -m pytest -q`. The full suite has over 2,500 tests in 0.2.0, against fake adb and systemd: no emulator, no accounts. Then prove each phone end to end with one small task, and read its audit record afterwards.
 
 ```bash
 orion-phone status a
