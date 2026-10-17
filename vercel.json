@@ -80,6 +80,11 @@
       "permanent": true
     },
     {
+      "source": "/works/orion-phone",
+      "destination": "/works/orion-phone/",
+      "permanent": true
+    },
+    {
       "source": "/works/failclosed",
       "destination": "/works/failclosed/",
       "permanent": true
@@ -238,6 +243,14 @@
     {
       "source": "/works/mcp-context-budget/:path*",
       "destination": "https://mcp-context-budget-site.vercel.app/:path*"
+    },
+    {
+      "source": "/works/orion-phone/",
+      "destination": "https://orion-phone-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-phone/:path*",
+      "destination": "https://orion-phone-site.vercel.app/:path*"
     },
     {
       "source": "/works/failclosed/",
