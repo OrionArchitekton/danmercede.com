@@ -614,6 +614,17 @@ export const WORKS: Work[] = [
     slug: 'orion-browser',
   },
   {
+    title: 'orion-phone',
+    description:
+      'Android phones (emulators) that AI agents drive through an MCP server or a CLI: Claude Code, Codex, or any MCP client. An agent leases a phone, reads its screen as text, taps, types and opens apps, and every action leaves an audit record with a screenshot. A phone in the locked tier does nothing until its owner unlocks it by hand, and orion-phone never sees the PIN. Linux and WSL2.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-phone-oss',
+    link: 'https://www.danmercede.com/works/orion-phone/',
+    license: 'MIT',
+    date: '2026-10-13',
+    slug: 'orion-phone',
+  },
+  {
     title: 'Fork Around & Find Out',
     description:
       "A fail-closed decision gateway for agent tool-calls. Instead of reading a proposed action and guessing whether it is dangerous, it runs the action in a disposable Daytona sandbox, measures the actual blast radius (files touched, network egress, honeytoken reads even when the secret leaves in a request body), and returns ALLOW, QUARANTINE, or BLOCK. If the run cannot be measured, the action is blocked. Built solo at Daytona HackSprint #5.",
@@ -851,6 +862,7 @@ export const WORKS: Work[] = [
 export const WORKS_PRIORITY: readonly string[] = [
   // Open Source & Tooling
   'failclosed',
+  'orion-phone',
   'orion-skills',
   'orion-browser',
   'orion-pm',
