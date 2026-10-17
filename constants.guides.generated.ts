@@ -21,6 +21,7 @@ export const GUIDES: Guide[] = [
     "slug": "operating-ai-agents-windows-wsl-linux",
     "date": "2026-10-15",
     "reviewed": "2026-10-15",
+    "youtube": "KS5iBoqqe3c",
     "category": "Agent Engineering",
     "description": "Build a practical Windows, WSL2, and Linux workflow for several coding agents: place files and processes, connect a remote worker, coordinate worktrees, verify results, and recover from failures.",
     "lead": "My working environment spans Windows applications, a WSL2 development environment, remote Linux machines, and several agent harnesses. Becoming fluent in it meant learning where work runs, who owns it, what crosses each boundary, and how to recover when one layer fails. This guide turns those lessons into a smaller setup you can build yourself.",
