@@ -3,7 +3,16 @@
   "observed": "2026-10-15",
   "guide": {
     "slug": "coordinate-local-agents-with-orion-pm",
-    "source_sha256": "abc15e55c17750d6090454a208b7d3c9afdfed7a2609feaf4773b1ef8f2ddf5e"
+    "source_sha256": "0836b06576e9a8209a077554f383e6be38840f2cec5dc15cfee3969631a5cf50",
+    "metadata_updates": [
+      {
+        "date": "2026-10-17",
+        "change": "Added the G03 YouTube ID to frontmatter for the existing inline player.",
+        "previous_source_sha256": "abc15e55c17750d6090454a208b7d3c9afdfed7a2609feaf4773b1ef8f2ddf5e",
+        "unchanged_body_sha256": "b1ce9e9cc03c6ac5663ccba2b344ac932b73daec4cf4200d22e80f8d1fec435b",
+        "validation_scope": "The walkthrough body and commands are byte-identical to the observed October 15 source. This metadata update does not claim a new CLI run."
+      }
+    ]
   },
   "core": {
     "version": "0.1.1",
