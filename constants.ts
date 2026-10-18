@@ -593,6 +593,16 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-handoff',
+    description: 'Carry bounded task context between local agent sessions. Explicit stores and immutable revisions keep task matching, observed recency and acceptance claims separate. Ambiguous pickup refuses selection; every result carries no authority.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-handoff',
+    link: 'https://www.danmercede.com/works/orion-handoff/',
+    license: 'MIT',
+    date: '2026-10-17',
+    slug: 'orion-handoff',
+  },
+  {
     title: 'orion-pm',
     description: 'Local task coordination for cooperating agents: exclusive claims, generation guards, durable task revisions and scoped evidence. Use the CLI independently or compose it with tools that keep their own resource leases and action permissions.',
     category: 'Open Source',
@@ -866,6 +876,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'orion-skills',
   'orion-browser',
   'orion-pm',
+  'orion-handoff',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
@@ -998,6 +1009,7 @@ export const GUIDE_LENSES = [
     slugs: [
       'operating-ai-agents-windows-wsl-linux',
       'coordinate-local-agents-with-orion-pm',
+      'hand-off-local-agent-tasks',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
       'giving-your-agent-web-access',
