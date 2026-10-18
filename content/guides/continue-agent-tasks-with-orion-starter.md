@@ -27,7 +27,7 @@ Download `orion-starter-0.2.0-rc.1.zip` from the release above. The external rel
 ```bash
 set -euo pipefail
 printf '%s  %s\n' \
-  'f920e621bd517096dfef30931fd00a711bb9b94a55a1a927c35506f33293ae10' \
+  '5858b935014443c1ad98100a60fa80da6518e2d0a3b10f5448a3e50110963b48' \
   'orion-starter-0.2.0-rc.1.zip' | sha256sum -c -
 unzip orion-starter-0.2.0-rc.1.zip
 cd orion-starter-0.2.0-rc.1
@@ -139,6 +139,7 @@ The private `yield.json` identifies the intended record and digest. Context obse
 In another terminal, select the same extracted candidate and explicitly set `DEMO_ROOT` to the synthetic directory you created. Review the current request and task goal. Do not copy the producer's holder or generation.
 
 ```bash
+set -euo pipefail
 .venv/bin/python examples/continuity_starter.py --selection "$DEMO_ROOT/selection.json" \
   continue --yield-receipt "$DEMO_ROOT/yield.json"
 .venv/bin/orion-pm --json --home "$DEMO_ROOT/pm" show continuity-demo
