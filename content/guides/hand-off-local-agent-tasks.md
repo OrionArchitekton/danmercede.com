@@ -23,7 +23,7 @@ Download `orion_handoff-0.1.0-py3-none-any.whl` from the [v0.1.0 release](https:
 ```bash
 set -euo pipefail
 printf '%s  %s\n' \
-  '97c7f964c61069af6c3182cd1edd3798e1546a524da9e46532af3452415f012f' \
+  'e1f3e1e43839cfd2896cfc553bef9366867c1cf50bce1e4d4762cdbec9977e41' \
   'orion_handoff-0.1.0-py3-none-any.whl' | sha256sum -c -
 DEMO_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/handoff-guide.XXXXXXXX")
 python3 -m venv "$DEMO_ROOT/venv"
