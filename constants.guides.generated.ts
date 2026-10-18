@@ -31,6 +31,7 @@ export const GUIDES: Guide[] = [
     "slug": "coordinate-local-agents-with-orion-pm",
     "date": "2026-10-15",
     "reviewed": "2026-10-15",
+    "youtube": "U8q_0b1lu_4",
     "category": "Agent Engineering",
     "description": "A practical Orion PM tutorial: run two workers against one local task store, retain claim generations and revisions, attach evidence, and hand unfinished work back safely.",
     "lead": "Two agents can read the same task list and both decide to start. Orion PM adds an exclusive claim, a generation that changes on reacquisition, and a revision for the task each worker observed. This guide follows those handles through a complete local workflow.",
