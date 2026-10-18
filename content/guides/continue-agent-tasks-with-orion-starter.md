@@ -27,7 +27,7 @@ Download `orion-starter-0.2.0-rc.1.zip` from the release above. The external rel
 ```bash
 set -euo pipefail
 printf '%s  %s\n' \
-  '2cbea14bbc64bf64d04c537cbd007226ff3321c4ae30b9e5a0f65a804bd390ec' \
+  'f920e621bd517096dfef30931fd00a711bb9b94a55a1a927c35506f33293ae10' \
   'orion-starter-0.2.0-rc.1.zip' | sha256sum -c -
 unzip orion-starter-0.2.0-rc.1.zip
 cd orion-starter-0.2.0-rc.1
