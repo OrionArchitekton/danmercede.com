@@ -1035,6 +1035,7 @@ export const GUIDE_LENSES = [
     description: 'Verification, layered review, evidence, and honest failure.',
     slugs: [
       'why-agent-code-needs-layered-review',
+      'done-needs-a-receipt',
       'verifier-abstention-not-refutation',
       'agent-built-infrastructure-you-can-trust',
       'the-fail-closed-harness',
