@@ -2,7 +2,7 @@
 title: Capture agent results without filling every selected view
 slug: capture-agent-results-with-byte-bounded-snapshots
 date: 2026-10-18
-reviewed: 2026-10-18
+reviewed: 2026-10-19
 category: Agent tooling
 description: Store complete text privately, pass a byte-bounded snapshot, and recover exact results by reference.
 lead: A small selected view is useful only when the original result remains recoverable and failures stay visible.
@@ -21,8 +21,8 @@ The following commands use CPython 3.11 on the demonstrated Linux/WSL2 local ext
 ```bash
 set -euo pipefail
 sha256sum -c <<'SHA256'
-7af24fa10042b5f658880ce1830b66ba5bbb3cf5bd7f10ffe7c940b865e97aad  orion_results-0.1.0-py3-none-any.whl
-4c8d1bbd9967716d9b0b928c9fc0ccca069e77f7278e4f9d8518faa170aa6f95  orion_results-0.1.0.tar.gz
+67af57c4deda8967db83c2176642184bb3b7fb59f826539284086efa95e78e2e  orion_results-0.1.0-py3-none-any.whl
+8463a8dfa19e9cfe4cf18718b82b0863ffcf52d4db180928908a0a810c61a56b  orion_results-0.1.0.tar.gz
 SHA256
 test ! -e .venv-results-demo
 test ! -e orion_results-0.1.0
