@@ -21,8 +21,8 @@ The following commands use CPython 3.11 on the demonstrated Linux/WSL2 local ext
 ```bash
 set -euo pipefail
 sha256sum -c <<'SHA256'
-9bcd14f47ab2ac7831e0c3df8908dc8a6943f935b844d417cecfe06aa640463f  orion_results-0.1.0-py3-none-any.whl
-6e39438121f884bf5e91bbc2f06ad85fdd2943c12a393087bdfbe47f7de93475  orion_results-0.1.0.tar.gz
+7af24fa10042b5f658880ce1830b66ba5bbb3cf5bd7f10ffe7c940b865e97aad  orion_results-0.1.0-py3-none-any.whl
+4c8d1bbd9967716d9b0b928c9fc0ccca069e77f7278e4f9d8518faa170aa6f95  orion_results-0.1.0.tar.gz
 SHA256
 test ! -e .venv-results-demo
 test ! -e orion_results-0.1.0
@@ -94,7 +94,7 @@ Read-only inspection never switches to writable mode to replay a journal. If rec
 
 ## Keep data and installation separate
 
-New roots and session directories are private 0700; marker, database, lock and native journal require 0600, correct ownership and safe file types. Existing unsafe roots are refused without repair. One cooperative writer holds a stable lock inode. Another writer gets `session_busy`; process exit releases the lock. This is local coordination, not cross-host fencing or isolation from hostile same-user processes.
+New roots and session directories are private 0700; marker, database, lock and native journal require 0600, correct ownership and safe file types. Existing unsafe roots are refused without repair. One cooperative writer holds a stable lock inode. Call the storage API serially within each process. Overlapping or reentrant calls, including calls for different sessions, refuse immediately with `storage_busy`. Do not share Session handles between threads. Separate processes retain the documented SQLite and writer-lease contention behavior. Another writer gets `session_busy`; process exit releases the lock. This is local coordination, not cross-host fencing or isolation from hostile same-user processes.
 
 For backup, retain the selected writer handle, complete a validating snapshot and perform no other operation during the copy. Copy only the documented quiescent marker/database/lock set into new private files under a fresh root. Verify every expected reference against the restored root before treating it as a backup. A live transaction filesystem copy is not a backup. The complete synthetic example demonstrates that sequence and validates its owned cleanup:
 
