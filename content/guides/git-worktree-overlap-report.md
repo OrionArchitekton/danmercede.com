@@ -25,7 +25,7 @@ The installer is a separate checksum-pinned pip wheel from PyPI. Python extracts
 set -euo pipefail
 test ! -e .venv
 test ! -e .installer
-printf 'a4df81889b04ecb08c51ecceacb77b1d3ba677c181b82492e231a1bbf3128149  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
+printf '407debe349c60106df2543ba94e589bfbffdd0ea043dd16466c89abfec7ad7d4  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
 curl --fail --location --proto '=https' --tlsv1.2 --max-time 60 \
   https://files.pythonhosted.org/packages/f3/6e/1736e5b4ae2b778ef2f81c47d797de9f891d4d8acb047a24ca37a60294dd/pip-26.2.1-py3-none-any.whl \
   --output pip-26.2.1-py3-none-any.whl
@@ -99,7 +99,7 @@ Always read interface version, process exit, coverage, conclusion and problems t
 
 On supported stable repositories, the command initiates no writes to objects, refs/reflogs, index, configuration, working files or registrations and creates no in-repository locks, caches or reports. Filesystem access-time bookkeeping is excluded. Native inventories and helper sentinels check this boundary on the acceptance target.
 
-Before any repository-aware Git setup, bounded configuration snapshots are checked with includes disabled. Include targets are refused before they are opened. Filters, included repository configuration, submodules/gitlinks, sparse or split indexes, partial/promisor clones and bare repositories are refused. The reader disables optional locks, fsmonitor, global/system config and attributes, prompts and inherited Git redirection/tracing. Repository-local ignore rules remain active. These controls require cooperative stable configuration and a trusted executable. They are not a sandbox against malicious Git or a concurrent configuration writer.
+Before any repository-aware Git setup, bounded configuration snapshots are checked with includes disabled. Include targets are refused before they are opened. Filters, included repository configuration, submodules/gitlinks, sparse or split indexes, partial/promisor clones and bare repositories are refused. Index flags that can hide changed paths, including assume-unchanged and skip-worktree, are refused as unsupported observations too. Intent-to-add remains observable. The reader disables optional locks, fsmonitor, global/system config and attributes, prompts and inherited Git redirection/tracing. Repository-local ignore rules remain active. These controls require cooperative stable configuration and a trusted executable. They are not a sandbox against malicious Git or a concurrent configuration writer.
 
 Repeated observations compare registrations, HEAD, index/config digests and status. Detected changes make coverage incomplete without a silent retry. Matching samples cannot rule out a change-and-revert between reads or fence another writer.
 
