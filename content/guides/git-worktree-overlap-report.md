@@ -25,14 +25,14 @@ The installer is a separate checksum-pinned pip wheel from PyPI. Python extracts
 set -euo pipefail
 test ! -e .venv
 test ! -e .installer
-printf '407debe349c60106df2543ba94e589bfbffdd0ea043dd16466c89abfec7ad7d4  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
+printf '0ed507b4a0d8cb054e355206d8f09867e637df099b135e6cbbba6a5a9a5b5bab  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
 curl --fail --location --proto '=https' --tlsv1.2 --max-time 60 \
   https://files.pythonhosted.org/packages/f3/6e/1736e5b4ae2b778ef2f81c47d797de9f891d4d8acb047a24ca37a60294dd/pip-26.2.1-py3-none-any.whl \
   --output pip-26.2.1-py3-none-any.whl
 printf '71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e  pip-26.2.1-py3-none-any.whl\n' | sha256sum --check --strict
 python3.11 -m zipfile -e pip-26.2.1-py3-none-any.whl .installer
 python3.11 -m venv --without-pip .venv
-python3.11 -I .installer/pip --python .venv/bin/python install --no-index --no-deps ./orion_worktree_report-0.1.0-py3-none-any.whl
+python3.11 -I .installer/pip --isolated --python .venv/bin/python install --no-index --no-deps ./orion_worktree_report-0.1.0-py3-none-any.whl
 .venv/bin/orion-worktree-report --json version
 ```
 
@@ -114,7 +114,7 @@ A later PM or Results consumer can deliberately attach a report through its own 
 ## Remove the package
 
 ```bash
-python3.11 -I .installer/pip --python .venv/bin/python uninstall -y orion-worktree-report
+python3.11 -I .installer/pip --isolated --python .venv/bin/python uninstall -y orion-worktree-report
 ```
 
 Uninstall removes package files only. Your synthetic repositories, linked worktrees and saved reports remain. No runtime state needs migration.
