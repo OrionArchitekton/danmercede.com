@@ -593,6 +593,16 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-results',
+    description: 'Capture complete text in a private local session, pass a byte-bounded snapshot and recover exact results by reference. Explicit storage, quotas and visible uncertainty keep a small selected view tied to a dependable original.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-results',
+    link: 'https://www.danmercede.com/works/orion-results/',
+    license: 'MIT',
+    date: '2026-10-18',
+    slug: 'orion-results',
+  },
+  {
     title: 'orion-handoff',
     description: 'Carry bounded task context between local agent sessions. Explicit stores and immutable revisions keep task matching, observed recency and acceptance claims separate. Ambiguous pickup refuses selection; every result carries no authority.',
     category: 'Open Source',
@@ -877,6 +887,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'orion-browser',
   'orion-pm',
   'orion-handoff',
+  'orion-results',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
