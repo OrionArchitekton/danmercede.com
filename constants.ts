@@ -593,6 +593,16 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-worktree-report',
+    description: 'Observe registered Git worktrees and exact shared uncommitted paths in repositories you select. Explicit coverage keeps missing checkouts, limits and uncertainty visible. The report grants no ownership or merge authority.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-worktree-report',
+    link: 'https://www.danmercede.com/works/orion-worktree-report/',
+    license: 'MIT',
+    date: '2026-10-19',
+    slug: 'orion-worktree-report',
+  },
+  {
     title: 'orion-results',
     description: 'Capture complete text in a private local session, pass a byte-bounded snapshot and recover exact results by reference. Explicit storage, quotas and visible uncertainty keep a small selected view tied to a dependable original.',
     category: 'Open Source',
@@ -888,6 +898,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'orion-pm',
   'orion-handoff',
   'orion-results',
+  'orion-worktree-report',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
