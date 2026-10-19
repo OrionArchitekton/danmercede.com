@@ -88,6 +88,7 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-09-21-approved-but-not-the-version-that-shipped',
   '2026-09-28-the-alert-fired-nobody-was-there',
   '2026-10-05-the-assistant-was-only-supposed-to-read',
+  '2026-10-19-the-tool-worked-the-agent-couldnt-use-it',
 ];
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of

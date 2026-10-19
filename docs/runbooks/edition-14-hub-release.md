@@ -1,0 +1,140 @@
+---
+verified: 2026-10-19
+review_after: 2026-10-26
+topics: [newsletter, hub-release, edition-14]
+references:
+  - scripts/compileContent.ts
+  - .github/workflows/substrate-sync.yml
+  - .github/workflows/substrate-verify.yml
+  - docs/runbooks/private-substrate-checkout-authentication.md
+  - docs/runbooks/substrate-sync-pr-authentication.md
+---
+
+# Edition 14 hub release: October 26, 2026
+
+## Prepared scope and release boundary
+
+Admit `2026-10-19-the-tool-worked-the-agent-couldnt-use-it` to the hub after
+its LinkedIn-exclusive week. The exact title is **The Tool Worked. The Agent
+Couldn't Use It.** The [published edition](https://www.linkedin.com/pulse/tool-worked-agent-couldnt-use-dan-mercede-f1lrc/)
+is verified in substrate [PR #98](https://github.com/OrionArchitekton/dan-mercede-substrate/pull/98),
+merged as `56fdb5cd61cfc6220b751dc8c3b463a4f8a94b22`.
+
+Native `publishedAt: 1792418784000` establishes actual publication at
+**October 19, 07:06:24 PDT / 14:06:24 UTC**. Seven full days elapse on
+**Monday, October 26, 07:06:24 PDT / 14:06:24 UTC**. Use that instant, rather
+than the planned October 19 07:00 slot or the canonical's editorial date.
+The hash-verified source record is
+`docs/editorial/edition-14-publication-evidence/published-identity-and-time.json`
+in the substrate merge above, SHA-256
+`e828c624136802f85ae245b2af6c4a78fc040425bccdb5821986e72d4e6dad1f`.
+
+The canonical SHA-256 is
+`df2e01151cb6ae29b88ef0fd977b5545a412b625d89567c66c49fd032f6a8a59`.
+Do not change its body, date, frontmatter or `surface_targets: ["linkedin"]`.
+This admission overrides only the hub's target filter; status, type, required
+fields and date validation remain enforced. No other edition is added.
+
+Preparation changes only the consumer allowlist and this handoff. Keep its PR
+in draft until the release checkpoint. The committed `constants.generated.ts`
+and served assets remain unchanged. Admission is one prerequisite; a separate
+reviewed content-sync PR must land before the hub can serve the essay. The
+current Vercel compiler guard preserves the committed bundle even if substrate
+is reachable during a deploy.
+
+This handoff does not schedule or authorize a future merge, workflow dispatch,
+deployment, browser send or syndication. No timer is armed. The existing
+read-only LinkedIn verification heartbeat stays paused.
+
+## Monday sequence
+
+1. After **14:06:24 UTC on October 26**, recheck the source hash, exact PR diff,
+   current main, checks and human approval. Refresh the PR against current main
+   if needed, without adding generated content. Obtain the required independent
+   last-push approval, then merge admission only with Dan's merge authority.
+2. The current sync cron is `10 15 * * 1`: on October 26 it is **15:10 UTC /
+   08:10 PDT**, 1 hour 3 minutes 36 seconds after eligibility. The workflow's
+   timezone comment is inaccurate; the cron expression defines the schedule.
+   Aim to land admission before this run. GitHub can delay scheduled runs.
+   If admission misses it, request an explicitly authorized dispatch of
+   `substrate-sync.yml` on **main** after admission lands; do not wait a week or
+   dispatch an unmerged task branch.
+3. Inspect that run's private checkout, strict nonempty compile, diagram
+   optimization, drift detection and PR creation steps. The October 19 run
+   [39277452263](https://github.com/OrionArchitekton/danmercede.com/actions/runs/39277452263)
+   passed checkout and strict compile but found no drift and skipped PR
+   creation. It proves those read/compile steps, not the Actions PR writer.
+   An inaccessible substrate or failed writer needs its own diagnosis; no
+   implicit credential rotation, scope broadening or gate bypass is authorized.
+4. Review the resulting `codex/substrate-sync` PR separately. It should add
+   this essay's exact generated title, October 19 display date and full body.
+   Explain any other source drift or removal before merge. Preserve every
+   existing thought and the approved CTA. Do not combine generated outputs
+   with this admission PR: trusted verification executes the base compiler.
+5. Require the sync PR's current build, extractability, secret scan,
+   fail-closed aggregate and trusted substrate verification checks. Obtain its
+   human review and separate content-merge approval. Only the content merge
+   and subsequent deployment can release the essay on the hub.
+
+If the PR writer alone fails, the existing fallback may prepare generated
+outputs in a fresh worktree using the now-merged main compiler and a pinned
+accepted substrate main. Preserve strict compilation, the workflow's pinned
+diagram optimizer, unchanged source, normal CI and a separate human-reviewed
+content PR. Do not repair credentials or merge generated output implicitly.
+
+## Validation and public verification
+
+Before admission, verify that the immutable source is excluded. With the new
+allowlist entry, the real source must be admitted exactly once, with the same
+title, date and full body; every previously admitted thought stays unchanged.
+Run existing tests, typecheck, build and built-output checks. Keep generated
+content and asset changes out of the admission diff.
+
+For the admission-only build, use `VERCEL=1 npm run build` to exercise the
+production compiler guard and preserve the committed bundle. An ordinary local
+build can discover a sibling substrate checkout even with `SUBSTRATE_PATH`
+unset, regenerate the essay bundle and copy unoptimized diagram originals.
+Keep that separate as a local rehearsal; restore its generated changes before
+checking or committing admission. The sync workflow owns its own strict compile
+and subsequent diagram optimization.
+
+October 19 preparation verified the actual source's exclusion before the
+change and admission afterward, with all 45 previously admitted thoughts
+unchanged. A local rendered-page rehearsal matched all 38 approved body blocks,
+six headings and the exact CTA anchor. After restoring the generated rehearsal
+output, typecheck, all 447 existing tests, the production-guarded build and all
+18 built-output tests passed. The admission diff contains no generated content
+or asset changes. These are preparation checks, not a production release.
+
+The current hub mapper reads essay body content. This canonical's cover is
+frontmatter-only and its body has no image references; this release therefore
+adds no inline cover or asset. Do not invent a body image, copy unrelated
+newsletter assets, or alter the sealed canonical to obtain one.
+
+After the content merge, verify the deployment for that exact commit, then
+inspect the actual public page:
+
+`https://www.danmercede.com/thoughts/2026-10-19-the-tool-worked-the-agent-couldnt-use-it`
+
+- Compare the essay-specific initial rendered article with the accepted
+  canonical: exact title, full prose, all six headings and literal
+  `Wsl/Service/E_ACCESSDENIED`. A title or a JavaScript-bundle match is not enough.
+- The visible CTA must be **Work with my agency on one workflow**. Follow its
+  actual anchor and confirm the Readiness Scan loads with the exact destination
+  and all four attribution parameters:
+  `https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14`.
+  Do not submit the form. The canonical keeps its approved newsletter tracking
+  parameters; this preparation does not rewrite them for a new channel.
+- Verify the thoughts index link, page canonical, sitemap, RSS and Atom entries.
+  Compare an invalid essay slug returning a real 404 so an SPA fallback cannot
+  be mistaken for this release. Record the deployed commit, observation time
+  and consumer evidence only after these checks.
+
+## Rollback
+
+Before content merge, close the unmerged content PR and revert admission via
+a reviewed PR if needed. After content merge, removing the allowlist entry
+alone does not remove the committed article. Revert admission, regenerate
+through the trusted sync flow, review and merge the generated removal, then
+verify the public page is removed. Never hand-edit the generated bundle or
+the immutable substrate canonical.
