@@ -1,5 +1,5 @@
 ---
-verified: 2026-10-18
+verified: 2026-10-19
 review_after: 2026-11-18
 topics: [works, guides, result-capture]
 references: [../../vercel.json, ../../constants.ts, ../../content/guides/capture-agent-results-with-byte-bounded-snapshots.md, ../../specs/orion-results-release-surface-spec.md]
@@ -7,15 +7,20 @@ references: [../../vercel.json, ../../constants.ts, ../../content/guides/capture
 
 # Result-capture release
 
-Current state is private preparation. No hosted repository, deployment or public
-guide is established by these staged changes. MIT and destination names are
-approved; publication requires the full refreshed package and exact action set.
+Current state is approved source-release preparation. The named public source
+repositories and protected task PRs exist. Exact replacement artifact acceptance,
+qualified final-head human review, protected merges and production rollout remain.
+MIT, destination names and the outward action set are already approved.
 
 After that approval, establish the named core/site repositories and protected
 review gates. Publish the exact reviewed v0.1.0 wheel/source/checksums first. Verify
 unauthenticated downloads and hashes before the guide is enabled. Prepare the
 site's new external Vercel project without copying another project's credentials
-or identity. Verify its root HTML, prefix-safe assets and absence of an SSO wall.
+or identity. Verify its root HTML and absence of an SSO wall. For upstream asset
+preflight, strip `/works/orion-results/` from each canonical built reference and
+request the resulting origin-root file; verify actual type and hash. The origin
+is the proxy upstream, with no direct-origin browser-render acceptance. Full browser
+and navigation checks run through the canonical Works route after the hub deploy.
 
 The hub release carries the Works card, no-slash redirect, two prefix-stripped
 rewrites, sitemap and static guide together. Merge only after the published core
