@@ -2,6 +2,11 @@
   "outputDirectory": "build",
   "redirects": [
     {
+      "source": "/works/orion-results",
+      "destination": "/works/orion-results/",
+      "permanent": true
+    },
+    {
       "source": "/works/orion-handoff",
       "destination": "/works/orion-handoff/",
       "permanent": true
@@ -201,6 +206,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/orion-results/",
+      "destination": "https://orion-results-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-results/:path*",
+      "destination": "https://orion-results-site.vercel.app/:path*"
+    },
     {
       "source": "/works/orion-handoff/",
       "destination": "https://orion-handoff-site.vercel.app/"
