@@ -84,6 +84,18 @@ export const SPEAKING = {
   // Mirrored into Person.sameAs in index.html per docs/identity-contract.md.
   href: "https://neo4j.com/nodes/speakers/dan-mercede/",
   cta: "Speaker profile",
+  // NODES 2026 speaker contest: Dan's personalized registration URL, exactly as Neo4j's
+  // generator emits it (dev.assets.neo4j.com/nodes-sc-2026.html, rechecked 2026-10-20).
+  // Known generator quirk: it joins first and last name with a raw "&", so a parser reads
+  // utm_campaign=Dan plus a stray "Mercede" key. This does not prove referral credit.
+  // Preserve the organizer's generated URL until they confirm a replacement; the hub
+  // offers registration without promising that contest attribution has been verified.
+  // It lands on the general NODES page, so it sits beside the proof link above and
+  // never replaces it.
+  registerHref: "https://www.neo4j.com/nodes?utm_source=SpeakerContest&utm_campaign=Dan&Mercede",
+  registerCta: "Register free",
+  // Time-bound promotion: on November 13 remove registration and change the block
+  // to past tense through the reviewed release in docs/runbooks/nodes-speaking-promotion.md.
 };
 
 export const BELIEFS: Belief[] = [

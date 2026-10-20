@@ -343,14 +343,24 @@ const HomePage = () => {
           <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.time} · {SPEAKING.track} Track</p>
           <p className="text-slate-400 mb-2 max-w-xl mx-auto italic">"{SPEAKING.title}"</p>
           <p className="text-slate-400 text-sm mb-6 max-w-xl mx-auto">{SPEAKING.detail}</p>
-          <a
-            href={SPEAKING.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-copper-500 text-sm font-semibold tracking-wider uppercase hover:text-copper-400 transition-colors inline-flex items-center"
-          >
-            {SPEAKING.cta} <ExternalLink className="w-4 h-4 ml-2" />
-          </a>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <a
+              href={SPEAKING.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-copper-500 text-sm font-semibold tracking-wider uppercase hover:text-copper-400 transition-colors inline-flex items-center"
+            >
+              {SPEAKING.cta} <ExternalLink className="w-4 h-4 ml-2" />
+            </a>
+            <a
+              href={SPEAKING.registerHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-copper-500 text-sm font-semibold tracking-wider uppercase hover:text-copper-400 transition-colors inline-flex items-center"
+            >
+              {SPEAKING.registerCta} <ExternalLink className="w-4 h-4 ml-2" />
+            </a>
+          </div>
         </div>
       </Section>
 
