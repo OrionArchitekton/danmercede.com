@@ -17,7 +17,7 @@ This guide covers Orion Starter **0.3.0-rc.1**, an opt-in release candidate. Dow
 ZIP SHA-256:
 
 ```text
-c9ff785a50cb7ebb64984166dc38fd94c90df3018b660f7b3f54336836148a58
+d46c844363721d1e8a67a4c8fd8fbf35c94134e84995af5e9cf5fc605614a68d
 ```
 
 ## Keep the roles separate
