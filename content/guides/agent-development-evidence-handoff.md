@@ -12,7 +12,13 @@ A development task often outlives the process that started it. The next worker n
 
 The development evidence profile in Orion Starter composes four independent tools around that problem. One worker retains an exact worktree observation and yields. A separately invoked worker recovers those exact bytes, obtains its own claim and observes again before completing one deliberately narrow demonstration.
 
-This guide covers Orion Starter **0.3.0-rc.1**, an opt-in release candidate. Download the [versioned ZIP](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/orion-starter-0.3.0-rc.1.zip), [SHA256SUMS](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/SHA256SUMS) and [verification receipt](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/release-verification.json). Verify the ZIP and verification receipt against SHA256SUMS before extracting the ZIP. The ZIP SHA-256 is `c9ff785a50cb7ebb64984166dc38fd94c90df3018b660f7b3f54336836148a58`. The receipt identifies the selected source, archive and observed validation scope; this preview is not a stable 0.3.0 release.
+This guide covers Orion Starter **0.3.0-rc.1**, an opt-in release candidate. Download the [versioned ZIP](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/orion-starter-0.3.0-rc.1.zip), [SHA256SUMS](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/SHA256SUMS) and [verification receipt](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/release-verification.json). Verify the ZIP and verification receipt against SHA256SUMS before extracting the ZIP. The receipt identifies the selected source, archive and observed validation scope; this preview is not a stable 0.3.0 release.
+
+ZIP SHA-256:
+
+```text
+c9ff785a50cb7ebb64984166dc38fd94c90df3018b660f7b3f54336836148a58
+```
 
 ## Keep the roles separate
 
