@@ -40,6 +40,9 @@ This is a manual editorial release. No timer, recurring task or automatic send
 is created. A render-time clock check would violate the site's deterministic
 initial-render contract; this PR keeps the dated source and rendered copy aligned.
 
-Before merge, abandon by closing PR #202. After merge, remove the registration
-link through a reviewed revert of the feature. Do not revert current main's
-unrelated changes or alter the substrate-generated content bundle.
+## Abandon or roll back only if Dan chooses to withdraw the promotion
+
+Before merge, close PR #202 to abandon the promotion. After merge, a reviewed
+revert can remove the registration link if Dan chooses to withdraw it early.
+This is separate from the November 13 forward edit above. Preserve current
+main's unrelated changes and the substrate-generated content bundle.
