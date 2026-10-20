@@ -10,9 +10,9 @@ lead: A useful handover preserves what the first worker saw while making the nex
 
 A development task often outlives the process that started it. The next worker needs the original evidence, an explanation of what remains unfinished and a fresh view of the repository. Passing a summary alone loses detail. Passing a task claim alone does not make an old observation current.
 
-The development evidence profile in Orion Starter composes four independent tools around that problem. One worker retains a complete worktree observation and yields. A separately invoked worker recovers those exact bytes, obtains its own claim and observes again before completing one deliberately narrow demonstration.
+The development evidence profile in Orion Starter composes four independent tools around that problem. One worker retains an exact worktree observation and yields. A separately invoked worker recovers those exact bytes, obtains its own claim and observes again before completing one deliberately narrow demonstration.
 
-This is the private 0.3.0-rc.1 preview package under review. The proposed download belongs in the [existing Starter releases](https://github.com/OrionArchitekton/orion-starter/releases). Publication, the final archive checksum and public download replay remain release gates. This draft does not describe a published 0.3.0 release.
+This guide covers Orion Starter **0.3.0-rc.1**, an opt-in release candidate. Download the [versioned ZIP](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/orion-starter-0.3.0-rc.1.zip), [SHA256SUMS](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/SHA256SUMS) and [verification receipt](https://github.com/OrionArchitekton/orion-starter/releases/download/v0.3.0-rc.1/release-verification.json). Verify the ZIP and verification receipt against SHA256SUMS before extracting the ZIP. The ZIP SHA-256 is `c9ff785a50cb7ebb64984166dc38fd94c90df3018b660f7b3f54336836148a58`. The receipt identifies the selected source, archive and observed validation scope; this preview is not a stable 0.3.0 release.
 
 ## Keep the roles separate
 
@@ -29,7 +29,7 @@ The default PM/browser and optional PM/browser/Handoff profiles remain available
 
 ## Start with a fresh extraction and synthetic data
 
-The package's [standalone profile walkthrough](https://github.com/OrionArchitekton/orion-starter/blob/main/profiles/development-evidence/README.md) is a proposed source target until the reviewed package lands. For this private review, use that file from the selected local ZIP. Its first block verifies the profile metadata, downloads the exact selected wheels and checked pip 26.2.1 installer, and installs into a virtual environment created without bundled pip. The installer is separate from the four installed packages.
+The package's [standalone profile walkthrough](https://github.com/OrionArchitekton/orion-starter/blob/v0.3.0-rc.1/profiles/development-evidence/README.md) is included in the extracted ZIP. Its first block verifies the profile metadata, downloads the exact selected wheels and checked pip 26.2.1 installer, and installs into a virtual environment created without bundled pip. The installer is separate from the four installed packages.
 
 The next block creates an empty private workspace outside Git. It initializes a run-specific demonstration task and Handoff store, selects an empty Results parent, and creates a synthetic repository with two linked worker worktrees. Both workers deliberately edit the same tracked path. Fixture creation is an explicit setup operation; `inspect` does not create these resources.
 
@@ -80,7 +80,7 @@ The failed reply supplies an attempt ID. The profile writes bounded private inte
 
 A lost session-creation response leaves a known slot with an unknown native session identity. No capture was requested, and the profile does not guess or discover a session. After the session identity is durably known, a lost capture response can instead be checked against the saved exact reference. Missing, incomplete or corrupt data remains a refusal or unresolved diagnosis. Writable native recovery is a separate explicit operation.
 
-The [profile runbook](https://github.com/OrionArchitekton/orion-starter/blob/main/docs/runbooks/starter-development-evidence.md) is also a proposed source target pending the release. It explains claim/context changes, native repair boundaries, output/process limits and quiescent backup. References provide identity, not execution authority.
+The [profile runbook](https://github.com/OrionArchitekton/orion-starter/blob/v0.3.0-rc.1/docs/runbooks/starter-development-evidence.md) explains claim/context changes, native repair boundaries, output/process limits and quiescent backup. References provide identity, not execution authority.
 
 ## Retain data when removing the environment
 
