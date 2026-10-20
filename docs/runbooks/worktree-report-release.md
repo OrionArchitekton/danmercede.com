@@ -7,7 +7,7 @@ references: [../../vercel.json, ../../constants.ts, ../../content/guides/git-wor
 
 # Worktree Report Works and guide release
 
-Private preparation only. The guide and Work dates are provisional publication metadata; the reviewed stamp records the actual full reread on October 19. A later publication date requires a fresh full reread and truthful metadata update, followed by regeneration and applicable checks.
+Dan approved the named package release. The public source repositories and the separate site project exist; artifact publication, deployment and canonical hosted acceptance remain separate checks. The guide and Work dates are provisional publication metadata; the reviewed stamp records the actual full reread on October 19. A later publication date requires a fresh full reread and truthful metadata update, followed by regeneration and applicable checks.
 
 Validate `npm run compile:guides`, `npm test`, `npm run build` and `npm run test:built`. Confirm the guide’s own initial HTML, canonical, Article data and generated sitemap. The microsite is proxy-served; do not add it to ROUTE_META. Source and site: OrionArchitekton/orion-worktree-report and OrionArchitekton/orion-worktree-report-site. The separately prepared external project/origin is orion-worktree-report-site / https://orion-worktree-report-site.vercel.app/ . No project or deployment is created by these files.
 

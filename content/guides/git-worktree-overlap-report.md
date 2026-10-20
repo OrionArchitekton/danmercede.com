@@ -25,7 +25,7 @@ The installer is a separate checksum-pinned pip wheel from PyPI. Python extracts
 set -euo pipefail
 test ! -e .venv
 test ! -e .installer
-printf '0ed507b4a0d8cb054e355206d8f09867e637df099b135e6cbbba6a5a9a5b5bab  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
+printf 'f06d7ca9d3fd1001b9bd16ed18a8ee7827727c09eeb4a535f41692723336550b  orion_worktree_report-0.1.0-py3-none-any.whl\n' | sha256sum --check --strict
 curl --fail --location --proto '=https' --tlsv1.2 --max-time 60 \
   https://files.pythonhosted.org/packages/f3/6e/1736e5b4ae2b778ef2f81c47d797de9f891d4d8acb047a24ca37a60294dd/pip-26.2.1-py3-none-any.whl \
   --output pip-26.2.1-py3-none-any.whl
@@ -36,7 +36,7 @@ python3.11 -I .installer/pip --isolated --python .venv/bin/python install --no-i
 .venv/bin/orion-worktree-report --json version
 ```
 
-There are no Python runtime dependencies. The reporter environment contains only the reporter, with its own bin/python; the POSIX launcher disables bytecode writes before Python startup. The separate installer and its vendored libraries are setup tools, not packages installed into that environment. Other installation layouts are unverified. Git must be trusted and on PATH. No daemon, hook or configuration change is installed.
+There are no Python runtime dependencies. The reporter environment contains only the reporter, with its own bin/python; the POSIX launcher isolates imports and disables bytecode writes before Python startup. The separate installer and its vendored libraries are setup tools, not packages installed into that environment. Other installation layouts are unverified. Git must be trusted and on PATH. No daemon, hook or configuration change is installed.
 
 ## Build one disposable example
 
