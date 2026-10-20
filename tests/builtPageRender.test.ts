@@ -5,8 +5,9 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { JSDOM } from 'jsdom';
 
-import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -139,6 +140,18 @@ test('every published route renders with a clean heading outline', async () => {
 // works hub, front door, content boundary, proof, privacy, case studies,
 // diagrams) bind the render the build ships. Review of #184, 2026-09-29;
 // the crawl block itself was retired in S5.
+test('the homepage speaking block renders the speaker page and the tracked NODES registration link', async () => {
+  const home = (await loadRender())('/');
+  const document = new JSDOM(home).window.document;
+  const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === SPEAKING.event);
+  assert.ok(heading, 'homepage: expected the speaking block heading');
+  const block = heading.closest('section');
+  assert.ok(block, 'the speaking heading belongs to a section');
+  const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+  assert.ok(hrefs.includes(SPEAKING.href), 'speaking block: the credential-proof link to the speaker page');
+  assert.ok(hrefs.includes(SPEAKING.registerHref), 'speaking block: the generated registration link');
+});
+
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {
   const home = (await loadRender())('/');
   const essayCards = SELECTED_WORK.filter((w) => w.href.startsWith('/thoughts/'));
