@@ -10,18 +10,18 @@
 
 ## 1. Latest selection
 
-- [ ] Add a test to `tests/thoughtLanes.test.ts` using an out-of-order frozen corpus with tied dates. Expect three newest entries, slug ties ascending, original corpus unchanged, and zero to two entries handled.
-- [ ] Run `npx tsx --test tests/thoughtLanes.test.ts`; observe failure before implementation.
-- [ ] Export `selectLatestThoughts(thoughts: readonly Thought[]): Thought[]` from `thoughtsIndex.ts`: copy, sort by descending ISO display date then ascending slug, slice to three.
-- [ ] Rerun the selector tests; require PASS.
+- [x] Add a test to `tests/thoughtLanes.test.ts` using an out-of-order frozen corpus with tied dates. Expect three newest entries, slug ties ascending, original corpus unchanged, and zero to two entries handled.
+- [x] Run `npx tsx --test tests/thoughtLanes.test.ts`; observe failure before implementation.
+- [x] Export `selectLatestThoughts(thoughts: readonly Thought[]): Thought[]` from `thoughtsIndex.ts`: copy, sort by descending ISO display date then ascending slug, slice to three.
+- [x] Rerun the selector tests; require PASS.
 
 ## 2. Visible initial HTML and live page
 
-- [ ] Add a built-page assertion in `tests/builtPageRender.test.ts` that the Latest releases section contains exactly the expected three card links in date order and precedes Start here and every lane.
-- [ ] Build with `VERCEL=1 npm run build` and run `npm run test:built`; observe the missing-section failure.
-- [ ] In `App.tsx`, select latest essays and render a labelled section above Start here only when `isLaneGroupedView` and the selection is nonempty. Reuse `renderCard` in a responsive one/three-column grid. Keep lane rendering and filters intact.
-- [ ] Run `npx tsc --noEmit`, `npm test`, `VERCEL=1 npm run build`, and `npm run test:built`; require PASS and no generated-content diff.
-- [ ] Check desktop/mobile preview and live search/category/clear transitions, including hydration errors and horizontal overflow. Record concise evidence.
+- [x] Add a built-page assertion in `tests/builtPageRender.test.ts` that the Latest releases section contains exactly the expected three card links in date order and precedes Start here and every lane.
+- [x] Build with `VERCEL=1 npm run build` and run `npm run test:built`; observe the missing-section failure.
+- [x] In `App.tsx`, select latest essays and render a labelled section above Start here only when `isLaneGroupedView` and the selection is nonempty. Reuse `renderCard` in a responsive one/three-column grid. Keep lane rendering and filters intact.
+- [x] Run `npx tsc --noEmit`, `npm test`, `VERCEL=1 npm run build`, and `npm run test:built`; require PASS and no generated-content diff.
+- [x] Check desktop/mobile preview and live search/category/clear transitions, including hydration errors and horizontal overflow. Record concise evidence.
 
 ## 3. Edition 13 admission and delivery
 

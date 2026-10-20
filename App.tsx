@@ -9,7 +9,7 @@ import GuideVideo from './components/GuideVideo';
 import Analytics from './components/Analytics';
 import { trackEvent } from './analytics/gaConfig';
 import { NAV_ITEMS, HERO_CONTENT, SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, GUIDE_LENSES, guideMatchesLens , GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
-import { selectThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
+import { selectThoughts, selectLatestThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
 import { WorkCard, linkTargetProps } from './components/WorkCard';
@@ -1554,6 +1554,7 @@ const ThoughtsPage = () => {
   // below are source-asserted (no React harness in this repo).
   const matchingThoughts = selectThoughts(THOUGHTS, activeCategory, query);
   const isLaneGroupedView = isLaneGroupedThoughtsView(activeCategory, query);
+  const latestThoughts = selectLatestThoughts(THOUGHTS);
 
   const renderCard = (thought: Thought, idx: number) => (
     <Link
@@ -1587,6 +1588,15 @@ const ThoughtsPage = () => {
             Work with OIA on one workflow.
           </a>
         </p>
+
+        {isLaneGroupedView && latestThoughts.length > 0 && (
+          <section aria-labelledby="latest-releases-heading" className="mb-12">
+            <h2 id="latest-releases-heading" className="text-2xl font-bold text-white mb-6">Latest releases</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestThoughts.map(renderCard)}
+            </div>
+          </section>
+        )}
 
         {/* Start here: curated entry into the strongest practical material */}
         <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mb-10 max-w-4xl">

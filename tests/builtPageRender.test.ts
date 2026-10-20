@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -41,6 +41,25 @@ async function loadRender(): Promise<(url: string) => string> {
   assert.ok(fs.existsSync(ssrEntry), 'run `npm run build` first; this test reads build-ssr/');
   return ((await import(pathToFileURL(ssrEntry).href)) as { render: (url: string) => string }).render;
 }
+
+test('/thoughts puts the three latest admitted essays ahead of the curated entry points and lanes', () => {
+  const html = decode(rootOf(fs.readFileSync(fileFor('/thoughts'), 'utf8')).inner);
+  const latest = /<section\b[^>]*aria-labelledby="latest-releases-heading"[^>]*>([\s\S]*?)<\/section>/.exec(html);
+  assert.ok(latest, 'Latest releases must ship in the initial HTML');
+  assert.match(latest[1], /id="latest-releases-heading"[^>]*>Latest releases<\/h2>/);
+  const expected = [...THOUGHTS].sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug)).slice(0, 3);
+  const links = [...latest[1].matchAll(/href="(\/thoughts\/[^"#]+)"/g)].map(m => m[1]);
+  assert.deepEqual(links, expected.map(t => `/thoughts/${t.slug}`));
+  for (const thought of expected) {
+    assert.ok(latest[1].includes(thought.title), `latest title: ${thought.slug}`);
+    assert.ok(latest[1].includes(thought.date), `latest date: ${thought.slug}`);
+  }
+  const end = latest.index + latest[0].length;
+  assert.ok(html.indexOf('>Start here</h2>') > end, 'Start here follows Latest releases');
+  for (const lane of THOUGHT_LANES) {
+    assert.ok(html.indexOf(`>${lane.name}</h2>`) > end, `${lane.name} stays below Latest releases`);
+  }
+});
 
 test('every rendered route ships its page render, stamped', async () => {
   const render = await loadRender();

@@ -13,6 +13,11 @@
 
 import type { Thought } from './types';
 
+// Compiler dates are normalized YYYY-MM-DD display dates. A copied sort keeps
+// this presentation independent of lane curation and the source array order.
+export const selectLatestThoughts = (thoughts: readonly Thought[]): Thought[] =>
+  [...thoughts].sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug)).slice(0, 3);
+
 // Search corpus for one thought. Deliberately EXCLUDES `body`: every hit must be
 // explainable by text the card itself renders (title, category badge, preview), so a
 // reader is never shown a result whose match is invisible. Widening this to include
