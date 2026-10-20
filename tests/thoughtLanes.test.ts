@@ -4,8 +4,26 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { THOUGHT_LANES, THOUGHTS } from '../constants';
-import { thoughtMatchesQuery, thoughtSearchText, selectThoughts, isLaneGroupedThoughtsView } from '../thoughtsIndex';
+import { thoughtMatchesQuery, thoughtSearchText, selectThoughts, selectLatestThoughts, isLaneGroupedThoughtsView } from '../thoughtsIndex';
 import type { Thought } from '../types';
+
+test('latest releases select the newest three across lanes without changing the corpus', () => {
+  const essay = (slug: string, date: string): Thought => ({
+    slug, date, title: slug, category: 'Doctrine', preview: 'Preview', body: 'Body',
+  });
+  const corpus = Object.freeze([
+    essay('old', '2026-01-01'),
+    essay('tie-z', '2026-10-19'),
+    essay('newest', '2026-10-20'),
+    essay('tie-a', '2026-10-19'),
+    essay('middle', '2026-10-12'),
+  ]);
+  assert.deepEqual(selectLatestThoughts(corpus).map(t => t.slug), ['newest', 'tie-a', 'tie-z']);
+  assert.deepEqual(corpus.map(t => t.slug), ['old', 'tie-z', 'newest', 'tie-a', 'middle']);
+  assert.deepEqual(selectLatestThoughts([]), []);
+  assert.deepEqual(selectLatestThoughts(corpus.slice(0, 1)).map(t => t.slug), ['old']);
+  assert.deepEqual(selectLatestThoughts(corpus.slice(0, 2)).map(t => t.slug), ['tie-z', 'old']);
+});
 
 // Guard the hub-side /thoughts lane curation (THOUGHT_LANES). Lanes hard-code
 // substrate-generated slugs; if a slug is renamed or removed in substrate, a curated

@@ -1,0 +1,53 @@
+{
+  "observed_on": "2026-10-20",
+  "surface": "Local production build at http://127.0.0.1:4173/thoughts; current 45-essay corpus, not live release proof.",
+  "build": "VERCEL=1 npm run build",
+  "unit_tests": {
+    "passed": 448,
+    "failed": 0
+  },
+  "built_tests": {
+    "passed": 19,
+    "failed": 0
+  },
+  "typecheck": "pass",
+  "browser_checks": {
+    "desktop_viewport": [
+      1440,
+      1000
+    ],
+    "mobile_viewport": [
+      390,
+      844
+    ],
+    "default_latest_cards": 3,
+    "search_transcript": {
+      "latest_cards": 0,
+      "result_count": 0
+    },
+    "category_enforcement_after_clearing_search": {
+      "latest_cards": 0,
+      "result_count": 19
+    },
+    "all_lanes_after_clear": {
+      "latest_cards": 3
+    },
+    "page_errors": [],
+    "horizontal_overflow": false
+  },
+  "artifacts": [
+    {
+      "path": "desktop.png",
+      "sha256": "0e9780eb3282c88b2f80232f3fb0d7f630f270ba8649586d4604ec917b998e86"
+    },
+    {
+      "path": "mobile.png",
+      "sha256": "5772ac5a638e7545d2b330599fdcffee04948d9b0d7ef37658b5f9872251a6a5"
+    }
+  ],
+  "source_corpus_sha256": "834ae8dc2b28ce129c6a7620b115cfa2ba8b20bdf35cb857e91aaa1dddda1a95",
+  "limitations": [
+    "Edition13 is not in this committed corpus yet; generated sync follows source and admission merges.",
+    "First agent-browser empty-fill/name-click attempts did not change React state. Independent Playwright user interactions confirmed search/category/clear behavior; no product defect found."
+  ]
+}
