@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { JSDOM } from 'jsdom';
 
 import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
@@ -141,11 +142,14 @@ test('every published route renders with a clean heading outline', async () => {
 // the crawl block itself was retired in S5.
 test('the homepage speaking block renders the speaker page and the tracked NODES registration link', async () => {
   const home = (await loadRender())('/');
-  const at = home.indexOf(`>${SPEAKING.event}<`);
-  assert.ok(at >= 0, 'homepage: expected the speaking block heading');
-  const block = home.slice(home.lastIndexOf('<section', at), home.indexOf('</section>', at));
-  assert.ok(block.includes(`href="${SPEAKING.href}"`), 'speaking block: the credential-proof link to the speaker page');
-  assert.ok(block.includes(`href="${SPEAKING.registerHref.replace(/&/g, '&amp;')}"`), 'speaking block: the tracked registration link');
+  const document = new JSDOM(home).window.document;
+  const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === SPEAKING.event);
+  assert.ok(heading, 'homepage: expected the speaking block heading');
+  const block = heading.closest('section');
+  assert.ok(block, 'the speaking heading belongs to a section');
+  const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+  assert.ok(hrefs.includes(SPEAKING.href), 'speaking block: the credential-proof link to the speaker page');
+  assert.ok(hrefs.includes(SPEAKING.registerHref), 'speaking block: the generated registration link');
 });
 
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {

@@ -85,7 +85,7 @@ test('PERSON_ID / WEBSITE_ID are anchored to the canonical www host', () => {
   assert.equal(SITE_ORIGIN, 'https://www.danmercede.com');
 });
 
-test('canonical Person.sameAs covers all four spokes plus GitHub and the live dev.to syndication spoke', () => {
+test('canonical Person.sameAs covers the spokes, GitHub and the NODES speaker credential', () => {
   const person = allNodes().find((n) => n['@type'] === 'Person');
   assert.ok(person, 'Person node must be declared');
   const sameAs = ((person.sameAs as string[]) || []).map((u) => u.replace(/\/+$/, ''));
@@ -103,6 +103,7 @@ test('canonical Person.sameAs covers all four spokes plus GitHub and the live de
     // /syndicate); Wikipedia/Wikidata/Crunchbase are REJECTED (notability
     // mismatch — a thin self-authored entity backfires).
     'https://dev.to/danmercede',
+    'https://neo4j.com/nodes/speakers/dan-mercede',
   ];
   for (const r of required) {
     assert.ok(sameAs.includes(r), `Person.sameAs must include ${r}`);
