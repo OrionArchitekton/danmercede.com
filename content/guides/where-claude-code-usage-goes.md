@@ -108,7 +108,7 @@ for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recur
                 when = when.replace(tzinfo=timezone.utc)
             if when < since:
                 continue
-            if rid not in best or u.get("output_tokens", 0) >= best[rid][1].get("output_tokens", 0):
+            if rid not in best or (u.get("output_tokens") or 0) >= (best[rid][1].get("output_tokens") or 0):
                 best[rid] = (msg.get("model", "?"), u)
 
 tokens, cost, unpriced = defaultdict(int), defaultdict(float), defaultdict(int)
@@ -134,15 +134,15 @@ for model, u in best.values():
     mult = (2 if u.get("speed") == "fast" else 1) * (1.1 if u.get("inference_geo") == "us" else 1)
     inp, out, rd = (x * mult for x in price)
     rate = {"uncached": inp, "write_5m": 1.25 * inp, "write_1h": 2 * inp, "read": rd, "output": out}
-    for kind, n in parts.items():
-        tokens[kind] += n
-        cost[kind] += n * rate[kind] / 1e6
+    for kind, count in parts.items():
+        tokens[kind] += count
+        cost[kind] += count * rate[kind] / 1e6
 
 t, c = sum(tokens.values()), sum(cost.values())
 if skipped:
     print(f"skipped {skipped} unreadable transcript lines; totals may be low")
-for model, n in unpriced.items():
-    print(f"no price row for {model}: {n / 1e6:,.1f}M tokens left out")
+for model, count in unpriced.items():
+    print(f"no price row for {model}: {count / 1e6:,.1f}M tokens left out")
 if c == 0:
     sys.exit("nothing priced: add a PRICES row for your model")
 print(f"{len(best)} requests, {t / 1e6:,.0f}M priced tokens, ${c:,.0f} at list price")
