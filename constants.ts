@@ -1046,6 +1046,7 @@ export const GUIDE_LENSES = [
       'hand-off-local-agent-tasks',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
+      'where-claude-code-usage-goes',
       'giving-your-agent-web-access',
       'why-llm-schemas-get-rejected',
       'claude-code-controls-grok-bot',
