@@ -75,14 +75,16 @@ from datetime import datetime, timedelta, timezone
 PRICES = {
     "claude-opus-5-5": (4.00, 20.00, 0.20),
     "claude-sonnet-5-5": (2.00, 10.00, 0.10),
-    "claude-haiku-5-5": (0.10, 0.50, 0.01),  # under-prices prompts over 100K
+    "claude-haiku-5-5": (0.10, 0.50, 0.01),  # prompts up to 100K tokens
     "claude-fable-5-1": (10.00, 50.00, 0.25),
     "claude-opus-5": (5.00, 25.00, 0.50),
 }
+HAIKU_LONG = (0.50, 2.50, 0.05)  # Haiku 5.5 prompts over 100K tokens
 days = float(sys.argv[1]) if len(sys.argv) > 1 else 7
 since = datetime.now(timezone.utc) - timedelta(days=days)
 
 best = {}  # request id -> (model, usage); keep the record with the most output
+skipped = 0
 for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recursive=True):
     with open(path, errors="replace") as fh:
         for line in fh:
@@ -91,6 +93,7 @@ for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recur
             try:
                 e = json.loads(line)
             except ValueError:
+                skipped += 1
                 continue
             msg, rid, ts = e.get("message") or {}, e.get("requestId"), e.get("timestamp")
             u = msg.get("usage") if isinstance(msg, dict) else None
@@ -116,13 +119,19 @@ for model, u in best.values():
     if price is None:
         unpriced[model] += sum(parts.values())
         continue
-    inp, out, rd = price
+    if model.startswith("claude-haiku-5-5") and sum(parts.values()) - parts["output"] > 100_000:
+        price = HAIKU_LONG
+    # fast mode doubles every rate; US-only routing adds 10%
+    mult = (2 if u.get("speed") == "fast" else 1) * (1.1 if u.get("inference_geo") == "us" else 1)
+    inp, out, rd = (x * mult for x in price)
     rate = {"uncached": inp, "write_5m": 1.25 * inp, "write_1h": 2 * inp, "read": rd, "output": out}
     for kind, n in parts.items():
         tokens[kind] += n
         cost[kind] += n * rate[kind] / 1e6
 
 t, c = sum(tokens.values()), sum(cost.values())
+if skipped:
+    print(f"skipped {skipped} unreadable transcript lines; totals may be low")
 for model, n in unpriced.items():
     print(f"no price row for {model}: {n / 1e6:,.1f}M tokens left out")
 if c == 0:
@@ -133,6 +142,8 @@ for kind in tokens:
 ```
 
 Run it with `python3 weigh.py 7` for the last seven days. On my week it matched the plugin to within 0.1% on request count and total tokens, and it put the week at roughly $2,500 at API list price.
+
+Claude Opus 5.5 and Sonnet 5.5 bill the full 1M-token context at standard rates, so a long session pays no surcharge for its size. The script handles the three cases that do change the price: Haiku 5.5 prompts over 100,000 tokens, fast mode (every rate doubles) and US-only routing (10% more). None of them showed up in my week: every request ran at standard speed on global routing.
 
 ![Two stacked bars comparing one week of Claude Code usage. By tokens, cache reads fill 97% of the bar. By list price, cache reads are 46%, cache writes 38% and output 16%.](/assets/guides/claude-code-usage/token-vs-cost-share.webp "Same week, two maps: cache writes are 3% of the tokens and 38% of the list-price cost.")
 
@@ -151,8 +162,9 @@ So I sorted the 223 big writes by what happened just before each one:
 | A main session sat idle for over an hour | 72 | 38.3M | about $307 |
 | A subagent had finished, then got a follow-up message over 5 minutes later | 92 | 19.5M | about $76 |
 | A subagent waited over 5 minutes on its own tool call | 42 | 9.9M | about $44 |
+| A subagent sat idle over 5 minutes in some other way | 3 | 0.7M | about $3 |
 | The prefix changed while the cache was still live | 13 | 2.3M | about $14 |
-| Other (first call of a transcript, mixed cases) | 4 | 1.0M | about $5 |
+| The first call of a transcript | 1 | 0.3M | about $2 |
 
 The prefix-change row is the one people usually blame: an edited system prompt, a changed tool list, a model switch. It was 13 breaks out of 223. Expiry was 209.
 
