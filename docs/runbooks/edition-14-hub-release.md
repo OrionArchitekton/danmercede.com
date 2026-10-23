@@ -1,5 +1,5 @@
 ---
-verified: 2026-10-19
+verified: 2026-10-23
 review_after: 2026-10-26
 topics: [newsletter, hub-release, edition-14]
 references:
@@ -50,8 +50,11 @@ read-only LinkedIn verification heartbeat stays paused.
 
 1. After **14:06:24 UTC on October 26**, recheck the source hash, exact PR diff,
    current main, checks and human approval. Refresh the PR against current main
-   if needed, without adding generated content. Obtain the required independent
-   last-push approval, then merge admission only with Dan's merge authority.
+   if needed, without adding generated content. Obtain Dan's scoped admission
+   merge approval and satisfy current required checks and review threads before
+   merging. The estate's October 23 owner-approved merge amendment supersedes
+   the earlier independent last-push approver requirement; it does not authorize
+   an early or automatic merge.
 2. The current sync cron is `10 15 * * 1`: on October 26 it is **15:10 UTC /
    08:10 PDT**, 1 hour 3 minutes 36 seconds after eligibility. The workflow's
    timezone comment is inaccurate; the cron expression defines the schedule.
@@ -129,6 +132,27 @@ inspect the actual public page:
   Compare an invalid essay slug returning a real 404 so an SPA fallback cannot
   be mistaken for this release. Record the deployed commit, observation time
   and consumer evidence only after these checks.
+
+## October 23 readiness refresh
+
+Refreshed the admission branch against hub main `0c6c703` without rewriting
+history. The allowlist conflict came from Edition 13's approved backfill;
+both admissions are preserved. The existing Latest releases presentation is
+unchanged. Relative to current main, the diff remains one Edition 14 allowlist
+entry plus this handoff, with no generated bundle or asset changes.
+
+Reverified the canonical and actual-publication evidence against their hashes
+above. A read-only comparison of the base and refreshed compilers against the
+accepted source admits Edition 14 exactly once, preserves all 46 previously
+admitted thoughts and every diagram, and leaves Edition 15 excluded. The added
+entry retains the complete body, exact title, October 19 display date, six H2
+headings, literal identifier and approved CTA. Typecheck, all 449 existing tests,
+the production-guarded build and all 20 built-output tests pass.
+
+The existing `approve-edition-14-hub-release` reminder remains active for
+October 26 at 07:10 Pacific. It is notification-only. Admission stays in draft
+until the Monday checkpoint; the subsequent generated-content PR and its merge
+approval remain separate. This refresh grants no release authority.
 
 ## Rollback
 

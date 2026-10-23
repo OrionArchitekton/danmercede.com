@@ -2,6 +2,11 @@
   "outputDirectory": "build",
   "redirects": [
     {
+      "source": "/works/orion-worktree-report",
+      "destination": "/works/orion-worktree-report/",
+      "permanent": true
+    },
+    {
       "source": "/works/orion-results",
       "destination": "/works/orion-results/",
       "permanent": true
@@ -206,6 +211,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/orion-worktree-report/",
+      "destination": "https://orion-worktree-report-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-worktree-report/:path*",
+      "destination": "https://orion-worktree-report-site.vercel.app/:path*"
+    },
     {
       "source": "/works/orion-results/",
       "destination": "https://orion-results-site.vercel.app/"

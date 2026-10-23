@@ -88,6 +88,8 @@ export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
   '2026-09-21-approved-but-not-the-version-that-shipped',
   '2026-09-28-the-alert-fired-nobody-was-there',
   '2026-10-05-the-assistant-was-only-supposed-to-read',
+  // Edition 13: published 2026-10-12T14:03:06Z; seven full days elapsed 2026-10-19T14:03:06Z.
+  '2026-10-12-the-transcript-looked-complete',
   '2026-10-19-the-tool-worked-the-agent-couldnt-use-it',
 ];
 

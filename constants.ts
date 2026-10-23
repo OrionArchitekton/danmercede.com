@@ -84,6 +84,18 @@ export const SPEAKING = {
   // Mirrored into Person.sameAs in index.html per docs/identity-contract.md.
   href: "https://neo4j.com/nodes/speakers/dan-mercede/",
   cta: "Speaker profile",
+  // NODES 2026 speaker contest: Dan's personalized registration URL, exactly as Neo4j's
+  // generator emits it (dev.assets.neo4j.com/nodes-sc-2026.html, rechecked 2026-10-20).
+  // Known generator quirk: it joins first and last name with a raw "&", so a parser reads
+  // utm_campaign=Dan plus a stray "Mercede" key. This does not prove referral credit.
+  // Preserve the organizer's generated URL until they confirm a replacement; the hub
+  // offers registration without promising that contest attribution has been verified.
+  // It lands on the general NODES page, so it sits beside the proof link above and
+  // never replaces it.
+  registerHref: "https://www.neo4j.com/nodes?utm_source=SpeakerContest&utm_campaign=Dan&Mercede",
+  registerCta: "Register free",
+  // Time-bound promotion: on November 13 remove registration and change the block
+  // to past tense through the reviewed release in docs/runbooks/nodes-speaking-promotion.md.
 };
 
 export const BELIEFS: Belief[] = [
@@ -593,6 +605,16 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-worktree-report',
+    description: 'Observe registered Git worktrees and exact shared uncommitted paths in repositories you select. Explicit coverage keeps missing checkouts, limits and uncertainty visible. The report grants no ownership or merge authority.',
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-worktree-report',
+    link: 'https://www.danmercede.com/works/orion-worktree-report/',
+    license: 'MIT',
+    date: '2026-10-19',
+    slug: 'orion-worktree-report',
+  },
+  {
     title: 'orion-results',
     description: 'Capture complete text in a private local session, pass a byte-bounded snapshot and recover exact results by reference. Explicit storage, quotas and visible uncertainty keep a small selected view tied to a dependable original.',
     category: 'Open Source',
@@ -888,6 +910,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'orion-pm',
   'orion-handoff',
   'orion-results',
+  'orion-worktree-report',
   'mcp-context-budget',
   'schemafit',
   'agent-demo-video',
@@ -1023,6 +1046,7 @@ export const GUIDE_LENSES = [
       'hand-off-local-agent-tasks',
       'multi-agent-browser-pool',
       'off-budget-subagents-under-claude-code',
+      'where-claude-code-usage-goes',
       'giving-your-agent-web-access',
       'why-llm-schemas-get-rejected',
       'claude-code-controls-grok-bot',
