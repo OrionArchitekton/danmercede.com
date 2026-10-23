@@ -99,7 +99,12 @@ for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recur
             u = msg.get("usage") if isinstance(msg, dict) else None
             if not (u and rid and ts):
                 continue
-            if datetime.fromisoformat(ts.replace("Z", "+00:00")) < since:
+            try:
+                when = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            except ValueError:
+                skipped += 1
+                continue
+            if when < since:
                 continue
             if rid not in best or u.get("output_tokens", 0) >= best[rid][1].get("output_tokens", 0):
                 best[rid] = (msg.get("model", "?"), u)
@@ -119,7 +124,8 @@ for model, u in best.values():
     if price is None:
         unpriced[model] += sum(parts.values())
         continue
-    if model.startswith("claude-haiku-5-5") and sum(parts.values()) - parts["output"] > 100_000:
+    prompt = sum(u.get(k, 0) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+    if model.startswith("claude-haiku-5-5") and prompt > 100_000:
         price = HAIKU_LONG
     # fast mode doubles every rate; US-only routing adds 10%
     mult = (2 if u.get("speed") == "fast" else 1) * (1.1 if u.get("inference_geo") == "us" else 1)
@@ -166,7 +172,7 @@ So I sorted the 223 big writes by what happened just before each one:
 | The prefix changed while the cache was still live | 13 | 2.3M | about $14 |
 | The first call of a transcript | 1 | 0.3M | about $2 |
 
-The prefix-change row is the one people usually blame: an edited system prompt, a changed tool list, a model switch. It was 13 breaks out of 223. Expiry was 209.
+The first four rows are all cache expiry: 72 + 92 + 42 + 3 = 209. The prefix-change row is the one people usually blame: an edited system prompt, a changed tool list, a model switch. It was 13 breaks out of 223.
 
 At list price, those 223 rewrites cost about $446, or 18% of my week. That is 223 calls out of 21,449.
 
