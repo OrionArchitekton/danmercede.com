@@ -104,6 +104,8 @@ for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recur
             except ValueError:
                 skipped += 1
                 continue
+            if when.tzinfo is None:  # treat offset-less timestamps as UTC
+                when = when.replace(tzinfo=timezone.utc)
             if when < since:
                 continue
             if rid not in best or u.get("output_tokens", 0) >= best[rid][1].get("output_tokens", 0):
@@ -111,20 +113,21 @@ for path in glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recur
 
 tokens, cost, unpriced = defaultdict(int), defaultdict(float), defaultdict(int)
 for model, u in best.values():
+    n = lambda d, k: d.get(k) or 0  # missing or null counts as 0
     cc = u.get("cache_creation") or {}
-    w1h = cc.get("ephemeral_1h_input_tokens", 0)
+    w1h = n(cc, "ephemeral_1h_input_tokens")
     parts = {
-        "uncached": u.get("input_tokens", 0),
+        "uncached": n(u, "input_tokens"),
         "write_1h": w1h,
-        "write_5m": u.get("cache_creation_input_tokens", 0) - w1h,
-        "read": u.get("cache_read_input_tokens", 0),
-        "output": u.get("output_tokens", 0),
+        "write_5m": max(n(u, "cache_creation_input_tokens") - w1h, 0),  # total includes 1h
+        "read": n(u, "cache_read_input_tokens"),
+        "output": n(u, "output_tokens"),
     }
     price = next((p for k, p in PRICES.items() if model.startswith(k)), None)
     if price is None:
         unpriced[model] += sum(parts.values())
         continue
-    prompt = sum(u.get(k, 0) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+    prompt = sum(n(u, k) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
     if model.startswith("claude-haiku-5-5") and prompt > 100_000:
         price = HAIKU_LONG
     # fast mode doubles every rate; US-only routing adds 10%
