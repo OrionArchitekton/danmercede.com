@@ -605,6 +605,17 @@ export const CASE_STUDIES: CaseStudy[] = [
 // (see docs/runbooks/works-update-on-ship.md).
 export const WORKS: Work[] = [
   {
+    title: 'orion-on-the-clock',
+    description:
+      "Turn yesterday's AI coding agent work into a daily YouTube Short. Agent logs and merged PRs become an allowlisted ledger, a script behind fourteen fail-closed checks, your cloned voice and a 9:16 render, uploaded privately unless you flip a switch.",
+    category: 'Open Source',
+    repo: 'https://github.com/OrionArchitekton/orion-on-the-clock-oss',
+    link: 'https://www.danmercede.com/works/orion-on-the-clock/',
+    license: 'MIT',
+    date: '2026-10-24',
+    slug: 'orion-on-the-clock',
+  },
+  {
     title: 'orion-worktree-report',
     description: 'Observe registered Git worktrees and exact shared uncommitted paths in repositories you select. Explicit coverage keeps missing checkouts, limits and uncertainty visible. The report grants no ownership or merge authority.',
     category: 'Open Source',
@@ -908,6 +919,7 @@ export const WORKS_PRIORITY: readonly string[] = [
   'orion-skills',
   'orion-browser',
   'orion-pm',
+  'orion-on-the-clock',
   'orion-handoff',
   'orion-results',
   'orion-worktree-report',
