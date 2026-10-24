@@ -3,6 +3,7 @@ title: "'Done' Needs a Receipt: Four Checks Before You Believe an Agent Finished
 slug: done-needs-a-receipt
 date: 2026-10-19
 reviewed: 2026-10-19
+youtube: 3KYZrGal5To
 category: Agent Engineering
 description: "When an agent says deployed, armed, fixed or verified, that is a claim, not evidence. Four MIT-licensed skills from orion-skills turn each claim into a receipt: output from the system itself, captured after the change, that would read differently if the claim were false."
 lead: "An agent ends its turn with a status word: deployed, armed, fixed, verified. The word arrives whether or not anything changed. I stopped accepting it on its own, and now a completion claim either carries a receipt or reads as unproven."
