@@ -2,6 +2,11 @@
   "outputDirectory": "build",
   "redirects": [
     {
+      "source": "/works/orion-on-the-clock",
+      "destination": "/works/orion-on-the-clock/",
+      "permanent": true
+    },
+    {
       "source": "/works/orion-worktree-report",
       "destination": "/works/orion-worktree-report/",
       "permanent": true
@@ -211,6 +216,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/works/orion-on-the-clock/",
+      "destination": "https://orion-on-the-clock-site.vercel.app/"
+    },
+    {
+      "source": "/works/orion-on-the-clock/:path*",
+      "destination": "https://orion-on-the-clock-site.vercel.app/:path*"
+    },
     {
       "source": "/works/orion-worktree-report/",
       "destination": "https://orion-worktree-report-site.vercel.app/"
