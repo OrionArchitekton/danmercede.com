@@ -3,6 +3,7 @@ title: Hand off a local task between agent sessions
 slug: hand-off-local-agent-tasks
 date: 2026-10-17
 reviewed: 2026-10-17
+youtube: fPeXt-E-j14
 category: Agent systems
 description: Save explicit local task context, refuse ambiguous pickup, and preserve uncertainty with Orion Handoff.
 lead: A new session needs the right task and its observed state. Here is a complete local walkthrough that keeps context separate from permission to act.

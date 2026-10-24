@@ -3,6 +3,7 @@ title: "Giving Your Coding Agent Web Access Without Wrecking Its Context Window"
 slug: giving-your-agent-web-access
 date: 2026-07-05
 reviewed: 2026-09-29
+youtube: 1bdN4d52170
 category: Agent Engineering
 description: "A coding agent that reads the raw web spends most of its tokens on HTML boilerplate, trips provider rate limits, and floods its own context. I measured the waste (one page was 9,541 tokens raw and 1,678 as clean markdown, an 82% cut) and built the fix: a few thin CLIs and a subagent-offload pattern that keep raw pages out of the main context. Free and self-hosted first."
 lead: "Point a coding agent at a docs page and it swallows the HTML: nav, ads, cookie banners, script tags, the lot. One page I measured was 9,541 tokens raw and 1,678 as clean markdown. That 82% is the easiest token saving you will find, and the default fetch tool leaves it on the table."
