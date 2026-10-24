@@ -3,6 +3,7 @@ title: "Give your AI agent its own Android phone"
 slug: agent-android-phones
 date: 2026-10-15
 reviewed: 2026-10-15
+youtube: YE9snj66-A0
 category: Agent Engineering
 description: "How to give AI agents Android phones of their own with the MIT-licensed orion-phone CLI and MCP server: one agent per phone, a screen read as text, an audit record of every action, and a locked tier that waits for unlock on a trusted host."
 lead: "Agents that share one browser collide, and some apps only run on a phone. Handing an agent your own phone puts everything on it in reach. We gave agents emulated Android phones of their own: leased one agent at a time, read as text, and, for the sensitive ones, locked until the owner unlocks them by hand."

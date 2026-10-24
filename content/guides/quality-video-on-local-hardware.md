@@ -3,6 +3,7 @@ title: "Quality video on local hardware: the Elsewhere Unfolds workflow"
 slug: quality-video-on-local-hardware
 date: 2026-10-13
 reviewed: 2026-10-13
+youtube: o_-x318-PaM
 category: Video
 description: "A practical local video workflow drawn from Elsewhere Unfolds: plan a coherent world, animate with Wan, score with ACE-Step, edit with FFmpeg, and review the finished film."
 lead: "Local models can produce beautiful shots. A finished film needs more: a world that stays coherent, movement that feels intentional, music that holds together, and an edit worth watching. This is the production method we have been developing with Elsewhere Unfolds."

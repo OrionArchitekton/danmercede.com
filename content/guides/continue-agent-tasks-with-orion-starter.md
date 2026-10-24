@@ -3,6 +3,7 @@ title: Continue a local agent task with PM, browser and Handoff
 slug: continue-agent-tasks-with-orion-starter
 date: 2026-10-17
 reviewed: 2026-10-17
+youtube: nMUzL2o6uEQ
 category: Agent systems
 description: Run a local two-worker continuity example with independent task claims, exact context selection and native browser leases.
 lead: One worker can leave observed context for another. The next worker still needs its own task claim, browser lease and current evidence before finishing.
