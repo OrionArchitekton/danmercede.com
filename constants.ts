@@ -612,7 +612,7 @@ export const WORKS: Work[] = [
     repo: 'https://github.com/OrionArchitekton/orion-on-the-clock-oss',
     link: 'https://www.danmercede.com/works/orion-on-the-clock/',
     license: 'MIT',
-    date: '2026-10-23',
+    date: '2026-10-24',
     slug: 'orion-on-the-clock',
   },
   {

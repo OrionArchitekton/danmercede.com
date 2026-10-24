@@ -4,9 +4,9 @@ A reader can find orion-on-the-clock, the MIT pipeline that turns yesterday's AI
 coding agent work into a daily YouTube Short, from the existing Works index and
 reach its product page at a Works URL.
 
-Private preparation, 2026-10-23. The source repository and the product page are
-private and the page is not deployed. This entry merges only after Dan has made
-the source repository public and the product page's origin serves public HTML.
+Prepared 2026-10-23 and released 2026-10-24: Dan made the source repository public
+and the product page's origin serves public HTML (checked anonymously) before this
+entry merged.
 
 ## Scenarios and acceptance
 
