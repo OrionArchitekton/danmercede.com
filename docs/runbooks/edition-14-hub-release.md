@@ -1,5 +1,5 @@
 ---
-verified: 2026-10-23
+verified: 2026-10-25
 review_after: 2026-10-26
 topics: [newsletter, hub-release, edition-14]
 references:
@@ -153,6 +153,25 @@ The existing `approve-edition-14-hub-release` reminder remains active for
 October 26 at 07:10 Pacific. It is notification-only. Admission stays in draft
 until the Monday checkpoint; the subsequent generated-content PR and its merge
 approval remain separate. This refresh grants no release authority.
+
+## October 25 readiness refresh
+
+Refreshed against hub main `f60cfe6` in a fresh worktree, preserving the
+existing admission history. Relative to main, the scope remains one allowlist
+entry and this runbook. No generated bundle, assets or presentation changed.
+
+Rechecked the sealed source and publication-evidence hashes above against
+accepted substrate main `fd9ca23a881552f0fa9102e722396ec455d2e302`.
+The read-only mapper comparison preserves all 46 existing thoughts and all
+23 diagrams, admits Edition 14 exactly once, and leaves Edition 15 excluded.
+The exact title, October 19 display date, six H2 headings, literal identifier
+and tracked CTA remain intact. Typecheck, all 449 existing tests, the
+production-guarded build and all 20 built-output tests pass.
+
+The admission remains a draft and is not released. Recheck current main and
+all hosted checks at the October 26 checkpoint; the publication-time boundary,
+Dan's scoped approval and separate content-sync PR still apply. This refresh
+does not dispatch a workflow or authorize publication.
 
 ## Rollback
 
