@@ -1,0 +1,53 @@
+{
+  "observed_at_utc": "2026-10-27T06:13:05.358184+00:00",
+  "events": [
+    {
+      "id": "uev_Tyee1LX4UO5RyQHofQJMnA3H",
+      "type": "aliases-assigned",
+      "createdAt": 1793079097415,
+      "text": "OrionArchitekton assigned 5 aliases to danmercede-8gd1smgi6-dan-mercedes-projects.vercel.app"
+    },
+    {
+      "id": "uev_LPdPBeN1r9fpuZAsE6A2ongQ",
+      "type": "deployment",
+      "createdAt": 1793079075049,
+      "text": "You deployed danmercede-com from OrionArchitekton/danmercede.com (545ca97 in main) to production (via Vercel CLI)"
+    },
+    {
+      "id": "uev_iU5wMZcXe00AeZZ4J2RjbrY5",
+      "type": "aliases-assigned",
+      "createdAt": 1793078663153,
+      "text": "OrionArchitekton assigned an alias to danmercede-gqv795vsg-dan-mercedes-projects.vercel.app"
+    },
+    {
+      "id": "uev_9Q0l8eE75RY51mwSyCSaURqV",
+      "type": "deployment",
+      "createdAt": 1793078642077,
+      "text": "You deployed danmercede-com from OrionArchitekton/danmercede.com (7f79cac in codex/substrate-sync) to danmercede-com-git-codex-substrate-sync-dan-mercedes-projects.vercel.app"
+    },
+    {
+      "id": "uev_rrEr0eRFlpqXrToeRfvFhKNm",
+      "type": "aliases-assigned",
+      "createdAt": 1793078624440,
+      "text": "OrionArchitekton assigned 5 aliases to danmercede-3zjrnskwj-dan-mercedes-projects.vercel.app"
+    },
+    {
+      "id": "uev_olaFxAzlxrPUMeJAcdcIeNM7",
+      "type": "deployment",
+      "createdAt": 1793078599801,
+      "text": "You deployed danmercede-com from OrionArchitekton/danmercede.com (2e7a166 in main) to production"
+    },
+    {
+      "id": "uev_VPFfGfysKok6pjTJfN3GZltN",
+      "type": "aliases-assigned",
+      "createdAt": 1793078437189,
+      "text": "OrionArchitekton assigned an alias to danmercede-fvuizw1nv-dan-mercedes-projects.vercel.app"
+    },
+    {
+      "id": "uev_AUrVz9pdmfzv2wdcOCOl73xv",
+      "type": "deployment",
+      "createdAt": 1793078421998,
+      "text": "You deployed danmercede-com from OrionArchitekton/danmercede.com (22105f2 in codex/newsletter-ed14-hub-prep-20261019) to danmercede-com-git-codex-newslette-0435dd-dan-mercedes-projects.vercel.app"
+    }
+  ]
+}
