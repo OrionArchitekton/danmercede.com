@@ -89,7 +89,7 @@ a danmercede.com `Thought` only when ALL of the following hold:
 
 | Substrate frontmatter field | Required value |
 |---|---|
-| `surface_targets` | array including `"danmercede.com"` |
+| `surface_targets` | array including `"danmercede.com"`, or an essay `slug` explicitly admitted by `HUB_ESSAY_ALLOWLIST` |
 | `status` | `"canonical"` |
 | `type` | `"essay-long"` |
 | `slug` | non-empty string |
@@ -100,6 +100,13 @@ a danmercede.com `Thought` only when ALL of the following hold:
 Canonicals that fail any filter are silently skipped (logged, not fatal).
 Substrate canonicals are operator-authored and trusted — no forbidden-content
 scan runs on substrate-admitted entries.
+
+The existing essay allowlist is the hub-side admission route for approved
+day-seven newsletter releases. It overrides only the surface-target filter;
+status, type, required fields and date validation still apply. Sealed canonical
+frontmatter stays unchanged. An admission PR is followed by a separate reviewed
+content-sync PR, as described in
+[`docs/runbooks/edition-14-hub-release.md`](docs/runbooks/edition-14-hub-release.md).
 
 ### How substrate fields map to `Thought`
 
