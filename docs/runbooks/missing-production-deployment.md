@@ -13,7 +13,11 @@ references:
 
 A green build or preview is not evidence that the merged revision reached
 production. The post-merge `production-deployment` job waits up to ten minutes
-for the exact SHA's latest Vercel Production status to succeed. It has read-only
+for the exact SHA's latest Vercel Production status to succeed, a native commit status naming the exact Vercel project,
+and the same SHA served at the fixed public `/deployment-revision.json` endpoint.
+The build writes only schema version and the native Vercel Git commit SHA; unknown
+local values are null. The endpoint is uncached and contains no credentials.
+The observer has read-only
 permissions and cannot recover or duplicate a deployment. It is not a pre-merge
 requirement. Existing protections and editorial approvals remain separate.
 
@@ -23,9 +27,11 @@ requirement. Existing protections and editorial approvals remain separate.
    Inspect push CI, Vercel commit statuses and deployment records for that exact
    SHA. Use the existing CLI auth; never export credentials.
 2. Run the same observer read-only for an explicit revision:
-   `node scripts/verifyProductionDeployment.mjs --repository OrionArchitekton/danmercede.com --sha <40-character-merge-SHA> --once`.
+   Set `HUB_MERGE_SHA` to the 40-character merged commit SHA, then run
+   `node scripts/verifyProductionDeployment.mjs --repository OrionArchitekton/danmercede.com --sha "$HUB_MERGE_SHA" --once`.
    Without `--once`, it waits for up to ten minutes. API errors fail separately
-   from an absent/non-successful record. A real Vercel Production deployment may
+   from absent/non-successful records or a missing/mismatched public revision.
+   Builds predating this observer have no marker and cannot pass the new check. A real Vercel Production deployment may
    have `production_environment: false`; use its native environment name.
 3. Inspect Vercel's project metadata: linked repository and exact `main` branch,
    automatic Git deployments, ignore command, repo configuration and account

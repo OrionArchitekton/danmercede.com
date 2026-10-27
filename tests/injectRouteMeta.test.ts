@@ -66,3 +66,11 @@ test('index.html anchored block equals renderSeoBlock("/") (no homepage drift)',
   const block = html.slice(s + SEO_BLOCK_START.length, e).trim();
   assert.equal(block, renderSeoBlock('/', ROUTE_META['/']).trim());
 });
+
+test('the deployment revision records only the native Vercel source SHA, with unknown local builds explicit', async () => {
+  const { renderDeploymentRevision } = await import('../scripts/injectRouteMeta');
+  const sha = '545ca97c45965c7a1b5bfcb568b505dc740db078';
+  assert.deepEqual(JSON.parse(renderDeploymentRevision({ VERCEL_GIT_COMMIT_SHA: sha })), { schemaVersion: 1, sha });
+  assert.deepEqual(JSON.parse(renderDeploymentRevision({ GITHUB_SHA: sha })), { schemaVersion: 1, sha: null });
+  assert.deepEqual(JSON.parse(renderDeploymentRevision({ VERCEL_GIT_COMMIT_SHA: 'invalid' })), { schemaVersion: 1, sha: null });
+});

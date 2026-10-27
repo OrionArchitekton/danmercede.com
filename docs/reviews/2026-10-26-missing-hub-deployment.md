@@ -35,10 +35,16 @@ routes rather than the merged revision. A missing deployment could therefore
 leave green builds while production still served the older bundle.
 
 The new read-only post-merge observer checks the exact merged SHA, Production
-environment, Vercel actor and latest successful status. It is bounded and never
+environment, Vercel actor and latest successful status. Review additionally
+requires a native project-specific commit status and matching source SHA from
+the actual public origin; repository-wide deployment records alone are insufficient.
+The build emits an uncached, non-secret revision marker for that consumer check. It is bounded and never
 sends or deploys. Tests replay absence, previews/older revisions, delayed success,
-failed statuses, wrong actors, malformed data and provider errors. Local live
-readback of the recovered Edition 14 deployment is separate from activation.
+failed statuses, wrong actors, malformed data and provider errors. The first observer
+revision recognized the recovered Edition 14 GitHub records read-only. The tightened
+observer also requires the new public marker; pre-feature deployments lack it and
+cannot establish activation. Its first complete positive live test must use this PR
+through the normal protected merge and Vercel Git path.
 
 The original provider-side reason for omitting the request is still unknown.
 Do not label the integration repaired, invent a webhook or authentication cause,

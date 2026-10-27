@@ -541,6 +541,19 @@
           "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/deployment-revision.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ]
 }

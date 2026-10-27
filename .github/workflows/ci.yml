@@ -107,6 +107,7 @@ jobs:
     permissions:
       contents: read
       deployments: read
+      statuses: read
     concurrency:
       group: production-deployment-${{ github.ref }}
       cancel-in-progress: true
