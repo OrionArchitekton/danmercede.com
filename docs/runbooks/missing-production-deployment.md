@@ -31,6 +31,8 @@ requirement. Existing protections and editorial approvals remain separate.
    `node scripts/verifyProductionDeployment.mjs --repository OrionArchitekton/danmercede.com --sha "$HUB_MERGE_SHA" --once`.
    Without `--once`, it waits for up to ten minutes. API errors fail separately
    from absent/non-successful records or a missing/mismatched public revision.
+   Public transport, HTTP, JSON and cache-policy errors are reported explicitly;
+   a successful public response must actually carry `Cache-Control: no-store`.
    Builds predating this observer have no marker and cannot pass the new check. A real Vercel Production deployment may
    have `production_environment: false`; use its native environment name.
 3. Inspect Vercel's project metadata: linked repository and exact `main` branch,

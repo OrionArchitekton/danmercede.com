@@ -98,3 +98,34 @@ test('the operator CLI rejects invalid commit identity before any API access', a
   assert.equal(result.status, 1);
   assert.match(result.stderr, /40-character commit SHA/);
 });
+
+test('public revision transport, HTTP and JSON failures are distinct from a stale revision', async () => {
+  const { readPublicRevision } = await import('../scripts/verifyProductionDeployment.mjs');
+  await assert.rejects(readPublicRevision(async () => { throw new Error('private transport detail'); }), /Public revision transport failed/);
+  await assert.rejects(readPublicRevision(async () => new Response('private body', { status: 503 })), /Public revision HTTP 503/);
+  await assert.rejects(readPublicRevision(async () => new Response('<html>old application</html>', { headers: { 'Cache-Control': 'no-store' } })), /Public revision JSON invalid/);
+  assert.deepEqual(await readPublicRevision(async () => Response.json({ schemaVersion: 1, sha: 'a'.repeat(40) }, { headers: { 'Cache-Control': 'no-store' } })),
+    { schemaVersion: 1, sha: 'a'.repeat(40) });
+});
+
+test('the actual public revision response must disable shared caching', async () => {
+  const { readPublicRevision } = await import('../scripts/verifyProductionDeployment.mjs');
+  await assert.rejects(readPublicRevision(async () => Response.json({ schemaVersion: 1, sha })), /Public revision cache policy/);
+});
+
+test('the CI GitHub reader checks subprocess results and JSON without exposing provider details', async () => {
+  const { readGitHubArray } = await import('../scripts/verifyProductionDeployment.mjs');
+  let command;
+  assert.deepEqual(await readGitHubArray('/repos/example/site/deployments', async (...args) => {
+    command = args;
+    return { stdout: '[]' };
+  }), []);
+  assert.equal(command[0], 'gh');
+  assert.deepEqual(command[1], ['api', '/repos/example/site/deployments', '--method', 'GET', '-H', 'X-GitHub-Api-Version: 2022-11-28']);
+  for (const stdout of ['', '{}', '{"private":"provider body"}']) {
+    await assert.rejects(readGitHubArray('/repos/example/site/deployments', async () => ({ stdout })),
+      { message: 'GitHub deployment API read failed; check read permissions and GitHub availability.' });
+  }
+  await assert.rejects(readGitHubArray('/repos/example/site/deployments', async () => { throw new Error('private subprocess detail'); }),
+    { message: 'GitHub deployment API read failed; check read permissions and GitHub availability.' });
+});

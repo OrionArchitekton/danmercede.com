@@ -19,7 +19,9 @@ completed a production deployment. CI must report a missing handoff separately.
 - The build emits `/deployment-revision.json` with schema version 1 and only the
   native `VERCEL_GIT_COMMIT_SHA`; a local or malformed value is null. Serve it
   with `Cache-Control: no-store`. The observer reads that fixed public origin
-  without credentials and requires its SHA to equal the merge.
+  without credentials, verifies that the actual response says `no-store`, and
+  requires its SHA to equal the merge. Public transport, HTTP, cache-policy and
+  JSON errors fail separately from a well-formed stale revision.
 - A matching success is project-specific deployment and served-revision evidence. Verify actual served copy
   and CTA through the edition release procedure. A manually recovered deployment
   can satisfy delivery; it does not prove automatic event handling recovered.

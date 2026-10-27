@@ -56,3 +56,27 @@ Evidence: neighboring `hub-deployment-20261026/activity.json` and
 `configuration.json` retain only this project's selected non-secret metadata.
 References: [Vercel troubleshooting](https://vercel.com/kb/guide/why-aren-t-commits-triggering-deployments-on-vercel),
 [Vercel GitHub integration](https://vercel.com/docs/git/vercel-for-github).
+
+## Review adjudication
+
+- Live activation remains operator-gated: an approved protected-main merge is
+  necessary before its ordinary production deployment can be observed. Do not
+  remove this acceptance criterion to make pre-merge review green.
+- Fixed the public-read failure classification: transport, HTTP, JSON and
+  missing `no-store` failures are explicit. The actual response header is checked,
+  so a source-only header assertion cannot establish successful verification.
+- Added direct tests of the actual CI GitHub reader for malformed/empty JSON,
+  non-array bodies, empty result arrays and subprocess failures. Empty arrays
+  mean absence, not success. Query/result filters reject unrelated deployments.
+- The arbitrary-host concern does not establish a false public-release success:
+  the observer never fetches the candidate URL and always requires the exact SHA
+  at the fixed canonical public origin plus the native named-project status.
+  Manual recovery is explicitly allowed to satisfy delivery, never automatic
+  recovery. The native GitHub deployment payload is empty and its log URL is
+  the same immutable host; it does not supply a project deployment ID to join.
+  Keep the explicit normal-Git activity check for automatic-path acceptance;
+  do not add a Vercel credential or a protected-host bypass to CI.
+- Existing header rules cache assets and the sitemap, not this JSON path. The
+  build-output test reads the real JSON artifact. All rewrites are `/works/...`
+  proxies; there is no root SPA rewrite for this path. Actual public header and
+  body readback remains required by the observer after merge.

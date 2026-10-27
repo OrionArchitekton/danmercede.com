@@ -6,14 +6,20 @@ import { pathToFileURL } from 'node:url';
 
 const exec = promisify(execFile);
 
-async function readPublicRevision() {
+export async function readPublicRevision(fetchRevision = fetch) {
+  let response;
   try {
-    const response = await fetch('https://www.danmercede.com/deployment-revision.json', {
+    response = await fetchRevision('https://www.danmercede.com/deployment-revision.json', {
       headers: { 'User-Agent': 'orion-ci-deployment-verification/1.0' },
       cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10_000),
     });
-    return response.ok ? await response.json() : null;
-  } catch { return null; }
+  } catch { throw new Error('Public revision transport failed; inspect public reachability.'); }
+  if (!response.ok) throw new Error(`Public revision HTTP ${response.status}; inspect the public endpoint.`);
+  if (!(response.headers.get('cache-control') ?? '').toLowerCase().split(',').some((value) => value.trim() === 'no-store')) {
+    throw new Error('Public revision cache policy must include no-store.');
+  }
+  try { return await response.json(); }
+  catch { throw new Error('Public revision JSON invalid; inspect the served artifact.'); }
 }
 
 export async function observeProductionDeployment(readJson, repository, sha, { readRevision = readPublicRevision } = {}) {
@@ -55,6 +61,19 @@ export async function waitForProductionDeployment(readJson, repository, sha, { t
   throw new Error(`No successful Vercel Production deployment and matching served revision for ${repository}@${sha}. Build success is not deployment proof; inspect the Git handoff before retrying a release.`);
 }
 
+export async function readGitHubArray(path, execute = exec) {
+  try {
+    const { stdout } = await execute('gh', ['api', path, '--method', 'GET',
+      '-H', 'X-GitHub-Api-Version: 2022-11-28'], { timeout: 10_000, maxBuffer: 2_000_000 });
+    const data = JSON.parse(stdout);
+    if (!Array.isArray(data)) throw new Error('Unexpected deployment API response');
+    return data;
+  } catch {
+    // Do not echo child argv/env, response bodies or provider error strings.
+    throw new Error('GitHub deployment API read failed; check read permissions and GitHub availability.');
+  }
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const { values } = parseArgs({ options: {
@@ -68,19 +87,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (!/^[a-f0-9]{40}$/i.test(values.sha ?? '')) {
       throw new Error('A 40-character commit SHA is required.');
     }
-    const readJson = async (path) => {
-      try {
-        const { stdout } = await exec('gh', ['api', path, '--method', 'GET',
-          '-H', 'X-GitHub-Api-Version: 2022-11-28'], { timeout: 10_000, maxBuffer: 2_000_000 });
-        const data = JSON.parse(stdout);
-        if (!Array.isArray(data)) throw new Error('Unexpected deployment API response');
-        return data;
-      } catch {
-        // Do not echo child argv/env, response bodies or provider error strings.
-        throw new Error('GitHub deployment API read failed; check read permissions and GitHub availability.');
-      }
-    };
-    const result = await waitForProductionDeployment(readJson, values.repository, values.sha,
+    const result = await waitForProductionDeployment(readGitHubArray, values.repository, values.sha,
       values.once ? { timeoutMs: 0 } : {});
     console.log(JSON.stringify(result));
   } catch (error) {
