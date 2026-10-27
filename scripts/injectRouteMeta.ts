@@ -215,6 +215,9 @@ async function main() {
   // so the not-found file below never inherits the homepage render.
   await fs.writeFile(indexPath, injectPageRender(baseHtml, '/', renderPage('/')), 'utf8');
 
+  // Public, non-secret revision proof for the canonical production origin.
+  await fs.writeFile(path.join(BUILD_DIR, 'deployment-revision.json'), renderDeploymentRevision(), 'utf8');
+
   await fs.writeFile(path.join(BUILD_DIR, '404.html'), renderNotFoundHtml(baseHtml), 'utf8');
 
   // Regenerate the per-thought sitemap entries into the BUILT sitemap so the
@@ -250,6 +253,12 @@ async function main() {
       `+ injected ${thoughtPaths().length} thought + ${guidePaths().length} guide + ` +
       `${diagramPaths().length} diagram entries into build/sitemap.xml`,
   );
+}
+
+export function renderDeploymentRevision(env: Record<string, string | undefined> = process.env): string {
+  const value = env.VERCEL_GIT_COMMIT_SHA;
+  const sha = /^[a-f0-9]{40}$/i.test(value ?? '') ? value : null;
+  return JSON.stringify({ schemaVersion: 1, sha }) + '\n';
 }
 
 // Entry-guard: run the injector ONLY when invoked as the CLI (npm run build →

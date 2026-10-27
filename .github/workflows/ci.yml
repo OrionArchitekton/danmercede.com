@@ -96,6 +96,35 @@ jobs:
       - name: Assert built client output
         run: npm run test:built
 
+  # A build check cannot establish that Vercel received the merge. This job is
+  # post-merge/read-only; it must not become a pre-merge requirement or deploy.
+  production-deployment:
+    name: production-deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      deployments: read
+      statuses: read
+    concurrency:
+      group: production-deployment-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout reviewed main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify this merge reached a successful Vercel production deployment
+        run: node scripts/verifyProductionDeployment.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   # A2 — passage-extractability linter as a first-class fail-closed REQUIRED
   # check. It emits a check-run NAMED `extractability`, which
   # required-checks-fail-closed.yml lists in BASE_REQUIRED_CHECKS so a red

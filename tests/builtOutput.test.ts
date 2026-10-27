@@ -112,3 +112,13 @@ test('every built page carries only the allowed script tags, naming built files'
     assert.deepEqual(scriptTagProblems(html, isBuiltFile), [], rel);
   }
 });
+
+test('the built revision marker is public JSON with no-store caching and no secrets', () => {
+  const marker = JSON.parse(fs.readFileSync(path.join(buildDir, 'deployment-revision.json'), 'utf8'));
+  const raw = process.env.VERCEL_GIT_COMMIT_SHA;
+  const sha = /^[a-f0-9]{40}$/i.test(raw ?? '') ? raw : null;
+  assert.deepEqual(marker, { schemaVersion: 1, sha });
+  const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  const headers = config.headers.find((rule) => rule.source === '/deployment-revision.json')?.headers;
+  assert.ok(headers?.some((h) => h.key === 'Cache-Control' && h.value === 'no-store'));
+});
