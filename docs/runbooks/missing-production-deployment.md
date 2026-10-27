@@ -33,11 +33,16 @@ requirement. Existing protections and editorial approvals remain separate.
    from absent/non-successful records or a missing/mismatched public revision.
    Public transport, HTTP, JSON and cache-policy errors are reported explicitly;
    a successful public response must actually carry `Cache-Control: no-store`.
+   Normal CI retries read failures inside the ten-minute window and retains the
+   last classification on timeout; `--once` reports a single failed read directly.
    Builds predating this observer have no marker and cannot pass the new check. A real Vercel Production deployment may
    have `production_environment: false`; use its native environment name.
 3. Inspect Vercel's project metadata: linked repository and exact `main` branch,
    automatic Git deployments, ignore command, repo configuration and account
-   access. Query only needed metadata; omit environment values and billing data.
+   access. Confirm `autoExposeSystemEnvs` is true: the marker requires the native
+   `VERCEL_GIT_COMMIT_SHA`. This setting was already enabled at the retained
+   preflight; do not change credentials or settings to compensate for a guess.
+   Query only needed metadata; omit environment values and billing data.
    Read the account activity log around the merge. Compare a working admission
    or earlier content merge with the missing request.
 4. Verify the GitHub installation can read this repository. A project link or

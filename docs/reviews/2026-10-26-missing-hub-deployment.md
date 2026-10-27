@@ -80,3 +80,18 @@ References: [Vercel troubleshooting](https://vercel.com/kb/guide/why-aren-t-comm
   build-output test reads the real JSON artifact. All rewrites are `/works/...`
   proxies; there is no root SPA rewrite for this path. Actual public header and
   body readback remains required by the observer after merge.
+- The final independent review's system-environment preflight is satisfied:
+  fresh project metadata confirms `autoExposeSystemEnvs: true`, now retained in
+  `configuration.json`. No setting changed. Native-built public marker readback
+  still belongs to the approved production canary.
+- Fixed propagation handling: regular CI retries classified public/GitHub read
+  failures within its existing bound and retains the last failure on timeout;
+  `--once` keeps its direct diagnostic. A real 404-then-success regression covers
+  the first-deployment/alias transition.
+- Declined accepting any historical success after a newer failed status. The
+  existing latest-failure/older-success regression deliberately rejects it.
+- Declined the claim that `no-store` allows positive `max-age` to override it:
+  [RFC 9111 section 5.2.2.5](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5)
+  applies to private and shared caches. This path has no separate CDN cache
+  override, and the actual response is checked. Full live activation, including
+  the public response, remains pending; no cached preview is accepted as proof.

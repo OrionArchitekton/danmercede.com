@@ -51,14 +51,20 @@ export async function observeProductionDeployment(readJson, repository, sha, { r
 
 export async function waitForProductionDeployment(readJson, repository, sha, { timeoutMs = 600_000, intervalMs = 15_000, readRevision = readPublicRevision } = {}) {
   const deadline = performance.now() + timeoutMs;
+  let lastError;
   do {
-    const result = await observeProductionDeployment(readJson, repository, sha, { readRevision });
-    if (result) return result;
+    try {
+      const result = await observeProductionDeployment(readJson, repository, sha, { readRevision });
+      if (result) return result;
+    } catch (error) {
+      if (timeoutMs === 0) throw error;
+      lastError = error;
+    }
     const remaining = deadline - performance.now();
     if (remaining <= 0) break;
     await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
   } while (performance.now() <= deadline);
-  throw new Error(`No successful Vercel Production deployment and matching served revision for ${repository}@${sha}. Build success is not deployment proof; inspect the Git handoff before retrying a release.`);
+  throw new Error(`No successful Vercel Production deployment and matching served revision for ${repository}@${sha}. Build success is not deployment proof; inspect the Git handoff before retrying a release.${lastError ? ` Last read failure: ${lastError.message}` : ''}`);
 }
 
 export async function readGitHubArray(path, execute = exec) {

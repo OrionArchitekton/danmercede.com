@@ -59,6 +59,8 @@ test('untrusted identifiers and destination URLs cannot be accepted as Vercel pr
 test('GitHub API errors cannot be treated as an empty successful result', async () => {
   const { waitForProductionDeployment } = await import('../scripts/verifyProductionDeployment.mjs');
   await assert.rejects(waitForProductionDeployment(async () => { throw new Error('GitHub unavailable'); }, repository, sha, { timeoutMs: 0 }), /GitHub unavailable/);
+  await assert.rejects(waitForProductionDeployment(async () => { throw new Error('GitHub unavailable'); }, repository, sha,
+    { timeoutMs: 10, intervalMs: 1 }), /Last read failure: GitHub unavailable/);
 });
 
 test('deployment verification runs only after a protected main push, with read-only permissions', async () => {
@@ -128,4 +130,20 @@ test('the CI GitHub reader checks subprocess results and JSON without exposing p
   }
   await assert.rejects(readGitHubArray('/repos/example/site/deployments', async () => { throw new Error('private subprocess detail'); }),
     { message: 'GitHub deployment API read failed; check read permissions and GitHub availability.' });
+});
+
+test('a brief public 404 during domain propagation is retried within the deployment window', async () => {
+  const { waitForProductionDeployment, readPublicRevision } = await import('../scripts/verifyProductionDeployment.mjs');
+  let publicReads = 0;
+  const result = await waitForProductionDeployment(async (path) => {
+    if (path.includes('/commits/')) return [projectStatus];
+    if (path.includes('/statuses?')) return [{ state: 'success', creator: { login: 'vercel[bot]' }, environment_url: 'https://danmercede-example.vercel.app' }];
+    return [{ id: 3, sha, environment: 'Production', creator: { login: 'vercel[bot]' } }];
+  }, repository, sha, { timeoutMs: 2000, intervalMs: 1, readRevision: () => readPublicRevision(async () => {
+    publicReads += 1;
+    return publicReads === 1 ? new Response('not yet served', { status: 404 }) :
+      Response.json({ schemaVersion: 1, sha }, { headers: { 'Cache-Control': 'no-store' } });
+  }) });
+  assert.equal(result.sha, sha);
+  assert.equal(publicReads, 2);
 });
