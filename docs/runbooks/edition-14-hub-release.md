@@ -62,6 +62,11 @@ read-only LinkedIn verification heartbeat stays paused.
    If admission misses it, request an explicitly authorized dispatch of
    `substrate-sync.yml` on **main** after admission lands; do not wait a week or
    dispatch an unmerged task branch.
+   Before dispatch, check the workflow run inventory and wait for any older
+   queued, waiting or running sync to finish. Both runs write the same
+   `codex/substrate-sync` branch, so an older completion can replace a newer
+   bundle. Bind the new run to the merged admission commit, and recheck that
+   the resulting PR still contains the post-admission bundle before merging it.
 3. Inspect that run's private checkout, strict nonempty compile, diagram
    optimization, drift detection and PR creation steps. The October 19 run
    [39277452263](https://github.com/OrionArchitekton/danmercede.com/actions/runs/39277452263)
