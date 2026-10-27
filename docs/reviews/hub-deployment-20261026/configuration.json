@@ -1,0 +1,23 @@
+{
+  "observed_at_utc": "2026-10-27T07:16:42.095632+00:00",
+  "project": {
+    "id": "prj_3JOIICn1bHmPD6l0hpJKJN8OHB74",
+    "name": "danmercede-com",
+    "framework": "vite",
+    "rootDirectory": null,
+    "commandForIgnoringBuildStep": null,
+    "gitProviderOptions": {
+      "createDeployments": "enabled"
+    },
+    "autoAssignCustomDomains": true,
+    "autoExposeSystemEnvs": true
+  },
+  "git": {
+    "type": "github",
+    "org": "OrionArchitekton",
+    "repo": "danmercede.com",
+    "repoId": 1139624589,
+    "productionBranch": "main",
+    "updatedAt": 1769076628320
+  }
+}
