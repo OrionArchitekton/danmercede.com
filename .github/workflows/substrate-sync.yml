@@ -9,10 +9,16 @@ name: Substrate Sync (fail-loud)
 on:
   workflow_dispatch: {}
   schedule:
-    # Mondays 08:10 PT (matches the danmercede.online cadence). 15:10 UTC PST /
-    # 16:10 UTC PDT — the half-hour drift across the seasonal boundary is
-    # acceptable for a weekly sync.
-    - cron: '10 15 * * 1'
+    # Mondays 08:10 Pacific, including both daylight and standard time.
+    # Job-level TZ affects commands, not the scheduler; bind the cron itself.
+    - cron: '10 8 * * 1'
+      timezone: America/Los_Angeles
+
+# Both triggers update the same review branch. Acquire this lock before either
+# checkout so a delayed run cannot compile an older admission snapshot in parallel.
+concurrency:
+  group: substrate-sync-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -25,6 +31,8 @@ jobs:
     steps:
       - name: Checkout danmercede.com
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       # persist-credentials: false — the substrate PAT is used only for this
       # fetch and never written to the vendored clone's git config, so no

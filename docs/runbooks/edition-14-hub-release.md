@@ -55,18 +55,20 @@ read-only LinkedIn verification heartbeat stays paused.
    merging. The estate's October 23 owner-approved merge amendment supersedes
    the earlier independent last-push approver requirement; it does not authorize
    an early or automatic merge.
-2. The current sync cron is `10 15 * * 1`: on October 26 it is **15:10 UTC /
-   08:10 PDT**, 1 hour 3 minutes 36 seconds after eligibility. The workflow's
-   timezone comment is inaccurate; the cron expression defines the schedule.
+2. For the October 26 release, the sync cron was `10 15 * * 1`: **15:10 UTC /
+   08:10 PDT**, 1 hour 3 minutes 36 seconds after eligibility. That fixed-UTC
+   timing is historical. The current schedule is Monday `10 8 * * 1` in
+   `America/Los_Angeles`: 15:10 UTC during PDT and 16:10 UTC during PST. See
+   [the current sync runbook](newsletter-hub-sync.md) for the November 2 window.
    Aim to land admission before this run. GitHub can delay scheduled runs.
    If admission misses it, request an explicitly authorized dispatch of
    `substrate-sync.yml` on **main** after admission lands; do not wait a week or
    dispatch an unmerged task branch.
-   Before dispatch, check the workflow run inventory and wait for any older
-   queued, waiting or running sync to finish. Both runs write the same
-   `codex/substrate-sync` branch, so an older completion can replace a newer
-   bundle. Bind the new run to the merged admission commit, and recheck that
-   the resulting PR still contains the post-admission bundle before merging it.
+   Before dispatch, check the workflow run inventory. Let any older active sync
+   finish. The shared concurrency group does not cancel active runs, and a newer
+   pending run replaces an older pending run. Bind the new run to the merged
+   admission commit, and recheck that the resulting PR still contains the
+   post-admission bundle before merging it.
 3. Inspect that run's private checkout, strict nonempty compile, diagram
    optimization, drift detection and PR creation steps. The October 19 run
    [39277452263](https://github.com/OrionArchitekton/danmercede.com/actions/runs/39277452263)
