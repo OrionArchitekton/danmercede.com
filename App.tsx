@@ -1188,7 +1188,7 @@ const ResourcesPage = () => {
           </div>
           <div className="max-w-4xl">
             <p className="text-base text-slate-300 leading-relaxed">
-              Governance is enforced at four deterministic boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
+              The design places governance at four boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
             </p>
           </div>
           <div className="mt-8 border-l-2 border-copper-500/40 pl-6 max-w-3xl">
@@ -1224,7 +1224,7 @@ const ResourcesPage = () => {
             <h2 className="text-2xl font-bold text-white mb-1">Gated Execution Pipeline</h2>
             <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: enforcement evaluated at every boundary.</p>
           </div>
-          <p className="text-base text-slate-300 mb-6">Every state mutation traverses three deterministic gates.</p>
+          <p className="text-base text-slate-300 mb-6">In this design, each state mutation passes three gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
@@ -1249,7 +1249,7 @@ const ResourcesPage = () => {
             <h2 className="text-2xl font-bold text-white mb-1">Governance Converts Risk Into Measurable Economics</h2>
             <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
-          <p className="text-base text-slate-300 mb-6">Governance converts operational risk into predictable unit economics.</p>
+          <p className="text-base text-slate-300 mb-6">The framework describes how governance could turn operational risk into predictable unit economics.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
