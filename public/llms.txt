@@ -6,7 +6,7 @@
 - [Dan Mercede, home](https://www.danmercede.com/): Positioning, philosophy, and turning AI from experiments into owned, governed workflows.
 - [The Throughline (About)](https://www.danmercede.com/about): Background, beliefs, and the operations-to-architecture arc.
 - [Ecosystem](https://www.danmercede.com/ecosystem): Independent ventures, their roles, and shared ownership architecture.
-- [Proof](https://www.danmercede.com/proof): Enforcement artifacts and illustrative reference architectures mapped to the four-layer control plane.
+- [Proof](https://www.danmercede.com/proof): Checkable evidence first, then conceptual architecture diagrams and illustrative reference architectures. The current Orion tools are listed at https://www.cosmocrat.ai/tools.
 
 ## Thoughts
 - [Thoughts](https://www.danmercede.com/thoughts): Essays on governed AI, workflow ownership, operator-led automation, and the failure modes that show up when systems meet reality. Each essay has its own indexable URL at /thoughts/<slug>.

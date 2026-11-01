@@ -37,6 +37,7 @@ export const FOOTER_LINKS: { label: string; href: string }[] = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/danmercede/' },
   { label: 'X (@danmercede)', href: 'https://x.com/danmercede' },
   { label: 'GitHub (OrionArchitekton)', href: 'https://github.com/OrionArchitekton' },
+  { label: 'Cosmocrat OS: the Orion tools', href: 'https://www.cosmocrat.ai/tools' },
   { label: 'YouTube (@danmercede)', href: 'https://www.youtube.com/@danmercede' },
   { label: 'Sessionize', href: 'https://sessionize.com/dan-mercede/' },
   // "Newsletter", not "Subscribe": the footer also renders on the identity-only /about.
@@ -320,7 +321,7 @@ export const INTENT_ROUTES = [
   {
     audience: 'Technical reader',
     prompt: 'Here for the engineering?',
-    description: 'Guides, essays, and open-source tools on governed AI and operator-led automation.',
+    description: 'Guides, essays, and open-source tools for human-directed AI work.',
     href: '/guides',
     cta: 'Read the guides',
     external: false,

@@ -21,7 +21,7 @@ export const SEO_BLOCK_START = '<!--SEO_BLOCK-->';
 export const SEO_BLOCK_END = '<!--/SEO_BLOCK-->';
 
 // Anchors delimiting the per-route JSON-LD block injected into <head>. The
-// homepage entity graph (Person/WebSite/ImageObject) stays static below this
+// homepage entity graph (Person/WebSite) stays static below this
 // block; content routes get an additional Article/ProfilePage + BreadcrumbList.
 export const JSONLD_BLOCK_START = '<!--ROUTE_JSONLD-->';
 export const JSONLD_BLOCK_END = '<!--/ROUTE_JSONLD-->';
