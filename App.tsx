@@ -1169,7 +1169,10 @@ const ResourcesPage = () => {
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Approach</span>
             <h2 className="text-2xl font-bold text-white mb-1">How the systems are built</h2>
-            <p className="text-sm text-slate-400">These diagrams explain the design. They are not measured outcomes.</p>
+            <p className="text-sm text-slate-400">
+              These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
+              <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">Cosmocrat OS: Platform</a>.
+            </p>
           </div>
         </div>
 
@@ -1178,7 +1181,7 @@ const ResourcesPage = () => {
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-6">
             <img
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
-              alt="Runtime Execution Control Plane Architecture, four-layer deterministic enforcement cascade: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
+              alt="Runtime Execution Control Plane Architecture, a conceptual diagram: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
               className="w-full h-auto"
               loading="eager"
             />
@@ -1217,15 +1220,15 @@ const ResourcesPage = () => {
         {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Enforcement Architecture</span>
-            <h2 className="text-2xl font-bold text-white mb-1">Deterministic Gate Cascade</h2>
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Conceptual</span>
+            <h2 className="text-2xl font-bold text-white mb-1">Gated Execution Pipeline</h2>
             <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: enforcement evaluated at every boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">Every state mutation traverses three deterministic gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
-              alt="Gated Execution Pipeline, deterministic gate cascade: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
+              alt="Gated Execution Pipeline, a conceptual diagram: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
               className="w-full h-auto"
               loading="lazy"
             />
@@ -1239,10 +1242,10 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Diagram, Governance Economics Scorecard (above Case Studies) */}
+        {/* Diagram, conceptual economics framework (above Case Studies) */}
         <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics</span>
+            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics (conceptual)</span>
             <h2 className="text-2xl font-bold text-white mb-1">Governance Converts Risk Into Measurable Economics</h2>
             <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
@@ -1250,7 +1253,7 @@ const ResourcesPage = () => {
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
-              alt="Governance Economics Scorecard, ROI framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
+              alt="Conceptual economics framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
               className="w-full h-auto"
               loading="lazy"
             />

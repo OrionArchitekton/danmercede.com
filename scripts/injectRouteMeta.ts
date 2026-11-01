@@ -144,7 +144,7 @@ export function renderNotFoundHtml(baseHtml: string): string {
   ].join('\n');
   let html = injectSeoBlock(baseHtml, seo);
   html = injectBlock(html, JSONLD_BLOCK_START, JSONLD_BLOCK_END, '', '  ');
-  // The site-wide entity graph (Person / WebSite / ImageObject) lives outside the
+  // The site-wide entity graph (Person / WebSite) lives outside the
   // anchors in index.html; a 404 describes no entity, so drop every JSON-LD block.
   return html.replace(/[ \t]*<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
 }
