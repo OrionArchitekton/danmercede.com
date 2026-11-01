@@ -1063,6 +1063,7 @@ export const GUIDE_LENSES = [
       'why-llm-schemas-get-rejected',
       'claude-code-controls-grok-bot',
       'openai-dot-starts-claude-code-sessions',
+      'build-a-supervisor-agent',
     ] as readonly string[],
   },
   {
