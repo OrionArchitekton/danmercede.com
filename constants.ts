@@ -1013,7 +1013,6 @@ export const START_HERE: { kind: 'guide' | 'essay'; slug: string; why: string }[
 export const FEATURED_ESSAY_SLUGS: readonly string[] = [
   '2026-06-08-authority-gate-made-runnable',
   '2026-05-20-pre-execution-authority-gates',
-  '2026-02-10-the-four-layer-enforcement-stack',
   '2026-05-19-the-merge-is-a-state-mutation',
   '2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability',
 ];

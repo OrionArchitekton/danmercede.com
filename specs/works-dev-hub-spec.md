@@ -52,6 +52,8 @@ nav-label change; URL-param filter on `/thoughts`; new `WORKS` entries; any new 
   `2026-06-08-authority-gate-made-runnable`, `2026-05-20-pre-execution-authority-gates`,
   `2026-02-10-the-four-layer-enforcement-stack`, `2026-05-19-the-merge-is-a-state-mutation`,
   `2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability`.
+  Since 2026-11-01 the four-layer essay is no longer featured (Cosmocrat OS alignment); four
+  slugs remain and the essay stays published under /thoughts.
 - `export function featuredEssays(): { slug: string; title: string }[]` — maps each slug to its
   `THOUGHTS` entry (title in sync with the corpus). **Fail-loud** if a slug is not in `THOUGHTS`
   (throw) so a typo/unpublished slug is caught at build/test, never a dangling link. Preserves
