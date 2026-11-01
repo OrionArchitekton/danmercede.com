@@ -115,8 +115,12 @@ sha() { { sha256sum "$1" 2>/dev/null || shasum -a 256 "$1"; } | cut -c1-64; }
 # log WORKSTREAM WHO TEXT: append a line to that workstream's log
 log() { printf -- '- %s %s: %s\n' "$(stamp)" "$2" "$3" >> "$COORD/$1.log.md"; }
 
-# ask WHO QUESTION NEEDS BLOCKING: put a question in the supervisor inbox
-ask() { printf -- '- %s %s: ASK: %s Needs: %s. Blocking: %s.\n' "$(stamp)" "$1" "$2" "$3" "$4" >> "$COORD/inbox.md"; }
+# ask WHO QUESTION NEEDS BLOCKING: put a question in the supervisor inbox, print its ID
+ask() {
+  local id="$1-$(date -u '+%H%M%S')-$RANDOM"
+  printf -- '- %s %s: ASK [%s]: %s Needs: %s. Blocking: %s.\n' "$(stamp)" "$1" "$id" "$2" "$3" "$4" >> "$COORD/inbox.md"
+  echo "$id"
+}
 
 # receipt FILE: the path and SHA-256 every handoff carries
 receipt() { printf '%s sha256 %s' "$1" "$(sha "$1")"; }
@@ -134,16 +138,16 @@ After that evening the supervisor's rule became log first, and queue a pointer o
 
 On 2026-10-31 I pasted two Codex questions into the supervisor by hand, because each thread had asked in its own prompt box, where the supervisor couldn't see it. At 8:24 PM I made it a rule: workers never prompt me. Every question goes into one append-only inbox file, and the worker keeps working.
 
-An inbox line carries four things: who's asking, the question, what the answer needs (a path or a receipt), and whether the worker is blocked. The `ask` helper above writes it:
+An inbox line carries five things: who's asking, a unique ID, the question, what the answer needs (a path or a receipt), and whether the worker is blocked. The `ask` helper above writes it:
 
 ```text
-- 2026-11-02 17:50 UTC build-round: ASK: May I take over the stalled caption PR? Its owner has been idle 14 hours. Needs: ~/coord/handoffs/captions/RECEIPT.txt. Blocking: no.
+- 2026-11-02 17:50 UTC build-round: ASK [build-round-175012-4821]: May I take over the stalled caption PR? Its owner has been idle 14 hours. Needs: ~/coord/handoffs/captions/RECEIPT.txt. Blocking: no.
 ```
 
-The supervisor answers with a message to the worker and an answer line that names the ask it closes, so the sweep can tell which asks are still open:
+The supervisor answers with a message to the worker and an answer line that repeats the ask's ID, so the sweep can tell which asks are still open:
 
 ```text
-- 2026-11-02 17:57 UTC supervisor: ANSWER to 2026-11-02 17:50 UTC build-round: yes, receipt verified, take it.
+- 2026-11-02 17:57 UTC supervisor: ANSWER [build-round-175012-4821]: yes, receipt verified, take it.
 ```
 
 Most asks never reach you. A worker asking which branch to rebase onto, whether a review finding is real, or whether a receipt checks out gets its answer from the supervisor. The asks only you can answer, like publishing, spend or creative approval, the supervisor holds and batches into one structured question, so you make five decisions in one sitting instead of being pinged five times.
@@ -225,9 +229,9 @@ for path in sorted(glob.glob(f"{COORD}/*.log.md")):
 print("\n== Unanswered asks")
 asks, answered = {}, set()
 for line in open(f"{COORD}/inbox.md", encoding="utf-8"):
-    if m := re.match(r"- (\S+ \S+ UTC) (\S+): ASK: (.*)", line):
-        asks[f"{m[1]} {m[2]}"] = m[3]
-    if m := re.match(r"- \S+ \S+ UTC supervisor: ANSWER to (\S+ \S+ UTC \S+):", line):
+    if m := re.match(r"- \S+ \S+ UTC (\S+): ASK \[([^\]]+)\]: (.*)", line):
+        asks[m[2]] = f"{m[1]}: {m[3]}"
+    if m := re.match(r"- \S+ \S+ UTC supervisor: ANSWER \[([^\]]+)\]", line):
         answered.add(m[1])
 for key, text in asks.items():
     if key not in answered:
@@ -254,7 +258,7 @@ Between 3:33 PM and 4:58 PM on 2026-10-31 my supervisor armed a fresh file watch
 # wait-grow.sh FILE...: exit as soon as any file grows, and show its new tail.
 # Run it as a background command; its exit is the wake-up.
 files=("$@"); sizes=()
-for f in "${files[@]}"; do touch "$f"; sizes+=("$(wc -c < "$f")"); done
+for f in "${files[@]}"; do [ -e "$f" ] || : > "$f"; sizes+=("$(wc -c < "$f")"); done  # never touch: the sweep reads mtime
 while sleep 15; do
   for i in "${!files[@]}"; do
     if [ "$(wc -c < "${files[$i]}")" -gt "${sizes[$i]}" ]; then
