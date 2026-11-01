@@ -1222,7 +1222,7 @@ const ResourcesPage = () => {
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Conceptual</span>
             <h2 className="text-2xl font-bold text-white mb-1">Gated Execution Pipeline</h2>
-            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: enforcement evaluated at every boundary.</p>
+            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">In this design, each state mutation passes three gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
@@ -1246,7 +1246,7 @@ const ResourcesPage = () => {
         <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics (conceptual)</span>
-            <h2 className="text-2xl font-bold text-white mb-1">Governance Converts Risk Into Measurable Economics</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">How Governance Could Change the Economics of Risk</h2>
             <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">The framework describes how governance could turn operational risk into predictable unit economics.</p>
