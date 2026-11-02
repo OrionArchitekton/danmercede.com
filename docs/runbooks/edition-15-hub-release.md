@@ -101,6 +101,48 @@ packages; installing the existing lockfile in this isolated worktree resolved
 those environment failures without dependency-file or application-code changes.
 The final diff contains only this handoff and the one allowlist entry.
 
+## November 2 release execution
+
+Dan requested taking the existing edition work through the merge process.
+Edition 16 source PR #110 and Ops #62 are merged. Edition 15 admission #231
+merged as `381ac6efcbc5539be5d8dec26bdd8b3e35636110` after all required checks
+and revalidation of the six actual-publication evidence hashes. Eligibility
+had elapsed at **14:08:08 UTC / 06:08:08 PST**.
+
+A fresh content worktree starts at that merged admission. The compiler reads
+an immutable accepted substrate checkout at
+`44207b8278055b5d76dea688c2eee6f31dfd3962`; the Edition 15 sealed canonical
+still matches SHA256 `39982a3894ff0192258a0a520f7a53e3d8c6338b76b99905bc1bed68f8941ce2`.
+The existing `--strict --require-matches` compiler reports WROTE. The existing
+workflow's pinned Sharp 0.34.4 optimizer restores copied diagram originals to
+byte-identical shipped assets. No generated field is hand-edited.
+
+The diff adds exactly this essay to the bundle. All 47 prior thoughts and all 23
+diagrams remain identical, including every prior asset. The new entry has the
+exact title, October 26 date and complete source body. All 33 approved blocks,
+five H2 headings, literal flock and the final comments question match the
+hash-verified browser map. It is first in the chronological corpus. Edition 16
+is excluded and no cover-only source asset is copied into the body.
+
+At the release admission checks after 10 a.m. Pacific, the active native sync
+workflow had no November 2 run in its history and no queued/running run or open
+content-sync PR. Its timezone configuration matches current GitHub documentation;
+no unsupported-timezone diagnosis is claimed. This local mechanical strict-sync
+preparation completes the requested reviewed content path without dispatching a
+runtime workflow or changing its schedule, token or configuration. Recheck run/PR
+inventory before merging to avoid a duplicate release if a delayed trigger arrives.
+Trusted base-compiler verification and the normal required checks still apply.
+
+Local validation passes: typecheck, all 462 regression tests, production build,
+and all 21 built-output tests. The build emits the new essay into initial HTML,
+latest-release ordering, sitemap and feeds; public deployment remains to be checked.
+
+The generated-content merge must still be followed by exact-commit production
+revision and real public page/index/feed verification. Neither this local
+comparison nor an admission merge is proof that the hub serves the new essay.
+The preserved comments CTA is LinkedIn context; the hub has no native composer.
+No new comment feature or source rewording is introduced by this release.
+
 ## Rollback
 
 Before admission merge, close the unmerged PR to withdraw this preparation.
