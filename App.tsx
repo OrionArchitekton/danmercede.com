@@ -1448,14 +1448,14 @@ const WorksPage = () => {
         <SectionHeader as="h1" title="Works" subtitle="Build · Selected Essays · Signal" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-16">
-          Open-source tooling and field-tested patterns from shipping governed agentic systems in production.
+          Open-source tooling and field-tested patterns from shipping governed agentic systems in production. The Orion tools are part of <a href="https://www.cosmocrat.ai/" {...linkTargetProps('https://www.cosmocrat.ai/')} className="text-copper-400 underline underline-offset-4 hover:text-copper-300">Cosmocrat OS</a>, with independent releases, installation identifiers and support boundaries.
         </p>
 
         {/* Curated pointers to existing project pages and the knowledge-graph essay. */}
         <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Start here</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {WORKS_START_HERE.map((item) => (
-            <a key={item.href} href={item.href} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
+            <a key={item.href} href={item.href} {...linkTargetProps(item.href)} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
               <h3 className="text-white font-semibold mb-3 group-hover:text-copper-400">{item.title}</h3>
               {item.description && <p className="text-slate-400 text-sm leading-relaxed">{item.description}</p>}
             </a>

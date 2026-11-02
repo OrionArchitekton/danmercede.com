@@ -9,6 +9,8 @@ description: "How to give AI agents Android phones of their own with the MIT-lic
 lead: "Agents that share one browser collide, and some apps only run on a phone. Handing an agent your own phone puts everything on it in reach. We gave agents emulated Android phones of their own: leased one agent at a time, read as text, and, for the sensitive ones, locked until the owner unlocks them by hand."
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 Two agents were taking turns with one browser, badly. One navigated away while the other filled a form. And some of the work had nowhere to go at all: the app only existed on a phone.
 
 The obvious fix was the wrong one. Give an agent your own phone and everything on it is in reach: every account, every code, every message.

@@ -9,6 +9,8 @@ description: "A practical Orion PM tutorial: run two workers against one local t
 lead: "Two agents can read the same task list and both decide to start. Orion PM adds an exclusive claim, a generation that changes on reacquisition, and a revision for the task each worker observed. This guide follows those handles through a complete local workflow."
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 Separate chats do not create separate ownership. Two agents can read the same task list, decide the work is available, and both begin editing. A status field that says `in_progress` tells you what the record says. It does not tell you which worker can still change it.
 
 **Orion PM** is a small, local coordination CLI for cooperating agents. A worker claims a task before doing the work, keeps the exact claim generation and task revision, and uses those handles to attach evidence, finish, or hand the task back. A later worker receives a different generation, even when it reuses the same holder name.

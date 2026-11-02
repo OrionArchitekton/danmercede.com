@@ -9,6 +9,8 @@ description: Save explicit local task context, refuse ambiguous pickup, and pres
 lead: A new session needs the right task and its observed state. Here is a complete local walkthrough that keeps context separate from permission to act.
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 A useful handoff says which task it belongs to, what was observed, what remains unfinished, and where its claims came from. It also lets the next session say that the information is stale or ambiguous.
 
 [Orion Handoff](/works/orion-handoff/) is a small local CLI for that boundary. It stores immutable JSON revisions in a directory you choose. It does not install agent hooks, inspect conversations, open references, or execute recorded next steps. Every response includes `authority: none`.

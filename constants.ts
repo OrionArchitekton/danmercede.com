@@ -60,9 +60,9 @@ export const WORKS_START_HERE: { title: string; href: string; description?: stri
     description: 'QA for non-deterministic AI automations. UiPath AgentHack 2026 finalist.',
   },
   {
-    title: 'failclosed',
-    href: '/works/failclosed/',
-    description: 'An LLM code reviewer that refuses to trust its own reviewer.',
+    title: 'Cosmocrat OS',
+    href: 'https://www.cosmocrat.ai/docs',
+    description: 'Independent Orion tools and a pinned Starter preview for handing over development evidence.',
   },
   {
     title: START_HERE_ESSAY.title,
@@ -109,10 +109,10 @@ export const VENTURES: Venture[] = [
   {
     name: "Cosmocrat",
     role: "Governed AI Operating System",
-    description: "Cosmocrat is a Governed AI Operating System that enforces auditability, policy control, and human oversight across AI memory, decisioning, and execution.",
-    ecosystemRole: "Cosmocrat is the Governed AI Operating System that serves as the control plane for human-owned intelligence. It governs how AI systems remember, decide, execute, and are audited over time.",
-    systemRelationship: "Cosmocrat is the core system originated and owned by Orion Apex Capital. All other entities in the ecosystem either deploy, validate, or operate under Cosmocrat’s governance model.",
-    operatingConstraints: "Enterprise-grade, governance-first. Not a chatbot. Not an orchestration tool. Designed to fail closed and remain auditable under real production conditions.",
+    description: "Cosmocrat OS is a family of tools and operating practices for AI work under human direction. Independently released Orion tools support coordination, context continuity and verification.",
+    ecosystemRole: "Cosmocrat OS connects independent tools, versioned Starter previews and guides. Its governance kernel has a separate, narrow policy and decision-receipt boundary; execution remains outside it.",
+    systemRelationship: "Cosmocrat OS originated in the private Orion Estate. Family membership does not establish kernel integration, runtime adoption or a shared support boundary.",
+    operatingConstraints: "The governance kernel has a narrow policy and decision-receipt boundary. Independent tools retain their own enforcement, execution and support scope; family membership does not establish kernel integration.",
     status: "GOVERNED AI OS · CORE",
     logo: "/cosmocrat-.png",
     slug: "cosmocrat",

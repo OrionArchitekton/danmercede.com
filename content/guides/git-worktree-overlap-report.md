@@ -8,6 +8,8 @@ description: Use explicit Git worktree observations, exact path identities and c
 lead: Two clean-looking command runs are not enough when one checkout was never observed. Start with coverage, then look at the shared paths.
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 
 Git worktrees let several changes move forward in separate checkouts. They also make it easy to miss that two changes touch the same path. The useful question is concrete: which registered worktrees currently report the same uncommitted path?
 

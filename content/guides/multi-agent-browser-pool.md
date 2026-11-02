@@ -9,6 +9,8 @@ description: "How to give cooperative agents persistent Chrome identities, exclu
 lead: "One shared browser becomes a shared cursor, shared focus, and shared sign-in state. We moved browser work into an identity-based pool: a persistent profile for each identity, a virtual screen for each browser, and a lease for the agent using it."
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 Two agents can have separate conversations and still be fighting over the same browser. One navigates away while the other is filling a form. A tab changes identity halfway through a task. The operator moves another window in front of Chrome, and an editor stops behaving as expected.
 
 The browser had become shared mutable state with no owner.

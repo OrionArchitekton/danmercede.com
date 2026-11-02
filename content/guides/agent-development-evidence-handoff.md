@@ -2,11 +2,13 @@
 title: Hand over development evidence without losing the original observation
 slug: agent-development-evidence-handoff
 date: 2026-10-19
-reviewed: 2026-10-19
+reviewed: 2026-10-31
 category: Agent tooling
 description: Retain exact worktree-report bytes, pass compact context and independently re-observe before completing a local demonstration.
 lead: A useful handover preserves what the first worker saw while making the next worker check what is true now.
 ---
+
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
 
 A development task often outlives the process that started it. The next worker needs the original evidence, an explanation of what remains unfinished and a fresh view of the repository. Passing a summary alone loses detail. Passing a task claim alone does not make an old observation current.
 
@@ -40,6 +42,10 @@ The package's [standalone profile walkthrough](https://github.com/OrionArchitekt
 The next block creates an empty private workspace outside Git. It initializes a run-specific demonstration task and Handoff store, selects an empty Results parent, and creates a synthetic repository with two linked worker worktrees. Both workers deliberately edit the same tracked path. Fixture creation is an explicit setup operation; `inspect` does not create these resources.
 
 Initial native qualification is CPython 3.11 on Linux x86_64 under WSL2, local ext4, Git 2.43.0 and linked SQLite 3.45.1. Other platforms, network filesystems, cross-host fencing, independent newcomer adoption and native Claude/Codex/Grok/Dot integration remain unverified. A general wheel tag does not expand that support claim.
+
+An October 31 operator reproduction used the exact ZIP and selected release wheels on CPython 3.11.9, WSL2/ext4, Git 2.43.0 and linked SQLite 3.45.1. A separately invoked consumer recovered the producer's exact 3,163-byte report, made a new observation under a different claim generation and read back the synthetic task as done with no remaining claim. The selected metadata snapshot was 173 bytes. These sizes describe that run, not a fixed report size or a whole-context budget.
+
+The same reproduction retained partial coverage without completing the task, refused an ambiguous Handoff pickup, and passed the archive's 38 development-evidence process tests. Those tests include stale or replaced context, missing capture and loss of ownership. This is one operator's local reproduction; the profile remains a preview pending independent newcomer evidence. The older continuity guide and its video still teach 0.2.0-rc.1.
 
 After running the package's verified install and synthetic-setup blocks, keep the printed `DEMO_ROOT`. Run the following from the extracted distribution root:
 
