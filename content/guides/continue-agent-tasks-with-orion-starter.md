@@ -9,6 +9,8 @@ description: Run a local two-worker continuity example with independent task cla
 lead: One worker can leave observed context for another. The next worker still needs its own task claim, browser lease and current evidence before finishing.
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 A useful handoff preserves context without pretending to transfer ownership. The producer records what it observed and leaves the task unfinished. The consumer checks that exact record, obtains new handles, and independently verifies the result.
 
 The [Orion starter preview](https://github.com/OrionArchitekton/orion-starter/releases/tag/v0.2.0-rc.1) puts three independently usable components into one reproducible local recipe:

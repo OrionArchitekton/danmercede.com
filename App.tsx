@@ -1448,7 +1448,7 @@ const WorksPage = () => {
         <SectionHeader as="h1" title="Works" subtitle="Build · Selected Essays · Signal" />
 
         <p className="text-slate-400 text-lg max-w-3xl mb-16">
-          Open-source tooling and field-tested patterns from shipping governed agentic systems in production.
+          Open-source tooling and field-tested patterns from shipping governed agentic systems in production. The Orion tools are part of <a href="https://www.cosmocrat.ai/" className="text-copper-400 underline underline-offset-4 hover:text-copper-300">Cosmocrat OS</a>, with independent releases, installation identifiers and support boundaries.
         </p>
 
         {/* Curated pointers to existing project pages and the knowledge-graph essay. */}

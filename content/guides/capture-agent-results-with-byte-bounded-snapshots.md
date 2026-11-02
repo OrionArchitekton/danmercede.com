@@ -8,6 +8,8 @@ description: Store complete text privately, pass a byte-bounded snapshot, and re
 lead: A small selected view is useful only when the original result remains recoverable and failures stay visible.
 ---
 
+The Orion tools in this guide are part of [Cosmocrat OS](https://www.cosmocrat.ai/). [Start with one workflow](https://www.cosmocrat.ai/docs), using the exact releases and environment stated below. Each tool keeps its own installation, state and support boundaries.
+
 A tool can return more text than you want to pass to the next step. Trimming the return value can make the current view smaller, but the consumer still needs a dependable way to recover the exact original. It also needs to know when storing the result failed.
 
 orion-results separates three operations: capture complete text in an explicitly selected private session, render a bounded snapshot, and read an exact result reference. The output promise applies to the complete UTF-8 snapshot string. It includes references, separators, inline JSON and omission counts. It does not limit tokens, the original input, previous strings you retained, process memory or a model's whole context window.

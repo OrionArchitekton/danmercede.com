@@ -3,7 +3,7 @@
   "observed": "2026-10-15",
   "guide": {
     "slug": "coordinate-local-agents-with-orion-pm",
-    "source_sha256": "0836b06576e9a8209a077554f383e6be38840f2cec5dc15cfee3969631a5cf50",
+    "source_sha256": "cb7bdabdd2e23dacec2ed3cdac7c3d4b3f35600a91eec6048217346c5916fb09",
     "metadata_updates": [
       {
         "date": "2026-10-17",
@@ -11,6 +11,15 @@
         "previous_source_sha256": "abc15e55c17750d6090454a208b7d3c9afdfed7a2609feaf4773b1ef8f2ddf5e",
         "unchanged_body_sha256": "b1ce9e9cc03c6ac5663ccba2b344ac932b73daec4cf4200d22e80f8d1fec435b",
         "validation_scope": "The walkthrough body and commands are byte-identical to the observed October 15 source. This metadata update does not claim a new CLI run."
+      }
+    ],
+    "content_updates": [
+      {
+        "date": "2026-10-31",
+        "change": "Added a Cosmocrat OS family/navigation paragraph before the original walkthrough.",
+        "previous_source_sha256": "0836b06576e9a8209a077554f383e6be38840f2cec5dc15cfee3969631a5cf50",
+        "unchanged_walkthrough_sha256": "b1ce9e9cc03c6ac5663ccba2b344ac932b73daec4cf4200d22e80f8d1fec435b",
+        "validation_scope": "Removing only the new navigation paragraph recovers the exact prior guide bytes. Commands, artifact pins and historical October 15 observations remain unchanged. This copy update does not claim a new PM tutorial execution."
       }
     ]
   },

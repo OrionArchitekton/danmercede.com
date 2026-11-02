@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-31 America/Los_Angeles",
+  "archive_sha256": "0140b2c4e3df2ad1bb0f015c9785d3ff44b44a6da51004026344a02c5ba91c01",
+  "archive_version": "0.3.0-rc.1",
+  "environment": {
+    "python": "3.11.9 (main, Mar  3 2026, 20:21:31) [GCC 9.4.0]",
+    "sqlite": "3.45.1",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  },
+  "filesystem": "ext4",
+  "git": "git version 2.43.0",
+  "components": {
+    "orion-handoff": "0.1.0",
+    "orion-pm": "0.1.1",
+    "orion-results": "0.1.0",
+    "orion-worktree-report": "0.1.0"
+  },
+  "happy": {
+    "run_id": "4ba57879-a793-4c3e-b127-81db360f2b14",
+    "task_id": "evidence-4ba57879a7934c3eb12781db360f2b14",
+    "producer_attempt": "8857d19c-04db-45a5-ac8b-c43e8884633d",
+    "consumer_attempt": "fda55a16-3c71-4d82-933f-1a4db7ddbdaa",
+    "old_report_sha256": "b29e69740b7853ca8b76b7135334db02e11f7268554a64f622ee3eda28a4cb94",
+    "new_report_sha256": "123b403a2e263ae695db196415884a05cf8ee3dcf366b7b7773a943e2bb2cc52",
+    "retained_utf8_bytes": 3163,
+    "snapshot_utf8_bytes": 173,
+    "distinct_generation": true,
+    "distinct_scan": true,
+    "exact_recovery": true,
+    "final_task_state": "done",
+    "final_claim": "absent"
+  },
+  "negative": {
+    "ambiguous_pickup_exit": 11,
+    "ambiguous_authority": "none",
+    "partial_consumer_exit": 3,
+    "partial_final_task": "todo",
+    "partial_final_claim": "absent",
+    "archive_process_tests": 38,
+    "archive_process_tests_result": "PASS"
+  },
+  "limits": [
+    "One operator reproduction, not independent newcomer adoption",
+    "No native harness hooks, accounts, cross-host, unattended or universal OS proof",
+    "Prior continuity video remains pinned to 0.2.0-rc.1",
+    "No publication, production/runtime adoption or creative approval"
+  ],
+  "cleanup": {
+    "closed_results_backup_exact_readback": true,
+    "selected_environment_removed": true,
+    "synthetic_data_and_receipts_retained": true
+  },
+  "artifact_bindings": [
+    {
+      "name": "orion-pm",
+      "version": "0.1.1",
+      "url": "https://github.com/OrionArchitekton/orion-pm-oss/releases/download/v0.1.1/orion_pm-0.1.1-py3-none-any.whl",
+      "sha256": "54f28272550054c32958c67fd84094b825bb387f91ad3efe3b342d463b9c16c7",
+      "license": "MIT"
+    },
+    {
+      "name": "orion-handoff",
+      "version": "0.1.0",
+      "url": "https://github.com/OrionArchitekton/orion-handoff/releases/download/v0.1.0/orion_handoff-0.1.0-py3-none-any.whl",
+      "sha256": "e1f3e1e43839cfd2896cfc553bef9366867c1cf50bce1e4d4762cdbec9977e41",
+      "license": "MIT"
+    },
+    {
+      "name": "orion-results",
+      "version": "0.1.0",
+      "url": "https://github.com/OrionArchitekton/orion-results/releases/download/v0.1.0/orion_results-0.1.0-py3-none-any.whl",
+      "sha256": "67af57c4deda8967db83c2176642184bb3b7fb59f826539284086efa95e78e2e",
+      "license": "MIT"
+    },
+    {
+      "name": "orion-worktree-report",
+      "version": "0.1.0",
+      "url": "https://github.com/OrionArchitekton/orion-worktree-report/releases/download/v0.1.0/orion_worktree_report-0.1.0-py3-none-any.whl",
+      "sha256": "f06d7ca9d3fd1001b9bd16ed18a8ee7827727c09eeb4a535f41692723336550b",
+      "license": "MIT"
+    }
+  ],
+  "scope": "One local operator reproduction of public release artifacts. Not independent newcomer or native harness validation."
+}
