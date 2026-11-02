@@ -112,7 +112,7 @@ export const VENTURES: Venture[] = [
     description: "Cosmocrat OS is a family of tools and operating practices for AI work under human direction. Independently released Orion tools support coordination, context continuity and verification.",
     ecosystemRole: "Cosmocrat OS connects independent tools, versioned Starter previews and guides. Its governance kernel has a separate, narrow policy and decision-receipt boundary; execution remains outside it.",
     systemRelationship: "Cosmocrat OS originated in the private Orion Estate. Family membership does not establish kernel integration, runtime adoption or a shared support boundary.",
-    operatingConstraints: "Enterprise-grade, governance-first. Not a chatbot. Not an orchestration tool. Designed to fail closed and remain auditable under real production conditions.",
+    operatingConstraints: "The governance kernel has a narrow policy and decision-receipt boundary. Independent tools retain their own enforcement, execution and support scope; family membership does not establish kernel integration.",
     status: "GOVERNED AI OS · CORE",
     logo: "/cosmocrat-.png",
     slug: "cosmocrat",
