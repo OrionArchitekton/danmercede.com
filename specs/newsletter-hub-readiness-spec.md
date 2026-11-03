@@ -42,7 +42,10 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
 3. **Fresh hub facts, not local guesses.** Resolve GitHub's current `main` SHA,
    read admission/compiler, generated essay bundle and workflow definition at that
    SHA, and inspect native workflow/run/open content-PR inventories. Re-read main
-   after collection. A changed main, failed/truncated read, unknown status, unsafe
+   after collection. A run is bound by native workflow ID, repository and either
+   the exact workflow path or that exact path suffixed by `@` and its independently
+   validated branch. Different paths, prefixes and mismatched/empty suffixes refuse.
+   A changed main, failed/truncated read, unknown status, unsafe
    source shape, disabled/unexpected workflow or inconsistent inventory is
    `ambiguous`, not absent work. Never execute fetched source or a PR's code. Verify each decoded Git
    blob digest and require the reviewed normalized workflow-data fingerprint;

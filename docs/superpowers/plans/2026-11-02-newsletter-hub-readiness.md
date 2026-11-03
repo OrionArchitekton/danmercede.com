@@ -70,6 +70,9 @@ before parsing, snapshot nesting to a conservative finite depth, and inventories
 to three pages of 100 rows each. Exhausted pagination/total-count inconsistencies
 are ambiguous, never empty. There is no polling loop. Match workflow path,
 repository, validated branch metadata and admitted schedule/manual events, not a display job title.
+Accept the exact bare run workflow path observed natively, or the exact path
+plus `@` and that validated head branch as documented by GitHub. Never accept
+a different file, arbitrary prefix or mismatched/empty suffix.
 Inventory every workflow ref: a manual other-ref run can share the repository
 concurrency group and fixed PR branch. Validate/report branch metadata, hold
 active runs across refs. Terminal events at the current main SHA also hold

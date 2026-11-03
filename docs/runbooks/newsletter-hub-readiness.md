@@ -87,13 +87,22 @@ scrubbed and never print native response bodies, environments or child commands.
   unsupported source/workflow, inconsistent candidates or unexplained current-main
   terminal events at the current main SHA on any ref. Inspect existing IDs; do not manufacture empty inventories.
 
+The parent's actual 49-run inventory used bare `.github/workflows/substrate-sync.yml`
+paths and its native read-only canary succeeded. GitHub's documented response
+also shows a workflow path suffixed by `@main`. Both exact bare and exact
+`<workflow-path>@<head_branch>` forms are supported, retaining workflow-ID and
+repository bindings. A suffix must equal the independently validated branch;
+arbitrary prefixes, other files and mismatched suffixes refuse. This is format
+compatibility, not a production-outage repair. See the [official workflow-runs
+response schema](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10).
+
 ## Validation and native canary
 
 Implementation validation: the focused CLI seam covers precise E15 DST/E16
 boundaries, late publication, strict JSON/file safety, source data parsing,
 queued old-head work, unrelated PRs, main drift, scheduling grace, pagination,
 unknown states and global dedupe. `npm test` includes this file explicitly.
-November 2 source validation passed: 20 focused scenarios, 482 full-suite tests,
+November 2 source validation passed: 22 focused scenarios, 484 full-suite tests,
 21 built-output tests, typecheck, production-consumer build, whitespace and
 staged/range secret scans. Run `npx tsc --noEmit`, `npm test`, `npm run build`,
 `npm run test:built`, `git diff --check` and range/staged secret scans before

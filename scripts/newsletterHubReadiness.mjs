@@ -227,7 +227,10 @@ export async function collectHubFacts(readGitHub, { slug }) {
             requireValue(!runIds.has(row.id));
             runIds.add(row.id);
             text(row.head_branch, 255);
-            requireValue(row.workflow_id === workflow.id && row.path === WORKFLOW && row.repository?.full_name === REPO && SHA.test(row.head_sha) && ['schedule', 'workflow_dispatch'].includes(row.event));
+            // Native responses observed here use the bare path; GitHub's
+            // documented response also permits that exact path suffixed by ref.
+            const pathMatches = row.path === WORKFLOW || row.path === `${WORKFLOW}@${row.head_branch}`;
+            requireValue(row.workflow_id === workflow.id && pathMatches && row.repository?.full_name === REPO && SHA.test(row.head_sha) && ['schedule', 'workflow_dispatch'].includes(row.event));
             requireValue((ACTIVE.has(row.status) && row.conclusion === null) || (row.status === 'completed' && CONCLUSIONS.has(row.conclusion)));
             runs.push({ id: row.id, head_branch: row.head_branch, head_sha: row.head_sha, status: row.status, conclusion: row.conclusion });
         }

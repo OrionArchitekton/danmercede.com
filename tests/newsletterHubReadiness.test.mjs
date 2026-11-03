@@ -238,3 +238,30 @@ test('changed known-name workflow step and mismatched source blob cannot authori
     const { result: r } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: read });
     assert.equal(r.decision.state, 'ambiguous');
 });
+test('bare observed and exact documented workflow path forms preserve all readiness decisions', async (t) => {
+    for (const suffix of [false, true]) {
+        const variants = [
+            [{ runs: [run()] }, 'existing-queued-running'],
+            [{ runs: [run({ head_branch: 'codex/other-ref', event: 'workflow_dispatch' })] }, 'existing-queued-running'],
+            [{ runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, 'ambiguous'],
+            [{ admitted: false, runs: [run({ status: 'completed', conclusion: 'success' })] }, 'needs-admission'],
+            [{ synced: true, runs: [run({ status: 'completed', conclusion: 'success' })] }, 'already-source-synced'],
+            [{ runs: [run({ status: 'completed', conclusion: 'success' })] }, 'dispatch-if-authorized'],
+        ];
+        for (const [config, expected] of variants) {
+            const rows = config.runs.map(row => ({ ...row, path: suffix ? `${row.path}@${row.head_branch}` : row.path }));
+            const native = nativeFixture({ ...config, runs: rows });
+            const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+            assert.equal(result.decision.state, expected, `${suffix ? 'suffixed' : 'bare'} ${expected}`);
+        }
+    }
+});
+test('workflow path suffix must exactly match the independently validated branch', async (t) => {
+    const path = '.github/workflows/substrate-sync.yml';
+    for (const invalid of [`${path}@`, `${path}@other`, `${path}@main-extra`, `${path}@main\n`, `${path}@refs/heads/main`, `.github/workflows/build.yml@main`, `prefix${path}@main`, `${path}.extra@main`]) {
+        const native = nativeFixture({ runs: [run({ path: invalid })] });
+        const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+        assert.equal(result.decision.state, 'ambiguous');
+        assert.equal(result.decision.operation, null);
+    }
+});
