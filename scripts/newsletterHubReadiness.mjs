@@ -216,7 +216,7 @@ const ACTIVE = new Set(['queued', 'requested', 'pending', 'waiting', 'in_progres
 const CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'neutral', 'stale', 'startup_failure']);
 export async function collectHubFacts(readGitHub, { slug }) {
     const prefix = `/repos/${REPO}`, main = mainSha(await readGitHub(`${prefix}/git/ref/heads/main`));
-    const admitted = literalExport(sourceContent(await readGitHub(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`)), 'HUB_ESSAY_ALLOWLIST').includes(slug);
+    const allowlisted = literalExport(sourceContent(await readGitHub(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`)), 'HUB_ESSAY_ALLOWLIST').includes(slug);
     const synced = literalExport(sourceContent(await readGitHub(`${prefix}/contents/constants.generated.ts?ref=${main}`)), 'THOUGHTS', true).includes(slug);
     workflowContract(sourceContent(await readGitHub(`${prefix}/contents/${WORKFLOW}?ref=${main}`)));
     const workflow = await readGitHub(`${prefix}/actions/workflows/substrate-sync.yml`);
@@ -270,8 +270,10 @@ export async function collectHubFacts(readGitHub, { slug }) {
     requireValue(complete && prs.length <= 1);
     for (const pr of prs)
         pr.target_slug_present = literalExport(sourceContent(await readGitHub(`${prefix}/contents/constants.generated.ts?ref=${pr.head_sha}`)), 'THOUGHTS', true).includes(slug);
-    requireValue(mainSha(await readGitHub(`${prefix}/git/ref/heads/main`)) === main && !(synced && !admitted));
-    return { source: { repository: REPO, main_sha: main, admitted, bundle_slug_present: synced, content_equivalence: 'not-checked' }, existing: { runs, prs } };
+    requireValue(mainSha(await readGitHub(`${prefix}/git/ref/heads/main`)) === main);
+    // Canonicals can target the hub directly. This reader sees the override,
+    // not the private canonical's surface_targets, so absence stays unknown.
+    return { source: { repository: REPO, main_sha: main, allowlisted, admitted: allowlisted ? true : null, bundle_slug_present: synced, content_equivalence: 'not-checked' }, existing: { runs, prs } };
 }
 export function decideHubReadiness(facts) {
     const decision = (state, reason, operation = null) => ({ state, reasons: [reason], operation });
@@ -281,8 +283,8 @@ export function decideHubReadiness(facts) {
         return decision('ambiguous', 'native-facts-unavailable');
     if (facts.source.bundle_slug_present)
         return decision('already-source-synced', 'current-main-source-present');
-    if (!facts.source.admitted)
-        return decision('needs-admission', 'current-main-admission-absent');
+    if (facts.source.admitted !== true)
+        return decision('ambiguous', 'canonical-targets-not-inspected');
     if (facts.existing.runs.some(r => ACTIVE.has(r.status)))
         return decision('existing-queued-running', 'global-sync-active');
     if (facts.existing.prs.length)

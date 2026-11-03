@@ -54,7 +54,7 @@ const workflow = await readFile(new URL('../.github/workflows/substrate-sync.yml
 function content(source) { const bytes = Buffer.from(source); return { type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64'), sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') }; }
 function compiler(slugs = [slug]) { return `export const HUB_ESSAY_ALLOWLIST: readonly string[] = ${JSON.stringify(slugs)};`; }
 function bundle(slugs = []) { return `export const THOUGHTS: Thought[] = ${JSON.stringify(slugs.map(slug => ({ title: 'Title', preview: 'Preview', date: '2026-11-02', category: 'Doctrine', slug, body: 'Body' })))};`; }
-function nativeFixture({ admitted = true, synced = false, runs = [], prs = [], mainAfter = head, compilerText, bundleText, workflowText = workflow, runCount = runs.length, workflowState = 'active' } = {}) {
+function nativeFixture({ allowlisted = true, synced = false, runs = [], prs = [], mainAfter = head, compilerText, bundleText, workflowText = workflow, runCount = runs.length, workflowState = 'active' } = {}) {
     const calls = [];
     let mainReads = 0;
     const read = async (path) => {
@@ -62,7 +62,7 @@ function nativeFixture({ admitted = true, synced = false, runs = [], prs = [], m
         if (path === `${prefix}/git/ref/heads/main`)
             return { ref: 'refs/heads/main', object: { type: 'commit', sha: ++mainReads === 1 ? head : mainAfter } };
         if (path === `${prefix}/contents/scripts/compileContent.ts?ref=${head}`)
-            return content(compilerText ?? compiler(admitted ? [slug] : []));
+            return content(compilerText ?? compiler(allowlisted ? [slug] : []));
         if (path === `${prefix}/contents/constants.generated.ts?ref=${head}`)
             return content(bundleText ?? bundle(synced ? [slug] : []));
         if (path === `${prefix}/contents/.github/workflows/substrate-sync.yml?ref=${head}`)
@@ -79,8 +79,8 @@ function nativeFixture({ admitted = true, synced = false, runs = [], prs = [], m
     };
     return { read, calls };
 }
-test('pinned current main distinguishes source sync and needed admission', async (t) => {
-    for (const [config, expected] of [[{ synced: true }, 'already-source-synced'], [{ admitted: false }, 'needs-admission']]) {
+test('pinned current main distinguishes source sync and unknown canonical admission', async (t) => {
+    for (const [config, expected] of [[{ synced: true }, 'already-source-synced'], [{ allowlisted: false }, 'ambiguous']]) {
         const native = nativeFixture(config);
         const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
         assert.equal(result.decision.state, expected);
@@ -140,7 +140,7 @@ test('grace waits until precise boundary then provides only one advisory identit
     assert.ok(native.calls.every(path => path.startsWith(prefix + '/') && !/dispatches|merge|comments/.test(path)));
 });
 test('native failures drift unsupported source workflow inventory and unknown state refuse', async (t) => {
-    const configs = [{ mainAfter: old }, { workflowState: 'disabled_manually' }, { compilerText: 'export const HUB_ESSAY_ALLOWLIST = [process.exit()];' }, { compilerText: `export const HUB_ESSAY_ALLOWLIST = ["${slug}"]; export const HUB_ESSAY_ALLOWLIST=[];` }, { workflowText: workflow.replace('ref: main', 'ref: older') }, { workflowText: workflow.replace('timezone: America/Los_Angeles', 'timezone: UTC') }, { runs: [run({ status: 'mystery' })] }, { runs: [run({ repository: { full_name: 'Else/repo' } })] }, { runs: [run(), run()] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'failure' })] }, { runs: [run()], runCount: 2 }, { prs: [pr(), pr({ number: 241 })] }, { admitted: false, synced: true }];
+    const configs = [{ mainAfter: old }, { workflowState: 'disabled_manually' }, { compilerText: 'export const HUB_ESSAY_ALLOWLIST = [process.exit()];' }, { compilerText: `export const HUB_ESSAY_ALLOWLIST = ["${slug}"]; export const HUB_ESSAY_ALLOWLIST=[];` }, { workflowText: workflow.replace('ref: main', 'ref: older') }, { workflowText: workflow.replace('timezone: America/Los_Angeles', 'timezone: UTC') }, { runs: [run({ status: 'mystery' })] }, { runs: [run({ repository: { full_name: 'Else/repo' } })] }, { runs: [run(), run()] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'failure' })] }, { runs: [run()], runCount: 2 }, { prs: [pr(), pr({ number: 241 })] }];
     for (const config of configs) {
         const native = nativeFixture(config);
         const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
@@ -244,7 +244,7 @@ test('bare observed and exact documented workflow path forms preserve all readin
             [{ runs: [run()] }, 'existing-queued-running'],
             [{ runs: [run({ head_branch: 'codex/other-ref', event: 'workflow_dispatch' })] }, 'existing-queued-running'],
             [{ runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, 'ambiguous'],
-            [{ admitted: false, runs: [run({ status: 'completed', conclusion: 'success' })] }, 'needs-admission'],
+            [{ allowlisted: false, runs: [run({ status: 'completed', conclusion: 'success' })] }, 'ambiguous'],
             [{ synced: true, runs: [run({ status: 'completed', conclusion: 'success' })] }, 'already-source-synced'],
             [{ runs: [run({ status: 'completed', conclusion: 'success' })] }, 'dispatch-if-authorized'],
         ];
@@ -285,4 +285,23 @@ test('Git-valid single-level slash and Unicode branch metadata remains supported
             assert.equal(result.decision.state, 'existing-queued-running', `${JSON.stringify(head_branch)} ${suffixed}`);
             assert.equal(result.existing.runs[0].head_branch, head_branch);
         }
+});
+test('bundle presence proves source sync without an allowlist override', async (t) => {
+    const native = nativeFixture({ allowlisted: false, synced: true });
+    const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+    assert.equal(result.decision.state, 'already-source-synced');
+    assert.equal(result.source.allowlisted, false);
+    assert.equal(result.source.admitted, null);
+    assert.equal(result.source.bundle_slug_present, true);
+    assert.equal(result.decision.operation, null);
+});
+test('missing override and missing bundle leave canonical surface targets uninspected', async (t) => {
+    const native = nativeFixture({ allowlisted: false });
+    const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+    assert.equal(result.decision.state, 'ambiguous');
+    assert.deepEqual(result.decision.reasons, ['canonical-targets-not-inspected']);
+    assert.equal(result.source.allowlisted, false);
+    assert.equal(result.source.admitted, null);
+    assert.equal(result.source.bundle_slug_present, false);
+    assert.equal(result.decision.operation, null);
 });

@@ -1,6 +1,6 @@
 ---
-verified: 2026-11-02
-review_after: 2026-12-02
+verified: 2026-11-03
+review_after: 2026-12-03
 topics: [newsletter, hub, github-actions, diagnostic]
 references:
   - specs/newsletter-hub-readiness-spec.md
@@ -71,19 +71,19 @@ scrubbed and never print native response bodies, environments or child commands.
 - `too-early`: fewer than 168 elapsed hours. Preserve the actual timestamp.
 - `waiting-for-scheduled-sync`: eligible, but nominal sync+grace has not elapsed;
   absence is not a missed-cron receipt.
-- `needs-admission`: current-main admission is absent. The existing admission PR
-  then separate content-sync PR trust split remains required.
 - `existing-queued-running`: inspect the same global run across all refs, including
   manual other-ref dispatches and old event SHAs whose queued job later checks out
   current main. Do not overlap it.
 - `existing-pr`: inspect that existing fixed-branch PR/head, even if it contains
   unrelated content. Its existence grants no merge authority.
-- `already-source-synced`: allowlisted slug exists in current-main generated
-  source. Exact copy, deployment and public reader delivery remain unverified.
+- `already-source-synced`: slug exists in current-main generated source, whether
+  an override or direct canonical surface target admitted it. Exact copy,
+  deployment and public reader delivery remain unverified.
 - `dispatch-if-authorized`: advisory operation identity only. The global dedupe
   key binds repository/workflow/main ref/main SHA, never edition. A later
   independently authorized executor must re-probe and reserve its own intent.
-- `ambiguous`: failed APIs, incomplete inventories, unknown states, moving main,
+- `ambiguous`: uninspected canonical targeting, failed APIs, incomplete inventories,
+  unknown states, moving main,
   unsupported source/workflow, inconsistent candidates or unexplained current-main
   terminal events at the current main SHA on any ref. Inspect existing IDs; do not manufacture empty inventories.
 
@@ -102,13 +102,20 @@ arbitrary prefixes, other files and mismatched suffixes refuse. This is format
 compatibility, not a production-outage repair. See the [official workflow-runs
 response schema](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10).
 
+The `source.allowlisted` boolean reports the hub override separately.
+`source.admitted` is true for that observed override or null when absent: direct
+canonical `surface_targets` are not read. Missing override plus missing bundle
+therefore holds with `canonical-targets-not-inspected`, never a false absence
+claim. `needs-admission` cannot be established from this CLI's current inputs and
+is not produced. The existing two-PR release process remains independently gated.
+
 ## Validation and native canary
 
 Implementation validation: the focused CLI seam covers precise E15 DST/E16
 boundaries, late publication, strict JSON/file safety, source data parsing,
 queued old-head work, unrelated PRs, main drift, scheduling grace, pagination,
 unknown states and global dedupe. `npm test` includes this file explicitly.
-November 2 source validation passed: 24 focused scenarios, 486 full-suite tests,
+Source validation through November 3 passed: 26 focused scenarios, 488 full-suite tests,
 21 built-output tests, typecheck, production-consumer build, whitespace and
 staged/range secret scans. Run `npx tsc --noEmit`, `npm test`, `npm run build`,
 `npm run test:built`, `git diff --check` and range/staged secret scans before

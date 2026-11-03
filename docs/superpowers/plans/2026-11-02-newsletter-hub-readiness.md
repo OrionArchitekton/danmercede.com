@@ -118,11 +118,13 @@ ambiguous; never rewrite it to suit the reader.
 ### Task 3: Pinned source facts and operation selection
 
 - [x] At the same CLI seam, RED/GREEN native main/compiler/bundle/workflow JSON
-  fixtures for `needs-admission` and `already-source-synced`. Add the test to
+  fixtures for uninspected canonical targeting and `already-source-synced`. Add the test to
   `package.json` now so ordinary `npm test` actually runs it.
 - [x] Implement only fixed GET reads and bounded literal-data extraction.
   Assert all remote source is treated as data and local generated files do not
-  change. Source-synced means allowlisted+slug present, not exact-copy/live proof.
+  change. Source-synced means bundle slug present regardless of admission path,
+  not exact-copy/live proof. Missing override alone cannot prove missing
+  admission: direct canonical `surface_targets` are not inspected; hold unknown.
 - [x] RED/GREEN final-main drift, unreadable/unsupported source/workflow contract,
   disabled workflow and malformed content envelopes as `ambiguous`.
 
@@ -133,7 +135,7 @@ ambiguous; never rewrite it to suit the reader.
 - [x] RED/GREEN exhausted/inconsistent pagination, unknown status, duplicate PR
   candidates, wrong branch/repository/event and native API failures. None may
   become empty inventory or an operation suggestion.
-- [x] RED/GREEN an eligible admitted missing edition, after nominal+grace, with
+- [x] RED/GREEN an eligible allowlisted missing edition, after nominal+grace, with
   complete empty inventories: `dispatch-if-authorized` with one structured
   candidate and no command execution. The dedupe key is workflow+main SHA,
   identical across two editions; it is not an exactly-once promise.

@@ -54,12 +54,15 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    `ambiguous`, not absent work. Never execute fetched source or a PR's code. Verify each decoded Git
    blob digest and require the reviewed normalized workflow-data fingerprint;
    any semantic workflow drift requires reviewed diagnostic requalification.
-4. **Admission and synchronization are separate.** An eligible essay absent from
-   the existing newsletter admission allowlist is `needs-admission`. This is not
-   approval to prepare or merge either PR. Allowlisted plus bundle slug presence
-   is `already-source-synced`, meaning source presence only; exact content
-   equivalence and public delivery are not established. Bundle presence without
-   expected newsletter admission is ambiguous. No generated bundle is rewritten.
+4. **Override membership is not the entire admission path.** Canonicals can
+   directly target `danmercede.com`; this reader does not inspect those private
+   `surface_targets`. Report `allowlisted` separately and `admitted:true` only
+   for an observed hub allowlist override, otherwise `admitted:null`. Bundle
+   slug presence is `already-source-synced` regardless of admission mechanism,
+   meaning source presence only; exact copy and public delivery stay unverified.
+   With neither override nor bundle presence, report `ambiguous` with reason
+   `canonical-targets-not-inspected`. These inputs cannot establish
+   `needs-admission`, so that state is not produced. No content is rewritten.
 5. **Existing global work wins over another catch-up.** A queued, requested,
    pending, waiting or in-progress run of the exact sync workflow across all refs is
    `existing-queued-running`. Its event SHA may be older than current main: the
@@ -71,7 +74,7 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    existing unrelated-content sync PR still owns that branch; inspect it rather
    than suggesting another dispatch. Duplicate/inconsistent candidates refuse.
 6. **Only an advisory operation identity.** When full supplied coverage is usable,
-   recovery is due, admission exists, the current bundle lacks the slug, complete
+   recovery is due, an allowlist override exists, the current bundle lacks the slug, complete
    inventories contain no active sync or existing content PR, and no unexplained
    terminal attempt at the current main SHA blocks the decision, report
    `dispatch-if-authorized`. The global dedupe identity is repository + workflow
@@ -142,8 +145,10 @@ Output envelope: `schema_version:1`, `kind:"newsletter-hub-readiness"`, `slug`,
   public URL and title, actual/capture/eligibility,
   nominal-sync/recovery-due instants, eligible flag, evidence reference/digest,
   missing coverage. Unknown facts remain null; estimates never replace them.
-- `source`: repository, main SHA, allowlist membership and bundle slug presence;
-  content equivalence remains `"not-checked"`.
+- `source`: repository, main SHA, `allowlisted` boolean, `admitted` true for the
+  observed override or null for uninspected canonical targeting, and bundle slug
+  presence. These facts grant no editorial/release authority; content equivalence
+  remains `"not-checked"`.
 - `existing`: bounded scrubbed run IDs/branches/statuses and PR numbers/head SHAs/target
   slug presence; raw source, result payloads, bodies and provider errors omitted.
 - `decision`: one scenario state, finite reason codes, optional structured
@@ -163,7 +168,7 @@ Use one CLI/native-reader seam: injected fixed-argv executor returning mocked
 native JSON, temporary observation files and explicit clock. A pure decision
 function consumes already validated facts. Gate unusable observations before any
 native calls, then `too-early`. With eligible observations, collection failures
-or inconsistent facts take `ambiguous`; otherwise source-synced, needs-admission,
+or inconsistent facts take `ambiguous`; otherwise source-synced, uninspected canonical targeting,
 existing global run, existing PR, waiting for nominal sync/grace, unexplained
 current-main terminal attempt, then advisory dispatch, in that order. Waiting is
 not absence proof. Native failures never become empty arrays.
