@@ -1,0 +1,8 @@
+{
+  "scope": "Read-only exact native check provenance; no API writes",
+  "files": {
+    "suite.json": "273a95eebe844cda1d18a85d9924e05c0ffef5d68c3010c29c893d271b4efc82",
+    "checks.json": "d8fcca14dad78fce1603a01b7e1b7e6a03aff9763ef6e150e0102b7089c0003e",
+    "run.json": "03636485083f06635829039a8c3cfd7f42259190ff77595edba49ddc7fafc872"
+  }
+}
