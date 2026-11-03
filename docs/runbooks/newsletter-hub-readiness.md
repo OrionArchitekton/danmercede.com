@@ -50,7 +50,9 @@ The fixed native adapter uses only `gh api --hostname github.com --method GET`
 for `OrionArchitekton/danmercede.com`. It requests no credential export. Each
 process is bounded to 10 seconds and 2 MiB stdout. Sources are pinned to current
 main, decoded up to 1 MiB and parsed as literal TypeScript/YAML data without
-execution. Current main is re-read after complete inventories. Run/PR inventories
+execution. Current main is re-read after complete inventories. Workflow runs are read across all refs: another ref
+can own repository-wide concurrency and the fixed PR branch. Validated branch
+metadata is reported; unusable branch metadata holds. Run/PR inventories
 are bounded to three pages of 100; truncation and native errors hold. Each decoded file must match its native Git blob digest. The exact reviewed
 workflow YAML data is fingerprinted independently of comments/key order; any
 semantic edit requires a reviewed diagnostic requalification. Unexpected workflow
@@ -71,8 +73,9 @@ scrubbed and never print native response bodies, environments or child commands.
   absence is not a missed-cron receipt.
 - `needs-admission`: current-main admission is absent. The existing admission PR
   then separate content-sync PR trust split remains required.
-- `existing-queued-running`: inspect the same global run, including old event
-  SHAs whose queued job later checks out current main. Do not overlap it.
+- `existing-queued-running`: inspect the same global run across all refs, including
+  manual other-ref dispatches and old event SHAs whose queued job later checks out
+  current main. Do not overlap it.
 - `existing-pr`: inspect that existing fixed-branch PR/head, even if it contains
   unrelated content. Its existence grants no merge authority.
 - `already-source-synced`: allowlisted slug exists in current-main generated
@@ -82,7 +85,7 @@ scrubbed and never print native response bodies, environments or child commands.
   independently authorized executor must re-probe and reserve its own intent.
 - `ambiguous`: failed APIs, incomplete inventories, unknown states, moving main,
   unsupported source/workflow, inconsistent candidates or unexplained current-main
-  terminal attempts. Inspect existing IDs; do not manufacture empty inventories.
+  terminal main-branch events at the current main SHA. Inspect existing IDs; do not manufacture empty inventories.
 
 ## Validation and native canary
 
@@ -90,7 +93,7 @@ Implementation validation: the focused CLI seam covers precise E15 DST/E16
 boundaries, late publication, strict JSON/file safety, source data parsing,
 queued old-head work, unrelated PRs, main drift, scheduling grace, pagination,
 unknown states and global dedupe. `npm test` includes this file explicitly.
-November 2 source validation passed: 18 focused scenarios, 480 full-suite tests,
+November 2 source validation passed: 20 focused scenarios, 482 full-suite tests,
 21 built-output tests, typecheck, production-consumer build, whitespace and
 staged/range secret scans. Run `npx tsc --noEmit`, `npm test`, `npm run build`,
 `npm run test:built`, `git diff --check` and range/staged secret scans before

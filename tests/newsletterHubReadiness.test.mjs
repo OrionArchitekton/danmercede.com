@@ -69,7 +69,7 @@ function nativeFixture({ admitted = true, synced = false, runs = [], prs = [], m
             return content(workflowText);
         if (path === `${prefix}/actions/workflows/substrate-sync.yml`)
             return { id: 292432866, path: '.github/workflows/substrate-sync.yml', state: workflowState };
-        if (path === `${prefix}/actions/workflows/substrate-sync.yml/runs?branch=main&per_page=100&page=1`)
+        if (path === `${prefix}/actions/workflows/substrate-sync.yml/runs?per_page=100&page=1`)
             return { total_count: runCount, workflow_runs: runs };
         if (path === `${prefix}/pulls?state=open&base=main&head=OrionArchitekton%3Acodex%2Fsubstrate-sync&per_page=100&page=1`)
             return prs;
@@ -100,6 +100,26 @@ test('global queued old-head sync and unrelated existing PR own the work', async
         if (state === 'existing-pr')
             assert.equal(result.existing.prs[0].target_slug_present, false);
     }
+});
+test('manual other-ref sync occupies repository-wide concurrency and fixed PR branch', async (t) => {
+    const n = nativeFixture();
+    const read = async (path) => path.endsWith('/runs?per_page=100&page=1') ? { total_count: 1, workflow_runs: [run({ head_branch: 'codex/other-dispatch', event: 'workflow_dispatch' })] } : n.read(path);
+    const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: read });
+    assert.equal(result.decision.state, 'existing-queued-running');
+    assert.equal(result.existing.runs[0].head_branch, 'codex/other-dispatch');
+    assert.equal(result.decision.operation, null);
+});
+test('other-ref inventory is bounded and terminal main reasoning remains branch-specific', async (t) => {
+    for (const bad of [null, '', 'bad\nbranch']) {
+        const n = nativeFixture({ runs: [run({ head_branch: bad, event: 'workflow_dispatch' })] });
+        const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: n.read });
+        assert.equal(result.decision.state, 'ambiguous');
+        assert.equal(result.decision.operation, null);
+    }
+    const n = nativeFixture({ runs: [run({ head_branch: 'codex/finished', head_sha: head, event: 'workflow_dispatch', status: 'completed', conclusion: 'success' })] });
+    const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: n.read });
+    assert.equal(result.decision.state, 'dispatch-if-authorized');
+    assert.equal(result.existing.runs[0].head_branch, 'codex/finished');
 });
 test('grace waits until precise boundary then provides only one advisory identity', async (t) => {
     for (const now of ['2026-11-02T14:10:00Z', '2026-11-02T16:10:00Z', '2026-11-02T16:24:59Z']) {
@@ -138,7 +158,7 @@ test('same main gives a global dedupe key across editions', async (t) => {
 test('bounded complete pagination retains global work on later pages', async (t) => {
     const historical = Array.from({ length: 100 }, (_, i) => run({ id: i + 1, status: 'completed', conclusion: 'success' }));
     const native = nativeFixture({ runs: historical, runCount: 101 });
-    const read = async (path) => path.endsWith('/runs?branch=main&per_page=100&page=2') ? { total_count: 101, workflow_runs: [run({ id: 101 })] } : native.read(path);
+    const read = async (path) => path.endsWith('/runs?per_page=100&page=2') ? { total_count: 101, workflow_runs: [run({ id: 101, head_branch: 'codex/later-page', event: 'workflow_dispatch' })] } : native.read(path);
     const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: read });
     assert.equal(result.decision.state, 'existing-queued-running');
     assert.equal(result.existing.runs.length, 101);
@@ -201,9 +221,9 @@ test('actual committed multiline bundle is parsed as inert body data', async (t)
     const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
     assert.equal(result.decision.state, 'already-source-synced');
 });
-test('whitespace-only matched titles remain unusable supplied observations', async t=>{
-    const {result}=await invoke(t,{snapshot:envelope([record({title:' ',observed_title:' '})])});
-    assert.equal(result.decision.state,'unverified');
+test('whitespace-only matched titles remain unusable supplied observations', async (t) => {
+    const { result } = await invoke(t, { snapshot: envelope([record({ title: ' ', observed_title: ' ' })]) });
+    assert.equal(result.decision.state, 'unverified');
 });
 test('changed known-name workflow step and mismatched source blob cannot authorize a suggestion', async (t) => {
     const n = nativeFixture({ workflowText: workflow.replace('node scripts/optimizeDiagrams.mjs --apply', 'git checkout older') });

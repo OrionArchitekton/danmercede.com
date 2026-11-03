@@ -59,7 +59,7 @@ No user-controlled API route, host, executable or repository option exists.
 3. `/repos/{repo}/contents/constants.generated.ts?ref={mainSha}`.
 4. `/repos/{repo}/contents/.github/workflows/substrate-sync.yml?ref={mainSha}`.
 5. `/repos/{repo}/actions/workflows/substrate-sync.yml`.
-6. `/repos/{repo}/actions/workflows/substrate-sync.yml/runs?branch=main&per_page=100&page=N`.
+6. `/repos/{repo}/actions/workflows/substrate-sync.yml/runs?per_page=100&page=N`.
 7. `/repos/{repo}/pulls?state=open&base=main&head=OrionArchitekton%3Acodex%2Fsubstrate-sync&per_page=100&page=N`.
 8. For a unique matching same-repo content PR, read its pinned
    `constants.generated.ts` as data at validated head SHA; record slug presence,
@@ -69,8 +69,12 @@ Bound each process to 10 seconds and 2 MiB stdout; bound content files to 1 MiB
 before parsing, snapshot nesting to a conservative finite depth, and inventories
 to three pages of 100 rows each. Exhausted pagination/total-count inconsistencies
 are ambiguous, never empty. There is no polling loop. Match workflow path,
-repository, branch and admitted schedule/manual events, not a display job title.
-Recognize active statuses queued/requested/pending/waiting/in_progress; completed
+repository, validated branch metadata and admitted schedule/manual events, not a display job title.
+Inventory every workflow ref: a manual other-ref run can share the repository
+concurrency group and fixed PR branch. Validate/report branch metadata, hold
+active runs across refs, and keep terminal current-main event reasoning limited
+to main-branch events at that SHA. Recognize active statuses
+queued/requested/pending/waiting/in_progress; completed
 requires a recognized conclusion. Unknown or contradictory statuses refuse.
 
 Read remote compiler/bundle as literal data using the already installed

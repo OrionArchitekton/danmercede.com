@@ -54,10 +54,11 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    equivalence and public delivery are not established. Bundle presence without
    expected newsletter admission is ambiguous. No generated bundle is rewritten.
 5. **Existing global work wins over another catch-up.** A queued, requested,
-   pending, waiting or in-progress run of the exact sync workflow on `main` is
+   pending, waiting or in-progress run of the exact sync workflow across all refs is
    `existing-queued-running`. Its event SHA may be older than current main: the
    queued job checks out main after acquiring the shared workflow concurrency
-   group. Hold that global workflow across all editions. One open same-repository
+   group. Manual dispatches from another ref may share that same group and fixed
+   content-PR branch; their active runs conservatively hold the workflow too. Hold that global workflow across all editions. One open same-repository
    content PR on the fixed sync branch is `existing-pr`; report its number/head
    and whether its pinned generated bundle contains the requested slug. An
    existing unrelated-content sync PR still owns that branch; inspect it rather
@@ -68,7 +69,7 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    terminal attempt at current main blocks the decision, report
    `dispatch-if-authorized`. The global dedupe identity is repository + workflow
    + main ref + observed main SHA, never edition/revision-specific. A failed or
-   completed current-main attempt with an unexplained missing result is
+   completed main-branch event at the current main SHA with an unexplained missing result is
    `ambiguous` and names that existing attempt for inspection. A successful CI
    run alone neither proves content sync nor public delivery. An absent run row
    cannot prove a delayed scheduled trigger will not arrive.
@@ -136,7 +137,7 @@ Output envelope: `schema_version:1`, `kind:"newsletter-hub-readiness"`, `slug`,
   missing coverage. Unknown facts remain null; estimates never replace them.
 - `source`: repository, main SHA, allowlist membership and bundle slug presence;
   content equivalence remains `"not-checked"`.
-- `existing`: bounded scrubbed run IDs/statuses and PR numbers/head SHAs/target
+- `existing`: bounded scrubbed run IDs/branches/statuses and PR numbers/head SHAs/target
   slug presence; raw source, result payloads, bodies and provider errors omitted.
 - `decision`: one scenario state, finite reason codes, optional structured
   operation `{kind:"workflow-dispatch", repository, workflow_path,

@@ -215,7 +215,9 @@ export async function collectHubFacts(readGitHub, { slug }) {
     const runs = [], runIds = new Set();
     let total;
     for (let page = 1; page <= 3; page++) {
-        const data = await readGitHub(`${prefix}/actions/workflows/substrate-sync.yml/runs?branch=main&per_page=100&page=${page}`);
+        // Manual dispatches on other refs can share the same repository-wide
+        // concurrency group and fixed PR branch. Never filter them out.
+        const data = await readGitHub(`${prefix}/actions/workflows/substrate-sync.yml/runs?per_page=100&page=${page}`);
         requireValue(Number.isSafeInteger(data?.total_count) && data.total_count >= 0 && data.total_count <= 300 && Array.isArray(data.workflow_runs) && data.workflow_runs.length <= 100);
         if (total === undefined)
             total = data.total_count;
@@ -224,9 +226,10 @@ export async function collectHubFacts(readGitHub, { slug }) {
             positive(row.id);
             requireValue(!runIds.has(row.id));
             runIds.add(row.id);
-            requireValue(row.workflow_id === workflow.id && row.path === WORKFLOW && row.head_branch === 'main' && row.repository?.full_name === REPO && SHA.test(row.head_sha) && ['schedule', 'workflow_dispatch'].includes(row.event));
+            text(row.head_branch, 255);
+            requireValue(row.workflow_id === workflow.id && row.path === WORKFLOW && row.repository?.full_name === REPO && SHA.test(row.head_sha) && ['schedule', 'workflow_dispatch'].includes(row.event));
             requireValue((ACTIVE.has(row.status) && row.conclusion === null) || (row.status === 'completed' && CONCLUSIONS.has(row.conclusion)));
-            runs.push({ id: row.id, head_sha: row.head_sha, status: row.status, conclusion: row.conclusion });
+            runs.push({ id: row.id, head_branch: row.head_branch, head_sha: row.head_sha, status: row.status, conclusion: row.conclusion });
         }
         requireValue(runs.length <= total);
         if (runs.length === total)
@@ -273,7 +276,7 @@ export function decideHubReadiness(facts) {
         return decision('existing-pr', 'fixed-sync-branch-owned');
     if (Date.parse(facts.now) < Date.parse(facts.publication.recovery_due_at))
         return decision('waiting-for-scheduled-sync', 'nominal-sync-grace-pending');
-    if (facts.existing.runs.some(r => r.head_sha === facts.source.main_sha))
+    if (facts.existing.runs.some(r => r.head_branch === 'main' && r.head_sha === facts.source.main_sha))
         return decision('ambiguous', 'current-main-terminal-attempt-needs-inspection');
     return decision('dispatch-if-authorized', 'eligible-admitted-missing-no-visible-work', { kind: 'workflow-dispatch', repository: REPO, workflow_path: WORKFLOW, ref: 'refs/heads/main', observed_main_sha: facts.source.main_sha, dedupe_key: `${REPO}:${WORKFLOW}:refs/heads/main:${facts.source.main_sha}` });
 }
