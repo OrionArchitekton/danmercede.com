@@ -2,7 +2,7 @@
 title: "'Done' Needs a Receipt: Four Checks Before You Believe an Agent Finished"
 slug: done-needs-a-receipt
 date: 2026-10-19
-reviewed: 2026-10-19
+reviewed: 2026-11-02
 youtube: 3KYZrGal5To
 category: Agent Engineering
 description: "When an agent says deployed, armed, fixed or verified, that is a claim, not evidence. Four MIT-licensed skills from orion-skills turn each claim into a receipt: output from the system itself, captured after the change, that would read differently if the claim were false."
@@ -56,6 +56,23 @@ git diff main...HEAD -- tests/ | grep -nE '^\+.*(skip|xfail|\.only\()'
 The three dots matter. `main...HEAD` compares the branch with the point where it left `main`, so a test added on `main` since then doesn't show up as "deleted on this branch".
 
 And the runner's collected count is part of the receipt. If `main` collects 212 tests and the branch collects 211, the word "green" leaves out the one that matters.
+
+## Choose the completion boundary before the work starts
+
+Make this sentence specific: **This task is complete when someone can observe the requested result at the place it will be used.** The boundary depends on the request.
+
+| Requested result | Where to check it | What that does not establish |
+|---|---|---|
+| A private draft | The readable document | Publication or delivery to another person |
+| A source repair | The requested revision and its corrected behavior | Adoption by a running service |
+| A deployed repair | The running version and the real user path | Every future case or delivery |
+| A delivered message | The recipient outcome required by the task | Receipt merely because a queue accepted it |
+
+A draft request does not require publication. A source change does not silently authorize deployment. A deployment request should not end at a successful build. Choose the boundary that matches the authority and the outcome actually requested.
+
+Bind the evidence to the change: include the relevant revision or artifact identifier, environment, observation time and case exercised. Exclude sensitive values. A passing check from an older revision or a screenshot from a preview environment answers a different question from whether the current production change works.
+
+Keep the check proportionate. One successful delivery proves that case at that time; it does not establish that every future delivery will succeed. Once the requested outcome is observed, report that result and its practical limits.
 
 ## Why isn't green CI and a healthy container proof of "deployed"?
 
@@ -232,3 +249,17 @@ So three limits are worth stating plainly.
 **Proof has a cost, so scale it to the blast radius.** A local refactor needs the test count and the test-file diff, not three deploy proofs. A production cutover needs all three, for every service it touched. Each skill's "when not to use" note keeps it to its own claim (`prove-deploy-is-live` is for after a deploy, not for a local change), so the heavy proofs only show up where the claim calls for them.
 
 The words I trust least in an agent's final message are done, live and verified. They still show up, and now each one arrives with the command that earned it, or it says unproven and names what's missing.
+
+## When the final check depends on a future event
+
+Sometimes the repaired version is running but the next ordinary event has not happened. Say both things plainly. For example:
+
+> The repaired collector is installed, and its requested native reads succeeded. The normal scheduled batch has not run yet. Observe the next batch before claiming scheduled adoption.
+
+That is an illustrative reporting pattern, not a benchmark result. Name the next observation point. Do not label an unfinished check as a defect, or create a customer message or business record just to make the status look complete.
+
+Use this instruction when asking an agent for its completion note:
+
+> State the result I requested. Describe what changed. Link the evidence for that result, including the revision and environment where relevant. State what remains unverified. If a check is blocked or waiting for an event, name the next observation or exact decision required. Keep publication, sending, deployment and other outward actions within the authority already given.
+
+The answer should let you accept the result, check one remaining fact, or resolve a concrete blocker. A prepared artifact is useful progress. Close the task when the evidence establishes the requested outcome.
