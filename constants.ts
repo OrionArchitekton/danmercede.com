@@ -722,7 +722,7 @@ export const WORKS: Work[] = [
   {
     title: 'orion-skills',
     description:
-      'An open collection of first-party Claude Code skills, structural read-only mode, scope guarding, ship discipline, pre-PR checks, incident-as-code, learning capture, goal-prompt authoring, and pre-compact handoffs, extracted from production operator workflows.',
+      'A curated collection of Orion-authored and adapted agent workflow skills: read-only mode, scope guarding, completion checks, incident documentation and session handoffs. Follow each skill’s source, notices and documented host support.',
     category: 'Open Source',
     repo: 'https://github.com/OrionArchitekton/orion-skills',
     link: 'https://www.danmercede.com/works/orion-skills/',
