@@ -109,7 +109,7 @@ test('manual other-ref sync occupies repository-wide concurrency and fixed PR br
     assert.equal(result.existing.runs[0].head_branch, 'codex/other-dispatch');
     assert.equal(result.decision.operation, null);
 });
-test('other-ref inventory is bounded and terminal main reasoning remains branch-specific', async (t) => {
+test('other-ref inventory is bounded and same-commit terminal attempts hold', async (t) => {
     for (const bad of [null, '', 'bad\nbranch']) {
         const n = nativeFixture({ runs: [run({ head_branch: bad, event: 'workflow_dispatch' })] });
         const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: n.read });
@@ -118,8 +118,12 @@ test('other-ref inventory is bounded and terminal main reasoning remains branch-
     }
     const n = nativeFixture({ runs: [run({ head_branch: 'codex/finished', head_sha: head, event: 'workflow_dispatch', status: 'completed', conclusion: 'success' })] });
     const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: n.read });
-    assert.equal(result.decision.state, 'dispatch-if-authorized');
+    assert.equal(result.decision.state, 'ambiguous');
+    assert.equal(result.decision.operation, null);
     assert.equal(result.existing.runs[0].head_branch, 'codex/finished');
+    const older = nativeFixture({ runs: [run({ head_branch: 'codex/finished-older', head_sha: old, event: 'workflow_dispatch', status: 'completed', conclusion: 'success' })] });
+    const { result: olderResult } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: older.read });
+    assert.equal(olderResult.decision.state, 'dispatch-if-authorized');
 });
 test('grace waits until precise boundary then provides only one advisory identity', async (t) => {
     for (const now of ['2026-11-02T14:10:00Z', '2026-11-02T16:10:00Z', '2026-11-02T16:24:59Z']) {

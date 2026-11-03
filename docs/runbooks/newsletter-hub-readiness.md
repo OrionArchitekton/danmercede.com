@@ -85,7 +85,7 @@ scrubbed and never print native response bodies, environments or child commands.
   independently authorized executor must re-probe and reserve its own intent.
 - `ambiguous`: failed APIs, incomplete inventories, unknown states, moving main,
   unsupported source/workflow, inconsistent candidates or unexplained current-main
-  terminal main-branch events at the current main SHA. Inspect existing IDs; do not manufacture empty inventories.
+  terminal events at the current main SHA on any ref. Inspect existing IDs; do not manufacture empty inventories.
 
 ## Validation and native canary
 

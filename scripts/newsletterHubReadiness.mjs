@@ -276,7 +276,7 @@ export function decideHubReadiness(facts) {
         return decision('existing-pr', 'fixed-sync-branch-owned');
     if (Date.parse(facts.now) < Date.parse(facts.publication.recovery_due_at))
         return decision('waiting-for-scheduled-sync', 'nominal-sync-grace-pending');
-    if (facts.existing.runs.some(r => r.head_branch === 'main' && r.head_sha === facts.source.main_sha))
+    if (facts.existing.runs.some(r => r.head_sha === facts.source.main_sha))
         return decision('ambiguous', 'current-main-terminal-attempt-needs-inspection');
     return decision('dispatch-if-authorized', 'eligible-admitted-missing-no-visible-work', { kind: 'workflow-dispatch', repository: REPO, workflow_path: WORKFLOW, ref: 'refs/heads/main', observed_main_sha: facts.source.main_sha, dedupe_key: `${REPO}:${WORKFLOW}:refs/heads/main:${facts.source.main_sha}` });
 }

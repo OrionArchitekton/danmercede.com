@@ -72,8 +72,8 @@ are ambiguous, never empty. There is no polling loop. Match workflow path,
 repository, validated branch metadata and admitted schedule/manual events, not a display job title.
 Inventory every workflow ref: a manual other-ref run can share the repository
 concurrency group and fixed PR branch. Validate/report branch metadata, hold
-active runs across refs, and keep terminal current-main event reasoning limited
-to main-branch events at that SHA. Recognize active statuses
+active runs across refs. Terminal events at the current main SHA also hold
+across refs: they used the same reviewed workflow commit and shared output path. Recognize active statuses
 queued/requested/pending/waiting/in_progress; completed
 requires a recognized conclusion. Unknown or contradictory statuses refuse.
 

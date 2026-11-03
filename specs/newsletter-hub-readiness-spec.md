@@ -66,11 +66,11 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
 6. **Only an advisory operation identity.** When full supplied coverage is usable,
    recovery is due, admission exists, the current bundle lacks the slug, complete
    inventories contain no active sync or existing content PR, and no unexplained
-   terminal attempt at current main blocks the decision, report
+   terminal attempt at the current main SHA blocks the decision, report
    `dispatch-if-authorized`. The global dedupe identity is repository + workflow
    + main ref + observed main SHA, never edition/revision-specific. A failed or
-   completed main-branch event at the current main SHA with an unexplained missing result is
-   `ambiguous` and names that existing attempt for inspection. A successful CI
+   completed attempt at the current main SHA on any ref, with an unexplained
+   missing result, is `ambiguous` and names that attempt for inspection. A successful CI
    run alone neither proves content sync nor public delivery. An absent run row
    cannot prove a delayed scheduled trigger will not arrive.
 7. **Read-only, bounded, independently consumable.** All native commands are fixed
