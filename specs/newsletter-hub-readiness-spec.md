@@ -44,7 +44,9 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    SHA, and inspect native workflow/run/open content-PR inventories. Re-read main
    after collection. A changed main, failed/truncated read, unknown status, unsafe
    source shape, disabled/unexpected workflow or inconsistent inventory is
-   `ambiguous`, not absent work. Never execute fetched source or a PR's code.
+   `ambiguous`, not absent work. Never execute fetched source or a PR's code. Verify each decoded Git
+   blob digest and require the reviewed normalized workflow-data fingerprint;
+   any semantic workflow drift requires reviewed diagnostic requalification.
 4. **Admission and synchronization are separate.** An eligible essay absent from
    the existing newsletter admission allowlist is `needs-admission`. This is not
    approval to prepare or merge either PR. Allowlisted plus bundle slug presence
@@ -94,7 +96,7 @@ node scripts/newsletterHubReadiness.mjs \
 All five arguments are required. `release-week` is an explicit Monday in Pacific
 calendar time and must equal the selected observation's `hub_release_week`.
 Strict instant inputs require seconds and an explicit `Z`/numeric offset;
-invalid calendar components/offsets, unknown `-00:00`, and arithmetic overflow
+invalid calendar components/offsets, `-00:00` outside the admitted ISO input profile, and arithmetic overflow
 refuse. The diagnostic computes the Pacific nominal instant; it never changes a
 cron. E15: actual `2026-10-26T14:08:08Z`, eligible
 `2026-11-02T14:08:08Z`, nominal `2026-11-02T16:10:00Z`, recovery due with 15-minute
@@ -109,8 +111,13 @@ Input envelope: `schema_version:1`, `kind:"newsletter-publication-coverage"`,
 - `slug`, `title`, `observed_title`, `hub_release_week`, `native_id`, `public_url`;
 - `package_sha256`, `published_at`, `observed_at`, `evidence_ref`, `evidence_sha256`;
 - `coverage`, a unique string array containing `identity`, `publication_time`,
-  `title`, `body`, `headings`, `literal_identifiers`, `anchor`, `cover`, `caption`,
+  `title`, `body`, `headings`, `anchor`, `cover`, `caption`,
   `commentary`, `cta`.
+
+This is the existing journal FULL_PUBLIC vocabulary. `body` includes exact literal
+identifier text; LinkedIn inline-code font loss is not a separate coverage item.
+The snapshot producer must attest that full comparison, rather than translating
+identity/time projection coverage into body verification.
 
 Full snapshot coverage is explicitly supplied, never independently authenticated
 by this reader. Publication must be no later than capture, and capture no later
@@ -123,7 +130,8 @@ Output envelope: `schema_version:1`, `kind:"newsletter-hub-readiness"`, `slug`,
 `now`, `release_week`, `sync_grace_minutes`, `publication`, `source`, `existing`,
 `decision`, `authority_granted:false`, `public_delivery:"unknown"`.
 
-- `publication`: supplied-snapshot status/provenance, actual/capture/eligibility,
+- `publication`: supplied-snapshot status/provenance, native identity, canonical
+  public URL and title, actual/capture/eligibility,
   nominal-sync/recovery-due instants, eligible flag, evidence reference/digest,
   missing coverage. Unknown facts remain null; estimates never replace them.
 - `source`: repository, main SHA, allowlist membership and bundle slug presence;

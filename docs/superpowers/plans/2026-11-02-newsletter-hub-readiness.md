@@ -87,59 +87,59 @@ ambiguous; never rewrite it to suit the reader.
 
 ### Task 1: Supplied publication gate through the CLI
 
-- [ ] Add one CLI test with a private complete observation and injected now;
+- [x] Add one CLI test with a private complete observation and injected now;
   assert `too-early` one second before actual+168h and no native calls.
-- [ ] Run `node --test --test-name-pattern='publication gate' tests/newsletterHubReadiness.test.mjs`;
+- [x] Run `node --test --test-name-pattern='publication gate' tests/newsletterHubReadiness.test.mjs`;
   capture deterministic RED, then implement just bounded file/schema/time parsing
   and the minimal CLI path. Repeat until GREEN; no network in tests.
-- [ ] Add separate RED/GREEN cases for exact boundary, E15 DST, E16 actual time,
+- [x] Add separate RED/GREEN cases for exact boundary, E15 DST, E16 actual time,
   partial/identity-time-only snapshot, title mismatch, duplicate keys/IDs, unsafe
   files and timestamp/offset/overflow refusal. Snapshot assertions remain labelled
   supplied, with authority false and public delivery unknown.
 
 ### Task 2: Bound nominal sync/grace without rewriting actual time
 
-- [ ] RED/GREEN a selected record bound to explicit intended hub-release Monday;
+- [x] RED/GREEN a selected record bound to explicit intended hub-release Monday;
   derive that day's 08:10 America/Los_Angeles instant and explicit 1–60 minute
   grace. Assert recovery due is the later of actual+168h and nominal+grace.
-- [ ] Prove a 07:05 eligibility instant yields `waiting-for-scheduled-sync` at
+- [x] Prove a 07:05 eligibility instant yields `waiting-for-scheduled-sync` at
   07:10 and 08:10, still waits one second before grace expires, and can advance
   at the precise grace boundary. Prove late actual eligibility wins over grace.
-- [ ] Keep one-time UTC/Pacific conversion internal and test both DST offsets;
+- [x] Keep one-time UTC/Pacific conversion internal and test both DST offsets;
   reject invalid Monday/week binding/grace. Never edit scheduler configuration.
 
 ### Task 3: Pinned source facts and operation selection
 
-- [ ] At the same CLI seam, RED/GREEN native main/compiler/bundle/workflow JSON
+- [x] At the same CLI seam, RED/GREEN native main/compiler/bundle/workflow JSON
   fixtures for `needs-admission` and `already-source-synced`. Add the test to
   `package.json` now so ordinary `npm test` actually runs it.
-- [ ] Implement only fixed GET reads and bounded literal-data extraction.
+- [x] Implement only fixed GET reads and bounded literal-data extraction.
   Assert all remote source is treated as data and local generated files do not
   change. Source-synced means allowlisted+slug present, not exact-copy/live proof.
-- [ ] RED/GREEN final-main drift, unreadable/unsupported source/workflow contract,
+- [x] RED/GREEN final-main drift, unreadable/unsupported source/workflow contract,
   disabled workflow and malformed content envelopes as `ambiguous`.
 
 ### Task 4: Existing-work dedupe and advisory catch-up
 
-- [ ] RED/GREEN an active old-head sync that blocks new work across editions,
+- [x] RED/GREEN an active old-head sync that blocks new work across editions,
   one existing fixed-branch PR, and a PR that carries only unrelated content.
-- [ ] RED/GREEN exhausted/inconsistent pagination, unknown status, duplicate PR
+- [x] RED/GREEN exhausted/inconsistent pagination, unknown status, duplicate PR
   candidates, wrong branch/repository/event and native API failures. None may
   become empty inventory or an operation suggestion.
-- [ ] RED/GREEN an eligible admitted missing edition, after nominal+grace, with
+- [x] RED/GREEN an eligible admitted missing edition, after nominal+grace, with
   complete empty inventories: `dispatch-if-authorized` with one structured
   candidate and no command execution. The dedupe key is workflow+main SHA,
   identical across two editions; it is not an exactly-once promise.
-- [ ] RED/GREEN failed/completed current-main attempts with unexplained gaps as
+- [x] RED/GREEN failed/completed current-main attempts with unexplained gaps as
   `ambiguous`. A completed old-head run never substitutes for current bundle
   or public proof. Repeated CLI calls perform reads only; no state framework.
 
 ### Task 5: Consumer canary and delivery gates
 
-- [ ] Finish the runbook with bounded actual CLI invocation, status meanings,
+- [x] Finish the runbook with bounded actual CLI invocation, status meanings,
   provenance limits and source-only rollback. Independent review checks the
   actual diff against the root spec and the read-only/no-authority boundary.
-- [ ] Run `npm ci`, `npx tsc --noEmit`, `npm test`, `npm run build`,
+- [x] Run `npm ci`, `npx tsc --noEmit`, `npm test`, `npm run build`,
   `npm run test:built`, `git diff --check`, and staged/range secret scans;
   capture exits. Keep build-generated baseline content unchanged and inspect
   any unintended local regeneration before commit.
