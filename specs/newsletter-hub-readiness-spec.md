@@ -44,7 +44,11 @@ insufficient. The diagnostic never visits LinkedIn or reads approval stores.
    SHA, and inspect native workflow/run/open content-PR inventories. Re-read main
    after collection. A run is bound by native workflow ID, repository and either
    the exact workflow path or that exact path suffixed by `@` and its independently
-   validated branch. Different paths, prefixes and mismatched/empty suffixes refuse.
+   validated branch. Branch metadata is literal, valid UTF-8 and at most 255
+   UTF-16 code units, checked with Git branch-name rules without checkout
+   shorthand expansion. Single-level names (including `@`) and valid Unicode
+   remain supported; reserved `HEAD`, leading dash and malformed ref syntax
+   refuse. Different paths, prefixes and mismatched/empty suffixes refuse.
    A changed main, failed/truncated read, unknown status, unsafe
    source shape, disabled/unexpected workflow or inconsistent inventory is
    `ambiguous`, not absent work. Never execute fetched source or a PR's code. Verify each decoded Git

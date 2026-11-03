@@ -265,3 +265,24 @@ test('workflow path suffix must exactly match the independently validated branch
         assert.equal(result.decision.operation, null);
     }
 });
+test('malformed Git branch metadata holds for bare and exact-suffixed run paths', async (t) => {
+    const invalid = ['not/a/git/ref..', 'with@{reflog', 'bad branch', 'bad\tbranch', 'bad\x7fbranch', 'bad~branch', 'bad^branch', 'bad:branch', 'bad?branch', 'bad*branch', 'bad[branch', 'bad\\branch', '/leading', 'trailing/', 'double//slash', '.hidden', 'nested/.hidden', 'nested/file.lock', 'ends.', '-leading', 'HEAD', 'nested/file.lock/child', 'x'.repeat(256), '\ud800'];
+    for (const head_branch of invalid)
+        for (const suffixed of [false, true]) {
+            const path = suffixed ? `.github/workflows/substrate-sync.yml@${head_branch}` : '.github/workflows/substrate-sync.yml';
+            const native = nativeFixture({ runs: [run({ head_branch, path, event: 'workflow_dispatch', status: 'completed', conclusion: 'success' })] });
+            const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+            assert.equal(result.decision.state, 'ambiguous', `${JSON.stringify(head_branch)} ${suffixed}`);
+            assert.equal(result.decision.operation, null);
+        }
+});
+test('Git-valid single-level slash and Unicode branch metadata remains supported', async (t) => {
+    for (const head_branch of ['main', 'feature/worker-one', 'valid-名字/épisode', 'foo./bar', 'foo/-bar', 'foo/@', '@', 'feature/🚀', '\u00a0'])
+        for (const suffixed of [false, true]) {
+            const path = suffixed ? `.github/workflows/substrate-sync.yml@${head_branch}` : '.github/workflows/substrate-sync.yml';
+            const native = nativeFixture({ runs: [run({ head_branch, path, event: 'workflow_dispatch' })] });
+            const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
+            assert.equal(result.decision.state, 'existing-queued-running', `${JSON.stringify(head_branch)} ${suffixed}`);
+            assert.equal(result.existing.runs[0].head_branch, head_branch);
+        }
+});

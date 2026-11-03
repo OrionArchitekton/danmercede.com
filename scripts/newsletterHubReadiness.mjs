@@ -202,6 +202,16 @@ async function nativeRead(path) {
 function strictNativeJson(raw) { const value = JSON.parse(raw); yaml.load(raw, { schema: yaml.JSON_SCHEMA }); return value; }
 function mainSha(value) { requireValue(value?.ref === 'refs/heads/main' && value.object?.type === 'commit' && SHA.test(value.object.sha)); return value.object.sha; }
 function positive(value) { requireValue(Number.isSafeInteger(value) && value > 0); return value; }
+function branchName(value) {
+    // Literal native branch metadata, never Git's @{-n} checkout shorthand.
+    // Git --branch permits single-level names (including @) and valid Unicode;
+    // it rejects the reserved HEAD name and leading dash in addition to ref rules.
+    requireValue(typeof value === 'string' && value.length > 0 && value.length <= 255 && Buffer.from(value, 'utf8').toString('utf8') === value);
+    requireValue(value !== 'HEAD' && !value.startsWith('-') && !value.endsWith('.') && !value.includes('..') && !value.includes('@{'));
+    requireValue(!/[\u0000-\u0020\u007f]/u.test(value) && !Array.from('~^:?*[\\').some(character => value.includes(character)));
+    requireValue(value.split('/').every(component => component.length > 0 && !component.startsWith('.') && !component.endsWith('.lock')));
+    return value;
+}
 const ACTIVE = new Set(['queued', 'requested', 'pending', 'waiting', 'in_progress']);
 const CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'neutral', 'stale', 'startup_failure']);
 export async function collectHubFacts(readGitHub, { slug }) {
@@ -226,7 +236,7 @@ export async function collectHubFacts(readGitHub, { slug }) {
             positive(row.id);
             requireValue(!runIds.has(row.id));
             runIds.add(row.id);
-            text(row.head_branch, 255);
+            branchName(row.head_branch);
             // Native responses observed here use the bare path; GitHub's
             // documented response also permits that exact path suffixed by ref.
             const pathMatches = row.path === WORKFLOW || row.path === `${WORKFLOW}@${row.head_branch}`;

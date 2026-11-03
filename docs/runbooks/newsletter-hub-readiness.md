@@ -91,7 +91,13 @@ The parent's actual 49-run inventory used bare `.github/workflows/substrate-sync
 paths and its native read-only canary succeeded. GitHub's documented response
 also shows a workflow path suffixed by `@main`. Both exact bare and exact
 `<workflow-path>@<head_branch>` forms are supported, retaining workflow-ID and
-repository bindings. A suffix must equal the independently validated branch;
+repository bindings. Branch metadata uses a bounded pure Git branch-name check: valid UTF-8,
+at most 255 UTF-16 code units, single-level names and Unicode allowed, no
+checkout-shorthand expansion. Git-valid `@` is allowed; reserved `HEAD`, leading
+dash, malformed components, forbidden ASCII characters, `..` and `@{` refuse.
+No Git subprocess or additional native read is introduced. See
+[Git branch-name rules](https://git-scm.com/docs/git-check-ref-format).
+A suffix must equal the independently validated branch;
 arbitrary prefixes, other files and mismatched suffixes refuse. This is format
 compatibility, not a production-outage repair. See the [official workflow-runs
 response schema](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10).
@@ -102,7 +108,7 @@ Implementation validation: the focused CLI seam covers precise E15 DST/E16
 boundaries, late publication, strict JSON/file safety, source data parsing,
 queued old-head work, unrelated PRs, main drift, scheduling grace, pagination,
 unknown states and global dedupe. `npm test` includes this file explicitly.
-November 2 source validation passed: 22 focused scenarios, 484 full-suite tests,
+November 2 source validation passed: 24 focused scenarios, 486 full-suite tests,
 21 built-output tests, typecheck, production-consumer build, whitespace and
 staged/range secret scans. Run `npx tsc --noEmit`, `npm test`, `npm run build`,
 `npm run test:built`, `git diff --check` and range/staged secret scans before
