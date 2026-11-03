@@ -104,11 +104,16 @@ For an asset-preserving production-consumer build in a sibling checkout, set
 prebuild may find the adjacent substrate and re-copy its original diagram assets;
 those derived copies are not changes belonging to this diagnostic PR.
 
-A parent-owned one-shot native CLI canary is still pending source review. It must
-use an already released edition and genuine complete supplied snapshot. If full
-coverage is unavailable, record `unverified`; never fabricate it or use this
-qualification to prepare/admit/release E16. Native GET success establishes only
-source readiness, never public delivery.
+The parent-owned one-shot native CLI canary ran at 2026-11-03T06:46:27Z from
+source e252a7575c51281b317ea70dafda4b8eb118cfe3. All six retained E15 publication
+evidence files matched their inventory before constructing a supplied historical
+snapshot. Current main e2bd8cab371d09c35c515f985c247f53bf57a1d8 reported E15
+admitted and present, 49 complete workflow runs and no open fixed-branch PR. The
+result was `already-source-synced`, operation null, authority false and public
+delivery unknown. No native mutation or E16 preparation/admission occurred. This
+checks actual GitHub source reads; it does not re-authenticate old publication
+observations, compare exact content or establish public delivery. Future reads
+must preserve `unverified` when genuine full coverage is unavailable.
 
 ## Rollout, monitoring and rollback
 
