@@ -40,7 +40,7 @@ interface ParsedCanonicalMarkdown {
   content: string;
 }
 
-function parseCanonicalMarkdown(raw: string): ParsedCanonicalMarkdown {
+export function parseCanonicalMarkdown(raw: string): ParsedCanonicalMarkdown {
   const normalized = raw.replace(/\r\n?/g, '\n');
   const match = /^---\n([\s\S]*?)\n---(?:\n|$)/.exec(normalized);
   if (!match) return { data: {}, content: normalized };
@@ -413,7 +413,9 @@ export function mapSubstrateToEntry(
   data: Record<string, unknown>,
   body: string,
   filename: string,
-  diagnostics?: SubstrateDiagnostic[]
+  diagnostics?: SubstrateDiagnostic[],
+  essayAllowlist: readonly string[] = HUB_ESSAY_ALLOWLIST,
+  log: (message: string) => void = console.log
 ): ThoughtEntry | null {
   const pushDiag = (severity: SubstrateDiagnostic['severity'], reason: string): void => {
     if (diagnostics) diagnostics.push({ file: filename, severity, reason });
@@ -423,25 +425,25 @@ export function mapSubstrateToEntry(
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
   const slugRaw = data['slug'];
-  const allowlisted = typeof slugRaw === 'string' && HUB_ESSAY_ALLOWLIST.includes(slugRaw);
+  const allowlisted = typeof slugRaw === 'string' && essayAllowlist.includes(slugRaw);
   if (!surfaceTargeted && !allowlisted) {
-    console.log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
+    log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
     pushDiag('skip', 'surface_targets does not include danmercede.com');
     return null;
   }
   if (allowlisted && !surfaceTargeted) {
-    console.log(`   ✅ substrate canonical admitted via HUB_ESSAY_ALLOWLIST: ${filename}`);
+    log(`   ✅ substrate canonical admitted via HUB_ESSAY_ALLOWLIST: ${filename}`);
   }
 
   if (data['status'] !== 'canonical') {
-    console.log(`   ℹ️  substrate canonical skipped (status="${String(data['status'])}"): ${filename}`);
+    log(`   ℹ️  substrate canonical skipped (status="${String(data['status'])}"): ${filename}`);
     pushDiag('skip', `status="${String(data['status'])}"`);
     return null;
   }
 
   const typeRaw = data['type'];
   if (typeof typeRaw !== 'string' || !ACCEPTED_TYPES.has(typeRaw)) {
-    console.log(`   ℹ️  substrate canonical skipped (unaccepted type "${String(typeRaw)}"): ${filename}`);
+    log(`   ℹ️  substrate canonical skipped (unaccepted type "${String(typeRaw)}"): ${filename}`);
     pushDiag('skip', `unaccepted type "${String(typeRaw)}"`);
     return null;
   }
@@ -461,7 +463,7 @@ export function mapSubstrateToEntry(
   if (!(dateRaw instanceof Date) && (typeof dateRaw !== 'string' || !dateRaw.trim())) missing.push('date');
   if (typeof claim !== 'string' || !claim.trim()) missing.push('claim');
   if (missing.length > 0) {
-    console.log(`   ⚠️  substrate canonical skipped (missing required: ${missing.join(', ')}): ${filename}`);
+    log(`   ⚠️  substrate canonical skipped (missing required: ${missing.join(', ')}): ${filename}`);
     pushDiag('fatal', `missing required fields: ${missing.join(', ')}`);
     return null;
   }
@@ -469,14 +471,14 @@ export function mapSubstrateToEntry(
   // The slug is an unescaped sitemap <loc> token — reject metachar/traversal slugs
   // as FATAL corruption (it matched target, so it was supposed to publish).
   if (!isSafeSlug(slug)) {
-    console.log(`   ⚠️  substrate canonical skipped (unsafe slug "${String(slug)}"): ${filename}`);
+    log(`   ⚠️  substrate canonical skipped (unsafe slug "${String(slug)}"): ${filename}`);
     pushDiag('fatal', `unsafe slug "${String(slug)}" (must match ${SAFE_SLUG_PATTERN})`);
     return null;
   }
 
   const dateResult = validateDate(dateRaw);
   if (!dateResult) {
-    console.log(`   ⚠️  substrate canonical skipped (invalid date "${String(dateRaw)}"): ${filename}`);
+    log(`   ⚠️  substrate canonical skipped (invalid date "${String(dateRaw)}"): ${filename}`);
     pushDiag('fatal', `invalid date "${String(dateRaw)}"`);
     return null;
   }

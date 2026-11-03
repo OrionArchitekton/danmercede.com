@@ -87,8 +87,11 @@ async function boundedFile(path) {
         await handle.close();
     }
 }
-export async function readPublicationSnapshot(path, { slug, releaseWeek, now, grace = 15 }) {
-    const root = strictJson(await boundedFile(path));
+export async function readPublicationSnapshot(path, options) {
+    return parsePublicationSnapshot(await boundedFile(path), options);
+}
+export function parsePublicationSnapshot(raw, { slug, releaseWeek, now, grace = 15 }) {
+    const root = strictJson(raw);
     fields(root, 'schema_version kind newsletter_id editions');
     requireValue(root.schema_version === 1 && root.kind === 'newsletter-publication-coverage' && root.newsletter_id === '7477834312608866304' && Array.isArray(root.editions) && root.editions.length > 0 && root.editions.length <= 100);
     const slugs = new Set(), ids = new Set(), urls = new Set();
@@ -337,3 +340,6 @@ export async function main(argv, { readGitHub, stdout = s => process.stdout.writ
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
     main(process.argv.slice(2)).then(code => { process.exitCode = code; }).catch(() => { process.stderr.write('Diagnostic failed.\n'); process.exitCode = 1; });
+
+// Shared fixed reader/decoders for the hub-owned release coordinator.
+export { nativeRead as readHubGitHub, sourceContent as decodeHubSource, instant as parseHubInstant };
