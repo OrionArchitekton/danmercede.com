@@ -842,6 +842,125 @@ export function copyDiagramAsset(
 // the bundle over an embellishment.
 const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"']+)((?:\s+(?:"[^"]*"|'[^']*'))?\s*\))/g;
 
+// Asset-only literal contexts follow the bounded Markdown renderer. Keep the
+// delinker/dash approximation separate: its unanchored fences can span figures.
+function essayLiteralCodeRanges(body: string): number[][] {
+  type Line = { text: string; start: number; end: number };
+  const lines: Line[] = [...body.matchAll(/[^\n]*(?:\n|$)/g)].filter(m => m[0]).map(m => ({ text: m[0].replace(/\r?\n$/, ''), start: m.index ?? 0, end: (m.index ?? 0) + m[0].length }));
+  const ranges: number[][] = [];
+  const fence = /^(\s*)```(.*)$/, heading = /^(#{1,6})\s+(.+)$/, image = /^!\[([^\]]*)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)\s*$/;
+  const quote = /^>\s?(.*)$/, unordered = /^(\s*)[-*]\s+(.*)$/, ordered = /^(\s*)(\d+)\.\s+(.*)$/, hr = /^\s*---+\s*$/, tableSep = /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/;
+  const indent = (text: string) => text.length - text.trimStart().length;
+  const special = (text: string) => fence.test(text) || heading.test(text) || image.test(text) || quote.test(text) || unordered.test(text) || ordered.test(text) || (hr.test(text) && !text.includes('|')) || text.trim().startsWith('|');
+  const sliced = (line: Line, count: number): Line => ({ ...line, text: line.text.slice(count), start: line.start + Math.min(count, line.text.length) });
+  function inline(parts: Line[]) {
+    let text = '';
+    const offsets: number[] = [];
+    for (const line of parts) {
+      const value = line.text.trim(), start = line.start + indent(line.text);
+      if (text) { text += ' '; offsets.push(line.start); }
+      text += value;
+      for (let p = 0; p < value.length; p++) offsets.push(start + p);
+    }
+    // Same earliest-token order and recursive inline scopes as parseInline.
+    const patterns = [/`([^`]+)`/, /\*\*([^*]+)\*\*/, /\*([^*]+)\*/, /\[([^\]]+)\]\(([^\s)]+)\)/];
+    function visit(start: number, end: number) {
+      let cursor = start;
+      while (cursor < end) {
+        let best: { match: RegExpExecArray; kind: number } | null = null;
+        for (const [kind, pattern] of patterns.entries()) {
+          const match = pattern.exec(text.slice(cursor, end));
+          if (match && (!best || match.index < best.match.index)) best = { match, kind };
+        }
+        if (!best) return;
+        const { match, kind } = best, first = cursor + match.index, last = first + match[0].length;
+        if (kind === 0) ranges.push([offsets[first], offsets[last - 1] + 1]);
+        else { const inner = first + (kind === 1 ? 2 : 1); visit(inner, inner + match[1].length); }
+        cursor = last;
+      }
+    }
+    visit(0, text.length);
+  }
+  function blocks(input: Line[]) {
+    let i = 0;
+    while (i < input.length) {
+      const line = input[i], text = line.text;
+      if (!text.trim()) { i++; continue; }
+      if (fence.test(text)) {
+        const first = i++;
+        while (i < input.length && input[i].text.trim() !== '```') i++;
+        ranges.push([input[first].start, input[Math.min(i, input.length - 1)].end]);
+        if (i < input.length) i++;
+        continue;
+      }
+      const h = heading.exec(text);
+      if (h) { inline([{ ...line, text: h[2], start: line.start + text.length - h[2].length }]); i++; continue; }
+      // Alt text is literal; the renderer parses each caption in its own scope.
+      const figure = image.exec(text);
+      if (figure) {
+        if (figure[3]) {
+          const end = text.lastIndexOf('"');
+          inline([{ text: figure[3], start: line.start + end - figure[3].length, end: line.start + end }]);
+        }
+        i++; continue;
+      }
+      if (hr.test(text) && !text.includes('|')) { i++; continue; }
+      if (quote.test(text)) {
+        const children: Line[] = [];
+        while (i < input.length) {
+          const current = input[i];
+          if (!current.text.trim()) {
+            if (i + 1 < input.length && quote.test(input[i + 1].text)) { children.push(current); i++; continue; }
+            break;
+          }
+          const match = quote.exec(current.text);
+          if (!match) break;
+          children.push(sliced(current, current.text.length - match[1].length)); i++;
+        }
+        blocks(children); continue;
+      }
+      if (text.trim().startsWith('|') && i + 1 < input.length && tableSep.test(input[i + 1].text)) {
+        const rows: Line[] = [];
+        while (i < input.length && input[i].text.trim().startsWith('|')) rows.push(input[i++]);
+        for (const [rowIndex, row] of rows.entries()) {
+          if (rowIndex === 1) continue;
+          const trimmed = row.text.trim(), left = indent(row.text) + (trimmed.startsWith('|') ? 1 : 0);
+          const value = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+          let at = row.start + left;
+          for (const cell of value.split('|')) { inline([{ text: cell, start: at, end: at + cell.length }]); at += cell.length + 1; }
+        }
+        continue;
+      }
+      if (unordered.test(text) || ordered.test(text)) {
+        const pattern = ordered.test(text) ? ordered : unordered, orderedList = pattern === ordered, base = indent(text);
+        while (i < input.length) {
+          const current = input[i], match = pattern.exec(current.text);
+          if (!match || indent(current.text) !== base) break;
+          const content = match[orderedList ? 3 : 2], width = current.text.length - content.length - base;
+          const children = [sliced(current, base + width)]; i++;
+          while (i < input.length) {
+            const next = input[i];
+            if (!next.text.trim()) {
+              if (i + 1 < input.length && indent(input[i + 1].text) > base) { children.push(next); i++; continue; }
+              break;
+            }
+            const depth = indent(next.text), sibling = pattern.test(next.text) && depth === base;
+            if (depth > base && !sibling) { children.push(sliced(next, base + width)); i++; continue; }
+            break;
+          }
+          blocks(children);
+        }
+        continue;
+      }
+      const paragraph = [input[i++]];
+      while (i < input.length && input[i].text.trim() && !special(input[i].text)) paragraph.push(input[i++]);
+      inline(paragraph);
+    }
+  }
+  blocks(lines);
+  return ranges.sort((a, b) => a[0] - b[0]);
+}
+
 /** Pure reference mapping; a resolver proves the source before rewriting. */
 export function rewriteEssayBodyAssetReferences(
   body: string,
@@ -854,8 +973,12 @@ export function rewriteEssayBodyAssetReferences(
     skip(`unsafe slug "${String(slug)}"`);
     return body;
   }
+  const code = essayLiteralCodeRanges(body);
+  let codeIndex = 0;
   const destSources = new Map<string, string>();
-  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
+  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix, offset) => {
+    while (codeIndex < code.length && code[codeIndex][1] <= offset) codeIndex++;
+    if (codeIndex < code.length && code[codeIndex][0] <= offset) return whole;
     if (!isSafeRelativePath(assetPath)) {
       skip(`unsafe asset path "${assetPath}"`);
       return whole;

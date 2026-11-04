@@ -210,7 +210,10 @@ binds `source_path`, served-tree `path`, regular `mode`/`type`, Git `blob`,
 and 512 characters, and use a compiler-supported image extension. No-follow Git
 tree traversal at the pinned canonical commit must prove every ancestor is a
 tree and each source is a regular non-executable blob. The adapter admits at most
-two distinct sources, each 1–524288 bytes; missing, oversized, unsafe or colliding
+two distinct sources, each at least one byte and no larger than the smaller of
+524288 bytes and the existing shared per-extension committed-image budget. The
+same budget applies to actual source and copied hub binary readbacks; no image
+is re-encoded or replaced by this adapter. Missing, oversized, unsafe or colliding
 sources hold before acceptance. Repeated references to one source retain their
 captions and share one asset record. Native binary blob content is decoded and
 rehashed; filenames or declared hashes alone do not establish parity. Original
@@ -220,6 +223,23 @@ all unrelated files stay identical. A source-synced target still requires exact
 asset identity before reader verification. These are conservative newsletter
 adapter holds; other compiler consumers retain the existing soft-fail image
 behavior and supported path breadth. The default newsletter has no inline images.
+
+Literal asset contexts follow the bounded renderer: a fence opens only at the
+start of a logical line, allowing leading whitespace, and closes only on a
+trimmed triple-backtick line. Unclosed fences end at the containing block's EOF;
+quoted/list containers retain their existing scope. Inline code is separate and
+cannot span unrelated block, figure alt or title contexts. Those image examples remain byte-for-byte
+unchanged and consume no asset read, path guard, copy or count. A real image in
+the same document still follows every existing guard. Backticks within a real
+image's alt or title do not turn the whole image into a code example. The shared
+visitor applies the same mapping in filesystem compilation and release planning;
+renderer, wiki-link and dash normalization behavior is unchanged.
+
+Each figure caption has its own inline scope at the original source offsets;
+the alt remains literal. Caption code contributes no candidate, read or copy,
+including when the outer image is external or already served. An owned outer
+image still maps normally, non-code caption references retain their existing
+mapping, and caption delimiters cannot affect another figure.
 
 
 The original full plan has an exclusive immutable anchor. A missing anchor in a

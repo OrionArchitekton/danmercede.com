@@ -19,6 +19,7 @@ references:
   - docs/reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json
   - scripts/newsletterHubReadiness.mjs
   - scripts/compileContent.ts
+  - scripts/imageBudgets.mjs
   - scripts/verifyProductionDeployment.mjs
   - .github/workflows/substrate-sync.yml
   - .github/workflows/substrate-verify.yml
@@ -136,12 +137,30 @@ through trees at the exact canonical commit and actual copied hub binary bytes.
 The shared compiler reference mapper supplies the expected served body. Missing,
 extra, changed, symlinked, executable or unrelated asset leaves hold; existing
 assets cannot be replaced or pruned as part of this release. Conservative adapter
-bounds are 1–524288 bytes per image, two distinct sources, 512 path characters
+bounds are at least one byte and at most the smaller of 524288 bytes or the
+shared `imageBudgets.mjs` extension budget (KB × 1024), two distinct sources, 512 path characters
 and eight simple ASCII components under `publishing/assets/<requested-slug>/`,
 using the compiler's supported image extensions. An unsupported source holds;
 do not broaden it or substitute a later asset. Other compiler consumers preserve
 their existing soft-fail behavior. Current default newsletter copy has no inline
 images, so its asset array is empty.
+
+Inline/fenced literal code examples are not image candidates. Asset contexts
+follow the bounded renderer's line-start fences (including leading whitespace),
+trimmed triple-backtick closer and quote/list scopes. An unclosed fence remains
+literal through its containing block's EOF. Inline code stays within its actual
+inline block; delimiters in prose or separate image alt/title text cannot hide
+a later rendered figure. The delinker approximation is not reused for this.
+Figure captions are separate inline scopes at their original source offsets;
+alt text stays literal. Code examples in external, already-served or owned
+figure captions trigger no asset callback or copy. The owned outer image and
+non-code caption references keep their existing mapping, and caption delimiters
+cannot spill into another figure.
+Examples trigger no source asset fetch, rewrite, copy, skip diagnostic or count.
+Real images elsewhere retain all existing controls, including real alt/title
+text containing backticks. These fixes change no renderer, wiki-link or dash
+rules and regenerate no committed body or asset. Oversized images hold; do not
+substitute, re-encode or change the shared budget during reconciliation.
 
 After the content merge, reader reconciliation requires the exact native Vercel
 project/production SHA, public no-store revision bookends, actual initial article,

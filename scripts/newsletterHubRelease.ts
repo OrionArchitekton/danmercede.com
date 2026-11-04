@@ -1,5 +1,5 @@
 /** Hub-specific release coordinator. CLI writers remain runtime-unadmitted. */
-import { isAbsolute } from 'node:path';
+import { isAbsolute, extname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFile } from 'node:child_process';
@@ -12,6 +12,7 @@ import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateO
 import { selectLatestThoughts } from '../thoughtsIndex.ts';
 import { verifyHubReader } from './newsletterHubReleaseReader.ts';
 import { readInstalledHubBrowser } from './newsletterHubInstalledBrowser.ts';
+import { budgetKbFor } from './imageBudgets.mjs';
 const REPOSITORY = 'OrionArchitekton/danmercede.com';
 const PILOT_DRAIN_CUTOFF = '2026-12-09T07:59:00Z';
 const executeRead = promisify(execFile);
@@ -152,8 +153,11 @@ async function trustedCanonical(binding: any, read: (path: string) => Promise<an
     return { raw, trusted_main_sha: trustedMain, blob_sha: pinned.sha };
 }
 const MAX_TARGET_ASSETS = 2, MAX_TARGET_ASSET_BYTES = 512 * 1024;
-function binaryBlob(data: any, expected: string) {
-    insist(data?.sha === expected && data.encoding === 'base64' && Number.isSafeInteger(data.size) && data.size > 0 && data.size <= MAX_TARGET_ASSET_BYTES && typeof data.content === 'string' && data.content.length <= 2 * MAX_TARGET_ASSET_BYTES && /^[A-Za-z0-9+/=\r\n]*$/.test(data.content), 'target-asset-unverified');
+function binaryBlob(data: any, expected: string, assetPath: string) {
+    const budget = budgetKbFor(extname(assetPath));
+    insist(Number.isSafeInteger(budget) && budget > 0, 'target-asset-unverified');
+    const limit = Math.min(MAX_TARGET_ASSET_BYTES, budget * 1024);
+    insist(data?.sha === expected && data.encoding === 'base64' && Number.isSafeInteger(data.size) && data.size > 0 && data.size <= limit && typeof data.content === 'string' && data.content.length <= 2 * MAX_TARGET_ASSET_BYTES && /^[A-Za-z0-9+/=\r\n]*$/.test(data.content), 'target-asset-unverified');
     const compact = data.content.replace(/[\r\n]/g, ''), bytes = Buffer.from(compact, 'base64');
     insist(bytes.length === data.size && bytes.toString('base64') === compact && gitBlob(bytes) === expected, 'target-asset-unverified');
     return bytes;
@@ -185,7 +189,7 @@ async function targetAssetPlan(binding: any, body: string, read: (path: string) 
             if (index < components.length - 1) { insist(leaf.type === 'tree' && leaf.mode === '040000', 'target-asset-source-unverified'); tree = leaf.sha; }
             else insist(leaf.type === 'blob' && leaf.mode === '100644', 'target-asset-source-unverified');
         }
-        const bytes = binaryBlob(await read(`${prefix}/git/blobs/${leaf.sha}`), leaf.sha);
+        const bytes = binaryBlob(await read(`${prefix}/git/blobs/${leaf.sha}`), leaf.sha, source_path);
         target_assets.push({ source_path, path, mode: '100644', type: 'blob', blob: leaf.sha, sha256: digest(bytes), size: bytes.length });
     }
     const rewritten = rewriteEssayBodyAssetReferences(body, binding.request.slug, source => candidates.has(source));
@@ -196,7 +200,7 @@ async function verifyTargetAssets(assets: any[], tree: any[], read: (path: strin
     for (const asset of assets) {
         const leaf = tree.find(e => e.path === asset.path);
         insist(JSON.stringify(leaf) === JSON.stringify({ path: asset.path, mode: '100644', type: 'blob', sha: asset.blob }), 'content-pr-assets-unverified');
-        const bytes = binaryBlob(await read(`${nativePrefix}/git/blobs/${asset.blob}`), asset.blob);
+        const bytes = binaryBlob(await read(`${nativePrefix}/git/blobs/${asset.blob}`), asset.blob, asset.path);
         insist(bytes.length === asset.size && digest(bytes) === asset.sha256, 'content-pr-assets-unverified');
     }
 }

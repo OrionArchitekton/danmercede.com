@@ -37,6 +37,19 @@ the figures entirely.
    checks; nothing is written unless every guard passes.
 4. **Inbox-only parity.** With no reachable substrate the body is returned
    verbatim (the compiler already skip-preserves the whole bundle then).
+5. **Literal examples.** Image-shaped text beginning inside renderer-compatible
+   inline/fenced code stays byte-for-byte unchanged, with no copy or skip
+   diagnostic. Fences open only at logical line start, including leading
+   whitespace, and end on a trimmed triple-backtick line or their containing
+   block's EOF. Existing quote/list scopes and inline block boundaries apply;
+   prose delimiters or one figure's alt/title cannot hide another figure. Real image refs
+   in the same document still copy/rewrite normally, including alt text or
+   captions containing backticks. This affects the shared asset visitor only;
+   renderer, wiki-link and dash behavior stays unchanged.
+   Captions use their own inline scope at original offsets, while alts remain
+   literal. Code examples in captions never rewrite/copy, including external or
+   already-served outer figures; an owned outer image and non-code caption refs
+   keep their existing mapping without delimiter spill between figures.
 
 ## Scope amendments (review-driven, cycle 1)
 
@@ -80,7 +93,8 @@ only via the trusted sync, so this PR cannot carry the regenerated corpus):
       window to minutes.
 
 **After the first post-merge substrate-sync:**
-- [ ] Zero `publishing/assets` refs remain in `constants.generated.ts`; every
+- [ ] Zero resolvable prose-image `publishing/assets` refs remain in
+      `constants.generated.ts`; literal code examples remain unchanged. Every
       rewritten ref resolves to a committed binary under
       `public/assets/thoughts/<slug>/`.
 - [ ] Entry count parity (no essay lost to the rewrite).

@@ -18,6 +18,7 @@ import { renderRss, renderAtom } from '../scripts/renderFeed.ts';
 import { privateRoot } from '../scripts/newsletterHubReleaseJournal.ts';
 import { verifyHubReader } from '../scripts/newsletterHubReleaseReader.ts';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, generateOutput, HUB_ESSAY_ALLOWLIST } from '../scripts/compileContent.ts';
+import { budgetKbFor } from '../scripts/imageBudgets.mjs';
 import { planHubRelease, inspectHubRelease, advanceHubRelease, reconcileHubRelease, verifyTrustedHubCheck } from '../scripts/newsletterHubRelease.ts';
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const slug = '2026-11-02-before-your-ai-tries-again';
@@ -745,7 +746,7 @@ test('journal recovers only a verified same-inode crash link and preserves unrel
 test('actual hub CLI import never executes replaced generated corpora', async (t) => {
     const f = await fixture(t), runtime = join(f.dir, 'runtime'), marker = join(f.dir, 'corpus-executed');
     await mkdir(runtime, { mode: 0o700 });
-    const closure = ['scripts/hubEssayAdmissions.mjs', 'data/hub-essay-admissions.json', 'scripts/newsletterHubRelease.ts', 'scripts/newsletterHubReleaseJournal.ts', 'scripts/newsletterHubReleaseReader.ts', 'scripts/newsletterHubReleaseBrowser.ts', 'scripts/newsletterHubInstalledBrowser.ts', 'scripts/newsletterHubReadiness.mjs', 'scripts/compileContent.ts', 'scripts/renderFeed.ts', 'scripts/renderFeedCore.ts', 'scripts/verifyProductionDeployment.mjs', 'components/Markdown.tsx', 'thoughtsIndex.ts', 'seoMeta.ts', 'siteOrigin.ts', 'constants.ts', 'types.ts', 'package.json', 'tsconfig.json'];
+    const closure = ['scripts/hubEssayAdmissions.mjs', 'scripts/imageBudgets.mjs', 'data/hub-essay-admissions.json', 'scripts/newsletterHubRelease.ts', 'scripts/newsletterHubReleaseJournal.ts', 'scripts/newsletterHubReleaseReader.ts', 'scripts/newsletterHubReleaseBrowser.ts', 'scripts/newsletterHubInstalledBrowser.ts', 'scripts/newsletterHubReadiness.mjs', 'scripts/compileContent.ts', 'scripts/renderFeed.ts', 'scripts/renderFeedCore.ts', 'scripts/verifyProductionDeployment.mjs', 'components/Markdown.tsx', 'thoughtsIndex.ts', 'seoMeta.ts', 'siteOrigin.ts', 'constants.ts', 'types.ts', 'package.json', 'tsconfig.json'];
     for (const path of closure) {
         let raw: Buffer;
         try { raw = await readFile(new URL('../' + path, import.meta.url)); } catch (error: any) { if (error.code === 'ENOENT') continue; throw error; }
@@ -1611,6 +1612,156 @@ test('an early read outage cannot supply a detailed plan under the same final he
         assert.equal(stage.input_sha256, original.input_sha256);
         for (const field of ['expected', 'target_assets', 'baseline', 'admission', 'canonical']) assert.equal(Object.hasOwn(stage, field), false, field);
         assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('target JPEG planning enforces the shared committed-image budget at its exact byte boundary', async (t) => {
+    for (const extension of ['jpg', 'jpeg']) await t.test(extension, async () => {
+        const source = canonical + `\n![Owned](publishing/assets/${slug}/figure.${extension})`;
+        for (const size of [250 * 1024, 250 * 1024 + 1]) {
+            const f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: `publishing/assets/${slug}/figure.${extension}`, bytes: Buffer.alloc(size, 1) }]);
+            const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+            const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+            assert.equal(stage.stage, size === 250 * 1024 ? 'admission-preparation-ready' : 'source-unverified');
+            if (size === 250 * 1024) assert.equal(stage.target_assets[0].size, size);
+            assert.equal(native.writes.length, 0);
+        }
+    });
+});
+
+test('code image examples stay literal while a real owned figure still plans exactly once', async (t) => {
+    const code = '`![Inline example](publishing/assets/foreign/missing.svg)`\n\n```markdown\n![Fenced example](publishing/assets/foreign/missing.svg)\n```';
+    const source = canonical + '\n' + code + assetBody;
+    const f = await fixture(t, source), native = pinnedAssetFixture(source);
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'admission-preparation-ready');
+    assert.ok(stage.expected.body.includes(code));
+    assert.equal(stage.target_assets.length, 1);
+    assert.ok(stage.expected.body.includes(`![Original attempt](/assets/thoughts/${slug}/gate.svg "Keep its record")`));
+    const doc = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
+    assert.equal(doc.querySelectorAll('img').length, 1);
+    assert.equal(doc.querySelectorAll('code').length, 2);
+    assert.ok([...doc.querySelectorAll('code')].every(e => e.textContent!.includes('publishing/assets/foreign/missing.svg')));
+    assert.equal(native.writes.length, 0);
+});
+
+test('an unclosed top-level code fence keeps image examples literal through EOF', async (t) => {
+    const code = '```markdown\n![Unclosed example](publishing/assets/foreign/missing.svg)';
+    const source = canonical + assetBody + '\n' + code;
+    const f = await fixture(t, source), native = pinnedAssetFixture(source);
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'admission-preparation-ready');
+    assert.ok(stage.expected.body.endsWith(code));
+    assert.equal(stage.target_assets.length, 1);
+    const doc = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
+    assert.equal(doc.querySelectorAll('img').length, 1);
+    assert.equal(doc.querySelectorAll('pre code').length, 1);
+    assert.equal(doc.querySelector('pre code')!.textContent, '![Unclosed example](publishing/assets/foreign/missing.svg)');
+    assert.equal(native.writes.length, 0);
+});
+
+test('each image extension uses the smaller shared budget and existing adapter cap', async (t) => {
+    for (const extension of ['jpg', 'jpeg', 'JpEg', 'png', 'webp', 'svg']) await t.test(extension, async () => {
+        const limit = Math.min(512 * 1024, budgetKbFor('.' + extension)! * 1024);
+        const source = canonical + `\n![Owned](publishing/assets/${slug}/figure.${extension})`;
+        for (const size of [limit, limit + 1]) {
+            const f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: `publishing/assets/${slug}/figure.${extension}`, bytes: Buffer.alloc(size, 1) }]);
+            const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+            const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+            assert.equal(stage.stage, size === limit ? 'admission-preparation-ready' : 'source-unverified');
+            assert.equal(native.writes.length, 0);
+        }
+    });
+});
+
+test('code-only image examples require no source asset reads or asset count', async (t) => {
+    const examples = '`![Inline](publishing/assets/foreign/missing.svg)`\n\n```markdown\n![One](publishing/assets/foreign/a.svg)\n![Two](publishing/assets/foreign/b.svg)\n![Three](publishing/assets/foreign/c.svg)\n```';
+    const source = canonical + '\n' + examples, f = await fixture(t, source), native = nativeFixture([oldThought], admissions, source);
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'admission-preparation-ready');
+    assert.deepEqual(stage.target_assets, []);
+    assert.ok(stage.expected.body.endsWith(examples));
+    assert.ok(!native.reads.some(path => path.startsWith('/repos/OrionArchitekton/dan-mercede-substrate/git/blobs/')));
+    assert.equal(native.writes.length, 0);
+});
+
+test('asset contexts match actual rendered figures across prose delimiters image text and nested code', async (t) => {
+    const one = `publishing/assets/${slug}/one.svg`, two = `publishing/assets/${slug}/two.svg`;
+    const cases = [
+        { name: 'prose-triples', body: `Prose \`\`\`inline opener\n\n![One](${one})\n\n\`\`\``, images: 1 },
+        { name: 'alt-triples', body: `![First \`\`\`](${one})\n\n![Second \`\`\`](${two})`, images: 2 },
+        { name: 'title-triples', body: `![First](${one} "Opening \`\`\` title")\n\n![Second](${two} "Closing \`\`\` title")`, images: 2 },
+        { name: 'indented-unclosed', body: `  \`\`\`markdown\n  ![Literal](publishing/assets/foreign/missing.svg)`, images: 0 },
+        { name: 'quoted-closed', body: `> \`\`\`markdown\n> ![Literal](publishing/assets/foreign/missing.svg)\n> \`\`\`\n\n![One](${one})`, images: 1 },
+        { name: 'quoted-unclosed', body: `> \`\`\`markdown\n> ![Literal](publishing/assets/foreign/missing.svg)\n\n![One](${one})`, images: 1 },
+        { name: 'list-closed', body: `- \`\`\`markdown\n  ![Literal](publishing/assets/foreign/missing.svg)\n  \`\`\`\n\n![One](${one})`, images: 1 },
+        { name: 'list-unclosed', body: `- \`\`\`markdown\n  ![Literal](publishing/assets/foreign/missing.svg)\n\n![One](${one})`, images: 1 },
+        { name: 'paragraph-inline-code', body: `Inline \`example\nwith ![Literal](publishing/assets/foreign/missing.svg)\nends\`.\n\n![One](${one})`, images: 1 },
+        { name: 'nested-quote-closed', body: `> > \`\`\`markdown\n> > ![Literal](publishing/assets/foreign/missing.svg)\n> > \`\`\`\n\n![One](${one})`, images: 1 },
+        { name: 'ordered-list-closed', body: `10. \`\`\`markdown\n    ![Literal](publishing/assets/foreign/missing.svg)\n    \`\`\`\n\n![One](${one})`, images: 1 },
+        { name: 'heading-inline-code', body: `## Use \`![Literal](publishing/assets/foreign/missing.svg)\`\n\n![One](${one})`, images: 1 },
+        { name: 'table-cell-inline-code', body: `| Example |\n| --- |\n| \`![Literal](publishing/assets/foreign/missing.svg)\` |\n\n![One](${one})`, images: 1 },
+        { name: 'strong-inline-code', body: `**Use \`![Literal](publishing/assets/foreign/missing.svg)\`**\n\n![One](${one})`, images: 1 },
+        { name: 'link-label-inline-code', body: `[Use \`literal\`](https://example.com)\n\n![One](${one})`, images: 1 },
+    ];
+    for (const example of cases) await t.test(example.name, async () => {
+        const source = canonical + '\n' + example.body, f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: one, bytes: assetBytes }, { path: two, bytes: assetBytes }]);
+        const before = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: example.body }))).window.document;
+        assert.equal(before.querySelectorAll('img').length, example.images, 'actual renderer fixture');
+        const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.stage, 'admission-preparation-ready');
+        assert.equal(stage.target_assets.length, example.images);
+        const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
+        assert.equal(after.querySelectorAll('img').length, example.images);
+        assert.ok([...after.querySelectorAll('img')].every(image => image.getAttribute('src')!.startsWith(`/assets/thoughts/${slug}/`)));
+        assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent));
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('figure caption code is its own literal scope for external served and owned outer images', async (t) => {
+    const outer = `publishing/assets/${slug}/outer.svg`, literal = `publishing/assets/${slug}/code.svg`;
+    for (const kind of ['external', 'served', 'owned']) await t.test(kind, async () => {
+        const src = kind === 'external' ? 'https://example.com/Try.png' : kind === 'served' ? '/assets/thoughts/previous/existing.svg' : outer;
+        const caption = ` Try \`![Literal](${literal})\` `, image = `![Try \`literal\`](${src} "${caption}")`, source = canonical + '\n' + image;
+        const f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: outer, bytes: assetBytes }, { path: literal, bytes: Buffer.from('<svg id="code"/>') }]);
+        const before = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: image }))).window.document;
+        assert.equal(before.querySelectorAll('img').length, 1);
+        assert.equal(before.querySelector('code')!.textContent, `![Literal](${literal})`);
+        const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.stage, 'admission-preparation-ready');
+        assert.deepEqual(stage.target_assets.map((asset: any) => asset.source_path), kind === 'owned' ? [outer] : []);
+        const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
+        assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent));
+        assert.equal(after.querySelector('img')!.getAttribute('src'), kind === 'owned' ? `/assets/thoughts/${slug}/outer.svg` : src);
+        assert.equal(after.querySelector('img')!.getAttribute('alt'), 'Try `literal`');
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('caption inline scopes preserve foreign examples and map non-code assets without spilling across figures', async (t) => {
+    const owned = `publishing/assets/${slug}/outer.svg`, foreign = 'publishing/assets/foreign/missing.svg';
+    const cases = [
+        { name: 'foreign-literal', body: `![External](https://example.com/cover.png "Try \`![Literal](${foreign})\`")`, assets: 0 },
+        { name: 'mixed-caption', body: `![External](https://example.com/cover.png "Try \`![Literal](${foreign})\` and ![Asset](${owned})")`, assets: 1 },
+        { name: 'separate-captions', body: `![External](https://example.com/cover.png "Open \`")\n\n![Owned](${owned} "Close \`")`, assets: 1 },
+    ];
+    for (const example of cases) await t.test(example.name, async () => {
+        const source = canonical + '\n' + example.body, f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: owned, bytes: assetBytes }]);
+        const before = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: example.body }))).window.document;
+        const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.stage, 'admission-preparation-ready');
+        assert.equal(stage.target_assets.length, example.assets);
+        assert.ok(stage.target_assets.every((asset: any) => asset.source_path === owned));
+        const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
+        assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent));
         assert.equal(native.writes.length, 0);
     });
 });
