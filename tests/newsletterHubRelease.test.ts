@@ -103,7 +103,7 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
         blobs.set(value.sha, raw);
         return value.sha;
     };
-    const baseTree = 'f'.repeat(40), baseEntries = [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: putBlob(compiler) }, { path: 'data/hub-essay-admissions.json', mode: '100644', type: 'blob', sha: putBlob(admissionData) }, { path: 'constants.generated.ts', mode: '100644', type: 'blob', sha: putBlob(bundle(baselineThoughts)) }, { path: '.github/workflows/substrate-sync.yml', mode: '100644', type: 'blob', sha: putBlob(workflow) }, { path: 'README.md', mode: '100644', type: 'blob', sha: putBlob('Unrelated source must remain exactly intact.') }];
+    const baseTree = 'f'.repeat(40), baseEntries = [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: putBlob(compiler) }, { path: 'data/hub-essay-admissions.json', mode: '100644', type: 'blob', sha: putBlob(admissionData) }, { path: 'constants.guides.generated.ts', mode: '100644', type: 'blob', sha: putBlob("import type { Guide } from './types'; export const GUIDES: Guide[] = [];") }, { path: 'constants.generated.ts', mode: '100644', type: 'blob', sha: putBlob(bundle(baselineThoughts)) }, { path: '.github/workflows/substrate-sync.yml', mode: '100644', type: 'blob', sha: putBlob(workflow) }, { path: 'README.md', mode: '100644', type: 'blob', sha: putBlob('Unrelated source must remain exactly intact.') }];
     trees.set(baseTree, baseEntries);
     commits.set(mainSha, { sha: mainSha, tree: { sha: baseTree }, parents: [] });
     const readGitHub = async (path: string) => {
@@ -125,7 +125,7 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
             return { total_count: runs.length, workflow_runs: runs };
         if (path.startsWith(`${prefix}/pulls?`)) {
             const query = new URL('https://api.github.com' + path).searchParams, branch = (query.get('head') ?? '').split(':')[1];
-            return prs.filter(p => p.head.ref === branch && (query.get('state') === 'all' || p.state === 'open'));
+            return prs.filter(p => p.head.ref === branch && (query.get('state') === 'all' || p.state === query.get('state')));
         }
         if (path === `${prefix}/actions/workflows/substrate-verify.yml`)
             return { id: 123456, state: 'active', path: '.github/workflows/substrate-verify.yml' };
@@ -133,6 +133,12 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
             return { id: 777, check_suite_id: 112471990107, workflow_id: 123456, head_repository: { full_name: 'OrionArchitekton/danmercede.com' }, repository: { full_name: 'OrionArchitekton/danmercede.com' }, head_branch: 'codex/substrate-sync', path: '.github/workflows/substrate-verify.yml', event: 'pull_request_target', head_sha: prs.find(p => p.number === 902)?.head.sha, status: 'completed', conclusion: 'success', pull_requests: [] };
         if (path === `${prefix}/check-suites/112471990107`)
             return { id: 112471990107, head_sha: prs.find(p => p.number === 902)?.head.sha, repository: { full_name: 'OrionArchitekton/danmercede.com' }, app: { id: 15368 }, status: 'completed', conclusion: 'success' };
+        if (path.startsWith(`${prefix}/compare/`)) {
+            const [base, head] = path.slice(`${prefix}/compare/`.length).split('...');
+            const pending = [head], seen = new Set<string>();
+            while (pending.length) { const id = pending.pop()!; if (seen.has(id)) continue; seen.add(id); for (const parent of commits.get(id)?.parents ?? []) pending.push(parent.sha); }
+            return { status: base === head ? 'identical' : seen.has(base) ? 'ahead' : 'diverged', base_commit: { sha: base }, merge_base_commit: { sha: seen.has(base) ? base : head } };
+        }
         if (path.startsWith(`${prefix}/git/commits/`))
             return commits.get(path.slice(`${prefix}/git/commits/`.length));
         if (path.startsWith(`${prefix}/git/trees/`)) {
@@ -224,7 +230,12 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
         activeMain = pr.merge_commit_sha;
         return activeMain;
     };
-    return { readGitHub, writeGitHub, writes, reads, trees, commits, refs, prs, runs, mergeAdmission, openContent, mergeContent, readReviewThreads: async (number: number) => ({ head_sha: prs.find(p => p.number === number)?.head.sha, complete: true, threads: [] }) };
+    const moveMain = () => {
+        const next = '7'.repeat(40);
+        commits.set(next, { sha: next, tree: commits.get(activeMain).tree, parents: [{ sha: activeMain }] });
+        activeMain = next;
+    };
+    return { readGitHub, writeGitHub, writes, reads, trees, commits, refs, prs, runs, mergeAdmission, openContent, mergeContent, moveMain, readReviewThreads: async (number: number) => ({ head_sha: prs.find(p => p.number === number)?.head.sha, complete: true, threads: [] }) };
 }
 test('eligible private plan builds a minimal exact admission patch while default writer remains unadmitted', async (t) => {
     const f = await fixture(t), native = nativeFixture();
@@ -793,4 +804,388 @@ test('full admission list cannot produce an invalid over-capacity proposal', asy
     const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
     assert.equal(result.status, 'held');
     assert.equal(native.writes.length, 0);
+});
+
+test('read-only reconcile appends an exact admission-merged generation proof', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native);
+    const originalBytes = await readFile(join(f.dir, original.artifacts[0].ref));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    const merge = native.mergeAdmission(), writesBefore = native.writes.length;
+    const observed = await reconcileHubRelease(options, native);
+    const stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.data_generations.length, 1);
+    const reference = stage.data_generations[0], bytes = await readFile(join(f.dir, reference.ref));
+    assert.equal(sha(bytes), reference.sha256);
+    const proof = JSON.parse(bytes.toString());
+    assert.equal(proof.transition, 'admission-merged');
+    assert.equal(proof.operation_id, f.request.operation_id);
+    assert.equal(proof.input_sha256, original.input_sha256);
+    assert.deepEqual(proof.original_plan, original.artifacts[0]);
+    assert.equal(proof.predecessor.commit, mainSha);
+    assert.equal(proof.successor.commit, merge);
+    assert.equal(proof.pr.number, 901);
+    assert.equal(proof.predecessor_proof, null);
+    assert.equal(native.writes.length, writesBefore);
+    assert.deepEqual(await readFile(join(f.dir, original.artifacts[0].ref)), originalBytes);
+});
+
+test('one original release reconciles through both merged generations to full public reader proof', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native), originalStage = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    const admissionMerge = native.mergeAdmission();
+    const admission = await reconcileHubRelease(options, native), admissionStage = JSON.parse(await readFile(join(f.dir, admission.artifacts[0].ref), 'utf8'));
+    native.openContent(originalStage.expected);
+    const pending = await reconcileHubRelease(options, native), pendingStage = JSON.parse(await readFile(join(f.dir, pending.artifacts[0].ref), 'utf8'));
+    assert.equal(pendingStage.stage, 'content-pr-awaiting-merge');
+    assert.deepEqual(pendingStage.data_generations, admissionStage.data_generations);
+    const merge = native.mergeContent(), writesBefore = native.writes.length;
+    const observed = await reconcileHubRelease(options, { ...native, readGitHub: async (path: string) => { if (path.includes('/deployments?')) throw Error('fixture: reader not yet verified'); return native.readGitHub(path); } });
+    const stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.data_generations.length, 2);
+    assert.deepEqual(stage.data_generations[0], admissionStage.data_generations[0]);
+    const contentProof = JSON.parse(await readFile(join(f.dir, stage.data_generations[1].ref), 'utf8'));
+    assert.equal(contentProof.transition, 'content-merged');
+    assert.deepEqual(contentProof.predecessor_proof, admissionStage.data_generations[0]);
+    assert.equal(contentProof.predecessor.commit, admissionMerge);
+    assert.equal(contentProof.successor.commit, merge);
+    assert.equal(contentProof.pr.number, 902);
+    assert.equal(contentProof.content_validation.required_checks_passed, true);
+    assert.equal(stage.public_delivery, 'unknown');
+    const target = originalStage.expected, origin = 'https://www.danmercede.com', url = `${origin}/thoughts/${slug}`;
+    const article = `<article><div><span>${target.category}</span><span>${target.date}</span></div><h1>${target.title}</h1><p>${target.preview}</p>${renderToStaticMarkup(React.createElement(Markdown, { source: target.body }))}</article>`;
+    const responses: any = { [url]: `<html><head><link rel="canonical" href="${url}"></head><body><div id="root">${article}</div></body></html>`, [`${origin}/thoughts`]: `<div id="root"><section aria-labelledby="latest-releases-heading"><a href="/thoughts/${slug}">Latest</a><a href="/thoughts/${oldSlug}">Previous</a></section></div>`, [`${origin}/sitemap.xml`]: `<urlset><url><loc>${url}</loc></url></urlset>`, [`${origin}/feed.xml`]: renderRss([target, oldThought], []), [`${origin}/atom.xml`]: renderAtom([target, oldThought], []) };
+    const readGitHub = async (path: string) => path.includes('/deployments?') ? [{ id: 123, sha: merge, environment: 'Production', creator: { login: 'vercel[bot]' } }] : path.includes('/deployments/123/statuses?') ? [{ state: 'success', environment_url: 'https://danmercede-com-qualified.vercel.app', creator: { login: 'vercel[bot]' } }] : path.includes('/statuses?') ? [{ state: 'success', context: 'Vercel', creator: { login: 'vercel[bot]' }, target_url: 'https://vercel.com/dan-mercedes-projects/danmercede-com/testdeployment' }] : native.readGitHub(path);
+    const fetchPublic = async (link: string) => link === `${origin}/deployment-revision.json` ? new Response(JSON.stringify({ schemaVersion: 1, sha: merge }), { headers: { 'cache-control': 'no-store' } }) : link.startsWith(`${origin}/thoughts/fcn-reader-invalid-`) ? new Response('Not found', { status: 404 }) : new Response(responses[link] ?? 'missing', { status: responses[link] ? 200 : 404 });
+    const readerTransport = { ...native, readGitHub, fetchPublic, readHydratedBrowser: async () => ({ article_html: article, latest_hrefs: [`/thoughts/${slug}`, `/thoughts/${oldSlug}`] }) };
+    const final = await reconcileHubRelease(options, readerTransport);
+    const finalStage = JSON.parse(await readFile(join(f.dir, final.artifacts[0].ref), 'utf8'));
+    assert.equal(final.status, 'completed');
+    assert.equal(finalStage.public_delivery, 'verified');
+    assert.equal(finalStage.reader.verification_scope, 'initial-and-hydrated-reader-parity');
+    assert.deepEqual(finalStage.data_generations, stage.data_generations);
+    assert.equal(native.writes.length, writesBefore);
+    assert.equal(final.operation_id, original.operation_id);
+    const proofBytes = await Promise.all(finalStage.data_generations.map((ref: any) => readFile(join(f.dir, ref.ref))));
+    const restarted = await reconcileHubRelease({ ...options, now: '2026-11-09T15:06:00Z' }, readerTransport);
+    const restartedStage = JSON.parse(await readFile(join(f.dir, restarted.artifacts[0].ref), 'utf8'));
+    assert.equal(restartedStage.public_delivery, 'verified');
+    assert.deepEqual(restartedStage.data_generations, finalStage.data_generations);
+    assert.deepEqual(await Promise.all(restartedStage.data_generations.map((ref: any) => readFile(join(f.dir, ref.ref)))), proofBytes);
+    assert.equal(native.writes.length, writesBefore);
+});
+
+test('merged generation evidence refuses unrelated changes, ambiguous PRs and missing protected ancestry', async (t) => {
+    for (const failure of ['second-slug', 'code', 'guides', 'ambiguous', 'foreign', 'not-protected', 'corrupt-original']) {
+        const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const original = await planHubRelease(options, native);
+        const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+        await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+        const merge = native.mergeAdmission();
+        if (failure === 'ambiguous') native.prs.push({ ...native.prs[0], number: 999 });
+        if (failure === 'foreign') native.prs[0].head.repo.full_name = 'Foreign/repo';
+        if (failure === 'corrupt-original') await writeFile(join(f.dir, original.artifacts[0].ref), '{}', { mode: 0o600 });
+        const readGitHub = async (path: string) => {
+            const value = await native.readGitHub(path);
+            if (failure === 'not-protected' && path.includes('/compare/')) return { ...value, status: 'diverged', merge_base_commit: { sha: '0'.repeat(40) } };
+            if (path.includes('/git/trees/') && path.includes(native.commits.get(merge).tree.sha)) return { ...value, tree: value.tree.map((leaf: any) => leaf.path === (failure === 'code' ? 'scripts/compileContent.ts' : failure === 'guides' ? 'constants.guides.generated.ts' : failure === 'second-slug' ? 'data/hub-essay-admissions.json' : '') ? { ...leaf, sha: '0'.repeat(40) } : leaf) };
+            return value;
+        };
+        const observed = await reconcileHubRelease(options, { ...native, readGitHub });
+        assert.equal(observed.status, 'held', failure);
+        const stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.public_delivery, 'unknown', failure);
+        assert.ok(!stage.data_generations?.length, failure);
+        assert.equal(native.writes.length, 5, failure);
+    }
+});
+test('content generation proof refuses changed unrelated copy or unverified checks after merge', async (t) => {
+    for (const failure of ['unrelated-thought', 'target', 'checks']) {
+        const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+        const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+        await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+        native.mergeAdmission(); await reconcileHubRelease(options, native);
+        native.openContent(failure === 'target' ? { ...first.expected, body: 'Changed target body' } : first.expected, failure === 'unrelated-thought' ? [{ ...oldThought, body: 'Lost unrelated copy' }] : [oldThought]);
+        native.mergeContent();
+        const readGitHub = async (path: string) => { const value = await native.readGitHub(path); return failure === 'checks' && path.includes('/check-runs?') ? { ...value, check_runs: value.check_runs.map((c: any) => ({ ...c, conclusion: 'failure' })) } : value; };
+        const result = await reconcileHubRelease(options, { ...native, readGitHub });
+        assert.equal(result.status, 'held', failure);
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.public_delivery, 'unknown', failure);
+        assert.ok((stage.data_generations?.length ?? 0) < 2, failure);
+        assert.equal(native.writes.length, 5);
+    }
+});
+
+test('first full plan has an immutable original-plan anchor independent of later file metadata', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const first = await planHubRelease(options, native);
+    const anchor = JSON.parse(await readFile(join(f.dir, 'hub-original-plan.json'), 'utf8'));
+    assert.deepEqual(anchor.plan, first.artifacts[0]);
+    assert.equal(anchor.input_sha256, first.input_sha256);
+    const bytes = await readFile(join(f.dir, 'hub-original-plan.json'));
+    await planHubRelease({ ...options, now: '2026-11-09T15:06:00Z' }, native);
+    assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), bytes);
+});
+
+test('missing original anchor after a merge holds without rebinding or retrying', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native);
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    native.mergeAdmission(); await rm(join(f.dir, 'hub-original-plan.json'));
+    const result = await reconcileHubRelease(options, native);
+    assert.equal(result.status, 'held');
+    assert.deepEqual(result.holds, ['original-plan-unverified']);
+    assert.ok(!(await readdir(f.dir)).includes('hub-original-plan.json'));
+    assert.equal(native.writes.length, 5);
+});
+
+test('main advancing inside the awaited authorizer prevents setup and every native write', async (t) => {
+    for (const moveAt of [1, 2]) {
+      await t.test(`authorization gate ${moveAt}`, async () => {
+        const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const plan = await planHubRelease(options, native);
+        let calls = 0;
+        const authorize = async (context: any) => {
+            if (++calls === moveAt) native.moveMain();
+            return { admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:bounded' };
+        };
+        const result = await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: plan.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+        assert.equal(result.status, 'held');
+        assert.equal(native.writes.length, 0, `authorizer call ${moveAt}`);
+        const names = await readdir(f.dir);
+        assert.ok(!names.some(name => name.endsWith('-intent.json')));
+        if (moveAt === 1) assert.ok(!names.includes('hub-operation.json') && !names.includes('hub-admission-action.json'));
+      });
+    }
+});
+
+test('recover-sync never dispatches when main changes during authorization', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T16:25:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native);
+    const grant = (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T16:30:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize: async (context: any) => grant(context), clock: () => Date.parse(now) });
+    native.mergeAdmission();
+    const plan = await planHubRelease(options, native), writesBefore = native.writes.length;
+    let calls = 0;
+    const result = await advanceHubRelease({ ...options, action: 'recover-sync', planSha256: plan.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize: async (context: any) => { if (++calls === 2) native.moveMain(); return grant(context); }, clock: () => Date.parse(now) });
+    assert.equal(result.status, 'held');
+    assert.equal(native.writes.length, writesBefore);
+    assert.ok(!(await readdir(f.dir)).includes('hub-sync-intent.json'));
+});
+
+test('unexpected original-anchor fields hold instead of widening the binding', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    await planHubRelease(options, native);
+    const path = join(f.dir, 'hub-original-plan.json'), value = JSON.parse(await readFile(path, 'utf8'));
+    await writeFile(path, JSON.stringify({ ...value, extra: true }), { mode: 0o600 });
+    const result = await reconcileHubRelease(options, native);
+    assert.equal(result.status, 'held');
+    assert.deepEqual(result.holds, ['original-plan-unverified']);
+    assert.equal(native.writes.length, 0);
+});
+
+test('authorization uses fresh time after awaited callbacks and final main readbacks', async (t) => {
+    for (const scenario of ['fresh', 'expired', 'drain']) await t.test(scenario, async () => {
+        const f = await fixture(t), native = nativeFixture(), now = scenario === 'drain' ? '2026-12-09T07:58:59Z' : '2026-11-09T15:05:00Z';
+        const options = { requestPath: f.path, jobDir: f.dir, now }, plan = await planHubRelease(options, native);
+        let ticks = Date.parse(now), pending = false;
+        const authorize = async (context: any) => {
+            if (scenario === 'fresh') ticks += 1000;
+            pending = true;
+            return { admitted: true, ...context, checked_at: new Date(ticks).toISOString(), expires_at: scenario === 'drain' ? '2026-12-09T07:59:00Z' : new Date(ticks + (scenario === 'fresh' ? 60000 : 1000)).toISOString(), stopped: false, grant_ref: 'fixture:clock-bound' };
+        };
+        const readGitHub = async (path: string) => {
+            const result = await native.readGitHub(path);
+            if (pending && path.endsWith('/git/ref/heads/main')) { pending = false; if (scenario !== 'fresh') ticks += 2000; }
+            return result;
+        };
+        await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: plan.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize, readGitHub, clock: () => ticks });
+        assert.equal(native.writes.length, scenario === 'fresh' ? 1 : 0, scenario);
+        const names = await readdir(f.dir);
+        if (scenario === 'fresh') {
+            const intent = JSON.parse(await readFile(join(f.dir, 'hub-admission-blob-intent.json'), 'utf8'));
+            assert.equal(intent.started_at, new Date(ticks).toISOString());
+        } else {
+            assert.ok(!names.some(name => name.endsWith('-intent.json')));
+            assert.ok(!names.includes('hub-operation.json') && !names.includes('hub-admission-action.json'));
+        }
+    });
+});
+
+test('recover-sync rechecks expiry after its asynchronous native inventory', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T16:25:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native);
+    const grant = (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T16:30:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize: async (context: any) => grant(context), clock: () => Date.parse(now) });
+    native.mergeAdmission();
+    const plan = await planHubRelease(options, native), before = await readdir(f.dir), writes = native.writes.length;
+    let ticks = Date.parse(now), calls = 0;
+    const authorize = async (context: any) => { calls++; return { ...grant(context), checked_at: new Date(ticks).toISOString(), expires_at: new Date(ticks + 1000).toISOString() }; };
+    const readGitHub = async (path: string) => { const result = await native.readGitHub(path); if (calls >= 2 && path.includes('/runs?')) ticks += 2000; return result; };
+    await advanceHubRelease({ ...options, action: 'recover-sync', planSha256: plan.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize, readGitHub, clock: () => ticks });
+    assert.equal(native.writes.length, writes);
+    assert.ok(!(await readdir(f.dir)).some(name => name.endsWith('-intent.json') && !before.includes(name)));
+});
+
+test('same-head successful check reruns retain one immutable content transition across restarts', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    native.mergeAdmission(); await reconcileHubRelease(options, native);
+    native.openContent(first.expected); native.mergeContent();
+    const transport = (rerun: boolean) => async (path: string) => {
+        if (path.includes('/deployments?')) throw Error('fixture: no public delivery');
+        const value = await native.readGitHub(path);
+        if (rerun && path.includes('/check-runs?')) return { ...value, check_runs: value.check_runs.map((check: any) => check.name === 'build' ? { ...check, id: 200 } : check).reverse() };
+        if (rerun && path.includes('/protection/required_status_checks')) return { ...value, checks: [...value.checks].reverse() };
+        return value;
+    };
+    const observed = await reconcileHubRelease(options, { ...native, readGitHub: transport(false) });
+    const stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+    const reference = stage.data_generations[1], bytes = await readFile(join(f.dir, reference.ref));
+    for (const minute of ['06', '07']) {
+        const after = await reconcileHubRelease({ ...options, now: `2026-11-09T15:${minute}:00Z` }, { ...native, readGitHub: transport(true) });
+        const next = JSON.parse(await readFile(join(f.dir, after.artifacts[0].ref), 'utf8'));
+        assert.deepEqual(next.data_generations, stage.data_generations);
+        assert.deepEqual(await readFile(join(f.dir, reference.ref)), bytes);
+        assert.equal(next.generation_observations.find((entry: any) => entry.transition === 'content-merged').content_validation.required_checks.find((check: any) => check.name === 'build').id, 200);
+    }
+    const content = [];
+    for (const name of (await readdir(f.dir)).filter(name => /^hub-generation-[a-f0-9]{64}\.json$/.test(name))) if (JSON.parse(await readFile(join(f.dir, name), 'utf8')).transition === 'content-merged') content.push(name);
+    assert.equal(content.length, 1);
+    assert.equal(native.writes.length, 5);
+});
+
+test('content-only handoffs rebind forged original trees, baselines and flags to native facts', async (t) => {
+    for (const failure of ['tree', 'baseline', 'surface-flag', 'allowlist-flag']) await t.test(failure, async () => {
+        const f = await fixture(t), initialAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+        const native = nativeFixture([oldThought], initialAdmissions), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T16:25:00Z' };
+        const first = await planHubRelease(options, native), original = JSON.parse(await readFile(join(f.dir, first.artifacts[0].ref), 'utf8'));
+        const changed = failure === 'baseline' ? [{ ...oldThought, body: 'Forged baseline matches an unrelated content change' }] : [oldThought];
+        const pr = native.openContent(original.expected, changed);
+        if (failure === 'tree') {
+            const originalLeaves = JSON.stringify(native.trees.get(original.admission.base_tree_sha));
+            const headTree = native.trees.get(native.commits.get(pr.head.sha).tree.sha)!.map((entry: any) => ({ ...entry }));
+            const leaf = headTree.find((entry: any) => entry.path === 'scripts/compileContent.ts');
+            leaf.sha = '0'.repeat(40);
+            const treeSha = sha(JSON.stringify(headTree)).slice(0, 40);
+            native.trees.set(treeSha, headTree);
+            native.commits.get(pr.head.sha).tree = { sha: treeSha };
+            original.admission.base_tree.find((entry: any) => entry.path === leaf.path).sha = leaf.sha;
+            assert.equal(JSON.stringify(native.trees.get(original.admission.base_tree_sha)), originalLeaves);
+        }
+        if (failure === 'baseline') original.baseline.thoughts = changed;
+        if (failure === 'surface-flag') original.canonical.surface_targeted = true;
+        if (failure === 'allowlist-flag') { original.source.allowlisted = false; original.canonical.surface_targeted = true; }
+        const bytes = JSON.stringify(original, null, 2) + '\n', hash = sha(bytes), ref = `hub-plan-${hash}.json`;
+        await writeFile(join(f.dir, ref), bytes, { mode: 0o600, flag: 'wx' });
+        const anchorPath = join(f.dir, 'hub-original-plan.json'), anchor = JSON.parse(await readFile(anchorPath, 'utf8'));
+        await writeFile(anchorPath, JSON.stringify({ ...anchor, plan: { ref, sha256: hash } }), { mode: 0o600 });
+        native.mergeContent();
+        const observed = await reconcileHubRelease(options, { ...native, readGitHub: async (path: string) => { if (path.includes('/deployments?')) throw Error('fixture: no public reads'); return native.readGitHub(path); } });
+        assert.equal(observed.status, 'held');
+        const stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+        assert.equal(stage.stage, 'data-generation-unverified');
+        assert.ok(!stage.data_generations?.length);
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('a transition anchor recovers its original proof after materialization crashes and checks rerun', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    native.mergeAdmission(); await reconcileHubRelease(options, native);
+    native.openContent(first.expected); native.mergeContent();
+    const originalLink = fsPromises.link;
+    let held: any;
+    try {
+        fsPromises.link = async (from: any, to: any) => { if (String(to).includes('/hub-generation-') && (await readdir(f.dir)).includes('hub-transition-content-merged.json')) throw Error('fixture: materialization crash'); return originalLink(from, to); };
+        syncBuiltinESMExports();
+        held = await reconcileHubRelease(options, native);
+    } finally { fsPromises.link = originalLink; syncBuiltinESMExports(); }
+    assert.equal(held.status, 'held');
+    const anchorPath = join(f.dir, 'hub-transition-content-merged.json'), anchorBytes = await readFile(anchorPath), anchor = JSON.parse(anchorBytes.toString());
+    assert.ok(!(await readdir(f.dir)).includes(anchor.proof.ref));
+    const readGitHub = async (path: string) => {
+        if (path.includes('/deployments?')) throw Error('fixture: no public reads');
+        const value = await native.readGitHub(path);
+        return path.includes('/check-runs?') ? { ...value, check_runs: value.check_runs.map((check: any) => check.name === 'build' ? { ...check, id: 200 } : check) } : value;
+    };
+    const recovered = await reconcileHubRelease(options, { ...native, readGitHub });
+    const stage = JSON.parse(await readFile(join(f.dir, recovered.artifacts[0].ref), 'utf8'));
+    assert.deepEqual(stage.data_generations[1], anchor.proof);
+    assert.equal(sha(await readFile(join(f.dir, anchor.proof.ref))), anchor.proof.sha256);
+    assert.deepEqual(await readFile(anchorPath), anchorBytes);
+    assert.equal(stage.generation_observations[0].content_validation.required_checks.find((check: any) => check.name === 'build').id, 200);
+    assert.equal(native.writes.length, 5);
+});
+
+test('recover-sync observes a current STOP raised during native inventory before any reservation', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T16:25:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native);
+    const grant = (context: any, stopped = false) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T16:30:00Z', stopped, grant_ref: 'fixture:current-authority' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize: async (context: any) => grant(context), clock: () => Date.parse(now) });
+    native.mergeAdmission();
+    const plan = await planHubRelease(options, native), writesBefore = native.writes.length, namesBefore = await readdir(f.dir);
+    let stopped = false, calls = 0;
+    const authorize = async (context: any) => { calls++; return grant(context, stopped); };
+    const readGitHub = async (path: string) => { const value = await native.readGitHub(path); if (calls >= 2 && path.includes('/runs?')) stopped = true; return value; };
+    const result = await advanceHubRelease({ ...options, action: 'recover-sync', planSha256: plan.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize, readGitHub, clock: () => Date.parse(now) });
+    assert.equal(native.writes.length, writesBefore);
+    assert.equal(result.status, 'held');
+    assert.ok(calls >= 3);
+    assert.ok(!(await readdir(f.dir)).some(name => name.endsWith('-intent.json') && !namesBefore.includes(name)));
+});
+
+test('recovery refresh starts only under a still-valid decision and may finish with a fresh later grant', async (t) => {
+    for (const scenario of ['expires-in-journal-read', 'valid-refresh-finishes-later']) await t.test(scenario, async () => {
+        const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T16:25:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const original = await planHubRelease(options, native);
+        const setupGrant = (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T16:30:00Z', stopped: false, grant_ref: 'fixture:setup' });
+        await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize: async (context: any) => setupGrant(context), clock: () => Date.parse(now) });
+        native.mergeAdmission();
+        const plan = await planHubRelease(options, native), writesBefore = native.writes.length;
+        let ticks = Date.parse(now), calls = 0, inventoryDone = false, delayed = false;
+        const authorize = async (context: any) => {
+            calls++;
+            if (scenario === 'valid-refresh-finishes-later' && calls === 3) ticks += 2000;
+            return { ...setupGrant(context), checked_at: new Date(ticks).toISOString(), expires_at: new Date(ticks + (calls === 3 ? 60000 : 1000)).toISOString(), grant_ref: `fixture:decision-${calls}` };
+        };
+        const readGitHub = async (path: string) => { const value = await native.readGitHub(path); if (calls >= 2 && path.includes('/runs?')) inventoryDone = true; return value; };
+        const originalOpen = fsPromises.open;
+        let result: any;
+        try {
+            fsPromises.open = async (...args: any[]) => {
+                const handle = await (originalOpen as any)(...args);
+                if (scenario === 'expires-in-journal-read' && inventoryDone && calls === 2 && !delayed && String(args[0]).endsWith('/hub-operation.json')) { ticks += 2000; delayed = true; }
+                return handle;
+            };
+            syncBuiltinESMExports();
+            result = await advanceHubRelease({ ...options, action: 'recover-sync', planSha256: plan.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize, readGitHub, clock: () => ticks });
+        } finally { fsPromises.open = originalOpen; syncBuiltinESMExports(); }
+        if (scenario === 'expires-in-journal-read') {
+            assert.equal(delayed, true);
+            assert.equal(calls, 2);
+            assert.equal(native.writes.length, writesBefore);
+            assert.equal(result.status, 'held');
+            assert.ok(!(await readdir(f.dir)).includes('hub-sync-intent.json'));
+        } else {
+            assert.equal(calls, 3);
+            assert.equal(native.writes.length, writesBefore + 1);
+            assert.equal(result.status, 'unknown');
+            const intent = JSON.parse(await readFile(join(f.dir, 'hub-sync-intent.json'), 'utf8'));
+            assert.equal(intent.started_at, new Date(ticks).toISOString());
+            assert.equal(intent.input_sha256, original.input_sha256);
+            assert.equal(intent.plan_sha256, plan.artifacts[0].sha256);
+        }
+    });
 });

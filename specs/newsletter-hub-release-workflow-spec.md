@@ -163,3 +163,63 @@ wait, admit only the exact source and destination URLs while rechecking lease,
 baseline and persistent target identity. Continue only when both native and CLI
 observations reach the destination. A replacement or unapproved third URL holds;
 a timeout stays unverified and still cleans up the original owned target safely.
+
+
+## Merged data-generation proofs
+
+Fresh read-only reconciliation preserves the original operation, request, root,
+plans and write reservations. It may append only two typed generation proofs:
+`admission-merged` for exactly the original planned JSON append, and
+`content-merged` for exactly the original compiler-derived target entry. Each
+proof binds the original plan digest, predecessor proof digest (if any), original
+operation/input, actual PR/head/base/merge identities and commit/tree/data blobs.
+Native fixed-repository readbacks must prove protected ancestry, exact tree
+changes and preservation of all unrelated entries/files; candidate declarations
+or a scheduled row never suffice. The content proof also retains the existing
+trusted required-check/review-thread and content-parity verification.
+
+Missing or ambiguous merged proof holds before public delivery verification.
+Read-only reconciliation may collect these proofs and fresh reader evidence;
+historical inspection remains historical. Proofs convey no writer, merge,
+publication or runtime authority. The default CLI writer remains unadmitted.
+Immutable proofs and earlier observations survive restarts and uncertain write
+responses; no unknown native write is resent. Source tests exercise the existing
+fake-GitHub plan/advance/reconcile seam with external fixture merges and exact
+negative controls. Actual source adoption and native reader qualification remain
+separate from synthetic evidence.
+
+
+The original full plan has an exclusive immutable anchor. A missing anchor in a
+root containing earlier full plans holds rather than selecting a new origin from
+file metadata. A first-plan crash may finish only its exact first binding.
+An awaited authorizer is followed by a fresh exact-main readback before setup or
+a native write; a changed base grants no stale operation. The admission migration
+test preserves the legacy prefix and full JSON/export consistency, while an
+isolated real compile demonstrates that a later valid data-only append succeeds
+without compiler changes.
+
+
+Fresh authorization checks use the trusted time after asynchronous admission and
+readbacks, and recheck the same grant after recovery inventory and before an
+intent/effect. A fresh valid checked-at value succeeds; grant expiry or drain
+crossings observed before reservation create no new native intent/effect. An
+already valid reservation that outlives its grant stays preserved and cannot
+send a new effect or authorize a resend. No clock check claims distributed
+atomicity or grants renewal authority.
+
+Each logical transition has a fixed immutable anchor freezing its original proof
+payload/ref before materialization. Same-head successful CI reruns and check
+ordering changes qualify fresh observations without changing that identity.
+Restart after an anchor-only crash restores exactly its original proof. An
+unanchored, corrupt or changed transition holds. Original native commit/tree/all
+leaves and admission flags/baseline/canonical-derived target are checked
+unconditionally before either handoff, including content-only release paths.
+
+
+For a new recovery reservation, current admission is refreshed through the
+existing authorizer after asynchronous inventory. A STOP already visible at that
+boundary prevents dispatch and creates no new sync intent. The original operation
+and any existing unknown intent are preserved. The prior decision must be valid
+at refresh entry after the final journal await; a fresh current decision may
+finish later under unchanged standing policy/STOP/expiry/drain bounds. This does
+not revive an expired entry, reset a budget or resend an uncertain attempt.

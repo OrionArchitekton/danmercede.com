@@ -302,3 +302,89 @@ stages and original intent/readbacks without resending unknown attempts. Roll
 back source through a reviewed revert; never delete reservations or remove live
 admission data as an operational rollback, and never edit generated bundles by
 hand. No source merge alone changes runtime, schedule, public delivery or grants.
+
+
+## Collecting merged data generations
+
+Use the existing read-only `reconcile` command on the original request and job
+root. A completed plan is preparation evidence, not public delivery. The first
+full plan receives an exclusive `hub-original-plan.json` anchor binding its exact
+immutable plan ref/digest to the operation, week and input. Later plans never
+replace that anchor. An old root without the anchor and with prior full plans
+holds; this is not authority to reconstruct, migrate or rebind a historical job.
+A crash between writing the sole first plan and its anchor may finish only that
+same original binding.
+
+Reconciliation reads fixed-repository closed PRs and their actual head/base/merge
+commit/tree and protected ancestry. It appends at most two logical handoffs:
+
+- `admission-merged`: the exact original planned JSON append, with all other tree
+  leaves unchanged.
+- `content-merged`: the exact original compiler-derived target Thought entry,
+  preserving every other Thought, Diagram, Guide and unrelated tree leaf. The
+  existing trusted required-check origin, check completeness, copy parity and
+  resolved-thread checks also run against the merged content PR head.
+
+Each `hub-generation-<SHA256>.json` is immutable and names its transition,
+operation/week/input, original plan ref/digest, predecessor proof ref/digest (or
+null), predecessor/successor commit/tree and the three data blob/SHA256 records,
+and actual PR/head/base/merge identities. Content proofs retain check/parity
+validation evidence. Stage `data_generations` refs expose the ordered chain;
+the proof files are supporting private artifacts, not additional publication
+operations. Repeated collection re-verifies native provenance without rewriting
+prior proofs. Unknown write reservations retain their prior no-resend behavior.
+
+Missing, ambiguous, foreign, non-ancestor, changed-copy or unrelated-file evidence
+holds with public delivery unknown. Proofs do not grant a write, protected merge,
+runtime admission or publication. The default CLI still lacks an authorizer and
+writer. A main readback after the asynchronous authorizer also prevents a stale
+base grant from reaching setup or a new native write; remote concurrency after a
+completed check remains bounded by subsequent native readbacks, not an atomic
+GitHub transaction or host-wide attestation.
+
+Only after the merged generation chain verifies does reconciliation call the
+existing independent initial/hydrated public-reader verifier. Source fixtures
+exercise these readers with injected transport; they do not establish a real
+public deployment. Pending PR239 endpoint adoption and the weekly controller's
+separately reviewed proof consumer remain qualification dependencies. Rollback is
+a reviewed source revert, never deleting anchors, generation proofs, original
+plans or uncertain write intents. These source changes activate no runtime.
+
+
+### Fresh admission and stable transition identity
+
+Authorization time is sampled again after the awaited authorizer and final main
+readback. The same bound grant is checked for age, expiry, stop and fixed drain
+at subsequent reservation/effect boundaries, including after recovery's awaited
+publication/inventory work. Intent timestamps use the fresh clock. These are
+bounded preflight checks, not an atomic transaction with GitHub or authority to
+renew a grant. Expired or late work holds; uncertain reserved effects remain
+collection-only.
+
+A fixed exclusive `hub-transition-admission-merged.json` or
+`hub-transition-content-merged.json` freezes each transition's original proof
+payload and digest before that proof file is materialized. A later successful
+same-head check rerun or changed check ordering requalifies the current native
+facts but reuses the original proof/ref. Its new check snapshot appears only in
+the fresh stage's `generation_observations`. A crash after the anchor can
+materialize only its exact original payload after fresh native verification.
+Unanchored earlier proofs, changed identities, corrupt pointers or missing
+provenance hold rather than mint a replacement or migrate a historical job.
+
+Before either transition, source readbacks independently verify the original
+protected commit/tree and every leaf. The original admission flags/list,
+Thought/Diagram baseline and compiler-derived target are rebound to actual
+protected data and pinned canonical bytes. A self-consistent local plan/hash is
+not proof that an unrelated code or corpus change was preserved.
+
+
+Recovery also refreshes the existing current authorizer after awaited native
+inventory and before any new sync reservation. This rechecks the same operation,
+input, plan, main and time binding and observes a STOP raised during that wait;
+a cached grant's `stopped: false` is not current STOP evidence. The earlier decision must still be valid when refresh begins, after the final
+journal await. A fresh current decision may finish after that earlier decision
+expires, while the standing policy, STOP, expiry and drain bounds remain valid;
+this does not extend policy, reset a budget or revive an expired refresh entry.
+An existing uncertain intent remains collection-only and never uses this refresh
+to send again. No new authority model, distributed lock or atomicity guarantee is
+introduced.
