@@ -24,6 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
+import { parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 
 // Parse frontmatter with js-yaml's JSON_SCHEMA. This disables YAML's default
 // `!!timestamp` type-coercion, so unquoted YAML dates like
@@ -72,27 +73,14 @@ const ACCEPTED_TYPES = new Set<string>(['essay-long']);
 // status / type / required-field / date gates still apply. INVARIANT: the lane's
 // [syndication] backfill_slugs MUST be a subset of this list (an essay may only
 // carry a .com canonical if it has a real .com page).
-export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
-  '2026-06-08-authority-gate-made-runnable',
-  '2026-05-20-pre-execution-authority-gates',
-  '2026-06-29-the-alibi-of-a-green-gate',
-  '2026-07-06-do-my-agents-learn',
-  '2026-07-13-the-approve-button',
-  '2026-07-20-nobody-owned-the-workflow',
-  '2026-07-27-the-machines-came-back',
-  '2026-08-03-the-alarm-that-always-fires',
-  '2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow',
-  '2026-09-01-gate-what-you-cannot-undo',
-  '2026-09-07-the-plan-checked-itself-and-passed',
-  '2026-09-14-the-fix-never-reached-the-customer',
-  '2026-09-21-approved-but-not-the-version-that-shipped',
-  '2026-09-28-the-alert-fired-nobody-was-there',
-  '2026-10-05-the-assistant-was-only-supposed-to-read',
-  // Edition 13: published 2026-10-12T14:03:06Z; seven full days elapsed 2026-10-19T14:03:06Z.
-  '2026-10-12-the-transcript-looked-complete',
-  '2026-10-19-the-tool-worked-the-agent-couldnt-use-it',
-  '2026-10-26-who-gets-to-interrupt-your-ai-work',
-];
+let essayAdmissionError: unknown;
+export const HUB_ESSAY_ALLOWLIST: readonly string[] = (() => {
+  try { return parseEssayAdmissions(fs.readFileSync(new URL('../data/hub-essay-admissions.json', import.meta.url), 'utf8')); }
+  catch (error) {
+    essayAdmissionError = error;
+    return new Proxy(Object.freeze([]), { get() { throw Error('invalid-essay-admission-data'); } });
+  }
+})();
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
 // HUB_ESSAY_ALLOWLIST. The substrate's type:diagram canonicals are immutable and
@@ -425,6 +413,7 @@ export function mapSubstrateToEntry(
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
   const slugRaw = data['slug'];
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const allowlisted = typeof slugRaw === 'string' && essayAllowlist.includes(slugRaw);
   if (!surfaceTargeted && !allowlisted) {
     log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
@@ -549,6 +538,7 @@ export function mapSubstrateToDiagram(
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
   const slugRaw = data['slug'];
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const allowlisted = typeof slugRaw === 'string' && allowlist.includes(slugRaw);
   if (!surfaceTargeted && !allowlisted) {
     console.log(`   ℹ️  substrate diagram skipped (surface_targets): ${filename}`);
@@ -632,6 +622,7 @@ export interface ReadResult {
  * is preserved for tests + back-compat.
  */
 export function readSubstrateWithDiagnostics(substratePath: string): ReadResult {
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const diagnostics: SubstrateDiagnostic[] = [];
   const canonicalDir = path.join(substratePath, 'publishing', 'canonical');
   if (!fs.existsSync(canonicalDir)) {
@@ -1133,6 +1124,12 @@ export function main(): void {
   //   danmercede.com matches and the committed seed is intentional.
   const strict = process.argv.includes('--strict');
   const requireMatches = process.argv.includes('--require-matches');
+  if (essayAdmissionError) {
+    if (strict) { console.error('Invalid hub essay admission data'); process.exit(1); return; }
+    fs.writeFileSync(path.join(projectRoot(), COMPILE_STATUS_FILENAME), 'SKIPPED\n');
+    console.log('Invalid hub essay admission data; preserving committed bundle');
+    return;
+  }
   const root = projectRoot();
   const substratePath = resolveSubstratePath(root);
 

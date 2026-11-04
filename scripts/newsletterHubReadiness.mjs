@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
 import yaml from 'js-yaml';
 import ts from 'typescript';
+import { ESSAY_ADMISSION_PATH, parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 const LIMIT = 1024 * 1024;
 const WEEK = 168 * 60 * 60 * 1000;
 const REPO = 'OrionArchitekton/danmercede.com';
@@ -219,7 +220,7 @@ const ACTIVE = new Set(['queued', 'requested', 'pending', 'waiting', 'in_progres
 const CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'neutral', 'stale', 'startup_failure']);
 export async function collectHubFacts(readGitHub, { slug }) {
     const prefix = `/repos/${REPO}`, main = mainSha(await readGitHub(`${prefix}/git/ref/heads/main`));
-    const allowlisted = literalExport(sourceContent(await readGitHub(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`)), 'HUB_ESSAY_ALLOWLIST').includes(slug);
+    const allowlisted = parseEssayAdmissions(sourceContent(await readGitHub(`${prefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${main}`))).includes(slug);
     const synced = literalExport(sourceContent(await readGitHub(`${prefix}/contents/constants.generated.ts?ref=${main}`)), 'THOUGHTS', true).includes(slug);
     workflowContract(sourceContent(await readGitHub(`${prefix}/contents/${WORKFLOW}?ref=${main}`)));
     const workflow = await readGitHub(`${prefix}/actions/workflows/substrate-sync.yml`);

@@ -1,8 +1,10 @@
 ---
-verified: 2026-11-03
-review_after: 2026-11-10
+verified: 2026-11-04
+review_after: 2026-11-11
 topics: [newsletter, hub, release, recovery, production-verification]
 references:
+  - scripts/hubEssayAdmissions.mjs
+  - data/hub-essay-admissions.json
   - specs/newsletter-hub-release-workflow-spec.md
   - scripts/newsletterHubRelease.ts
   - scripts/newsletterHubReleaseJournal.ts
@@ -103,7 +105,7 @@ read-only canary after final source review.
 ## Recovery and monitoring
 
 Admission reserves separate blob/tree/commit/ref/PR intents. Readbacks verify the
-single compiler insertion and unchanged complete base tree. Existing foreign work
+single requested slug addition in the protected admission-data file and unchanged complete base tree. Existing foreign work
 holds; there is no overwrite, force push, branch reset or replacement PR. A fully
 prepared PR waits for the separate human merge boundary. Strict sync remains the
 only generated-content writer; its existing trusted base compiler is unchanged.
@@ -266,3 +268,37 @@ mutation authorizer, publication, admission, merge, dispatch, deployment, timer 
 runtime-installation authority, and does not certify future content or changed
 installed tools. Subsequent changes must preserve the exact code/tool/data
 boundaries and be verified at their own requested consumer boundary.
+
+
+## Essay admission data
+
+`data/hub-essay-admissions.json` carries only version 1 and the ordered
+`essay_slugs` array. The fixed parser rejects unknown/duplicate keys, duplicate
+slugs, invalid versions/slugs and oversized data. This overrides only essay
+surface targeting; all other compiler gates and diagram admission are unchanged.
+Invalid data yields consumer SKIPPED with the old generated bundle untouched;
+strict compilation exits nonzero. Exported mapping/reader APIs reject invalid
+configuration, and the exported list cannot be consumed as an empty fallback.
+
+Admission plans bind protected main, the original data Git blob and SHA256, and
+the proposed Git blob and SHA256 to the original immutable request/plan. The
+injected writer rechecks the base tree and appends exactly the requested slug;
+its tree contains one changed data leaf. Unrequested entries, removals, reorder,
+base movement and unrelated tree edits hold. The normal compiler code closure
+therefore remains fixed across later legitimate data-only admissions. Trusted
+verification uses its base checkout's data; PR-supplied policy/code never executes
+in that lane. Admission and content PRs remain separate and HUMAN_REQUIRED.
+
+This source change does not install or qualify a writer. `advance` still requires
+both an explicitly injected authorizer and bounded writer; the default CLI holds.
+No authenticated GitHub writer fallback is provided. The weekly controller needs
+a separately reviewed extension to its protected mutable-data receipt plus new
+fixed code pins before consuming this source generation. Pending PR239's browser
+endpoint fix remains a separate final reader-qualification dependency.
+
+Roll out through reviewed source, verify migration parity and fake-GitHub
+plan/advance/reconcile tests, then qualify the consumer separately. Monitor held
+stages and original intent/readbacks without resending unknown attempts. Roll
+back source through a reviewed revert; never delete reservations or remove live
+admission data as an operational rollback, and never edit generated bundles by
+hand. No source merge alone changes runtime, schedule, public delivery or grants.

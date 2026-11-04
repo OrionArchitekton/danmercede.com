@@ -84,6 +84,7 @@ test('actual CLI plan and inspect emit bound JSON while execute flags cannot cre
 });
 const mainSha = 'e'.repeat(40), oldSlug = '2026-10-26-existing-edition';
 const workflow = await readFile(new URL('../.github/workflows/substrate-sync.yml', import.meta.url), 'utf8');
+const admissions = await readFile(new URL('../data/hub-essay-admissions.json', import.meta.url), 'utf8');
 const compiler = await readFile(new URL('../scripts/compileContent.ts', import.meta.url), 'utf8');
 const oldThought = { title: 'An existing edition', preview: 'Existing accepted claim', date: '2026-10-26', category: 'Doctrine', slug: oldSlug, body: 'Existing approved body. Preserve every word.' };
 const bundle = (thoughts: any[]) => `export const THOUGHTS: Thought[] = ${JSON.stringify(thoughts)};\nexport const DIAGRAMS: Diagram[] = [];\n`;
@@ -91,7 +92,7 @@ const content = (text: string) => {
     const bytes = Buffer.from(text);
     return { type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64'), sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') };
 };
-function nativeFixture(baselineThoughts: any[] = [oldThought]) {
+function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = admissions) {
     const writes: any[] = [];
     const reads: string[] = [];
     const blobs = new Map<string, string>(), trees = new Map<string, any[]>(), commits = new Map<string, any>(), refs = new Map<string, string>(), prs: any[] = [];
@@ -102,7 +103,7 @@ function nativeFixture(baselineThoughts: any[] = [oldThought]) {
         blobs.set(value.sha, raw);
         return value.sha;
     };
-    const baseTree = 'f'.repeat(40), baseEntries = [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: putBlob(compiler) }, { path: 'constants.generated.ts', mode: '100644', type: 'blob', sha: putBlob(bundle(baselineThoughts)) }, { path: '.github/workflows/substrate-sync.yml', mode: '100644', type: 'blob', sha: putBlob(workflow) }, { path: 'README.md', mode: '100644', type: 'blob', sha: putBlob('Unrelated source must remain exactly intact.') }];
+    const baseTree = 'f'.repeat(40), baseEntries = [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: putBlob(compiler) }, { path: 'data/hub-essay-admissions.json', mode: '100644', type: 'blob', sha: putBlob(admissionData) }, { path: 'constants.generated.ts', mode: '100644', type: 'blob', sha: putBlob(bundle(baselineThoughts)) }, { path: '.github/workflows/substrate-sync.yml', mode: '100644', type: 'blob', sha: putBlob(workflow) }, { path: 'README.md', mode: '100644', type: 'blob', sha: putBlob('Unrelated source must remain exactly intact.') }];
     trees.set(baseTree, baseEntries);
     commits.set(mainSha, { sha: mainSha, tree: { sha: baseTree }, parents: [] });
     const readGitHub = async (path: string) => {
@@ -110,6 +111,8 @@ function nativeFixture(baselineThoughts: any[] = [oldThought]) {
         const prefix = '/repos/OrionArchitekton/danmercede.com';
         if (path === `${prefix}/git/ref/heads/main`)
             return { ref: 'refs/heads/main', object: { type: 'commit', sha: activeMain } };
+        if (path === `${prefix}/contents/data/hub-essay-admissions.json?ref=${mainSha}`)
+            return content(admissionData);
         if (path === `${prefix}/contents/scripts/compileContent.ts?ref=${mainSha}`)
             return content(compiler);
         if (path === `${prefix}/contents/constants.generated.ts?ref=${mainSha}`)
@@ -230,9 +233,13 @@ test('eligible private plan builds a minimal exact admission patch while default
     const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
     assert.equal(stage.stage, 'admission-preparation-ready');
     assert.equal(stage.expected.slug, slug);
-    assert.ok(stage.admission.patch.includes(`'${slug}'`));
+    assert.deepEqual(JSON.parse(stage.admission.patch).essay_slugs, [...JSON.parse(admissions).essay_slugs, slug]);
+    assert.equal(stage.admission.data_path, 'data/hub-essay-admissions.json');
+    assert.equal(stage.admission.original_blob_sha, content(admissions).sha);
+    assert.equal(stage.admission.proposed_blob_sha, content(stage.admission.patch).sha);
+    assert.equal(stage.admission.original_sha256, sha(admissions));
     assert.equal(stage.admission.base_sha, mainSha);
-    assert.ok(stage.admission.patch.replace(stage.admission.insertion, '') === compiler);
+    assert.deepEqual(JSON.parse(stage.admission.patch).essay_slugs.slice(0, -1), JSON.parse(admissions).essay_slugs);
     const blocked = await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: result.artifacts[0].sha256, maxActions: 6 }, native);
     assert.equal(blocked.status, 'held');
     assert.deepEqual(blocked.holds, ['runtime-authority-unadmitted']);
@@ -341,7 +348,7 @@ test('missed sync waits for nominal grace and sends once, leaving uncertain disp
     assert.equal(state.sync_attempt.native_run_id, null);
     assert.equal(native.writes.length, 6);
 });
-test('authorized admission action creates only its compiler patch and separate draft PR with durable sub-write readbacks', async (t) => {
+test('authorized admission action creates only its data patch and separate draft PR with durable sub-write readbacks', async (t) => {
     const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
     const planned = await planHubRelease(options, native);
     const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:scoped-authorizer' });
@@ -350,7 +357,7 @@ test('authorized admission action creates only its compiler patch and separate d
     assert.equal(native.prs.length, 1);
     assert.equal(native.prs[0].draft, true);
     assert.equal(native.writes[1].body.tree.length, 1);
-    assert.equal(native.writes[1].body.tree[0].path, 'scripts/compileContent.ts');
+    assert.equal(native.writes[1].body.tree[0].path, 'data/hub-essay-admissions.json');
     const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
     assert.equal(stage.stage, 'admission-pr-awaiting-merge');
     assert.equal(stage.admission_pr.number, 901);
@@ -717,7 +724,7 @@ test('journal recovers only a verified same-inode crash link and preserves unrel
 test('actual hub CLI import never executes replaced generated corpora', async (t) => {
     const f = await fixture(t), runtime = join(f.dir, 'runtime'), marker = join(f.dir, 'corpus-executed');
     await mkdir(runtime, { mode: 0o700 });
-    const closure = ['scripts/newsletterHubRelease.ts', 'scripts/newsletterHubReleaseJournal.ts', 'scripts/newsletterHubReleaseReader.ts', 'scripts/newsletterHubReleaseBrowser.ts', 'scripts/newsletterHubInstalledBrowser.ts', 'scripts/newsletterHubReadiness.mjs', 'scripts/compileContent.ts', 'scripts/renderFeed.ts', 'scripts/renderFeedCore.ts', 'scripts/verifyProductionDeployment.mjs', 'components/Markdown.tsx', 'thoughtsIndex.ts', 'seoMeta.ts', 'siteOrigin.ts', 'constants.ts', 'types.ts', 'package.json', 'tsconfig.json'];
+    const closure = ['scripts/hubEssayAdmissions.mjs', 'data/hub-essay-admissions.json', 'scripts/newsletterHubRelease.ts', 'scripts/newsletterHubReleaseJournal.ts', 'scripts/newsletterHubReleaseReader.ts', 'scripts/newsletterHubReleaseBrowser.ts', 'scripts/newsletterHubInstalledBrowser.ts', 'scripts/newsletterHubReadiness.mjs', 'scripts/compileContent.ts', 'scripts/renderFeed.ts', 'scripts/renderFeedCore.ts', 'scripts/verifyProductionDeployment.mjs', 'components/Markdown.tsx', 'thoughtsIndex.ts', 'seoMeta.ts', 'siteOrigin.ts', 'constants.ts', 'types.ts', 'package.json', 'tsconfig.json'];
     for (const path of closure) {
         let raw: Buffer;
         try { raw = await readFile(new URL('../' + path, import.meta.url)); } catch (error: any) { if (error.code === 'ENOENT') continue; throw error; }
@@ -742,4 +749,48 @@ test('pure feed core preserves prior fixed-fixture bytes and existing default AP
     assert.equal(sha(pure.renderAtom([thought], [])), 'e769473eb31c8e94ef0ecf2052ce3180a3f4ce64f4521bfff91da94c0c4cc23b');
     assert.equal(pure.renderRss(THOUGHTS, GUIDES), renderRss());
     assert.equal(pure.renderAtom(THOUGHTS, GUIDES), renderAtom());
+});
+
+test('admission data must match its exact protected base tree leaf before preparation', async (t) => {
+    const f = await fixture(t), native = nativeFixture();
+    const deps = { ...native, readGitHub: async (path: string) => {
+        const value = await native.readGitHub(path);
+        if (path.includes('/git/trees/') && path.endsWith('?recursive=1')) return { ...value, tree: value.tree.map((e: any) => e.path === 'data/hub-essay-admissions.json' ? { ...e, sha: '0'.repeat(40) } : e) };
+        return value;
+    } };
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, deps);
+    assert.equal(result.status, 'held');
+    assert.equal(native.writes.length, 0);
+});
+
+test('admission writer refuses second slugs, reorder, removal and unrelated base leaves before any write', async (t) => {
+    for (const change of ['second-slug', 'reorder', 'remove', 'tree-leaf']) {
+        const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const planned = await planHubRelease(options, native);
+        const stage = JSON.parse(await readFile(join(f.dir, planned.artifacts[0].ref), 'utf8'));
+        if (change === 'tree-leaf') stage.admission.base_tree.find((e: any) => e.path === 'README.md').sha = '0'.repeat(40);
+        else {
+            const data = JSON.parse(stage.admission.patch);
+            if (change === 'second-slug') data.essay_slugs.push('unrequested-slug');
+            if (change === 'reorder') [data.essay_slugs[0], data.essay_slugs[1]] = [data.essay_slugs[1], data.essay_slugs[0]];
+            if (change === 'remove') data.essay_slugs.shift();
+            stage.admission.patch = JSON.stringify(data, null, 2) + '\n';
+            stage.admission.patch_sha256 = sha(stage.admission.patch);
+            stage.admission.proposed_blob_sha = content(stage.admission.patch).sha;
+            stage.admission.allowlist = data.essay_slugs;
+        }
+        const bytes = JSON.stringify(stage, null, 2) + '\n', digest = sha(bytes);
+        await writeFile(join(f.dir, `hub-plan-${digest}.json`), bytes, { mode: 0o600, flag: 'wx' });
+        const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:bounded-authorizer' });
+        const result = await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: digest, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+        assert.equal(result.status, 'held', change);
+        assert.equal(native.writes.length, 0, change);
+    }
+});
+
+test('full admission list cannot produce an invalid over-capacity proposal', async (t) => {
+    const f = await fixture(t), raw = JSON.stringify({ schema_version: 1, essay_slugs: Array.from({ length: 1000 }, (_, i) => `existing-${i}`) }), native = nativeFixture([oldThought], raw);
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    assert.equal(result.status, 'held');
+    assert.equal(native.writes.length, 0);
 });

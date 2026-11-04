@@ -1,9 +1,11 @@
 /** Hub-specific release coordinator. CLI writers remain runtime-unadmitted. */
 import { isAbsolute } from 'node:path';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify, parseArgs } from 'node:util';
 import ts from 'typescript';
+import { ESSAY_ADMISSION_PATH, parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 import { digest, insist, readPrivateJson, privateRoot } from './newsletterHubReleaseJournal.ts';
 import { parsePublicationSnapshot, collectHubFacts, decideHubReadiness, readHubGitHub, decodeHubSource, parseHubInstant } from './newsletterHubReadiness.mjs';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput } from './compileContent.ts';
@@ -120,17 +122,15 @@ function rows(source: string, name: string) {
     insist(new Set(result.map(row => row.slug)).size === result.length, 'duplicate-bundle-slug');
     return result;
 }
+function gitBlob(raw: string) {
+    return createHash('sha1').update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest('hex');
+}
 function admissionPatch(source: string, slug: string) {
-    const array = arrayDeclaration(source, 'HUB_ESSAY_ALLOWLIST');
-    const existing = array.elements.map(e => {
-        insist(ts.isStringLiteral(e), 'unsupported-allowlist');
-        return e.text;
-    });
-    insist(new Set(existing).size === existing.length, 'duplicate-allowlist');
-    if (existing.includes(slug))
-        return { patch: source, insertion: '', allowlist: existing };
-    const end = array.end - 1, insertion = `${array.elements.length && !array.elements.hasTrailingComma ? ',' : ''}\n  '${slug}',\n`;
-    return { patch: source.slice(0, end) + insertion + source.slice(end), insertion, allowlist: [...existing, slug] };
+    const existing = parseEssayAdmissions(source);
+    const allowlist = existing.includes(slug) ? existing : [...existing, slug];
+    const patch = existing.includes(slug) ? source : JSON.stringify({ schema_version: 1, essay_slugs: allowlist }, null, 2) + '\n';
+    parseEssayAdmissions(patch); // The appended proposal must satisfy the same bounded data contract.
+    return { patch, allowlist, data_path: ESSAY_ADMISSION_PATH, original_blob_sha: gitBlob(source), original_sha256: digest(source), proposed_blob_sha: gitBlob(patch), patch_sha256: digest(patch) };
 }
 async function trustedCanonical(binding: any, read: (path: string) => Promise<any>) {
     const r = binding.request;
@@ -153,11 +153,11 @@ async function trustedCanonical(binding: any, read: (path: string) => Promise<an
 }
 async function detailedPlan(binding: any, facts: any, read: (path: string) => Promise<any>, pub: any) {
     const r = binding.request, main = facts.source.main_sha, prefix = `/repos/${REPOSITORY}`;
-    const compiler = decodeHubSource(await read(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`));
+    const admissionData = decodeHubSource(await read(`${prefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${main}`));
     const baselineSource = decodeHubSource(await read(`${prefix}/contents/constants.generated.ts?ref=${main}`));
     const trusted = await trustedCanonical(binding, read);
     const raw = trusted.raw;
-    const parsed = parseCanonicalMarkdown(raw), patch = admissionPatch(compiler, r.slug);
+    const parsed = parseCanonicalMarkdown(raw), patch = admissionPatch(admissionData, r.slug);
     const entry = mapSubstrateToEntry(parsed.data, delinkWikiLinks(parsed.content.trim()), r.canonical.path, [], patch.allowlist, () => {
     });
     insist(entry && entry.slug === r.slug && entry.title === pub.title, 'canonical-not-admissible');
@@ -168,10 +168,11 @@ async function detailedPlan(binding: any, facts: any, read: (path: string) => Pr
     const commit = await read(`${prefix}/git/commits/${main}`);
     insist(commit?.sha === main && SHA.test(commit.tree?.sha), 'base-commit-unusable');
     const baseTree = await leafTree(read, commit.tree.sha);
+    insist(baseTree.some((e: any) => e.path === ESSAY_ADMISSION_PATH && e.mode === '100644' && e.type === 'blob' && e.sha === patch.original_blob_sha), 'admission-data-base-mismatch');
     const current = baseline.thoughts.find((e: any) => e.slug === r.slug);
     if (current)
         insist(JSON.stringify(current) === JSON.stringify(expected), 'target-copy-mismatch');
-    return { expected, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, compiler_sha256: digest(compiler), patch: patch.patch, insertion: patch.insertion, patch_sha256: digest(patch.patch) } };
+    return { expected, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, ...patch } };
 }
 async function leafTree(read: (path: string) => Promise<any>, sha: string) {
     const data = await read(`/repos/${REPOSITORY}/git/trees/${sha}?recursive=1`);
@@ -414,6 +415,15 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
 async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies) {
     insist(plan.stage === 'admission-preparation-ready', 'admission-plan-not-ready');
     const read = deps.readGitHub ?? readHubGitHub, a = plan.admission, budget = { used: 0 };
+    const original = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${a.base_sha}`));
+    const checked = admissionPatch(original, binding.request.slug);
+    insist(a.base_sha === plan.source.main_sha, 'admission-data-base-mismatch');
+    const currentBase = await read(`${nativePrefix}/git/commits/${a.base_sha}`);
+    insist(currentBase?.sha === a.base_sha && currentBase.tree?.sha === a.base_tree_sha, 'admission-data-base-mismatch');
+    const currentLeaves = await leafTree(read, a.base_tree_sha);
+    insist(JSON.stringify(currentLeaves) === JSON.stringify(a.base_tree) && currentLeaves.some((e: any) => e.path === ESSAY_ADMISSION_PATH && e.mode === '100644' && e.type === 'blob' && e.sha === checked.original_blob_sha), 'admission-data-base-mismatch');
+    for (const key of ['data_path', 'original_blob_sha', 'original_sha256', 'proposed_blob_sha', 'patch_sha256', 'patch']) insist(a[key] === checked[key], 'admission-data-binding-mismatch');
+    insist(JSON.stringify(a.allowlist) === JSON.stringify(checked.allowlist), 'admission-data-binding-mismatch');
     const operation = await root.get('hub-operation.json');
     if (operation)
         insist(operation.value.input_sha256 === binding.input_sha256, 'operation-input-changed');
@@ -435,15 +445,15 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
         insist(decodeHubSource({ ...data, type: 'file' }) === a.patch, 'blob-readback-mismatch');
         return { sha: response.sha };
     }, budget);
-    const tree = await nativeStep(root, options, binding, plan, deps, 'tree', 'POST', `${nativePrefix}/git/trees`, { base_tree: a.base_tree_sha, tree: [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: blob.sha }] }, async (response) => {
-        const actual = await leafTree(read, response.sha), expected = a.base_tree.map((e: any) => e.path === 'scripts/compileContent.ts' ? { ...e, sha: blob.sha } : e);
+    const tree = await nativeStep(root, options, binding, plan, deps, 'tree', 'POST', `${nativePrefix}/git/trees`, { base_tree: a.base_tree_sha, tree: [{ path: ESSAY_ADMISSION_PATH, mode: '100644', type: 'blob', sha: blob.sha }] }, async (response) => {
+        const actual = await leafTree(read, response.sha), expected = a.base_tree.map((e: any) => e.path === ESSAY_ADMISSION_PATH ? { ...e, sha: blob.sha } : e);
         insist(JSON.stringify(actual) === JSON.stringify(expected), 'admission-tree-unrelated-change');
         return { sha: response.sha };
     }, budget);
     const commit = await nativeStep(root, options, binding, plan, deps, 'commit', 'POST', `${nativePrefix}/git/commits`, { message: `Admit ${binding.request.slug} [${binding.request.operation_id}:${binding.input_sha256}]`, tree: tree.sha, parents: [a.base_sha] }, async (response) => {
         const data = await read(`${nativePrefix}/git/commits/${response.sha}`);
         insist(data?.sha === response.sha && data.tree?.sha === tree.sha && data.parents?.length === 1 && data.parents[0].sha === a.base_sha, 'commit-readback-mismatch');
-        insist(decodeHubSource(await read(`${nativePrefix}/contents/scripts/compileContent.ts?ref=${response.sha}`)) === a.patch, 'commit-copy-mismatch');
+        insist(decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${response.sha}`)) === a.patch, 'commit-copy-mismatch');
         return { sha: response.sha };
     }, budget);
     const ref = await nativeStep(root, options, binding, plan, deps, 'ref', 'POST', `${nativePrefix}/git/refs`, { ref: `refs/heads/${a.branch}`, sha: commit.sha }, async (response) => {

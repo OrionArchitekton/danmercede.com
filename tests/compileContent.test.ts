@@ -9,6 +9,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { spawnSync } from 'node:child_process';
+import { parseEssayAdmissions } from '../scripts/hubEssayAdmissions.mjs';
 
 import { THOUGHTS } from '../constants.js';
 import {
@@ -1109,4 +1111,37 @@ test('shipped THOUGHTS is ordered newest-first (non-increasing publish date)', (
         'Regenerate with `node scripts/compileContent.ts` and commit.',
     );
   }
+});
+
+// Admission source is inert data; migration preserves the public compiler API.
+test('essay admission data preserves the exact legacy list and rejects ambiguous JSON', () => {
+  const raw = fs.readFileSync(new URL('../data/hub-essay-admissions.json', import.meta.url), 'utf8');
+  const legacy = ["2026-06-08-authority-gate-made-runnable", "2026-05-20-pre-execution-authority-gates", "2026-06-29-the-alibi-of-a-green-gate", "2026-07-06-do-my-agents-learn", "2026-07-13-the-approve-button", "2026-07-20-nobody-owned-the-workflow", "2026-07-27-the-machines-came-back", "2026-08-03-the-alarm-that-always-fires", "2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow", "2026-09-01-gate-what-you-cannot-undo", "2026-09-07-the-plan-checked-itself-and-passed", "2026-09-14-the-fix-never-reached-the-customer", "2026-09-21-approved-but-not-the-version-that-shipped", "2026-09-28-the-alert-fired-nobody-was-there", "2026-10-05-the-assistant-was-only-supposed-to-read", "2026-10-12-the-transcript-looked-complete", "2026-10-19-the-tool-worked-the-agent-couldnt-use-it", "2026-10-26-who-gets-to-interrupt-your-ai-work"];
+  assert.deepEqual(HUB_ESSAY_ALLOWLIST, legacy);
+  assert.deepEqual(JSON.parse(raw), { schema_version: 1, essay_slugs: legacy });
+});
+
+test('invalid admission data preserves CLI output and refuses exported reader bypass', (t) => {
+  const root = mkTempDir('hub-admission-cli-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'scripts')); fs.mkdirSync(path.join(root, 'data'));
+  for (const name of ['compileContent.ts', 'hubEssayAdmissions.mjs']) fs.copyFileSync(new URL('../scripts/' + name, import.meta.url), path.join(root, 'scripts', name));
+  fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}');
+  fs.symlinkSync(path.resolve('node_modules'), path.join(root, 'node_modules'));
+  fs.writeFileSync(path.join(root, 'data/hub-essay-admissions.json'), '{"schema_version":1,"essay_slugs":[],"essay_slugs":[]}');
+  fs.writeFileSync(path.join(root, 'constants.generated.ts'), 'EXACT EXISTING BUNDLE');
+  const env: NodeJS.ProcessEnv = { ...process.env, TSX_DISABLE_CACHE: '1' }; delete env.VERCEL;
+  for (const strict of [false, true]) {
+    const result = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/compileContent.ts', ...(strict ? ['--strict'] : [])], { cwd: root, env, encoding: 'utf8' });
+    assert.equal(result.status, strict ? 1 : 0, result.stderr);
+    assert.equal(fs.readFileSync(path.join(root, 'constants.generated.ts'), 'utf8'), 'EXACT EXISTING BUNDLE');
+    if (!strict) assert.equal(fs.readFileSync(path.join(root, '.compile-status'), 'utf8'), 'SKIPPED\n');
+  }
+  const api = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `import { readSubstrateWithDiagnostics, mapSubstrateToEntry, HUB_ESSAY_ALLOWLIST } from './scripts/compileContent.ts'; import assert from 'node:assert/strict'; assert.throws(() => readSubstrateWithDiagnostics('/not-present'), /invalid-essay-admission-data/); assert.throws(() => mapSubstrateToEntry({}, '', 'bad', [], []), /invalid-essay-admission-data/); assert.throws(() => HUB_ESSAY_ALLOWLIST.length, /invalid-essay-admission-data/);`], { cwd: root, env, encoding: 'utf8' });
+  assert.equal(api.status, 0, api.stderr);
+});
+test('essay admission parser rejects ambiguous or executable data', () => {
+  const valid = JSON.stringify({ schema_version: 1, essay_slugs: ['one'] });
+  assert.deepEqual(parseEssayAdmissions(valid), ['one']);
+  for (const raw of [valid.replace('"schema_version":1', '"schema_version":1,"schema_version":1'), valid.replace('"one"', '"one","one"'), valid.replace('"one"', '"../one"'), valid.replace('"one"', '"ONE"'), valid.replace('"one"', '4'), valid.replace(':1', ':2'), valid.replace('{', '{"extra":true,'), 'process.exit()', ' '.repeat(65537)]) assert.throws(() => parseEssayAdmissions(raw));
 });

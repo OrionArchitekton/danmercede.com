@@ -61,9 +61,9 @@ No consumer may infer public delivery from the outer completed status.
    the week. E16's earliest instant is `2026-11-09T15:02:46Z`. A recovery dispatch
    additionally waits until Monday 08:10 Pacific plus explicit existing 15-minute
    grace. No date-only, intended schedule or later draft substitutes for evidence.
-3. Planning reads pinned main/compiler/bundle/workflow and complete global
+3. Planning reads pinned main/admission-data/bundle/workflow and complete global
    workflow/ref/PR inventories through the existing checker. It previews an
-   admission-only compiler patch with all other bytes unchanged, and maps the
+   admission-only data patch appending exactly the requested slug, preserving existing order and all other tree leaves, and maps the
    pinned canonical using the trusted local compiler. It never hand-edits the
    generated bundle or sealed source. Bundle presence without allowlist membership
    remains valid; absent override alone does not establish absent direct targeting.

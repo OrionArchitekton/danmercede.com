@@ -52,17 +52,17 @@ const repo = 'OrionArchitekton/danmercede.com', head = 'c'.repeat(40), old = 'd'
 const prefix = `/repos/${repo}`;
 const workflow = await readFile(new URL('../.github/workflows/substrate-sync.yml', import.meta.url), 'utf8');
 function content(source) { const bytes = Buffer.from(source); return { type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64'), sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') }; }
-function compiler(slugs = [slug]) { return `export const HUB_ESSAY_ALLOWLIST: readonly string[] = ${JSON.stringify(slugs)};`; }
+function admissions(slugs = [slug]) { return JSON.stringify({ schema_version: 1, essay_slugs: slugs }); }
 function bundle(slugs = []) { return `export const THOUGHTS: Thought[] = ${JSON.stringify(slugs.map(slug => ({ title: 'Title', preview: 'Preview', date: '2026-11-02', category: 'Doctrine', slug, body: 'Body' })))};`; }
-function nativeFixture({ allowlisted = true, synced = false, runs = [], prs = [], mainAfter = head, compilerText, bundleText, workflowText = workflow, runCount = runs.length, workflowState = 'active' } = {}) {
+function nativeFixture({ allowlisted = true, synced = false, runs = [], prs = [], mainAfter = head, admissionText, bundleText, workflowText = workflow, runCount = runs.length, workflowState = 'active' } = {}) {
     const calls = [];
     let mainReads = 0;
     const read = async (path) => {
         calls.push(path);
         if (path === `${prefix}/git/ref/heads/main`)
             return { ref: 'refs/heads/main', object: { type: 'commit', sha: ++mainReads === 1 ? head : mainAfter } };
-        if (path === `${prefix}/contents/scripts/compileContent.ts?ref=${head}`)
-            return content(compilerText ?? compiler(allowlisted ? [slug] : []));
+        if (path === `${prefix}/contents/data/hub-essay-admissions.json?ref=${head}`)
+            return content(admissionText ?? admissions(allowlisted ? [slug] : []));
         if (path === `${prefix}/contents/constants.generated.ts?ref=${head}`)
             return content(bundleText ?? bundle(synced ? [slug] : []));
         if (path === `${prefix}/contents/.github/workflows/substrate-sync.yml?ref=${head}`)
@@ -140,7 +140,7 @@ test('grace waits until precise boundary then provides only one advisory identit
     assert.ok(native.calls.every(path => path.startsWith(prefix + '/') && !/dispatches|merge|comments/.test(path)));
 });
 test('native failures drift unsupported source workflow inventory and unknown state refuse', async (t) => {
-    const configs = [{ mainAfter: old }, { workflowState: 'disabled_manually' }, { compilerText: 'export const HUB_ESSAY_ALLOWLIST = [process.exit()];' }, { compilerText: `export const HUB_ESSAY_ALLOWLIST = ["${slug}"]; export const HUB_ESSAY_ALLOWLIST=[];` }, { workflowText: workflow.replace('ref: main', 'ref: older') }, { workflowText: workflow.replace('timezone: America/Los_Angeles', 'timezone: UTC') }, { runs: [run({ status: 'mystery' })] }, { runs: [run({ repository: { full_name: 'Else/repo' } })] }, { runs: [run(), run()] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'failure' })] }, { runs: [run()], runCount: 2 }, { prs: [pr(), pr({ number: 241 })] }];
+    const configs = [{ mainAfter: old }, { workflowState: 'disabled_manually' }, { admissionText: '{"schema_version":1,"essay_slugs":[process.exit()]}' }, { admissionText: `{"schema_version":1,"essay_slugs":["${slug}"],"essay_slugs":[]}` }, { workflowText: workflow.replace('ref: main', 'ref: older') }, { workflowText: workflow.replace('timezone: America/Los_Angeles', 'timezone: UTC') }, { runs: [run({ status: 'mystery' })] }, { runs: [run({ repository: { full_name: 'Else/repo' } })] }, { runs: [run(), run()] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'success' })] }, { runs: [run({ head_sha: head, status: 'completed', conclusion: 'failure' })] }, { runs: [run()], runCount: 2 }, { prs: [pr(), pr({ number: 241 })] }];
     for (const config of configs) {
         const native = nativeFixture(config);
         const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
@@ -154,7 +154,7 @@ test('native failures drift unsupported source workflow inventory and unknown st
 test('same main gives a global dedupe key across editions', async (t) => {
     const native = nativeFixture();
     const first = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
-    const other = '2026-10-19-another-essay', secondNative = nativeFixture({ compilerText: compiler([slug, other]) });
+    const other = '2026-10-19-another-essay', secondNative = nativeFixture({ admissionText: admissions([slug, other]) });
     const second = await invoke(t, { selectedSlug: other, snapshot: envelope([record({ slug: other })]), now: '2026-11-02T16:25:00Z', readGitHub: secondNative.read });
     assert.equal(first.result.decision.operation.dedupe_key, second.result.decision.operation.dedupe_key);
     assert.equal(first.result.decision.operation.dedupe_key, `${repo}:.github/workflows/substrate-sync.yml:refs/heads/main:${head}`);
@@ -220,8 +220,8 @@ test('unknown workflow trigger and conditional strict compile refuse', async (t)
 });
 test('actual committed multiline bundle is parsed as inert body data', async (t) => {
     const bundleText = await readFile(new URL('../constants.generated.ts', import.meta.url), 'utf8');
-    const compilerText = await readFile(new URL('../scripts/compileContent.ts', import.meta.url), 'utf8');
-    const native = nativeFixture({ compilerText, bundleText });
+    const admissionText = await readFile(new URL('../data/hub-essay-admissions.json', import.meta.url), 'utf8');
+    const native = nativeFixture({ admissionText, bundleText });
     const { result } = await invoke(t, { now: '2026-11-02T16:25:00Z', readGitHub: native.read });
     assert.equal(result.decision.state, 'already-source-synced');
 });
