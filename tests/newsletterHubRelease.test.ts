@@ -20,7 +20,8 @@ import { verifyHubReader } from '../scripts/newsletterHubReleaseReader.ts';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, generateOutput, HUB_ESSAY_ALLOWLIST } from '../scripts/compileContent.ts';
 import { planHubRelease, inspectHubRelease, advanceHubRelease, reconcileHubRelease, verifyTrustedHubCheck } from '../scripts/newsletterHubRelease.ts';
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
-const slug = '2026-11-02-before-your-ai-tries-again';
+// A synthetic unadmitted slug keeps admission tests independent of real releases.
+const slug = '2026-11-02-fixture-confirmation-recovery';
 const title = 'Before Your AI Tries Again';
 const canonical = `---\nstatus: canonical\ntype: essay-long\nslug: ${slug}\ntitle: ${title}\ndate: 2026-11-02T07:00:00-08:00\nclaim: Recover a missing confirmation before repeating work.\nlayer: enforcement\nsurface_targets: [linkedin]\n---\nAn absent confirmation leaves the outcome unknown. Recover the actual record before repeating a consequential step.\n\n## Keep the original attempt\n\nRetain its identifier and inspect the result before allowing another attempt. A new request cannot explain what happened to the old one.\n\nWhich confirmation would you recover before trying again?\n`;
 async function fixture(t: any) {
@@ -35,7 +36,7 @@ async function fixture(t: any) {
     await writeFile(path, raw, { mode: 0o600 });
     return { dir, path, request, raw, snapshotPath, snapshotRaw };
 }
-test('private plan preserves E16 exact boundary and binds a real local artifact without native writes', async (t) => {
+test('private plan preserves the exact 168-hour boundary and binds a local artifact without native writes', async (t) => {
     const f = await fixture(t);
     let reads = 0;
     const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:02:45Z' }, { readGitHub: async () => {
