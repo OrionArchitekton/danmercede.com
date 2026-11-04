@@ -23,14 +23,14 @@ const sha = (value: string | Buffer) => createHash('sha256').update(value).diges
 const slug = '2026-11-02-before-your-ai-tries-again';
 const title = 'Before Your AI Tries Again';
 const canonical = `---\nstatus: canonical\ntype: essay-long\nslug: ${slug}\ntitle: ${title}\ndate: 2026-11-02T07:00:00-08:00\nclaim: Recover a missing confirmation before repeating work.\nlayer: enforcement\nsurface_targets: [linkedin]\n---\nAn absent confirmation leaves the outcome unknown. Recover the actual record before repeating a consequential step.\n\n## Keep the original attempt\n\nRetain its identifier and inspect the result before allowing another attempt. A new request cannot explain what happened to the old one.\n\nWhich confirmation would you recover before trying again?\n`;
-async function fixture(t: any) {
+async function fixture(t: any, canonicalSource = canonical) {
     const dir = await mkdtemp(join(tmpdir(), 'hub-workflow-test-'));
     await chmod(dir, 0o700);
     t.after(() => rm(dir, { recursive: true, force: true }));
     const snapshot = { schema_version: 1, kind: 'newsletter-publication-coverage', newsletter_id: '7477834312608866304', editions: [{ slug, title, observed_title: title, hub_release_week: '2026-11-09', native_id: '7522060460920934400', public_url: 'https://www.linkedin.com/pulse/before-your-ai-tries-again-dan-mercede-example/', package_sha256: 'a'.repeat(64), published_at: '2026-11-02T15:02:46Z', observed_at: '2026-11-02T15:10:00Z', evidence_ref: 'fixture:publication', evidence_sha256: 'b'.repeat(64), coverage: ['identity', 'publication_time', 'title', 'body', 'headings', 'anchor', 'cover', 'caption', 'commentary', 'cta'] }] };
     const snapshotRaw = JSON.stringify(snapshot), snapshotPath = join(dir, 'publication.json');
     await writeFile(snapshotPath, snapshotRaw, { mode: 0o600 });
-    const request = { schema_version: 1, kind: 'newsletter-hub-release-request', operation_id: 'fcn-hub-ed16-20261102', week: '2026-11-02', release_week: '2026-11-09', slug, canonical: { commit: 'c'.repeat(40), path: `publishing/canonical/${slug}.md`, sha256: sha(canonical) }, publication_snapshot: { path: snapshotPath, sha256: sha(snapshotRaw) }, cta: { kind: 'question', text: 'Which confirmation would you recover before trying again?' } };
+    const request = { schema_version: 1, kind: 'newsletter-hub-release-request', operation_id: 'fcn-hub-ed16-20261102', week: '2026-11-02', release_week: '2026-11-09', slug, canonical: { commit: 'c'.repeat(40), path: `publishing/canonical/${slug}.md`, sha256: sha(canonicalSource) }, publication_snapshot: { path: snapshotPath, sha256: sha(snapshotRaw) }, cta: { kind: 'question', text: 'Which confirmation would you recover before trying again?' } };
     const raw = JSON.stringify(request), path = join(dir, 'request.json');
     await writeFile(path, raw, { mode: 0o600 });
     return { dir, path, request, raw, snapshotPath, snapshotRaw };
@@ -92,10 +92,10 @@ const content = (text: string) => {
     const bytes = Buffer.from(text);
     return { type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64'), sha: createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex') };
 };
-function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = admissions) {
+function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = admissions, canonicalSource = canonical) {
     const writes: any[] = [];
     const reads: string[] = [];
-    const blobs = new Map<string, string>(), trees = new Map<string, any[]>(), commits = new Map<string, any>(), refs = new Map<string, string>(), prs: any[] = [];
+    const blobs = new Map<string, string>(), binaryBlobs = new Map<string, Buffer>(), trees = new Map<string, any[]>(), commits = new Map<string, any>(), refs = new Map<string, string>(), prs: any[] = [];
     const runs: any[] = [];
     let activeMain = mainSha;
     const putBlob = (raw: string) => {
@@ -145,8 +145,10 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
             const id = path.slice(`${prefix}/git/trees/`.length).split('?')[0];
             return { sha: id, truncated: false, tree: trees.get(id) };
         }
-        if (path.startsWith(`${prefix}/git/blobs/`))
-            return content(blobs.get(path.slice(`${prefix}/git/blobs/`.length))!);
+        if (path.startsWith(`${prefix}/git/blobs/`)) {
+            const id = path.slice(`${prefix}/git/blobs/`.length), binary = binaryBlobs.get(id);
+            return binary ? { sha: id, encoding: 'base64', size: binary.length, content: binary.toString('base64') } : content(blobs.get(id)!);
+        }
         if (path.startsWith(`${prefix}/git/matching-refs/heads/`)) {
             const branch = decodeURIComponent(path.slice(`${prefix}/git/matching-refs/heads/`.length));
             return refs.has(branch) ? [{ ref: `refs/heads/${branch}`, object: { type: 'commit', sha: refs.get(branch) } }] : [];
@@ -165,7 +167,7 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
                 return content(blobs.get(trees.get(commit.tree.sha)!.find(e => e.path === p).sha)!);
         }
         if (path === `/repos/OrionArchitekton/dan-mercede-substrate/contents/publishing/canonical/${slug}.md?ref=${'c'.repeat(40)}`)
-            return content(canonical);
+            return content(canonicalSource);
         if (path === '/repos/OrionArchitekton/dan-mercede-substrate/git/ref/heads/main')
             return { ref: 'refs/heads/main', object: { type: 'commit', sha: 'c'.repeat(40) } };
         throw Object.assign(Error('missing fixture route'), { path });
@@ -212,8 +214,16 @@ function nativeFixture(baselineThoughts: any[] = [oldThought], admissionData = a
         activeMain = pr.merge_commit_sha;
         return activeMain;
     };
-    const openContent = (expected: any, changed = baselineThoughts) => {
-        const next = [expected, ...changed].sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug)), tree = trees.get(commits.get(activeMain).tree.sha)!.map(e => e.path === 'constants.generated.ts' ? { ...e, sha: putBlob(bundle(next)) } : e), treeSha = sha(JSON.stringify(tree)).slice(0, 40), id = '8'.repeat(40);
+    const openContent = (expected: any, changed = baselineThoughts, assets: { path: string; bytes: Buffer; mode?: string }[] = []) => {
+        const next = [expected, ...changed].sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug)), tree = trees.get(commits.get(activeMain).tree.sha)!.map(e => e.path === 'constants.generated.ts' ? { ...e, sha: putBlob(bundle(next)) } : e), id = '8'.repeat(40);
+        for (const asset of assets) {
+            const blob = createHash('sha1').update(`blob ${asset.bytes.length}\0`).update(asset.bytes).digest('hex');
+            binaryBlobs.set(blob, asset.bytes);
+            const leaf = { path: asset.path, mode: asset.mode ?? '100644', type: 'blob', sha: blob };
+            const existing = tree.findIndex(e => e.path === asset.path);
+            if (existing < 0) tree.push(leaf); else tree[existing] = leaf;
+        }
+        const treeSha = sha(JSON.stringify(tree)).slice(0, 40);
         trees.set(treeSha, tree);
         commits.set(id, { sha: id, tree: { sha: treeSha }, parents: [{ sha: activeMain }] });
         refs.set('codex/substrate-sync', id);
@@ -1188,4 +1198,203 @@ test('recovery refresh starts only under a still-valid decision and may finish w
             assert.equal(intent.plan_sha256, plan.artifacts[0].sha256);
         }
     });
+});
+
+const assetBody = `\n![Original attempt](publishing/assets/${slug}/gate.svg "Keep its record")\n`;
+const assetCanonical = canonical + assetBody;
+const assetBytes = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1"/></svg>');
+function pinnedAssetFixture(canonicalSource = assetCanonical, sourceEntries: { path: string; bytes: Buffer; mode?: string }[] = [{ path: `publishing/assets/${slug}/gate.svg`, bytes: assetBytes }]) {
+    const native = nativeFixture([oldThought], admissions, canonicalSource), prefix = '/repos/OrionArchitekton/dan-mercede-substrate', rootTree = '1'.repeat(40);
+    const treeEntries = new Map<string, any[]>(), assetBlobs = new Map<string, Buffer>();
+    treeEntries.set(rootTree, []);
+    for (const entry of sourceEntries) {
+        let tree = rootTree;
+        const parts = entry.path.split('/');
+        for (const part of parts.slice(0, -1)) {
+            let child = treeEntries.get(tree)!.find(e => e.path === part);
+            if (!child) { const id = sha(tree + '/' + part).slice(0, 40); child = { path: part, mode: '040000', type: 'tree', sha: id }; treeEntries.get(tree)!.push(child); treeEntries.set(id, []); }
+            tree = child.sha;
+        }
+        const blob = createHash('sha1').update(`blob ${entry.bytes.length}\0`).update(entry.bytes).digest('hex');
+        assetBlobs.set(blob, entry.bytes);
+        treeEntries.get(tree)!.push({ path: parts.at(-1), mode: entry.mode ?? '100644', type: 'blob', sha: blob });
+    }
+    const readGitHub = async (path: string) => {
+        if (path === `${prefix}/git/commits/${'c'.repeat(40)}`) return { sha: 'c'.repeat(40), tree: { sha: rootTree } };
+        if (path.startsWith(`${prefix}/git/trees/`)) { const id = path.slice(`${prefix}/git/trees/`.length); return { sha: id, truncated: false, tree: treeEntries.get(id) }; }
+        if (path.startsWith(`${prefix}/git/blobs/`)) { const id = path.slice(`${prefix}/git/blobs/`.length), bytes = assetBlobs.get(id)!; return { sha: id, encoding: 'base64', size: bytes.length, content: bytes.toString('base64') }; }
+        const hubBlob = '/repos/OrionArchitekton/danmercede.com/git/blobs/';
+        if (path.startsWith(hubBlob) && assetBlobs.has(path.slice(hubBlob.length))) { const id = path.slice(hubBlob.length), bytes = assetBlobs.get(id)!; return { sha: id, encoding: 'base64', size: bytes.length, content: bytes.toString('base64') }; }
+        return native.readGitHub(path);
+    };
+    return { ...native, readGitHub, assetBlobs, treeEntries };
+}
+test('pinned target image derives compiler rewritten body and exact owned asset proof', async (t) => {
+    const f = await fixture(t, assetCanonical), native = pinnedAssetFixture();
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'admission-preparation-ready');
+    assert.ok(stage.expected.body.includes(`![Original attempt](/assets/thoughts/${slug}/gate.svg "Keep its record")`));
+    assert.deepEqual(stage.target_assets, [{ source_path: `publishing/assets/${slug}/gate.svg`, path: `public/assets/thoughts/${slug}/gate.svg`, mode: '100644', type: 'blob', blob: [...native.assetBlobs.keys()][0], sha256: sha(assetBytes), size: assetBytes.length }]);
+    assert.equal(native.writes.length, 0);
+});
+
+test('merged target image content retains exact asset proof and original operation', async (t) => {
+    const f = await fixture(t, assetCanonical), native = pinnedAssetFixture(), now = '2026-11-09T15:05:00Z';
+    const options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    native.mergeAdmission();
+    const pr = native.openContent(first.expected, [oldThought], [{ path: `public/assets/thoughts/${slug}/gate.svg`, bytes: assetBytes }]);
+    const readGitHub = async (path: string) => {
+        if (path.includes('/deployments?')) throw Error('fixture: no public browser');
+        const asset = first.target_assets[0];
+        if (path === `/repos/OrionArchitekton/danmercede.com/git/blobs/${asset.blob}`) return { sha: asset.blob, encoding: 'base64', size: asset.size, content: assetBytes.toString('base64') };
+        return native.readGitHub(path);
+    };
+    const pending = await reconcileHubRelease(options, { ...native, readGitHub });
+    const pendingStage = JSON.parse(await readFile(join(f.dir, pending.artifacts[0].ref), 'utf8'));
+    assert.equal(pendingStage.stage, 'content-pr-awaiting-merge');
+    native.mergeContent();
+    const result = await reconcileHubRelease(options, { ...native, readGitHub });
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.data_generations.length, 2);
+    const proof = JSON.parse(await readFile(join(f.dir, stage.data_generations[1].ref), 'utf8'));
+    assert.deepEqual(proof.target_assets, first.target_assets);
+    assert.equal(proof.pr.head_sha, pr.head.sha);
+    assert.equal(proof.operation_id, original.operation_id);
+    assert.equal(stage.public_delivery, 'unknown');
+    assert.equal(native.writes.length, 5);
+    const again = await reconcileHubRelease(options, { ...native, readGitHub });
+    const restarted = JSON.parse(await readFile(join(f.dir, again.artifacts[0].ref), 'utf8'));
+    assert.deepEqual(restarted.data_generations, stage.data_generations);
+});
+
+test('already compiled target still refuses changed image bytes before reader verification', async (t) => {
+    const f = await fixture(t, assetCanonical), native = pinnedAssetFixture(), now = '2026-11-09T15:05:00Z';
+    const options = { requestPath: f.path, jobDir: f.dir, now };
+    const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+    await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    native.mergeAdmission();
+    const pr = native.openContent(first.expected, [oldThought], [{ path: `public/assets/thoughts/${slug}/gate.svg`, bytes: Buffer.from('<svg>changed</svg>') }]);
+    native.mergeContent();
+    const result = await planHubRelease(options, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'source-unverified');
+    assert.equal(result.status, 'held');
+    assert.equal(native.writes.length, 5);
+    assert.ok(pr.merged);
+});
+
+test('target asset path and count refusals occur before any source blob read', async (t) => {
+    const cases = {
+        foreign: '![x](publishing/assets/another-edition/gate.svg)',
+        traversal: `![x](publishing/assets/${slug}/../private.svg)`,
+        unsupported: `![x](publishing/assets/${slug}/notes.txt)`,
+        query: `![x](publishing/assets/${slug}/gate.svg?private=1)`,
+        collision: `![x](publishing/assets/${slug}/one/gate.svg)\n![y](publishing/assets/${slug}/two/gate.svg)`,
+        count: [1, 2, 3].map(n => `![x](publishing/assets/${slug}/gate-${n}.svg)`).join('\n'),
+    };
+    for (const [reason, body] of Object.entries(cases)) await t.test(reason, async () => {
+        const source = canonical + '\n' + body, f = await fixture(t, source), native = pinnedAssetFixture(source);
+        let blobReads = 0;
+        const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, { ...native, readGitHub: async (path: string) => { if (path.includes('/git/blobs/')) blobReads++; return native.readGitHub(path); } });
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.equal(stage.stage, 'source-unverified');
+        assert.equal(blobReads, 0);
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('pinned asset source requires bounded unique trees and exact regular binary blobs', async (t) => {
+    for (const reason of ['symlink', 'executable', 'ancestor-symlink', 'missing', 'truncated', 'duplicate', 'bytes', 'sha', 'base64', 'oversize', 'empty']) await t.test(reason, async () => {
+        const f = await fixture(t, assetCanonical), bytes = reason === 'oversize' ? Buffer.alloc(524289, 1) : reason === 'empty' ? Buffer.alloc(0) : assetBytes;
+        const native = pinnedAssetFixture(assetCanonical, reason === 'missing' ? [] : [{ path: `publishing/assets/${slug}/gate.svg`, bytes, mode: reason === 'symlink' ? '120000' : reason === 'executable' ? '100755' : '100644' }]);
+        const readGitHub = async (path: string) => {
+            const value = await native.readGitHub(path);
+            if (path.startsWith('/repos/OrionArchitekton/dan-mercede-substrate/git/trees/')) {
+                if (reason === 'truncated') return { ...value, truncated: true };
+                if (reason === 'duplicate') return { ...value, tree: [...value.tree, ...value.tree] };
+                if (reason === 'ancestor-symlink') return { ...value, tree: value.tree.map((e: any) => e.type === 'tree' ? { ...e, type: 'blob', mode: '120000' } : e) };
+            }
+            if (path.startsWith('/repos/OrionArchitekton/dan-mercede-substrate/git/blobs/')) {
+                if (reason === 'bytes') return { ...value, content: Buffer.from('different').toString('base64'), size: 9 };
+                if (reason === 'sha') return { ...value, sha: '0'.repeat(40) };
+                if (reason === 'base64') return { ...value, content: value.content + ' ' };
+            }
+            return value;
+        };
+        const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, { ...native, readGitHub });
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.equal(stage.stage, 'source-unverified');
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('content image proof refuses missing extra changed or executable asset leaves', async (t) => {
+    for (const reason of ['missing', 'extra', 'wrong-bytes', 'executable', 'binary-readback', 'unrelated-delete', 'existing-replace']) await t.test(reason, async () => {
+        const f = await fixture(t, assetCanonical), native = pinnedAssetFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
+        const initialTree = native.trees.get(native.commits.get(mainSha).tree.sha)!;
+        initialTree.push({ path: reason === 'existing-replace' ? `public/assets/thoughts/${slug}/gate.svg` : `public/assets/thoughts/${oldSlug}/retained.svg`, type: 'blob', mode: '100644', sha: '0'.repeat(40) });
+        const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+        const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' });
+        await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+        native.mergeAdmission();
+        const assets = reason === 'missing' ? [] : [{ path: `public/assets/thoughts/${slug}/gate.svg`, bytes: reason === 'wrong-bytes' ? Buffer.from('<svg>wrong</svg>') : assetBytes, mode: reason === 'executable' ? '100755' : '100644' }];
+        if (reason === 'extra') assets.push({ path: `public/assets/thoughts/${slug}/unmentioned.svg`, bytes: assetBytes, mode: '100644' });
+        const pr = native.openContent(first.expected, [oldThought], assets);
+        if (reason === 'unrelated-delete') {
+            const commit = native.commits.get(pr.head.sha), tree = native.trees.get(commit.tree.sha)!;
+            tree.splice(tree.findIndex(e => e.path === `public/assets/thoughts/${oldSlug}/retained.svg`), 1);
+        }
+        native.mergeContent();
+        const readGitHub = async (path: string) => {
+            if (path.includes('/deployments?')) throw Error('fixture: no reader');
+            const value = await native.readGitHub(path);
+            if (reason === 'binary-readback' && path.startsWith('/repos/OrionArchitekton/danmercede.com/git/blobs/')) return { ...value, content: Buffer.from('changed').toString('base64'), size: 7 };
+            return value;
+        };
+        const result = await reconcileHubRelease(options, { ...native, readGitHub });
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.equal(stage.public_delivery, 'unknown');
+        assert.ok(!stage.data_generations?.some((_: any, index: number) => index === 1));
+        assert.equal(native.writes.length, 5);
+    });
+});
+
+test('rehashed original image plans cannot widen native asset provenance', async (t) => {
+    const sourceAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+    const f = await fixture(t, assetCanonical), underlying = nativeFixture([oldThought], sourceAdmissions, assetCanonical), assetNative = pinnedAssetFixture();
+    const native = { ...underlying, readGitHub: async (path: string) => path.startsWith('/repos/OrionArchitekton/dan-mercede-substrate/') ? assetNative.readGitHub(path) : path.startsWith('/repos/OrionArchitekton/danmercede.com/git/blobs/') && assetNative.assetBlobs.has(path.split('/').at(-1)!) ? assetNative.readGitHub(path) : underlying.readGitHub(path) };
+    const options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const result = await planHubRelease(options, native), original = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    native.openContent(original.expected, [oldThought], [{ path: `public/assets/thoughts/${slug}/gate.svg`, bytes: assetBytes }]);
+    original.target_assets[0].source_path = `publishing/assets/another-edition/gate.svg`;
+    const bytes = JSON.stringify(original, null, 2) + '\n', hash = sha(bytes), ref = `hub-plan-${hash}.json`;
+    await writeFile(join(f.dir, ref), bytes, { mode: 0o600, flag: 'wx' });
+    const anchorPath = join(f.dir, 'hub-original-plan.json'), anchor = JSON.parse(await readFile(anchorPath, 'utf8'));
+    await writeFile(anchorPath, JSON.stringify({ ...anchor, plan: { ref, sha256: hash } }), { mode: 0o600 });
+    native.mergeContent();
+    const observed = await reconcileHubRelease(options, native), stage = JSON.parse(await readFile(join(f.dir, observed.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'data-generation-unverified');
+    assert.equal(stage.public_delivery, 'unknown');
+    assert.ok(!stage.data_generations?.length);
+    assert.equal(native.writes.length, 0);
+});
+
+test('image planning admits two owned refs and repeats one source without duplicate asset records', async (t) => {
+    const body = `\n![first](publishing/assets/${slug}/gate.svg)\n![second](publishing/assets/${slug}/other.png)\n![again](publishing/assets/${slug}/gate.svg 'same source')`;
+    const source = canonical + body, f = await fixture(t, source), native = pinnedAssetFixture(source, [{ path: `publishing/assets/${slug}/gate.svg`, bytes: assetBytes }, { path: `publishing/assets/${slug}/other.png`, bytes: Buffer.alloc(524288, 1) }]);
+    const result = await planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.stage, 'admission-preparation-ready');
+    assert.equal(stage.target_assets.length, 2);
+    assert.equal(stage.target_assets[1].size, 524288);
+    assert.ok(stage.expected.body.includes(`![again](/assets/thoughts/${slug}/gate.svg 'same source')`));
+    assert.equal(native.writes.length, 0);
 });

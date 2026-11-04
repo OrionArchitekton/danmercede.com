@@ -15,7 +15,7 @@ const REPO = 'OrionArchitekton/danmercede.com';
 const WORKFLOW = '.github/workflows/substrate-sync.yml';
 // Reviewed main contract, normalized as YAML data (comments/key order excluded).
 // Requalify this diagnostic in a reviewed PR when the workflow contract changes.
-const WORKFLOW_CONTRACT_SHA256 = '3b276d591bb0f3c8cbc4eb9bc3eb6263c1646323de7ce2aacf7af90c7b8ee933';
+const WORKFLOW_CONTRACT_SHA256 = 'a029ead27ca5a410d96722e001f5bbb65ee6e9ccab495ec9779fbe8d2d61ecb0';
 const COVERAGE = new Set(['identity', 'publication_time', 'title', 'body', 'headings', 'anchor', 'cover', 'caption', 'commentary', 'cta']);
 const SHA = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;

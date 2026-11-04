@@ -842,6 +842,42 @@ export function copyDiagramAsset(
 // the bundle over an embellishment.
 const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"']+)((?:\s+(?:"[^"]*"|'[^']*'))?\s*\))/g;
 
+/** Pure reference mapping; a resolver proves the source before rewriting. */
+export function rewriteEssayBodyAssetReferences(
+  body: string,
+  slug: string,
+  resolve: (sourcePath: string, publicPath: string) => boolean,
+  skip: (reason: string) => void = () => {}
+): string {
+  if (!body || !body.includes('publishing/assets/')) return body;
+  if (!isSafeSlug(slug)) {
+    skip(`unsafe slug "${String(slug)}"`);
+    return body;
+  }
+  const destSources = new Map<string, string>();
+  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
+    if (!isSafeRelativePath(assetPath)) {
+      skip(`unsafe asset path "${assetPath}"`);
+      return whole;
+    }
+    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+    const ext = path.extname(safeAssetPath).toLowerCase();
+    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+      skip(`unsupported asset extension "${ext}"`);
+      return whole;
+    }
+    const publicName = path.basename(safeAssetPath), priorSource = destSources.get(publicName);
+    if (priorSource && priorSource !== safeAssetPath) {
+      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
+      return whole;
+    }
+    const publicPath = `public/assets/thoughts/${slug}/${publicName}`;
+    if (!resolve(safeAssetPath, publicPath)) return whole;
+    destSources.set(publicName, safeAssetPath);
+    return `${prefix}/${publicPath.slice('public/'.length)}${suffix}`;
+  });
+}
+
 export function rewriteEssayBodyAssets(
   body: string,
   slug: string,
@@ -868,55 +904,34 @@ export function rewriteEssayBodyAssets(
   }
 
   const substrateRoot = path.resolve(substratePath);
-  // Basename-collision guard: refs are flattened to basenames under one dir
-  // per essay, so two DIFFERENT sources sharing a basename would silently
-  // overwrite each other and show the wrong image. First source wins; later
-  // colliding refs stay unrewritten with a diagnostic.
-  const destSources = new Map<string, string>();
-  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
-    if (!isSafeRelativePath(assetPath)) {
-      skip(`unsafe asset path "${assetPath}"`);
-      return whole;
-    }
-    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
-    const ext = path.extname(safeAssetPath).toLowerCase();
-    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
-      skip(`unsupported asset extension "${ext}"`);
-      return whole;
-    }
+  return rewriteEssayBodyAssetReferences(body, slug, (safeAssetPath, publicPath) => {
     const source = path.resolve(substrateRoot, safeAssetPath);
     const relativeSource = path.relative(substrateRoot, source);
     if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
       skip('asset path escapes substrate root');
-      return whole;
+      return false;
     }
     const publicDir = path.join(projectRoot, 'public', 'assets', 'thoughts', slug);
     const publicName = path.basename(safeAssetPath);
-    const priorSource = destSources.get(publicName);
-    if (priorSource && priorSource !== safeAssetPath) {
-      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
-      return whole;
-    }
-    const dest = path.join(publicDir, publicName);
+    const dest = path.join(projectRoot, publicPath);
     const relativeDest = path.relative(publicDir, dest);
     if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
       skip(`destination "${publicName}" escapes public/assets/thoughts/${slug}/`);
-      return whole;
+      return false;
     }
     try {
       if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
         skip(`asset missing at ${safeAssetPath}`);
-        return whole;
+        return false;
       }
       fs.mkdirSync(publicDir, { recursive: true });
       fs.copyFileSync(source, dest);
-      destSources.set(publicName, safeAssetPath);
-      return `${prefix}/assets/thoughts/${slug}/${publicName}${suffix}`;
+      return true;
     } catch (e) {
       skip(`failed to copy asset (${e})`);
-      return whole;
+      return false;
     }
-  });
+  }, skip);
 }
 
 /**

@@ -8,7 +8,7 @@ import ts from 'typescript';
 import { ESSAY_ADMISSION_PATH, parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 import { digest, insist, readPrivateJson, privateRoot } from './newsletterHubReleaseJournal.ts';
 import { parsePublicationSnapshot, collectHubFacts, decideHubReadiness, readHubGitHub, decodeHubSource, parseHubInstant } from './newsletterHubReadiness.mjs';
-import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput } from './compileContent.ts';
+import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput, rewriteEssayBodyAssetReferences } from './compileContent.ts';
 import { selectLatestThoughts } from '../thoughtsIndex.ts';
 import { verifyHubReader } from './newsletterHubReleaseReader.ts';
 import { readInstalledHubBrowser } from './newsletterHubInstalledBrowser.ts';
@@ -122,7 +122,7 @@ function rows(source: string, name: string) {
     insist(new Set(result.map(row => row.slug)).size === result.length, 'duplicate-bundle-slug');
     return result;
 }
-function gitBlob(raw: string) {
+function gitBlob(raw: string | Buffer) {
     return createHash('sha1').update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest('hex');
 }
 function admissionPatch(source: string, slug: string) {
@@ -151,6 +151,55 @@ async function trustedCanonical(binding: any, read: (path: string) => Promise<an
     insist(after?.object?.sha === trustedMain, 'canonical-main-moved');
     return { raw, trusted_main_sha: trustedMain, blob_sha: pinned.sha };
 }
+const MAX_TARGET_ASSETS = 2, MAX_TARGET_ASSET_BYTES = 512 * 1024;
+function binaryBlob(data: any, expected: string) {
+    insist(data?.sha === expected && data.encoding === 'base64' && Number.isSafeInteger(data.size) && data.size > 0 && data.size <= MAX_TARGET_ASSET_BYTES && typeof data.content === 'string' && data.content.length <= 2 * MAX_TARGET_ASSET_BYTES && /^[A-Za-z0-9+/=\r\n]*$/.test(data.content), 'target-asset-unverified');
+    const compact = data.content.replace(/[\r\n]/g, ''), bytes = Buffer.from(compact, 'base64');
+    insist(bytes.length === data.size && bytes.toString('base64') === compact && gitBlob(bytes) === expected, 'target-asset-unverified');
+    return bytes;
+}
+async function targetAssetPlan(binding: any, body: string, read: (path: string) => Promise<any>) {
+    const candidates = new Map<string, string>();
+    rewriteEssayBodyAssetReferences(body, binding.request.slug, (source, dest) => {
+        insist(source.startsWith(`publishing/assets/${binding.request.slug}/`) && source.length <= 512 && source.split('/').length <= 8 && source.split('/').every(part => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part)), 'target-asset-path-unverified');
+        insist(![...candidates.values()].includes(dest) || candidates.get(source) === dest, 'target-asset-path-unverified');
+        candidates.set(source, dest);
+        insist(candidates.size <= MAX_TARGET_ASSETS, 'target-asset-count-unverified');
+        return false;
+    }, () => { throw Error('target-asset-path-unverified'); });
+    if (!candidates.size) return { body, target_assets: [] };
+    const prefix = '/repos/OrionArchitekton/dan-mercede-substrate';
+    const commit = await read(`${prefix}/git/commits/${binding.request.canonical.commit}`);
+    insist(commit?.sha === binding.request.canonical.commit && SHA.test(commit.tree?.sha), 'target-asset-source-unverified');
+    const trees = new Map<string, any>(), target_assets = [];
+    for (const [source_path, path] of candidates) {
+        let tree = commit.tree.sha, leaf: any;
+        const components = source_path.split('/');
+        for (const [index, component] of components.entries()) {
+            if (!trees.has(tree)) trees.set(tree, await read(`${prefix}/git/trees/${tree}`));
+            const data = trees.get(tree);
+            insist(data?.sha === tree && data.truncated === false && Array.isArray(data.tree) && data.tree.length <= 10000, 'target-asset-tree-unverified');
+            const matches = data.tree.filter((entry: any) => entry.path === component);
+            insist(matches.length === 1 && SHA.test(matches[0].sha), 'target-asset-source-unverified');
+            leaf = matches[0];
+            if (index < components.length - 1) { insist(leaf.type === 'tree' && leaf.mode === '040000', 'target-asset-source-unverified'); tree = leaf.sha; }
+            else insist(leaf.type === 'blob' && leaf.mode === '100644', 'target-asset-source-unverified');
+        }
+        const bytes = binaryBlob(await read(`${prefix}/git/blobs/${leaf.sha}`), leaf.sha);
+        target_assets.push({ source_path, path, mode: '100644', type: 'blob', blob: leaf.sha, sha256: digest(bytes), size: bytes.length });
+    }
+    const rewritten = rewriteEssayBodyAssetReferences(body, binding.request.slug, source => candidates.has(source));
+    return { body: rewritten, target_assets };
+}
+async function verifyTargetAssets(assets: any[], tree: any[], read: (path: string) => Promise<any>) {
+    insist(Array.isArray(assets) && assets.length <= MAX_TARGET_ASSETS, 'content-pr-assets-unverified');
+    for (const asset of assets) {
+        const leaf = tree.find(e => e.path === asset.path);
+        insist(JSON.stringify(leaf) === JSON.stringify({ path: asset.path, mode: '100644', type: 'blob', sha: asset.blob }), 'content-pr-assets-unverified');
+        const bytes = binaryBlob(await read(`${nativePrefix}/git/blobs/${asset.blob}`), asset.blob);
+        insist(bytes.length === asset.size && digest(bytes) === asset.sha256, 'content-pr-assets-unverified');
+    }
+}
 async function detailedPlan(binding: any, facts: any, read: (path: string) => Promise<any>, pub: any) {
     const r = binding.request, main = facts.source.main_sha, prefix = `/repos/${REPOSITORY}`;
     const admissionData = decodeHubSource(await read(`${prefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${main}`));
@@ -161,6 +210,8 @@ async function detailedPlan(binding: any, facts: any, read: (path: string) => Pr
     const entry = mapSubstrateToEntry(parsed.data, delinkWikiLinks(parsed.content.trim()), r.canonical.path, [], patch.allowlist, () => {
     });
     insist(entry && entry.slug === r.slug && entry.title === pub.title, 'canonical-not-admissible');
+    const assets = await targetAssetPlan(binding, entry.body, read);
+    entry.body = assets.body;
     const expected = rows(generateOutput([entry!]), 'THOUGHTS')[0];
     insist(expected.date === r.week, 'canonical-week-mismatch');
     insist(expected.body.includes(r.cta.text), 'cta-not-in-pinned-body');
@@ -170,9 +221,11 @@ async function detailedPlan(binding: any, facts: any, read: (path: string) => Pr
     const baseTree = await leafTree(read, commit.tree.sha);
     insist(baseTree.some((e: any) => e.path === ESSAY_ADMISSION_PATH && e.mode === '100644' && e.type === 'blob' && e.sha === patch.original_blob_sha), 'admission-data-base-mismatch');
     const current = baseline.thoughts.find((e: any) => e.slug === r.slug);
-    if (current)
+    if (current) {
         insist(JSON.stringify(current) === JSON.stringify(expected), 'target-copy-mismatch');
-    return { expected, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, ...patch } };
+        await verifyTargetAssets(assets.target_assets, baseTree, read);
+    }
+    return { expected, target_assets: assets.target_assets, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, ...patch } };
 }
 async function leafTree(read: (path: string) => Promise<any>, sha: string) {
     const data = await read(`/repos/${REPOSITORY}/git/trees/${sha}?recursive=1`);
@@ -202,8 +255,16 @@ async function contentPrPlan(binding: any, detail: any, facts: any, read: (path:
     const commit = await read(`${nativePrefix}/git/commits/${pr.head.sha}`);
     insist(commit?.parents?.length === 1 && commit.parents[0].sha === facts.source.main_sha && SHA.test(commit.tree?.sha), 'content-pr-base-mismatch');
     const tree = await leafTree(read, commit.tree.sha), base = detail.admission.base_tree;
-    const unaffected = (entries: any[]) => entries.filter(e => e.path !== 'constants.generated.ts');
+    insist(Array.isArray(detail.target_assets) && detail.target_assets.length <= MAX_TARGET_ASSETS, 'content-pr-assets-unverified');
+    const assetPaths = new Set(detail.target_assets.map((asset: any) => asset.path));
+    const unaffected = (entries: any[]) => entries.filter(e => e.path !== 'constants.generated.ts' && !assetPaths.has(e.path));
     insist(JSON.stringify(unaffected(tree)) === JSON.stringify(unaffected(base)), 'content-pr-unrelated-files');
+    await verifyTargetAssets(detail.target_assets, tree, read);
+    for (const asset of detail.target_assets) {
+        const prior = base.find((e: any) => e.path === asset.path);
+        const expectedLeaf = { path: asset.path, mode: '100644', type: 'blob', sha: asset.blob };
+        insist(!prior || JSON.stringify(prior) === JSON.stringify(expectedLeaf), 'content-pr-assets-unverified');
+    }
     const source = decodeHubSource(await read(`${nativePrefix}/contents/constants.generated.ts?ref=${pr.head.sha}`)), thoughts = rows(source, 'THOUGHTS'), diagrams = rows(source, 'DIAGRAMS');
     const targets = thoughts.filter((e: any) => e.slug === binding.request.slug);
     insist(targets.length === 1 && JSON.stringify(targets[0]) === JSON.stringify(detail.expected), 'content-pr-target-mismatch');
@@ -643,8 +704,10 @@ async function verifyOriginalPlan(binding: any, original: any, protectedMain: st
     }
     const entry = mapSubstrateToEntry(parsed.data, delinkWikiLinks(parsed.content.trim()), binding.request.canonical.path, [], patch.allowlist, () => {});
     insist(entry && entry.slug === binding.request.slug, 'original-target-unverified');
+    const assets = await targetAssetPlan(binding, entry.body, read);
+    entry.body = assets.body;
     const expected = rows(generateOutput([entry!]), 'THOUGHTS')[0];
-    insist(JSON.stringify(original.expected) === JSON.stringify(expected) && expected.date === binding.request.week && expected.body.includes(binding.request.cta.text), 'original-target-unverified');
+    insist(JSON.stringify(original.expected) === JSON.stringify(expected) && JSON.stringify(original.target_assets) === JSON.stringify(assets.target_assets) && expected.date === binding.request.week && expected.body.includes(binding.request.cta.text), 'original-target-unverified');
     return base;
 }
 async function mergedDataGenerations(options: Options, binding: any, current: any, deps: Dependencies) {
@@ -661,6 +724,7 @@ async function mergedDataGenerations(options: Options, binding: any, current: an
         const original = first.value;
         insist(original.operation_id === binding.request.operation_id && original.week === binding.request.week && original.input_sha256 === binding.input_sha256 && original.admission?.data_path === ESSAY_ADMISSION_PATH && original.expected && original.baseline && original.source?.main_sha, 'original-plan-unverified');
         insist(JSON.stringify(current.expected) === JSON.stringify(original.expected), 'original-target-changed');
+        insist(JSON.stringify(current.target_assets) === JSON.stringify(original.target_assets), 'original-target-changed');
         const read = deps.readGitHub ?? readHubGitHub;
         const originalBase = await verifyOriginalPlan(binding, original, current.source.main_sha, read);
         if (current.source.main_sha === original.source.main_sha) return { references: [], observations: [] };
@@ -698,7 +762,7 @@ async function mergedDataGenerations(options: Options, binding: any, current: an
             const proof = { schema_version: 1, kind: 'newsletter-hub-generation-proof', transition: 'content-merged', operation_id: binding.request.operation_id, week: binding.request.week, input_sha256: binding.input_sha256, original_plan: originalPlan, predecessor_proof: generations.at(-1) ?? null,
                 predecessor: { commit: predecessor.commit, tree: predecessor.tree, files: await generationData(read, predecessor.commit, predecessor.leaves) },
                 successor: { commit: verified.merge.sha, tree: verified.merge.tree.sha, files: await generationData(read, verified.merge.sha, verified.tree) },
-                pr: { number: verified.pr.number, head_sha: verified.head.sha, base_sha: predecessor.commit, merge_sha: verified.merge.sha, merge_tree_sha: verified.merge.tree.sha }, content_validation: validation };
+                pr: { number: verified.pr.number, head_sha: verified.head.sha, base_sha: predecessor.commit, merge_sha: verified.merge.sha, merge_tree_sha: verified.merge.tree.sha }, target_assets: original.target_assets, content_validation: validation };
             const reference = await retainGeneration(root, proof);
             generations.push(reference);
             observations.push({ transition: 'content-merged', proof: reference, content_validation: validation });

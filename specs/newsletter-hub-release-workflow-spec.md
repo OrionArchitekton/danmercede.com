@@ -85,7 +85,12 @@ No consumer may infer public delivery from the outer completed status.
    compiler-produced title/date/preview/category/body must
    match the pinned canonical. Every unrelated current Thought and Diagram stays
    byte-equivalent; additions/removals/changes outside this release hold. Preserve
-   newer already present editions and their newest-first presentation. Changes requiring new materialized assets hold in this version; no incomplete asset release is accepted. Green CI
+   newer already present editions and their newest-first presentation. At most two
+   explicitly referenced images owned by the requested canonical may accompany
+   the target entry. The compiler's shared pure reference mapper derives the
+   served body; pinned regular source blobs and exact copied hub blobs must
+   agree. Other asset changes, pruning, substitutions or incomplete copies hold.
+   Green CI
    does not replace content equivalence. Unknown, stale or failing checks/threads
    remain holds and current merge classification always remains human-required.
 7. Restarts reuse immutable action/sub-write intents and readbacks. An exclusive
@@ -188,6 +193,25 @@ fake-GitHub plan/advance/reconcile seam with external fixture merges and exact
 negative controls. Actual source adoption and native reader qualification remain
 separate from synthetic evidence.
 
+The full original plan and content-merged proof carry a separate `target_assets`
+array; the three existing data-file identities retain their meaning. Each asset
+binds `source_path`, served-tree `path`, regular `mode`/`type`, Git `blob`,
+`sha256` and `size`. Source paths must stay under the exact canonical's
+`publishing/assets/<slug>/`, contain at most eight simple ASCII path components
+and 512 characters, and use a compiler-supported image extension. No-follow Git
+tree traversal at the pinned canonical commit must prove every ancestor is a
+tree and each source is a regular non-executable blob. The adapter admits at most
+two distinct sources, each 1–524288 bytes; missing, oversized, unsafe or colliding
+sources hold before acceptance. Repeated references to one source retain their
+captions and share one asset record. Native binary blob content is decoded and
+rehashed; filenames or declared hashes alone do not establish parity. Original
+asset plans are independently recomputed before either merged handoff. Existing
+assets may remain identical but cannot be replaced or removed by this release;
+all unrelated files stay identical. A source-synced target still requires exact
+asset identity before reader verification. These are conservative newsletter
+adapter holds; other compiler consumers retain the existing soft-fail image
+behavior and supported path breadth. The default newsletter has no inline images.
+
 
 The original full plan has an exclusive immutable anchor. A missing anchor in a
 root containing earlier full plans holds rather than selecting a new origin from
@@ -223,3 +247,10 @@ and any existing unknown intent are preserved. The prior decision must be valid
 at refresh entry after the final journal await; a fresh current decision may
 finish later under unchanged standing policy/STOP/expiry/drain bounds. This does
 not revive an expired entry, reset a budget or resend an uncertain attempt.
+
+
+Endpoint admission uses only exact numeric `127.0.0.1` or `[::1]` loopback literals,
+an explicit nonzero valid port and the exact owned browser WebSocket path.
+Hostname aliases, noncanonical spellings, credentials and extra URL components
+hold before discovery or CDP client commands; no never-started client is created
+just for cleanup, while normal same-holder lease release still runs.

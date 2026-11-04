@@ -15,6 +15,8 @@ references:
   - scripts/renderFeed.ts
   - siteOrigin.ts
   - docs/reviews/newsletter-hub-reader-native-20261103-attempt1/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json
   - scripts/newsletterHubReadiness.mjs
   - scripts/compileContent.ts
   - scripts/verifyProductionDeployment.mjs
@@ -126,9 +128,20 @@ recovery. Verify resulting content independently instead of inventing attributio
 A content PR must preserve the complete unrelated corpus/tree, newer editions and
 latest order, have exact current base/head, all five strict required checks from
 native check runs including trusted substrate verification bound through native check/run/suite IDs, exact repository/head/branch/workflow and success. Native run/suite PR arrays may be empty; those arrays cannot substitute for or defeat positive suite association. Require complete resolved
-review threads. It still requires a human merge. This version conservatively
-holds changes outside the bundle; editions requiring newly materialized assets
-need separate supported asset preparation rather than an approximate acceptance.
+review threads. It still requires a human merge. A target may add at most two
+explicitly referenced canonical-owned image blobs alongside its bundle entry.
+The immutable original plan and content-merged proof retain `target_assets` with
+source/served paths, mode/type, Git blob, SHA256 and size. Verify source ancestry
+through trees at the exact canonical commit and actual copied hub binary bytes.
+The shared compiler reference mapper supplies the expected served body. Missing,
+extra, changed, symlinked, executable or unrelated asset leaves hold; existing
+assets cannot be replaced or pruned as part of this release. Conservative adapter
+bounds are 1–524288 bytes per image, two distinct sources, 512 path characters
+and eight simple ASCII components under `publishing/assets/<requested-slug>/`,
+using the compiler's supported image extensions. An unsupported source holds;
+do not broaden it or substitute a later asset. Other compiler consumers preserve
+their existing soft-fail behavior. Current default newsletter copy has no inline
+images, so its asset array is empty.
 
 After the content merge, reader reconciliation requires the exact native Vercel
 project/production SHA, public no-store revision bookends, actual initial article,
@@ -293,8 +306,10 @@ This source change does not install or qualify a writer. `advance` still require
 both an explicitly injected authorizer and bounded writer; the default CLI holds.
 No authenticated GitHub writer fallback is provided. The weekly controller needs
 a separately reviewed extension to its protected mutable-data receipt plus new
-fixed code pins before consuming this source generation. Pending PR239's browser
-endpoint fix remains a separate final reader-qualification dependency.
+fixed code pins before consuming this source generation. The numeric endpoint
+repair from PR239 is included in this combined source. Its earlier native
+receipts bind their recorded code maps; this combined generation still requires
+separate protected-source adoption and consumer qualification.
 
 Roll out through reviewed source, verify migration parity and fake-GitHub
 plan/advance/reconcile tests, then qualify the consumer separately. Monitor held
@@ -345,8 +360,10 @@ GitHub transaction or host-wide attestation.
 Only after the merged generation chain verifies does reconciliation call the
 existing independent initial/hydrated public-reader verifier. Source fixtures
 exercise these readers with injected transport; they do not establish a real
-public deployment. Pending PR239 endpoint adoption and the weekly controller's
-separately reviewed proof consumer remain qualification dependencies. Rollback is
+public deployment. Protected adoption of this combined source and the weekly
+controller's separately reviewed proof consumer remain qualification
+dependencies. Earlier native reader receipts do not qualify the combined code
+generation. Rollback is
 a reviewed source revert, never deleting anchors, generation proofs, original
 plans or uncertain write intents. These source changes activate no runtime.
 
@@ -388,3 +405,41 @@ this does not extend policy, reset a budget or revive an expired refresh entry.
 An existing uncertain intent remains collection-only and never uses this refresh
 to send again. No new authority model, distributed lock or atomicity guarantee is
 introduced.
+
+
+Endpoint admission accepts only the exact numeric loopback literals `127.0.0.1`
+and `[::1]`, an explicit valid nonzero port and the owned browser DevTools path.
+Hostname aliases such as `localhost`, alternate/noncanonical numeric spellings,
+credentials, query/fragment additions and non-loopback addresses hold before
+CDP commands or discovery. Normal release still uses the same unique lease
+holder; a client that was never started needs no disconnect command. A started
+client retains the independent disconnect cleanup described above.
+
+
+The final numeric-only endpoint guard was also qualified once against the live
+E14 page at November 4, 01:03:44–01:04:01 UTC (November 3 Pacific), using the
+actual consumer and installed helper. Its
+[separate second receipt](../reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json)
+binds reviewed functional tree `307119980d398f36f4631198dc1e9dc71598383a` and
+preserves the first attempt unchanged. Full parity and the exact attributed CTA
+passed; owned-tab/client cleanup and normal release were clean, followed by a
+down/unheld reader state. This page also had zero images. The receipt is read-only
+qualification, with no new writer, policy or production authority.
+
+
+Explicit default ports are validated from the raw numeric authority before URL
+normalization: `ws:80` and `wss:443` remain valid, and the exact owned WebSocket
+endpoint is passed through unchanged. The derived discovery origin may omit its
+standard port without changing the destination. Missing, zero, overflow,
+noncanonical, aliased or otherwise disallowed authorities still hold.
+
+
+The PR239 raw-port normalization repair was qualified once on the ordinary leased
+E14 reader route at November 4, 02:04:01–02:04:17 UTC (November 3 Pacific).
+[Its separate receipt](../reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json)
+binds reviewed functional tree `8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9` and
+the exact static code map, not just the earlier base HEAD. Full initial/hydrated
+parity, exact attributed CTA and clean normal release passed against public73;
+all prior attempts remain unchanged. Explicit 80/443 cases remain hermetic-only,
+and this image-free page does not qualify native image guards. No browser config,
+writer, policy or production authority changed.
