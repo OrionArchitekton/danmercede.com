@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm, chmod, readdir, mkdir, rename, symlink } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, chmod, readdir, mkdir, rename, symlink, link } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, isAbsolute } from 'node:path';
+import { join, isAbsolute, basename, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -333,6 +333,13 @@ test('missed sync waits for nominal grace and sends once, leaving uncertain disp
     const again = await advanceHubRelease(dispatch, deps);
     assert.equal(native.writes.length, 6);
     assert.equal(again.status, 'unknown');
+    const reconciled = await reconcileHubRelease(options, deps);
+    assert.equal(reconciled.status, 'unknown');
+    const state = JSON.parse(await readFile(join(f.dir, reconciled.artifacts[0].ref), 'utf8'));
+    assert.equal(state.step, 'sync');
+    assert.equal(state.sync_attempt.attributed, false);
+    assert.equal(state.sync_attempt.native_run_id, null);
+    assert.equal(native.writes.length, 6);
 });
 test('authorized admission action creates only its compiler patch and separate draft PR with durable sub-write readbacks', async (t) => {
     const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z', options = { requestPath: f.path, jobDir: f.dir, now };
@@ -393,6 +400,12 @@ test('initial HTML and revision parity alone cannot claim hydrated public delive
     assert.equal(result.public_delivery, 'unknown');
     assert.equal(result.stage, 'hydrated-reader-unqualified');
     assert.equal(result.initial.invalid_route_status, 404);
+    const atomUrl = `${origin}/atom.xml`, acceptedAtom = responses[atomUrl];
+    responses[atomUrl] = acceptedAtom.replace(`href="${url}"`, 'href="https://www.danmercede.com/thoughts/wrong-entry"');
+    await assert.rejects(verifyHubReader(input, { readGitHub, fetchPublic }), /public-feed-entry-mismatch/);
+    responses[atomUrl] = acceptedAtom.replace(`<link href="${url}" rel="alternate"`, `<link href="${url}"`);
+    assert.equal((await verifyHubReader(input, { readGitHub, fetchPublic })).stage, 'hydrated-reader-unqualified');
+    responses[atomUrl] = acceptedAtom;
     responses[url] = html.replace('Retain its identifier', 'Lose its identifier');
     await assert.rejects(verifyHubReader(input, { readGitHub, fetchPublic }), /public-body-mismatch/);
     responses[url] = html;
@@ -408,7 +421,8 @@ test('initial HTML and revision parity alone cannot claim hydrated public delive
                 if (script.includes("capture_kind:'index'"))
                     value = { capture_kind: 'index', url: `${origin}/thoughts`, time_origin: 1234, target_count: 1, latest_hrefs: [`/thoughts/${slug}`, `/thoughts/${oldSlug}`] };
                 else if (script.includes("capture_kind:'article'"))
-                    value = { capture_kind: 'article', url, time_origin: afterTimeOrigin, article_html: hydratedArticle, article_visible: articleVisible, latest_hrefs: [`/thoughts/${slug}`, `/thoughts/${oldSlug}`], cta_href: null };
+                    value = { capture_kind: 'article', url, time_origin: afterTimeOrigin, article_html: hydratedArticle, article_visible: articleVisible, images_ready: true, latest_hrefs: [`/thoughts/${slug}`, `/thoughts/${oldSlug}`], cta_href: null };
+                else if (script.includes('images_loaded:true')) value = { images_loaded: true, image_count: 0 };
                 else if (script.includes("fetch('/deployment-revision.json'"))
                     value = { schemaVersion: 1, sha: mainSha };
                 else
@@ -592,7 +606,7 @@ test('emitted browser recipe follows the actual CTA and rejects an invisible anc
         let data: any = { done: true };
         if (argv[0] === 'eval') {
             const script = Buffer.from(argv[2], 'base64').toString();
-            data = { result: await runInNewContext(script, { document: dom.window.document, location, performance: { timeOrigin: 100 }, getComputedStyle: dom.window.getComputedStyle.bind(dom.window), fetch: async () => new Response(JSON.stringify({ schemaVersion: 1, sha: mainSha }), { headers: { 'cache-control': 'no-store' } }) }) };
+            data = { result: await runInNewContext(script, { document: dom.window.document, location, performance: { timeOrigin: 100 }, getComputedStyle: dom.window.getComputedStyle.bind(dom.window), scrollX: 0, scrollY: 0, scrollTo: () => {}, requestAnimationFrame: (f: any) => f(), setTimeout, clearTimeout, fetch: async () => new Response(JSON.stringify({ schemaVersion: 1, sha: mainSha }), { headers: { 'cache-control': 'no-store' } }) }) };
         }
         return { exit_code: 0, profile_id: profile.id, command_sha256: sha(JSON.stringify(argv)), run_id: `fixture-script-${++sequence}`, stdout: JSON.stringify({ success: true, data }) };
     } };
@@ -602,6 +616,29 @@ test('emitted browser recipe follows the actual CTA and rejects an invisible anc
     location.href = 'https://www.danmercede.com/thoughts';
     dom.window.document.body.style.opacity = '0';
     await assert.rejects(readHydratedHub(input, runtime), /hydrated-article-not-visible/);
+    dom.window.document.body.style.opacity = '1';
+    const image = dom.window.document.createElement('img');
+    image.src = 'https://www.danmercede.com/assets/fixture.webp';
+    const figure = dom.window.document.createElement('figure');
+    figure.appendChild(image);
+    dom.window.document.querySelector('article')!.appendChild(figure);
+    let imageReady = false, lazy = false;
+    Object.defineProperty(image, 'complete', { get: () => imageReady });
+    Object.defineProperty(image, 'naturalWidth', { get: () => imageReady ? 200 : 0 });
+    Object.defineProperty(image, 'naturalHeight', { get: () => imageReady ? 100 : 0 });
+    image.scrollIntoView = () => { if (lazy) imageReady = true; };
+    image.decode = async () => { if (!imageReady) throw Error('broken fixture image'); };
+    location.href = 'https://www.danmercede.com/thoughts';
+    await assert.rejects(readHydratedHub(input, runtime), /(?:image|browser)-/);
+    imageReady = true;
+    image.style.opacity = '0';
+    location.href = 'https://www.danmercede.com/thoughts';
+    await assert.rejects(readHydratedHub(input, runtime), /hydrated-images-unready/);
+    image.style.opacity = '1';
+    imageReady = false;
+    lazy = true;
+    location.href = 'https://www.danmercede.com/thoughts';
+    assert.equal((await readHydratedHub(input, runtime)).images_ready, true);
     dom.window.close();
 });
 
@@ -627,4 +664,82 @@ test('captured native trusted checks bind their suite even when native PR arrays
     await assert.rejects(verifyTrustedHubCheck(pr, nativeCheck, read), /trusted-check-origin-unverified/);
     badSuite = false;
     await assert.rejects(verifyTrustedHubCheck(pr, { ...nativeCheck, check_suite: { id: nativeSuite.id + 1 } }, read), /trusted-check-origin-unverified/);
+});
+
+test('reconciliation rejects replacement of its newly emitted content-addressed plan before semantic use', async (t) => {
+    const f = await fixture(t), originalOpen = fsPromises.open;
+    let replaced = false;
+    fsPromises.open = (async (...args: any[]) => {
+        const handle = await (originalOpen as any)(...args);
+        if (typeof args[0] === 'string' && /\/hub-plan-[a-f0-9]{64}\.json$/.test(args[0]) && !replaced) {
+            replaced = true;
+            const close = handle.close.bind(handle);
+            handle.close = async () => {
+                await close();
+                const path = join(f.dir, basename(args[0]));
+                const changed = JSON.parse(await readFile(path, 'utf8'));
+                changed.stage = 'content-pr-awaiting-merge';
+                await writeFile(path, JSON.stringify(changed), { mode: 0o600 });
+            };
+        }
+        return handle;
+    }) as typeof fsPromises.open;
+    syncBuiltinESMExports();
+    try {
+        await assert.rejects(reconcileHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:02:45Z' }, { readGitHub: async () => { throw Error('must not read'); } }), /artifact-(digest|binding)-mismatch/);
+        assert.ok(replaced);
+    } finally {
+        fsPromises.open = originalOpen;
+        syncBuiltinESMExports();
+    }
+});
+
+test('journal recovers only a verified same-inode crash link and preserves unrelated private work', async (t) => {
+    const f = await fixture(t), root = await privateRoot(f.dir, { recoverCrashLinks: true });
+    const value = { schema_version: 1, kind: 'hub-operation', operation_id: f.request.operation_id, input_sha256: sha(f.raw), week: f.request.week, slug };
+    try {
+        await root.put('hub-operation.json', value);
+        const orphan = join(f.dir, '.hub-11111111-2222-3333-4444-555555555555');
+        const unrelated = join(f.dir, '.hub-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+        await link(join(f.dir, 'hub-operation.json'), orphan);
+        const inspectRoot = await privateRoot(f.dir);
+        try { await assert.rejects(inspectRoot.get('hub-operation.json'), /private-file-unusable/); } finally { await inspectRoot.close(); }
+        assert.ok((await readdir(f.dir)).includes(basename(orphan)));
+        await writeFile(unrelated, 'Preserve unrelated private work.', { mode: 0o600 });
+        assert.deepEqual((await root.get('hub-operation.json'))?.value, value);
+        assert.ok(!(await readdir(f.dir)).includes(basename(orphan)));
+        assert.equal(await readFile(unrelated, 'utf8'), 'Preserve unrelated private work.');
+        await link(f.path, join(f.dir, 'unrelated-request-link'));
+        await assert.rejects(planHubRelease({ requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:02:45Z' }), /private-file-unusable/);
+    } finally { await root.close(); }
+});
+
+test('actual hub CLI import never executes replaced generated corpora', async (t) => {
+    const f = await fixture(t), runtime = join(f.dir, 'runtime'), marker = join(f.dir, 'corpus-executed');
+    await mkdir(runtime, { mode: 0o700 });
+    const closure = ['scripts/newsletterHubRelease.ts', 'scripts/newsletterHubReleaseJournal.ts', 'scripts/newsletterHubReleaseReader.ts', 'scripts/newsletterHubReleaseBrowser.ts', 'scripts/newsletterHubInstalledBrowser.ts', 'scripts/newsletterHubReadiness.mjs', 'scripts/compileContent.ts', 'scripts/renderFeed.ts', 'scripts/renderFeedCore.ts', 'scripts/verifyProductionDeployment.mjs', 'components/Markdown.tsx', 'thoughtsIndex.ts', 'seoMeta.ts', 'siteOrigin.ts', 'constants.ts', 'types.ts', 'package.json', 'tsconfig.json'];
+    for (const path of closure) {
+        let raw: Buffer;
+        try { raw = await readFile(new URL('../' + path, import.meta.url)); } catch (error: any) { if (error.code === 'ENOENT') continue; throw error; }
+        await mkdir(dirname(join(runtime, path)), { recursive: true, mode: 0o700 });
+        await writeFile(join(runtime, path), raw, { mode: 0o600 });
+    }
+    const malicious = `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(marker)}, 'executed'); export const THOUGHTS = []; export const DIAGRAMS = []; export const GUIDES = [];`;
+    await writeFile(join(runtime, 'constants.generated.ts'), malicious);
+    await writeFile(join(runtime, 'constants.guides.generated.ts'), malicious);
+    await symlink(new URL('../node_modules', import.meta.url).pathname, join(runtime, 'node_modules'), 'dir');
+    const run = promisify(execFile);
+    await run(process.execPath, ['--import', 'tsx', '--input-type=module', '--eval', `await import(${JSON.stringify(join(runtime, 'scripts/newsletterHubRelease.ts'))})`], { cwd: runtime });
+    assert.ok(!(await readdir(f.dir)).includes('corpus-executed'));
+});
+
+test('pure feed core preserves prior fixed-fixture bytes and existing default API', async () => {
+    const pure = await import('../scripts/renderFeedCore.ts');
+    const { THOUGHTS } = await import('../constants.generated.ts');
+    const { GUIDES } = await import('../constants.guides.generated.ts');
+    const thought = { ...oldThought, slug: '2026-10-26-existing-edition' };
+    assert.equal(sha(pure.renderRss([thought], [])), 'c9331e46ad4a10aaf905f7f9761b39e4fe02e5d718332b8b0a5eeddf0a9892b8');
+    assert.equal(sha(pure.renderAtom([thought], [])), 'e769473eb31c8e94ef0ecf2052ce3180a3f4ce64f4521bfff91da94c0c4cc23b');
+    assert.equal(pure.renderRss(THOUGHTS, GUIDES), renderRss());
+    assert.equal(pure.renderAtom(THOUGHTS, GUIDES), renderAtom());
 });

@@ -73,8 +73,31 @@ check/run/suite/head/repository/workflow association instead. Those repairs each
 have focused test evidence. The parent owns exact final-generation re-review and
 controller-consumer integration against actual unchanged CLI output.
 
-Production writer, mutation authorizer and public-browser executor are still
-unadmitted and unbound. The authenticated writer fallback was rejected and has
+Production writer and mutation authorizer remain unadmitted and unbound. The public-reader now has a fixed existing-CLI binding; native read-only qualification remains separately observed after final source review. The authenticated writer fallback was rejected and has
 not been retried or installed. A private prose-only checkpoint preserves the
 reason and remaining activation capability outside executable source. No live
 admission, sync dispatch, PR, merge, deployment, runtime or timer change occurred.
+
+
+## Combined repair generation
+
+Manual installed-reader review and the first native/advisory review cycle added
+required fixes: real WebSocket lease paths, independent own-client disconnect,
+persistent target identity and command URL checks, fresh-plan digest/name binding,
+loaded/visible nested images, unknown dispatch reconciliation, verified crash-link
+recovery and Atom alternate destinations. The PR review triage records all five
+native threads and the deliberate incompatible-runtime mapper hold. The earlier
+advisory result remains findings-remain; final repaired review is separate.
+
+A controller reproduction also showed generated modules could execute before
+post-launch verification. A pure feed-core/shared-origin extraction removes both
+corpora from the actual hub CLI import graph. An actual subprocess import with
+hostile replacement corpora proves no execution; fixed historical fixture bytes
+and default feed API parity verify the public feed behavior. The installed
+index-only CLI is guarded before/after commands under its exclusive lease and
+does not claim atomic target dispatch against an actor racing inside that interval.
+
+The complete repaired generation passes 519 registered tests, typecheck,
+production build and 21 built-output tests. Source review, native read-only reader
+qualification, commit/delivery and later runtime activation remain distinct steps.
+No GitHub writer fallback, native release or production mutation was performed.

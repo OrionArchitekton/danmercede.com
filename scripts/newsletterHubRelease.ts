@@ -1,5 +1,5 @@
 /** Hub-specific release coordinator. CLI writers remain runtime-unadmitted. */
-import { isAbsolute, join } from 'node:path';
+import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify, parseArgs } from 'node:util';
@@ -9,6 +9,7 @@ import { parsePublicationSnapshot, collectHubFacts, decideHubReadiness, readHubG
 import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput } from './compileContent.ts';
 import { selectLatestThoughts } from '../thoughtsIndex.ts';
 import { verifyHubReader } from './newsletterHubReleaseReader.ts';
+import { readInstalledHubBrowser } from './newsletterHubInstalledBrowser.ts';
 const REPOSITORY = 'OrionArchitekton/danmercede.com';
 const PILOT_DRAIN_CUTOFF = '2026-12-09T07:59:00Z';
 const executeRead = promisify(execFile);
@@ -226,7 +227,7 @@ async function contentPrPlan(binding: any, detail: any, facts: any, read: (path:
     return { number: pr.number, head_sha: pr.head.sha, base_sha: pr.base.sha, copy_parity: true, unrelated_corpus_preserved: true, required_checks_passed: true, required_checks: required, unresolved_threads: 0, latest_slugs: selectLatestThoughts(thoughts as any).map(t => t.slug), merge_gate: 'HUMAN_REQUIRED' };
 }
 async function artifact(options: Options, binding: any, data: any, status: string, holds: string[]) {
-    const root = await privateRoot(options.jobDir);
+    const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     try {
         const value = { schema_version: 1, kind: 'newsletter-hub-stage', operation_id: binding.request.operation_id, week: binding.request.week, release_week: binding.request.release_week, input_sha256: binding.input_sha256, observed_at: options.now, merge_gate: 'HUMAN_REQUIRED', public_delivery: 'unknown', ...data };
         const name = `hub-plan-${digest(Buffer.from(JSON.stringify(value, null, 2) + '\n'))}.json`;
@@ -493,7 +494,7 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
     if (typeof deps.writeGitHub !== 'function')
         return envelope(binding, 'held', [], ['native-writer-unqualified']);
     insist(['prepare-admission', 'recover-sync'].includes(options.action) && Number.isSafeInteger(options.maxActions) && options.maxActions >= 1 && options.maxActions <= 6, 'invalid-advance-action');
-    const root = await privateRoot(options.jobDir);
+    const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     let plan: any, result: any;
     try {
         plan = await loadPlan(root, options, binding);
@@ -515,14 +516,31 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
     return artifact(options, binding, { ...result, source: plan?.source ?? null }, unknown ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
 }
 export async function reconcileHubRelease(options: Options, deps: Dependencies = {}) {
+    const binding = await load(options);
     const fresh = await planHubRelease(options, deps);
-    const freshArtifact = fresh.artifacts[0] ? await readPrivateJson(join(options.jobDir, fresh.artifacts[0].ref)) : null;
-    const current = freshArtifact?.value;
+    insist(fresh.input_sha256 === binding.input_sha256 && fresh.operation_id === binding.request.operation_id, 'operation-input-changed');
+    const freshRoot = await privateRoot(options.jobDir, { recoverCrashLinks: true });
+    let current: any, syncAttempt: any = null;
+    try {
+        const reference = fresh.artifacts[0];
+        insist(reference && HASH.test(reference.sha256) && reference.ref === `hub-plan-${reference.sha256}.json`, 'artifact-binding-mismatch');
+        const saved = await freshRoot.get(reference.ref);
+        insist(saved && digest(saved.bytes) === reference.sha256, 'artifact-digest-mismatch');
+        current = saved.value;
+        insist(current.kind === 'newsletter-hub-stage' && current.input_sha256 === binding.input_sha256 && current.operation_id === binding.request.operation_id && current.week === binding.request.week && current.release_week === binding.request.release_week, 'artifact-binding-mismatch');
+        const sync = await freshRoot.get('hub-sync-intent.json');
+        if (sync) {
+            insist(sync.value.kind === 'hub-sync-intent' && sync.value.input_sha256 === binding.input_sha256 && sync.value.action === 'recover-sync' && sync.value.attributed === false && SHA.test(sync.value.main_sha) && HASH.test(sync.value.plan_sha256), 'operation-input-changed');
+            syncAttempt = { ...sync.value, attributed: false, native_run_id: null };
+        }
+    } finally { await freshRoot.close(); }
     if (current?.stage === 'content-pr-awaiting-merge' || current?.stage === 'content-pr-unverified') {
-        return fresh;
+        return syncAttempt ? artifact(options, binding, { ...current, sync_attempt: syncAttempt }, 'held', fresh.holds) : fresh;
+    }
+    if (syncAttempt && current?.stage !== 'already-source-synced') {
+        return artifact(options, binding, { ...current, stage: 'unknown-native-attempt', step: 'sync', sync_attempt: syncAttempt }, 'unknown', ['unknown-native-attempt']);
     }
     if (current?.stage === 'already-source-synced') {
-        const binding = await load(options);
         try {
             const proof = await verifyHubReader({
                 operation_id: binding.request.operation_id,
@@ -531,15 +549,15 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
                 target: current.expected,
                 thoughts: current.baseline.thoughts,
                 cta: binding.request.cta,
-            }, { ...deps, readGitHub: deps.readGitHub ?? readHubGitHub });
-            return artifact(options, binding, { ...current, observed_at: options.now, stage: proof.stage, public_delivery: proof.public_delivery, reader: proof }, proof.public_delivery === 'verified' ? 'completed' : 'held', proof.holds);
+            }, { ...deps, readGitHub: deps.readGitHub ?? readHubGitHub, readHydratedBrowser: deps.readHydratedBrowser ?? (deps.browserRuntime ? undefined : readInstalledHubBrowser) });
+            return artifact(options, binding, { ...current, observed_at: options.now, stage: proof.stage, public_delivery: proof.public_delivery, reader: proof, ...(syncAttempt ? { sync_attempt: syncAttempt } : {}) }, proof.public_delivery === 'verified' ? 'completed' : 'held', proof.holds);
         }
         catch (error: any) {
             const code = typeof error.message === 'string' && /^(public|hydrated|production|browser)-[a-z-]{1,65}$/.test(error.message) ? error.message : 'reader-proof-unverified';
-            return artifact(options, binding, { ...current, observed_at: options.now, stage: 'public-reader-unverified', public_delivery: 'unknown' }, 'held', [code]);
+            return artifact(options, binding, { ...current, observed_at: options.now, stage: 'public-reader-unverified', public_delivery: 'unknown', ...(syncAttempt ? { sync_attempt: syncAttempt } : {}) }, 'held', [code]);
         }
     }
-    const binding = await load(options), root = await privateRoot(options.jobDir);
+    const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     let result: any;
     try {
         const operation = await root.get('hub-operation.json');
