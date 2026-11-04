@@ -193,6 +193,11 @@ or a scheduled row never suffice. The content proof also retains the existing
 trusted required-check/review-thread and content-parity verification.
 
 Missing or ambiguous merged proof holds before public delivery verification.
+That held stage may carry optional `generation_error`, drawn only from the
+source's fixed audited generation-failure whitelist or the literal
+`unclassified`. Unknown/native/transient/parse messages are never echoed. This
+data-only diagnostic changes no status, hold code, public-delivery judgment or
+authority; old artifacts without it remain valid and summaries may omit it.
 Read-only reconciliation may collect these proofs and fresh reader evidence;
 historical inspection remains historical. Proofs convey no writer, merge,
 publication or runtime authority. The default CLI writer remains unadmitted.

@@ -399,7 +399,12 @@ The selected PR still needs all original detailed commit/tree/ancestry checks.
 
 Missing, ambiguous, foreign, non-ancestor, changed-copy or unrelated-file evidence
 holds with public delivery unknown. Proofs do not grant a write, protected merge,
-runtime admission or publication. The default CLI still lacks an authorizer and
+runtime admission or publication. The held full artifact may include optional
+`generation_error`, restricted to the fixed audited source generation-code list
+or `unclassified`; raw native/transient/parse messages are not retained there.
+Its stage and `merged-generation-unverified` hold stay unchanged. It conveys no
+authority, and older artifacts or bounded summaries may omit this data-only field.
+The default CLI still lacks an authorizer and
 writer. A main readback after the asynchronous authorizer also prevents a stale
 base grant from reaching setup or a new native write; remote concurrency after a
 completed check remains bounded by subsequent native readbacks, not an atomic

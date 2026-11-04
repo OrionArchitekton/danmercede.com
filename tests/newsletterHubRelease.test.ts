@@ -1579,6 +1579,9 @@ test('held reconcile retains its fresh validated detailed plan after an initial 
     const original = await planHubRelease(options, native), originalBytes = await readFile(join(f.dir, original.artifacts[0].ref)), first = JSON.parse(originalBytes.toString());
     const anchor = await readFile(join(f.dir, 'hub-original-plan.json'));
     // The private plan exists, but a caller did not retain that first return.
+    native.moveMain();
+    const movedMain = (await native.readGitHub('/repos/OrionArchitekton/danmercede.com/git/ref/heads/main')).object.sha;
+    assert.notEqual(movedMain, first.source.main_sha);
     const observedAt = '2026-11-09T15:06:00Z', result = await reconcileHubRelease({ ...options, now: observedAt }, native);
     const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
     assert.equal(result.status, 'held');
@@ -1589,7 +1592,17 @@ test('held reconcile retains its fresh validated detailed plan after an initial 
     assert.equal(stage.observed_at, observedAt);
     assert.equal(stage.operation_id, original.operation_id);
     assert.equal(stage.input_sha256, original.input_sha256);
-    for (const field of ['expected', 'target_assets', 'baseline', 'source', 'admission', 'canonical']) assert.deepEqual(stage[field], first[field], field);
+    for (const field of ['expected', 'target_assets', 'baseline', 'canonical']) assert.deepEqual(stage[field], first[field], field);
+    const assertFreshSource = (value: any) => {
+        assert.deepEqual(value.source, { ...first.source, main_sha: movedMain });
+        assert.deepEqual(value.admission, { ...first.admission, base_sha: movedMain });
+    };
+    assertFreshSource(stage);
+    // An owned cached-plan counterexample passed the old first-plan comparisons.
+    const cached = { ...stage, source: first.source, admission: first.admission };
+    assert.deepEqual(cached.source, first.source);
+    assert.deepEqual(cached.admission, first.admission);
+    assert.throws(() => assertFreshSource(cached), assert.AssertionError);
     assert.deepEqual(await readFile(join(f.dir, original.artifacts[0].ref)), originalBytes);
     assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
     assert.equal(native.writes.length, 0);
@@ -1762,6 +1775,51 @@ test('caption inline scopes preserve foreign examples and map non-code assets wi
         assert.ok(stage.target_assets.every((asset: any) => asset.source_path === owned));
         const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: stage.expected.body }))).window.document;
         assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent));
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('generation holds expose only fixed source-owned diagnostics and never raw native errors', async (t) => {
+    const cases = [
+        { name: 'unrelated-tree', expected: 'content-pr-unrelated-files' },
+        { name: 'failed-checks', expected: 'required-checks-unverified' },
+        { name: 'unknown-lowercase', expected: 'unclassified', raw: 'private-access-token-do-not-echo' },
+        { name: 'known-prefix-secret', expected: 'unclassified', raw: 'content-pr-unrelated-files-private-token' },
+        { name: 'transient-raw', expected: 'unclassified', raw: 'HTTP 503 private provider detail' },
+        { name: 'accessor-message', expected: 'unclassified', raw: 'private-accessor-token-do-not-echo' },
+    ];
+    for (const example of cases) await t.test(example.name, async () => {
+        const f = await fixture(t), admitted = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+        const native = nativeFixture([oldThought], admitted), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+        const pr = native.openContent(first.expected);
+        if (example.name === 'unrelated-tree') {
+            const commit = native.commits.get(pr.head.sha), leaves = native.trees.get(commit.tree.sha)!.map(e => ({ ...e }));
+            leaves.find(e => e.path === 'README.md')!.sha = '0'.repeat(40);
+            const tree = sha(JSON.stringify(leaves)).slice(0, 40); native.trees.set(tree, leaves); commit.tree = { sha: tree };
+        }
+        native.mergeContent();
+        let accessorCalls = 0;
+        const readGitHub = async (path: string) => {
+            if (example.raw && path.startsWith('/repos/OrionArchitekton/danmercede.com/pulls?state=closed')) {
+                if (example.name === 'accessor-message') {
+                    const error = new Error();
+                    Object.defineProperty(error, 'message', { get: () => { accessorCalls++; return example.raw; } });
+                    throw error;
+                }
+                throw Error(example.raw);
+            }
+            const value = await native.readGitHub(path);
+            return example.name === 'failed-checks' && path.includes('/check-runs?') ? { ...value, check_runs: value.check_runs.map((check: any) => ({ ...check, conclusion: 'failure' })) } : value;
+        };
+        const result = await reconcileHubRelease(options, { ...native, readGitHub }), raw = await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'), stage = JSON.parse(raw);
+        assert.equal(stage.generation_error, example.expected);
+        assert.equal(result.status, 'held');
+        assert.equal(stage.stage, 'data-generation-unverified');
+        assert.equal(stage.public_delivery, 'unknown');
+        assert.deepEqual(result.holds, ['merged-generation-unverified']);
+        if (example.raw) assert.equal(raw.includes(example.raw), false);
+        assert.equal(accessorCalls, 0);
         assert.equal(native.writes.length, 0);
     });
 });

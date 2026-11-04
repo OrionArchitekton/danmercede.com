@@ -644,6 +644,25 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
     return artifact(options, binding, { ...result, source: plan?.source ?? null }, unknown ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
 }
 const HUB_DATA_PATHS = [ESSAY_ADMISSION_PATH, 'constants.generated.ts', 'constants.guides.generated.ts'];
+// Only audited source-owned generation failures may appear in held diagnostics.
+// Native/transient/parse messages and future unlisted failures stay unclassified.
+const GENERATION_ERROR_CODES = new Set([
+    'original-plan-unverified', 'original-target-changed', 'original-base-unverified',
+    'original-admission-unverified', 'original-baseline-unverified', 'original-canonical-unverified', 'original-target-unverified',
+    'generation-data-unusable', 'generation-data-unproved', 'generation-main-moved',
+    'generation-anchor-unverified', 'generation-identity-changed', 'generation-proof-unusable', 'generation-proof-conflict',
+    'merged-pr-inventory-unusable', 'merged-pr-inventory-incomplete', 'merged-pr-unverified',
+    'merged-pr-head-unverified', 'merged-pr-tree-unverified', 'merged-pr-not-protected',
+    'admission-merge-unrelated-change', 'admission-merge-copy-mismatch',
+    'content-pr-ambiguous', 'content-pr-stale-or-foreign', 'content-pr-base-mismatch',
+    'content-pr-unrelated-files', 'content-pr-assets-unverified', 'content-pr-target-mismatch', 'content-pr-unrelated-content',
+    'required-check-inventory-unverified', 'required-checks-unverified', 'trusted-check-origin-unverified', 'review-threads-unverified',
+    'target-asset-count-unverified', 'target-asset-path-unverified', 'target-asset-source-unverified',
+    'target-asset-tree-unverified', 'target-asset-unverified',
+    'canonical-main-unverified', 'canonical-not-on-protected-main', 'canonical-pin-changed',
+    'canonical-protected-main-mismatch', 'canonical-main-moved',
+    'tree-inventory-unusable', 'tree-entry-unusable', 'tree-duplicate-path',
+]);
 async function generationData(read: (path: string) => Promise<any>, commit: string, tree: any[]) {
     const files = [];
     for (const path of HUB_DATA_PATHS) {
@@ -834,8 +853,10 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
     try {
         const generations = await mergedDataGenerations(options, binding, current, deps);
         if (generations.references.length) current = { ...current, data_generations: generations.references, generation_observations: generations.observations };
-    } catch {
-        return artifact(options, binding, { ...current, stage: 'data-generation-unverified', public_delivery: 'unknown' }, 'held', ['merged-generation-unverified']);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? Object.getOwnPropertyDescriptor(error, 'message')?.value : undefined;
+        const generation_error = typeof message === 'string' && GENERATION_ERROR_CODES.has(message) ? message : 'unclassified';
+        return artifact(options, binding, { ...current, stage: 'data-generation-unverified', public_delivery: 'unknown', generation_error }, 'held', ['merged-generation-unverified']);
     }
     if (current.data_generations?.length && !syncAttempt && current.stage !== 'already-source-synced') return artifact(options, binding, current, fresh.status, fresh.holds);
     if (current?.stage === 'content-pr-awaiting-merge' || current?.stage === 'content-pr-unverified') {
