@@ -288,6 +288,20 @@ async function contentPrPlan(binding: any, detail: any, facts: any, read: (path:
     insist(threads?.head_sha === pr.head.sha && threads.complete === true && Array.isArray(threads.threads) && threads.threads.length <= 300 && threads.threads.every((t: any) => typeof t.id === 'string' && t.id.length > 0 && t.isResolved === true) && new Set(threads.threads.map((t: any) => t.id)).size === threads.threads.length, 'review-threads-unverified');
     return { number: pr.number, head_sha: pr.head.sha, base_sha: pr.base.sha, copy_parity: true, unrelated_corpus_preserved: true, required_checks_passed: true, required_checks: required, unresolved_threads: 0, latest_slugs: selectLatestThoughts(thoughts as any).map(t => t.slug), merge_gate: 'HUMAN_REQUIRED' };
 }
+async function originalPlanAnchor(root: any, binding: any) {
+    let anchor: any;
+    try { anchor = await root.get('hub-original-plan.json'); }
+    catch (error: any) {
+        if (error instanceof SyntaxError || error?.name === 'YAMLException' || error?.code === 'ERR_ENCODING_INVALID_ENCODED_DATA') throw Error('original-plan-unverified');
+        throw error;
+    }
+    if (!anchor) return null;
+    const value = anchor.value;
+    insist(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).sort().join('|') === 'input_sha256|kind|operation_id|plan|schema_version|week' && value.schema_version === 1 && value.kind === 'newsletter-hub-original-plan' && value.operation_id === binding.request.operation_id && value.week === binding.request.week && value.input_sha256 === binding.input_sha256, 'original-plan-unverified');
+    const ref = value.plan;
+    insist(ref && typeof ref === 'object' && !Array.isArray(ref) && Object.keys(ref).sort().join('|') === 'ref|sha256' && HASH.test(ref.sha256) && ref.ref === `hub-plan-${ref.sha256}.json`, 'original-plan-unverified');
+    return anchor;
+}
 async function artifact(options: Options, binding: any, data: any, status: string, holds: string[]) {
     const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     try {
@@ -296,7 +310,7 @@ async function artifact(options: Options, binding: any, data: any, status: strin
         const stored = await root.put(name, value);
         insist(digest(stored.bytes) === digest(Buffer.from(JSON.stringify(value, null, 2) + '\n')), 'artifact-conflict');
         if (value.admission?.data_path === ESSAY_ADMISSION_PATH && value.expected && value.baseline && value.source?.main_sha) {
-            let anchor = await root.get('hub-original-plan.json');
+            let anchor = await originalPlanAnchor(root, binding);
             if (!anchor) {
                 // Recover only a first-plan crash, never silently rebase an existing job.
                 for (const prior of await root.list()) {
@@ -306,9 +320,9 @@ async function artifact(options: Options, binding: any, data: any, status: strin
                     insist(!previous.value.admission || !previous.value.expected, 'original-plan-unverified');
                 }
                 await root.put('hub-original-plan.json', { schema_version: 1, kind: 'newsletter-hub-original-plan', operation_id: binding.request.operation_id, week: binding.request.week, input_sha256: binding.input_sha256, plan: { ref: name, sha256: stored.sha256 } });
-                anchor = await root.get('hub-original-plan.json');
+                anchor = await originalPlanAnchor(root, binding);
             }
-            insist(anchor?.value.schema_version === 1 && Object.keys(anchor.value).sort().join('|') === 'input_sha256|kind|operation_id|plan|schema_version|week' && anchor.value.kind === 'newsletter-hub-original-plan' && anchor.value.operation_id === binding.request.operation_id && anchor.value.week === binding.request.week && anchor.value.input_sha256 === binding.input_sha256, 'original-plan-unverified');
+            insist(anchor, 'original-plan-unverified');
         }
         return envelope(binding, status, [{ ref: name, sha256: stored.sha256 }], holds);
     }
@@ -394,6 +408,10 @@ async function loadPlan(root: any, options: AdvanceOptions, binding: any) {
     insist(HASH.test(options.planSha256), 'invalid-plan-digest');
     const saved = await root.get(`hub-plan-${options.planSha256}.json`);
     insist(saved && digest(saved.bytes) === options.planSha256 && saved.value.input_sha256 === binding.input_sha256 && saved.value.operation_id === binding.request.operation_id, 'plan-binding-mismatch');
+    if (options.action === 'prepare-admission') {
+        const anchor = await originalPlanAnchor(root, binding);
+        insist(anchor?.value.plan.sha256 === options.planSha256 && anchor.value.plan.ref === `hub-plan-${options.planSha256}.json`, 'original-plan-unverified');
+    }
     return saved.value;
 }
 function freshGrantTime(grant: any, deps: Dependencies) {
@@ -613,7 +631,7 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
             result = await recoverSyncAction(root, options, binding, plan, deps);
     }
     catch (e: any) {
-        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
+        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'original-plan-unverified', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
     }
     finally {
         await root.close();
@@ -634,8 +652,19 @@ async function generationData(read: (path: string) => Promise<any>, commit: stri
     return files;
 }
 async function mergedPull(read: (path: string) => Promise<any>, branch: string, base: string, protectedMain: string, marker?: string) {
-    const candidates = await read(`${nativePrefix}/pulls?state=closed&base=main&head=${encodeURIComponent('OrionArchitekton:' + branch)}&per_page=100&page=1`);
-    insist(Array.isArray(candidates) && candidates.length < 100, 'merged-pr-inventory-unusable');
+    const candidates: any[] = [], seen = new Set<number>();
+    let complete = false;
+    for (let page = 1; page <= 3; page++) {
+        const records = await read(`${nativePrefix}/pulls?state=closed&base=main&head=${encodeURIComponent('OrionArchitekton:' + branch)}&per_page=100&page=${page}`);
+        insist(Array.isArray(records) && records.length <= 100, 'merged-pr-inventory-unusable');
+        for (const record of records) {
+            insist(Number.isSafeInteger(record?.number) && record.number > 0 && !seen.has(record.number) && record.state === 'closed' && record.head?.ref === branch && SHA.test(record.head.sha) && record.head.repo?.full_name === REPOSITORY && record.base?.ref === 'main' && SHA.test(record.base.sha) && record.base.repo?.full_name === REPOSITORY, 'merged-pr-inventory-unusable');
+            seen.add(record.number);
+            candidates.push(record);
+        }
+        if (records.length < 100) { complete = true; break; }
+    }
+    insist(complete, 'merged-pr-inventory-incomplete');
     const matches = candidates.filter(p => p.base?.sha === base && (!marker || p.body === marker));
     insist(matches.length === 1 && Number.isSafeInteger(matches[0].number) && matches[0].number > 0, 'merged-pr-unverified');
     const pr = await read(`${nativePrefix}/pulls/${matches[0].number}`);
@@ -714,8 +743,8 @@ async function mergedDataGenerations(options: Options, binding: any, current: an
     if (!current.source?.main_sha || !current.admission || !current.expected) return { references: [], observations: [] };
     const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     try {
-        const anchor = await root.get('hub-original-plan.json');
-        insist(anchor?.value.schema_version === 1 && Object.keys(anchor.value).sort().join('|') === 'input_sha256|kind|operation_id|plan|schema_version|week' && anchor.value.kind === 'newsletter-hub-original-plan' && anchor.value.operation_id === binding.request.operation_id && anchor.value.week === binding.request.week && anchor.value.input_sha256 === binding.input_sha256, 'original-plan-unverified');
+        const anchor = await originalPlanAnchor(root, binding);
+        insist(anchor, 'original-plan-unverified');
         const originalPlan = anchor.value.plan;
         fields(originalPlan, 'ref sha256');
         insist(HASH.test(originalPlan.sha256) && originalPlan.ref === `hub-plan-${originalPlan.sha256}.json`, 'original-plan-unverified');

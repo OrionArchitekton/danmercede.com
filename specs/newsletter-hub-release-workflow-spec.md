@@ -216,6 +216,15 @@ behavior and supported path breadth. The default newsletter has no inline images
 The original full plan has an exclusive immutable anchor. A missing anchor in a
 root containing earlier full plans holds rather than selecting a new origin from
 file metadata. A first-plan crash may finish only its exact first binding.
+Preparing admission requires the saved candidate's exact ref and digest to equal
+that valid original anchor before consulting mutation authority or reserving any
+effect. A later observation cannot rebase the admission. Fresh recovery plans
+retain their existing current-state semantics; their digest need not equal the
+original admission-plan digest. Malformed JSON, duplicate-key JSON or invalid
+UTF-8 in this original anchor map only to `original-plan-unverified`; direct
+planning retains that error contract and reconciliation emits its bound held
+artifact without rewriting the bad bytes. Other private-file, bounds or artifact
+parse failures retain their existing error behavior.
 An awaited authorizer is followed by a fresh exact-main readback before setup or
 a native write; a changed base grants no stale operation. The admission migration
 test preserves the legacy prefix and full JSON/export consistency, while an
@@ -247,6 +256,16 @@ and any existing unknown intent are preserved. The prior decision must be valid
 at refresh entry after the final journal await; a fresh current decision may
 finish later under unchanged standing policy/STOP/expiry/drain bounds. This does
 not revive an expired entry, reset a budget or resend an uncertain attempt.
+
+Closed PR history is read completely before selecting either merged handoff,
+using at most three pages of 100 records. A terminal short page proves bounded
+completeness; three full pages hold even if an apparent match appeared earlier.
+Every listed record must have a unique positive safe integer ID, closed state,
+the fixed repository/branch/base and well-formed native SHA identities. Duplicate,
+malformed, unavailable, overlong or incomplete inventories hold; multiple exact
+base/marker matches remain ambiguous. Detailed PR/head/merge/tree/protected
+ancestry checks remain mandatory after selection. Pagination grants no write or
+retry authority.
 
 
 Endpoint admission uses only exact numeric `127.0.0.1` or `[::1]` loopback literals,

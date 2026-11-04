@@ -1398,3 +1398,177 @@ test('image planning admits two owned refs and repeats one source without duplic
     assert.ok(stage.expected.body.includes(`![again](/assets/thoughts/${slug}/gate.svg 'same source')`));
     assert.equal(native.writes.length, 0);
 });
+
+test('prepare-admission refuses a rebased saved plan before authorization or native intents', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const original = await planHubRelease(options, native), anchor = await readFile(join(f.dir, 'hub-original-plan.json'));
+    native.moveMain();
+    const rebased = await planHubRelease({ ...options, now: '2026-11-09T15:06:00Z' }, native);
+    assert.notDeepEqual(rebased.artifacts, original.artifacts);
+    let authorizations = 0;
+    const now = '2026-11-09T15:06:00Z';
+    const authorize = async (context: any) => { authorizations++; return { admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T15:10:00Z', stopped: false, grant_ref: 'fixture:only' }; };
+    const result = await advanceHubRelease({ ...options, now, action: 'prepare-admission', planSha256: rebased.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(now) });
+    assert.equal(authorizations, 0);
+    assert.equal(native.writes.length, 0);
+    assert.equal(result.status, 'held');
+    assert.ok(![...await readdir(f.dir)].some(name => name.startsWith('hub-admission-')));
+    assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
+});
+
+test('fresh recover-sync plans retain their original anchor without requiring its old digest', async (t) => {
+    const f = await fixture(t), sourceAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+    const native = nativeFixture([oldThought], sourceAdmissions), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T16:25:00Z' };
+    const original = await planHubRelease(options, native), anchor = await readFile(join(f.dir, 'hub-original-plan.json'));
+    const now = '2026-11-09T16:26:00Z', fresh = await planHubRelease({ ...options, now }, native);
+    assert.notDeepEqual(fresh.artifacts, original.artifacts);
+    const authorize = async (context: any) => ({ admitted: true, ...context, checked_at: now, expires_at: '2026-11-09T16:30:00Z', stopped: false, grant_ref: 'fixture:only' });
+    const result = await advanceHubRelease({ ...options, now, action: 'recover-sync', planSha256: fresh.artifacts[0].sha256, maxActions: 1 }, { ...native, authorize, clock: () => Date.parse(now) });
+    assert.equal(result.status, 'unknown');
+    assert.equal(native.writes.length, 1);
+    assert.equal(native.writes[0].path, '/repos/OrionArchitekton/danmercede.com/actions/workflows/substrate-sync.yml/dispatches');
+    assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
+});
+
+test('malformed original anchor parse failures reconcile to a bound hold without rewriting bad bytes', async (t) => {
+    for (const [reason, raw] of [['json', Buffer.from('{')], ['duplicate', Buffer.from('{"schema_version":1,"schema_version":2}')], ['utf8', Buffer.from([0xff])]] as const) await t.test(reason, async () => {
+        const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native), anchorPath = join(f.dir, 'hub-original-plan.json');
+        await writeFile(anchorPath, raw, { mode: 0o600 });
+        await assert.rejects(planHubRelease(options, native), /original-plan-unverified/);
+        const result = await reconcileHubRelease(options, native), stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.deepEqual(result.holds, ['original-plan-unverified']);
+        assert.equal(stage.stage, 'data-generation-unverified');
+        assert.equal(stage.input_sha256, original.input_sha256);
+        assert.equal(stage.operation_id, original.operation_id);
+        assert.equal(stage.public_delivery, 'unknown');
+        assert.deepEqual(await readFile(anchorPath), raw);
+        assert.equal(native.writes.length, 0);
+        const repeated = await reconcileHubRelease(options, native);
+        assert.deepEqual(repeated, result);
+        assert.deepEqual(await readFile(anchorPath), raw);
+    });
+});
+
+test('original anchor parse mapping preserves permission failures and other artifact parse errors', async (t) => {
+    for (const reason of ['anchor-mode', 'other-artifact-json']) await t.test(reason, async () => {
+        const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native);
+        if (reason === 'anchor-mode') {
+            await chmod(join(f.dir, 'hub-original-plan.json'), 0o644);
+            await assert.rejects(reconcileHubRelease(options, native), /private-file-unusable/);
+        } else {
+            await writeFile(join(f.dir, original.artifacts[0].ref), '{', { mode: 0o600 });
+            await assert.rejects(reconcileHubRelease(options, native), SyntaxError);
+            assert.deepEqual(await readFile(join(f.dir, original.artifacts[0].ref)), Buffer.from('{'));
+        }
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('merged fixed-branch history reads a complete second page before selecting its actual merge', async (t) => {
+    const f = await fixture(t), sourceAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+    const native = nativeFixture([oldThought], sourceAdmissions), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const original = await planHubRelease(options, native), stage = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const pr = native.openContent(stage.expected); native.mergeContent();
+    const history = Array.from({ length: 100 }, (_, n) => ({ ...pr, number: 1000 + n, base: { ...pr.base, sha: '6'.repeat(40) } }));
+    const closedPages: number[] = [];
+    const readGitHub = async (path: string) => {
+        if (path.includes('/deployments?')) throw Error('fixture: no public proof');
+        if (path.startsWith('/repos/OrionArchitekton/danmercede.com/pulls?state=closed')) {
+            const page = Number(new URL('https://api.github.com' + path).searchParams.get('page')); closedPages.push(page);
+            return page === 1 ? history : page === 2 ? [pr] : [];
+        }
+        return native.readGitHub(path);
+    };
+    const result = await reconcileHubRelease(options, { ...native, readGitHub }), observed = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(observed.data_generations?.length ?? 0, 1);
+    const proof = JSON.parse(await readFile(join(f.dir, observed.data_generations[0].ref), 'utf8'));
+    assert.equal(proof.transition, 'content-merged');
+    assert.equal(proof.pr.number, pr.number);
+    assert.deepEqual(closedPages, [1, 2]);
+    assert.equal(observed.public_delivery, 'unknown');
+    assert.equal(native.writes.length, 0);
+});
+
+test('merged history pagination rejects duplicates malformed pages ambiguity errors and incomplete caps', async (t) => {
+    for (const reason of ['duplicate', 'invalid-id', 'open', 'foreign', 'ambiguous', 'error', 'not-array', 'overlong', 'cap']) await t.test(reason, async () => {
+        const f = await fixture(t), sourceAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+        const native = nativeFixture([oldThought], sourceAdmissions), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+        const pr = native.openContent(first.expected); native.mergeContent();
+        const history = (offset: number) => Array.from({ length: 100 }, (_, n) => ({ ...pr, number: offset + n, base: { ...pr.base, sha: '6'.repeat(40) } }));
+        const pages: number[] = [];
+        const readGitHub = async (path: string) => {
+            if (path.includes('/deployments?')) throw Error('fixture: reader must not qualify');
+            if (path.startsWith('/repos/OrionArchitekton/danmercede.com/pulls?state=closed')) {
+                const page = Number(new URL('https://api.github.com' + path).searchParams.get('page')); pages.push(page);
+                if (reason === 'cap') return page === 1 ? [pr, ...history(1000).slice(1)] : history(page * 1000);
+                if (page === 1) return history(1000);
+                if (reason === 'duplicate') return [pr, history(1000)[0]];
+                if (reason === 'invalid-id') return [pr, { ...history(2000)[0], number: 0 }];
+                if (reason === 'open') return [pr, { ...history(2000)[0], state: 'open' }];
+                if (reason === 'foreign') return [pr, { ...history(2000)[0], head: { ...pr.head, repo: { full_name: 'Foreign/repo' } } }];
+                if (reason === 'ambiguous') return [pr, { ...pr, number: 999 }];
+                if (reason === 'error') throw Error('fixture: page unavailable');
+                if (reason === 'not-array') return { items: [pr] };
+                if (reason === 'overlong') return [pr, ...history(2000)];
+            }
+            return native.readGitHub(path);
+        };
+        const result = await reconcileHubRelease(options, { ...native, readGitHub }), stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.equal(stage.stage, 'data-generation-unverified');
+        assert.ok(!stage.data_generations?.length);
+        assert.equal(stage.public_delivery, 'unknown');
+        assert.deepEqual(pages, reason === 'cap' ? [1, 2, 3] : [1, 2]);
+        assert.equal(native.writes.length, 0);
+    });
+});
+
+test('merged history permits an empty third terminal page but never accepts a partial match early', async (t) => {
+    const f = await fixture(t), sourceAdmissions = JSON.stringify({ ...JSON.parse(admissions), essay_slugs: [...JSON.parse(admissions).essay_slugs, slug] });
+    const native = nativeFixture([oldThought], sourceAdmissions), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const original = await planHubRelease(options, native), first = JSON.parse(await readFile(join(f.dir, original.artifacts[0].ref), 'utf8'));
+    const pr = native.openContent(first.expected); native.mergeContent();
+    const history = (offset: number) => Array.from({ length: 100 }, (_, n) => ({ ...pr, number: offset + n, base: { ...pr.base, sha: '6'.repeat(40) } }));
+    const pages: number[] = [];
+    const readGitHub = async (path: string) => {
+        if (path.includes('/deployments?')) throw Error('fixture: no public proof');
+        if (path.startsWith('/repos/OrionArchitekton/danmercede.com/pulls?state=closed')) {
+            const page = Number(new URL('https://api.github.com' + path).searchParams.get('page')); pages.push(page);
+            return page === 1 ? [pr, ...history(1000).slice(1)] : page === 2 ? history(2000) : [];
+        }
+        return native.readGitHub(path);
+    };
+    const result = await reconcileHubRelease(options, { ...native, readGitHub }), stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(stage.data_generations.length, 1);
+    assert.deepEqual(pages, [1, 2, 3]);
+    assert.equal(native.writes.length, 0);
+});
+
+test('prepare-admission requires an exact closed original anchor before invoking authority', async (t) => {
+    for (const reason of ['missing', 'operation', 'week', 'input', 'extra-ref-field', 'wrong-ref', 'null']) await t.test(reason, async () => {
+        const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native), path = join(f.dir, 'hub-original-plan.json');
+        const anchor = JSON.parse(await readFile(path, 'utf8'));
+        if (reason === 'missing') await rm(path);
+        else {
+            if (reason === 'operation') anchor.operation_id = 'other-operation';
+            if (reason === 'week') anchor.week = '2026-11-16';
+            if (reason === 'input') anchor.input_sha256 = '0'.repeat(64);
+            if (reason === 'extra-ref-field') anchor.plan.extra = true;
+            if (reason === 'wrong-ref') anchor.plan = { ref: `hub-plan-${'0'.repeat(64)}.json`, sha256: '0'.repeat(64) };
+            await writeFile(path, JSON.stringify(reason === 'null' ? null : anchor), { mode: 0o600 });
+        }
+        let authorizations = 0;
+        const authorize = async () => { authorizations++; throw Error('must not reach authority'); };
+        const result = await advanceHubRelease({ ...options, action: 'prepare-admission', planSha256: original.artifacts[0].sha256, maxActions: 5 }, { ...native, authorize, clock: () => Date.parse(options.now) });
+        assert.equal(result.status, 'held');
+        assert.deepEqual(result.holds, ['original-plan-unverified']);
+        assert.equal(authorizations, 0);
+        assert.equal(native.writes.length, 0);
+        if (reason === 'missing') assert.ok(!(await readdir(f.dir)).includes('hub-original-plan.json'));
+    });
+});

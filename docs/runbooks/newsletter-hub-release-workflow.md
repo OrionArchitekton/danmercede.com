@@ -330,6 +330,19 @@ holds; this is not authority to reconstruct, migrate or rebind a historical job.
 A crash between writing the sole first plan and its anchor may finish only that
 same original binding.
 
+`prepare-admission` accepts only the exact saved ref/digest in that valid original
+anchor, checked before any authorizer call or native intent. A freshly observed
+plan on a moved base does not authorize rebasing the admission. Do not replace
+the anchor to make it fit. Fresh `recover-sync` plans retain their existing
+current-state behavior and may differ from that original digest.
+
+Malformed JSON, duplicate keys or invalid UTF-8 in the original anchor become
+`original-plan-unverified`. Direct planning keeps that error; `reconcile` returns
+a bound held artifact and preserves the bad bytes. It does not repair, chmod or
+replace the anchor. Permission, changed-file, unbounded-input and other artifact
+parse errors retain their existing failures; never treat those as an approved
+anchor repair.
+
 Reconciliation reads fixed-repository closed PRs and their actual head/base/merge
 commit/tree and protected ancestry. It appends at most two logical handoffs:
 
@@ -348,6 +361,14 @@ validation evidence. Stage `data_generations` refs expose the ordered chain;
 the proof files are supporting private artifacts, not additional publication
 operations. Repeated collection re-verifies native provenance without rewriting
 prior proofs. Unknown write reservations retain their prior no-resend behavior.
+
+Closed branch history may span at most three pages of 100 records. Selection
+waits for a terminal short page and validates every listed native ID, closed
+state, fixed branch/repository/base and SHA shape, rejecting duplicate IDs.
+Three full pages, malformed/unavailable/overlong pages or ambiguous exact
+base/marker matches hold even when an apparent candidate was already seen.
+Do not widen the cap, skip records or select the first match during recovery.
+The selected PR still needs all original detailed commit/tree/ancestry checks.
 
 Missing, ambiguous, foreign, non-ancestor, changed-copy or unrelated-file evidence
 holds with public delivery unknown. Proofs do not grant a write, protected merge,
