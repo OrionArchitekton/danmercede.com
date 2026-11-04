@@ -163,3 +163,10 @@ wait, admit only the exact source and destination URLs while rechecking lease,
 baseline and persistent target identity. Continue only when both native and CLI
 observations reach the destination. A replacement or unapproved third URL holds;
 a timeout stays unverified and still cleans up the original owned target safely.
+
+
+Endpoint admission uses only exact numeric `127.0.0.1` or `[::1]` loopback literals,
+an explicit nonzero valid port and the exact owned browser WebSocket path.
+Hostname aliases, noncanonical spellings, credentials and extra URL components
+hold before discovery or CDP client commands; no never-started client is created
+just for cleanup, while normal same-holder lease release still runs.

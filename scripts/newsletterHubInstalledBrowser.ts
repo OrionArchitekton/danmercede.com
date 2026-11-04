@@ -33,6 +33,15 @@ function jsonResult(result: any) {
   insist(Number.isInteger(result?.exit_code) && typeof result.stdout === 'string' && Buffer.byteLength(result.stdout) <= 2 * 1024 * 1024, 'browser-command-response-unusable');
   try { return JSON.parse(result.stdout); } catch { throw Error('browser-command-response-unusable'); }
 }
+function ownedEndpoint(value: string) {
+  try {
+    const address = new URL(value);
+    insist(['ws:', 'wss:'].includes(address.protocol) && ['127.0.0.1', '[::1]'].includes(address.hostname), 'browser-reader-endpoint-unusable');
+    insist(/^[0-9]+$/.test(address.port) && Number(address.port) >= 1 && Number(address.port) <= 65535, 'browser-reader-endpoint-unusable');
+    insist(/^\/devtools\/browser\/[A-Za-z0-9_-]{1,128}$/.test(address.pathname) && !address.username && !address.password && !address.search && !address.hash && address.href === value, 'browser-reader-endpoint-unusable');
+    return address;
+  } catch { throw Error('browser-reader-endpoint-unusable'); }
+}
 function tabRows(value: any): Tab[] {
   const tabs = value?.tabs;
   insist(Array.isArray(tabs) && tabs.length > 0 && tabs.length <= 20, 'browser-reader-tabs-unverified');
@@ -53,7 +62,7 @@ export async function readInstalledHubBrowser(input: Input, dependencies: Depend
   const started = clock(), holder = `fcn-reader-${randomUUID()}`;
   const env = environment();
   let endpoint = '', discoveryUrl = '', ownTarget = '', expectedUrl = '', expires = 0, acquired = false, leaseAttempted = false, ownTab: number | null = null;
-  let disconnected = false, tabClosed = false, released = false, releaseStop = '';
+  let clientAttempted = false, disconnected = false, tabClosed = false, released = false, releaseStop = '';
   let baseline: Tab[] = [], sequence = 0, configDir = '';
   let pendingNavigation: { from: string; to: string } | null = null;
   const toolBytes = dependencies.toolBytes ?? (async path => readFile(await realpath(path)));
@@ -84,6 +93,7 @@ export async function readInstalledHubBrowser(input: Input, dependencies: Depend
     return ['--config', join(configDir, 'agent-browser.json'), '--json', '--session', holder, ...(cdp ? ['--cdp', endpoint] : []), '--allowed-domains', 'www.danmercede.com,www.orionintelligenceagency.com', '--no-auto-dialog'];
   }
   async function agent(args: string[], cdp = true) {
+    if (cdp) clientAttempted = true;
     const result = await call(AGENT, [...flags(cdp), ...args]);
     const value = jsonResult(result);
     insist(result.exit_code === 0 && value.success === true && value.data, 'browser-reader-command-unverified');
@@ -166,7 +176,7 @@ export async function readInstalledHubBrowser(input: Input, dependencies: Depend
     return expectedUrl;
   }
   async function disconnect() {
-    if (!disconnected) {
+    if (clientAttempted && !disconnected) {
       // CDP close disconnects this unique agent-browser session; it does not close Chrome.
       await agent(['close'], false);
       disconnected = true;
@@ -192,9 +202,7 @@ export async function readInstalledHubBrowser(input: Input, dependencies: Depend
     const lease = await pool(['lease', 'reader', '--minutes', '5', '--holder', holder], 45000);
     acquired = true;
     insist(lease?.browser === 'reader' && lease.holder === holder && typeof lease.endpoint === 'string', 'browser-reader-lease-unverified');
-    const address = new URL(lease.endpoint);
-    insist(['ws:', 'wss:'].includes(address.protocol) && ['127.0.0.1', '[::1]', 'localhost'].includes(address.hostname) && address.port && /^\/devtools\/browser\/[A-Za-z0-9_-]{1,128}$/.test(address.pathname) && !address.username && !address.password && !address.search && !address.hash, 'browser-reader-endpoint-unusable');
-    insist(address.href === lease.endpoint, 'browser-reader-endpoint-unusable');
+    const address = ownedEndpoint(lease.endpoint);
     endpoint = lease.endpoint;
     discoveryUrl = `${address.protocol === 'ws:' ? 'http:' : 'https:'}//${address.host}/json/list`;
     expires = Date.parse(lease.expires_at);

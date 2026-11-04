@@ -13,6 +13,7 @@ references:
   - scripts/renderFeed.ts
   - siteOrigin.ts
   - docs/reviews/newsletter-hub-reader-native-20261103-attempt1/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json
   - scripts/newsletterHubReadiness.mjs
   - scripts/compileContent.ts
   - scripts/verifyProductionDeployment.mjs
@@ -266,3 +267,23 @@ mutation authorizer, publication, admission, merge, dispatch, deployment, timer 
 runtime-installation authority, and does not certify future content or changed
 installed tools. Subsequent changes must preserve the exact code/tool/data
 boundaries and be verified at their own requested consumer boundary.
+
+
+Endpoint admission accepts only the exact numeric loopback literals `127.0.0.1`
+and `[::1]`, an explicit valid nonzero port and the owned browser DevTools path.
+Hostname aliases such as `localhost`, alternate/noncanonical numeric spellings,
+credentials, query/fragment additions and non-loopback addresses hold before
+CDP commands or discovery. Normal release still uses the same unique lease
+holder; a client that was never started needs no disconnect command. A started
+client retains the independent disconnect cleanup described above.
+
+
+The final numeric-only endpoint guard was also qualified once against the live
+E14 page at November 4, 01:03:44–01:04:01 UTC (November 3 Pacific), using the
+actual consumer and installed helper. Its
+[separate second receipt](../reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json)
+binds reviewed functional tree `307119980d398f36f4631198dc1e9dc71598383a` and
+preserves the first attempt unchanged. Full parity and the exact attributed CTA
+passed; owned-tab/client cleanup and normal release were clean, followed by a
+down/unheld reader state. This page also had zero images. The receipt is read-only
+qualification, with no new writer, policy or production authority.
