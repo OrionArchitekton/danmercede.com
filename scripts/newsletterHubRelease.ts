@@ -873,7 +873,7 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
     finally {
         await root.close();
     }
-    return artifact(options, binding, result, result.stage === 'unknown-native-attempt' ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
+    return artifact(options, binding, { ...current, ...result, public_delivery: 'unknown' }, result.stage === 'unknown-native-attempt' ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
 }
 export async function main(argv: string[], dependencies: Dependencies = {}) {
     const command = argv[0];

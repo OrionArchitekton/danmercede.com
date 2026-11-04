@@ -50,6 +50,15 @@ source/native PR/run/deployment/reader evidence, stage, explicit
 `merge_gate:"HUMAN_REQUIRED"` and `public_delivery:"unknown"|"verified"`.
 No consumer may infer public delivery from the outer completed status.
 
+The final held reconciliation artifact retains the detailed plan actually
+validated during that same invocation, while the reconciliation result overrides
+its stage and public delivery stays unknown. This permits exact recovery after a
+lost initial plan return without searching unreferenced artifacts. A native or
+source read failure before detailed validation does not supply those missing
+fields. The shared held label alone proves no original-plan validation, authority
+or public delivery; consumers still verify the immutable original binding and
+fresh detailed fields independently.
+
 ## Observable scenarios
 
 1. A request's exact bytes bind every artifact and persistent record. Unsafe,

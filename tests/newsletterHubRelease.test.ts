@@ -1572,3 +1572,45 @@ test('prepare-admission requires an exact closed original anchor before invoking
         if (reason === 'missing') assert.ok(!(await readdir(f.dir)).includes('hub-original-plan.json'));
     });
 });
+
+test('held reconcile retains its fresh validated detailed plan after an initial return is lost', async (t) => {
+    const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+    const original = await planHubRelease(options, native), originalBytes = await readFile(join(f.dir, original.artifacts[0].ref)), first = JSON.parse(originalBytes.toString());
+    const anchor = await readFile(join(f.dir, 'hub-original-plan.json'));
+    // The private plan exists, but a caller did not retain that first return.
+    const observedAt = '2026-11-09T15:06:00Z', result = await reconcileHubRelease({ ...options, now: observedAt }, native);
+    const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+    assert.equal(result.status, 'held');
+    assert.equal(stage.stage, 'operation-held');
+    assert.equal(stage.reason, 'operation-not-started');
+    assert.equal(stage.public_delivery, 'unknown');
+    assert.equal(stage.merge_gate, 'HUMAN_REQUIRED');
+    assert.equal(stage.observed_at, observedAt);
+    assert.equal(stage.operation_id, original.operation_id);
+    assert.equal(stage.input_sha256, original.input_sha256);
+    for (const field of ['expected', 'target_assets', 'baseline', 'source', 'admission', 'canonical']) assert.deepEqual(stage[field], first[field], field);
+    assert.deepEqual(await readFile(join(f.dir, original.artifacts[0].ref)), originalBytes);
+    assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
+    assert.equal(native.writes.length, 0);
+});
+
+test('an early read outage cannot supply a detailed plan under the same final held label', async (t) => {
+    for (const failure of ['hub-main', 'canonical-content']) await t.test(failure, async () => {
+        const f = await fixture(t), native = nativeFixture(), options = { requestPath: f.path, jobDir: f.dir, now: '2026-11-09T15:05:00Z' };
+        const original = await planHubRelease(options, native), anchor = await readFile(join(f.dir, 'hub-original-plan.json'));
+        const readGitHub = async (path: string) => {
+            if (failure === 'hub-main' && path === '/repos/OrionArchitekton/danmercede.com/git/ref/heads/main' || failure === 'canonical-content' && path.startsWith('/repos/OrionArchitekton/dan-mercede-substrate/contents/publishing/canonical/')) throw Error('fixture: unavailable');
+            return native.readGitHub(path);
+        };
+        const result = await reconcileHubRelease({ ...options, now: '2026-11-09T15:06:00Z' }, { ...native, readGitHub });
+        const stage = JSON.parse(await readFile(join(f.dir, result.artifacts[0].ref), 'utf8'));
+        assert.equal(result.status, 'held');
+        assert.equal(stage.stage, 'operation-held');
+        assert.equal(stage.public_delivery, 'unknown');
+        assert.equal(stage.operation_id, original.operation_id);
+        assert.equal(stage.input_sha256, original.input_sha256);
+        for (const field of ['expected', 'target_assets', 'baseline', 'admission', 'canonical']) assert.equal(Object.hasOwn(stage, field), false, field);
+        assert.deepEqual(await readFile(join(f.dir, 'hub-original-plan.json')), anchor);
+        assert.equal(native.writes.length, 0);
+    });
+});

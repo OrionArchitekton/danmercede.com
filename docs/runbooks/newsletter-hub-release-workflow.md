@@ -330,6 +330,14 @@ holds; this is not authority to reconstruct, migrate or rebind a historical job.
 A crash between writing the sole first plan and its anchor may finish only that
 same original binding.
 
+If the initial plan return was lost, final held reconciliation retains the
+detailed fields freshly validated in that invocation. Its result stage still
+wins and public delivery remains unknown. An early native/source read failure
+does not acquire missing detailed fields from an old plan. Consumers must compare
+the actual returned detailed fields with the immutable original and independent
+native facts; `operation-held` alone does not establish that comparison. No
+extra CLI, unreferenced-artifact search, new grant or resend is involved.
+
 `prepare-admission` accepts only the exact saved ref/digest in that valid original
 anchor, checked before any authorizer call or native intent. A freshly observed
 plan on a moved base does not authorize rebasing the admission. Do not replace
