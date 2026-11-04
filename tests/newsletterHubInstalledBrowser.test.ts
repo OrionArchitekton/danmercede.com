@@ -8,10 +8,11 @@ const input = {
   cta: { kind: 'question', text: 'Which workflow needs a protected window?' },
 };
 const purpose = 'Signed-out general web reading: job posts, articles, docs. Never sign in to any account here. Not for YouTube competitor study (use study).';
-function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?: boolean; failRecipe?: boolean; failRelease?: boolean; wrongVersion?: boolean; tabDrift?: boolean; expired?: boolean; replaceTarget?: boolean; replaceAfterOpen?: boolean; duplicateTargetUrl?: boolean; delayedNavigation?: boolean; replacePending?: boolean; unexpectedPending?: boolean; neverCommit?: boolean } = {}) {
+function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?: boolean; failRecipe?: boolean; failRelease?: boolean; wrongVersion?: boolean; tabDrift?: boolean; expired?: boolean; replaceTarget?: boolean; replaceAfterOpen?: boolean; duplicateTargetUrl?: boolean; delayedNavigation?: boolean; replacePending?: boolean; unexpectedPending?: boolean; neverCommit?: boolean; endpoint?: string } = {}) {
   const calls: Array<{ binary: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
   let holder = '', active = 0, created = false, released = false, tabClosed = false;
-  const endpoint = 'ws://127.0.0.1:39199/devtools/browser/11111111-2222-3333-4444-555555555555';
+  const endpoint = overrides.endpoint ?? 'ws://127.0.0.1:39199/devtools/browser/11111111-2222-3333-4444-555555555555';
+  let discoveryCalls = 0;
   let currentUrl = 'about:blank', targetId = 'owned-target', publicOpened = false, discovered = 0;
   let pendingUrl = '', pendingReads = 0;
   const readerInput = overrides.delayedNavigation || overrides.replacePending || overrides.unexpectedPending || overrides.neverCommit ? { ...input, cta: { kind: 'external', text: 'Work with my agency on one workflow', url: 'https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin' } } : input;
@@ -54,10 +55,11 @@ function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?:
     return json({ success: true, data: { done: true } });
   };
   const fetchDiscovery = async (url: string, options: any) => {
+    discoveryCalls++;
     assert.equal(options.method, 'GET');
     assert.equal(options.credentials, 'omit');
     assert.equal(options.redirect, 'error');
-    assert.equal(url, 'http://127.0.0.1:39199/json/list');
+    assert.equal(url, endpoint.includes('[::1]') ? 'http://[::1]:39199/json/list' : 'http://127.0.0.1:39199/json/list');
     if ((overrides.replaceTarget && created && ++discovered > 1 && !publicOpened) || (overrides.replaceAfterOpen && publicOpened)) targetId = 'foreign-replacement';
     if (pendingUrl) {
       if (overrides.replacePending) targetId = 'replacement-during-navigation';
@@ -66,7 +68,7 @@ function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?:
     }
     return new Response(JSON.stringify([{ id: 'baseline-target', type: 'page', url: 'about:blank' }, ...(created && !tabClosed ? [{ id: targetId, type: 'page', url: currentUrl }] : []), ...(overrides.duplicateTargetUrl && created ? [{ id: 'ambiguous-target', type: 'page', url: currentUrl }] : [])]));
   };
-  return { readerInput, calls, invoke, fetchDiscovery, pause: async () => {}, clock: () => Date.parse('2026-11-03T22:00:00Z'), toolBytes: async () => Buffer.from('fixture installed tool bytes'), state: () => ({ released, tabClosed, created }) };
+  return { readerInput, calls, invoke, fetchDiscovery, pause: async () => {}, clock: () => Date.parse('2026-11-03T22:00:00Z'), toolBytes: async () => Buffer.from('fixture installed tool bytes'), state: () => ({ released, tabClosed, created, discoveryCalls }) };
 }
 test('installed fixed reader checks identity and UA before navigation and normally releases without exposing capabilities', async () => {
   const f = fixture();
@@ -159,4 +161,24 @@ test('a pending navigation that never commits stays bounded and cleans up its or
   assert.equal(f.state().tabClosed, true);
   assert.equal(f.state().released, true);
   assert.ok(f.calls.filter(c => c.binary.endsWith('/orion-browser') && c.args.includes('status')).length < 100);
+});
+
+test('only exact numeric loopback endpoints are admitted before discovery or browser commands', async () => {
+  const path = '/devtools/browser/11111111-2222-3333-4444-555555555555';
+  for (const endpoint of [
+    `ws://localhost:39199${path}`, `ws://127.0.0.2:39199${path}`,
+    `ws://192.0.2.1:39199${path}`, `ws://127.1:39199${path}`,
+    `ws://127.0.0.1${path}`, `ws://127.0.0.1:0${path}`,
+    `ws://127.0.0.1:65536${path}`, `ws://user:pass@127.0.0.1:39199${path}`,
+    'ws://127.0.0.1:39199/devtools/page/target',
+    `ws://127.0.0.1:39199${path}?token=SECRET`, `ws://127.0.0.1:39199${path}#fragment`,
+  ]) {
+    const f = fixture({ endpoint });
+    await assert.rejects(readInstalledHubBrowser(input, f), /browser-reader-endpoint-unusable/);
+    assert.equal(f.state().discoveryCalls, 0);
+    assert.ok(!f.calls.some(c => c.binary.endsWith('/agent-browser') && c.args[0] !== '--version'));
+    assert.equal(f.state().released, true);
+  }
+  const ipv6 = fixture({ endpoint: `ws://[::1]:39199${path}` });
+  assert.equal((await readInstalledHubBrowser(input, ipv6)).installed_reader.lease_released, true);
 });
