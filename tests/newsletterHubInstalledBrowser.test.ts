@@ -8,7 +8,7 @@ const input = {
   cta: { kind: 'question', text: 'Which workflow needs a protected window?' },
 };
 const purpose = 'Signed-out general web reading: job posts, articles, docs. Never sign in to any account here. Not for YouTube competitor study (use study).';
-function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?: boolean; failRecipe?: boolean; failRelease?: boolean; wrongVersion?: boolean; tabDrift?: boolean; expired?: boolean; replaceTarget?: boolean; replaceAfterOpen?: boolean; duplicateTargetUrl?: boolean; delayedNavigation?: boolean; replacePending?: boolean; unexpectedPending?: boolean; neverCommit?: boolean; endpoint?: string } = {}) {
+function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?: boolean; failRecipe?: boolean; failRelease?: boolean; wrongVersion?: boolean; tabDrift?: boolean; expired?: boolean; replaceTarget?: boolean; replaceAfterOpen?: boolean; duplicateTargetUrl?: boolean; delayedNavigation?: boolean; replacePending?: boolean; unexpectedPending?: boolean; neverCommit?: boolean; endpoint?: string; discoveryUrl?: string } = {}) {
   const calls: Array<{ binary: string; args: string[]; env: NodeJS.ProcessEnv }> = [];
   let holder = '', active = 0, created = false, released = false, tabClosed = false;
   const endpoint = overrides.endpoint ?? 'ws://127.0.0.1:39199/devtools/browser/11111111-2222-3333-4444-555555555555';
@@ -59,7 +59,7 @@ function fixture(overrides: { headless?: boolean; busy?: boolean; wrongPurpose?:
     assert.equal(options.method, 'GET');
     assert.equal(options.credentials, 'omit');
     assert.equal(options.redirect, 'error');
-    assert.equal(url, endpoint.includes('[::1]') ? 'http://[::1]:39199/json/list' : 'http://127.0.0.1:39199/json/list');
+    assert.equal(url, overrides.discoveryUrl ?? (endpoint.includes('[::1]') ? 'http://[::1]:39199/json/list' : 'http://127.0.0.1:39199/json/list'));
     if ((overrides.replaceTarget && created && ++discovered > 1 && !publicOpened) || (overrides.replaceAfterOpen && publicOpened)) targetId = 'foreign-replacement';
     if (pendingUrl) {
       if (overrides.replacePending) targetId = 'replacement-during-navigation';
@@ -169,9 +169,9 @@ test('only exact numeric loopback endpoints are admitted before discovery or bro
     `ws://localhost:39199${path}`, `ws://127.0.0.2:39199${path}`,
     `ws://192.0.2.1:39199${path}`, `ws://127.1:39199${path}`,
     `ws://127.0.0.1${path}`, `ws://127.0.0.1:0${path}`,
-    `ws://127.0.0.1:65536${path}`, `ws://user:pass@127.0.0.1:39199${path}`,
+    `ws://127.0.0.1:65536${path}`, `ws://127.0.0.1:080${path}`, `wss://127.0.0.1:0443${path}`, `ws://user:pass@127.0.0.1:39199${path}`,
     'ws://127.0.0.1:39199/devtools/page/target',
-    `ws://127.0.0.1:39199${path}?token=SECRET`, `ws://127.0.0.1:39199${path}#fragment`,
+    `ws://127.0.0.1:39199${path}\n`, `ws://127.0.0.1:39199${path}?token=SECRET`, `ws://127.0.0.1:39199${path}#fragment`,
   ]) {
     const f = fixture({ endpoint });
     await assert.rejects(readInstalledHubBrowser(input, f), /browser-reader-endpoint-unusable/);
@@ -181,4 +181,19 @@ test('only exact numeric loopback endpoints are admitted before discovery or bro
   }
   const ipv6 = fixture({ endpoint: `ws://[::1]:39199${path}` });
   assert.equal((await readInstalledHubBrowser(input, ipv6)).installed_reader.lease_released, true);
+});
+
+test('explicit default WebSocket ports remain valid and the owned endpoint is passed through exactly', async () => {
+  const path = '/devtools/browser/11111111-2222-3333-4444-555555555555';
+  for (const pair of [
+    { endpoint: `ws://127.0.0.1:80${path}`, discoveryUrl: 'http://127.0.0.1/json/list' },
+    { endpoint: `wss://127.0.0.1:443${path}`, discoveryUrl: 'https://127.0.0.1/json/list' },
+    { endpoint: `ws://[::1]:80${path}`, discoveryUrl: 'http://[::1]/json/list' },
+    { endpoint: `wss://[::1]:443${path}`, discoveryUrl: 'https://[::1]/json/list' },
+  ]) {
+    const f = fixture(pair);
+    assert.equal((await readInstalledHubBrowser(input, f)).installed_reader.lease_released, true);
+    assert.ok(f.calls.some(c => c.args.includes('--cdp')));
+    assert.ok(f.calls.filter(c => c.args.includes('--cdp')).every(c => c.args[c.args.indexOf('--cdp') + 1] === pair.endpoint));
+  }
 });

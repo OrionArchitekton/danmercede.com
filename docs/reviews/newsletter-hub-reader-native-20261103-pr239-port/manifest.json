@@ -1,0 +1,38 @@
+{
+  "kind": "PR239-port-normalization-native-qualification",
+  "started_at": "2026-11-04T02:04:00.760Z",
+  "completed_at": "2026-11-04T02:04:17.650Z",
+  "reviewed_code_tree": "8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9",
+  "static_map_sha256": "d40859b200cc51a20b3b8752a62a922a6d06e6428eec9b3037c56e6905d93336",
+  "observed_main": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+  "adoption": {
+    "base": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+    "head": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+    "status": "identical"
+  },
+  "public_delivery": "verified",
+  "browser_attempted": true,
+  "browser_completed": true,
+  "failure": null,
+  "artifacts": [
+    {
+      "ref": "code-sha256.json",
+      "sha256": "d40859b200cc51a20b3b8752a62a922a6d06e6428eec9b3037c56e6905d93336"
+    },
+    {
+      "ref": "input.json",
+      "sha256": "0284e48bdb345424a7c579248fc87339516597a268f880c811dab1c7d9257b1c"
+    },
+    {
+      "ref": "observation.json",
+      "sha256": "39c885d3e247bd8d8c06d115ddd4cfc9e657a5d672f171e99adecff95d3d9143"
+    }
+  ],
+  "forms_submitted": 0,
+  "github_or_public_content_mutations": 0,
+  "credential_access": false,
+  "capabilities_saved": false,
+  "forced_browser_configuration": false,
+  "explicit_default_ports": "80/443 cases are hermetic tests only; no forced native binding",
+  "authority_granted": false
+}

@@ -1,0 +1,270 @@
+{
+  "operation_id": "pr239-default-port-e14-native-20261103",
+  "input_sha256": "af6ebbd592b265b92c9e161d80f389cfcfed7b660e8ec691901614db5ceaed67",
+  "main_sha": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+  "target": {
+    "title": "The Tool Worked. The Agent Couldn't Use It.",
+    "preview": "A successful integration test establishes access for the executor that ran it; accepting a workflow requires evidence from its intended executor through the permitted route.",
+    "date": "2026-10-19",
+    "category": "Architecture",
+    "slug": "2026-10-19-the-tool-worked-the-agent-couldnt-use-it",
+    "body": "Your team delivers an AI integration. The developer runs it, gets a response, and marks the work complete. On Monday, the person responsible for the workflow asks the agent to use it. The agent cannot reach the tool.\n\nThe operations lead now owns a capability the team expected to have and still cannot use. Someone has to stop their work, reconstruct the developer's setup, and decide whether the missing access is a configuration problem or a boundary that should stay closed. If a customer is waiting on the result, the handoff has become their delay too.\n\nThat customer consequence is hypothetical. The access failure came from my own operation. We had a working tool, a successful host test, and an agent that could not run the same command from its own environment.\n\nThe host test answered a narrower question than the handoff required.\n\n## The installer and the worker had different access\n\nThe integration connected a local AI assistant to an existing task relay. A small command-line adapter submitted an explicitly requested task and collected the response. The command lived in Linux under Windows Subsystem for Linux. The agent expected to use it was running through a Windows PowerShell executor with its own restrictions.\n\nThe adapter worked from the environment used to install and test it. That established something useful: the command was present and the tested route could run it. It did not establish that the consuming agent could read the files, invoke Linux, or reach the command through an approved interface.\n\nWe added a narrow Windows launcher for the adapter. It fixed the distribution, Linux user, interpreter, and command rather than exposing a general shell. A help check from the Windows host succeeded. From the agent's restricted executor, the reported error was `Wsl/Service/E_ACCESSDENIED`. Adapter help never appeared.\n\nSo the second green check had the same limit as the first. We had proved another route from an environment we controlled. The intended worker still lacked a verified route.\n\nThe recovery needed a separately approved invocation from that worker. A reported help check then succeeded through the approved route. Later, a retained consumer check reported successful collection from the agent's native Linux executor, with the request and returned value compared against the existing local response. Those observations belong to their respective environments. A later success does not make the earlier host test sufficient.\n\n## A tool name is only the start of the handoff\n\nWhen you ask whether an agent has a tool, the answer needs an actor and an operation. Can this worker, under this identity, perform this permitted action from the environment where the work will run?\n\nYou can install the same command on a machine and get different answers from an interactive terminal, a restricted desktop agent, a scheduled job, and a service account. They can differ in visible files, executable paths, network access, credentials, and approval requirements. Sharing a physical machine does not make their access equivalent.\n\nAn operations leader should not need to diagnose each of those differences personally. But someone has to own acceptance across them. If engineering hands over a successful terminal session and operations accepts a working business process, the two teams have agreed to different deliverables.\n\n## Put acceptance in the worker's environment\n\nFor one AI workflow, name the executor that will do the work. Be specific enough to distinguish a developer's terminal from the agent's actual runtime and account. Then name the allowed operation and the result someone will inspect.\n\nFor our adapter, displaying command help answered an access question. It did not establish that a task could be submitted, that the response would arrive, or that the response belonged to the request. Each of those needed its own evidence and the appropriate authority to run the check.\n\nFor a hypothetical invoice workflow, the equivalent distinction is between opening the invoice system and creating the intended draft under the correct business account. If the workflow stops at a draft for a person to approve, acceptance should stop there too. A developer's ability to send a live invoice supplies neither permission nor a requirement for the agent to do so.\n\nStart with the least consequential check that answers the open question. Reading help can establish that a command starts. A permitted test record can establish a particular write path. A retained request identifier and matching result can establish the observed round trip. Keep the claim as narrow as the observation.\n\nIf you cannot run the required check without new authority, record that boundary explicitly. The work can be installed while acceptance remains open. That gives the workflow owner an accurate decision instead of a green status that conceals unfinished delivery.\n\n## A denial deserves a decision\n\nAn access failure creates pressure to make the demonstration work. Someone suggests a broader account, a copied credential, or a general execution bridge. The missing capability can quietly become permission to expand what the agent may do.\n\nTreat the denial as evidence about the current route. First determine whether the intended operation belongs within the worker's authority. Then identify the smallest approved interface that supports it. If the owner has not approved that access, keep the operation blocked and make the requested decision precise.\n\nOur launcher was deliberately narrow. That reduced what it exposed, but it did not make the surrounding executor's restrictions disappear. Fixing the command's interface and authorizing the caller to invoke it were separate concerns.\n\nEngineers should preserve that distinction in the result they return. A permission denial should retain its cause and identify the blocked step. If an agent silently tries a more powerful route, the eventual success can conceal a change in authority that the workflow owner never accepted.\n\nFail-closed behavior also needs an owner for the next move. Name who can approve the missing access, choose another permitted route, or decide the workflow should remain manual. Otherwise a correct refusal leaves the business waiting without a person responsible for resolving it.\n\n## Follow the result back to the request\n\nReaching the tool still leaves the result to verify. An accepted submission, an available response file, and a correctly interpreted result answer different questions. The worker needs the answer in a form it can use and associate with the original request.\n\nThe adapter retained a request identifier and caller attribution. For its bounded live check, the response had to carry the matching identity and expected value. Caller attribution helped connect the records; it was not authentication. A successful process exit alone was insufficient.\n\nWe also encountered a response the transport had returned but the adapter had not recognized. The repair was to correct the parser and collect the existing response. Sending the task again would have tested another action while leaving the original result unresolved.\n\nThat recovery detail matters to whoever operates the workflow after delivery. They need to know where to look when the agent has no usable answer, how to distinguish an access failure from an unresolved submission, and when a retry could create a second action. The integration handoff should include that path alongside the successful one.\n\nThis evidence establishes specific observed invocations. It does not certify every operation, future account change, or surrounding workflow. Keep the records identifiable so a later operator can see what was actually tested.\n\n## Try the handoff you expect someone else to use\n\nChoose one AI capability your team already considers delivered. Identify its intended worker and one harmless operation within that worker's existing authority. Ask for the check from that environment, without borrowing the developer's account or adding access to get through it.\n\nFollow the result to the place the next person uses it. If the check stops, identify the exact boundary and who owns the next decision. If it succeeds, record which operation and route succeeded. One observation establishes that path; it does not clear every path the agent might later need.\n\nThen look at the delivery record. Does it name the actual executor, the permitted action, the result that was inspected, and the person responsible when it fails? Those details let operations distinguish an installed component from a workflow they can depend on.\n\nI want the acceptance check to follow the person or agent expected to do the work. That is where the promise of the integration gets tested, and where its limitations become useful information.\n\nIf your team has an AI integration caught between a successful demo and daily use, the Readiness Scan my agency offers maps one workflow, its failure modes, and who owns its handoffs. [Work with my agency on one workflow](https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14)."
+  },
+  "thoughts": [
+    {
+      "slug": "2026-10-26-who-gets-to-interrupt-your-ai-work",
+      "title": "Who Gets to Interrupt Your AI Work?",
+      "date": "2026-10-26"
+    },
+    {
+      "slug": "2026-10-19-the-tool-worked-the-agent-couldnt-use-it",
+      "title": "The Tool Worked. The Agent Couldn't Use It.",
+      "date": "2026-10-19"
+    },
+    {
+      "slug": "2026-10-12-the-transcript-looked-complete",
+      "title": "The Transcript Looked Complete",
+      "date": "2026-10-12"
+    },
+    {
+      "slug": "2026-10-05-the-assistant-was-only-supposed-to-read",
+      "title": "The Assistant Was Only Supposed to Read",
+      "date": "2026-10-05"
+    },
+    {
+      "slug": "2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+      "title": "The Knowledge Graph My Agents Stopped Asking",
+      "date": "2026-09-30"
+    },
+    {
+      "slug": "2026-09-28-the-alert-fired-nobody-was-there",
+      "title": "The Alert Fired. Nobody Was There.",
+      "date": "2026-09-28"
+    },
+    {
+      "slug": "2026-09-21-approved-but-not-the-version-that-shipped",
+      "title": "Approved, But Not the Version That Shipped",
+      "date": "2026-09-21"
+    },
+    {
+      "slug": "2026-09-14-the-fix-never-reached-the-customer",
+      "title": "When the Fix Never Reaches the Customer",
+      "date": "2026-09-14"
+    },
+    {
+      "slug": "2026-09-07-the-plan-checked-itself-and-passed",
+      "title": "The Plan Checked Itself and Passed",
+      "date": "2026-09-07"
+    },
+    {
+      "slug": "2026-09-01-gate-what-you-cannot-undo",
+      "title": "Gate What You Cannot Undo",
+      "date": "2026-09-01"
+    },
+    {
+      "slug": "2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow",
+      "title": "Five Tests Between an AI Demo and an Owned Workflow",
+      "date": "2026-08-10"
+    },
+    {
+      "slug": "2026-08-03-the-alarm-that-always-fires",
+      "title": "The Alarm That Always Fires",
+      "date": "2026-08-03"
+    },
+    {
+      "slug": "2026-07-27-the-machines-came-back",
+      "title": "The Machines Came Back. The Workflow Didn't.",
+      "date": "2026-07-27"
+    },
+    {
+      "slug": "2026-07-24-adopt-the-transport-keep-the-gates",
+      "title": "Adopt the Transport, Keep the Gates",
+      "date": "2026-07-27"
+    },
+    {
+      "slug": "2026-07-20-unpinned-is-a-silent-write",
+      "title": "Unpinned Is a Silent Write",
+      "date": "2026-07-20"
+    },
+    {
+      "slug": "2026-07-20-nobody-owned-the-workflow",
+      "title": "Your AI Pilot Did Not Fail. Nobody Owned the Workflow.",
+      "date": "2026-07-20"
+    },
+    {
+      "slug": "2026-07-13-silence-is-not-success",
+      "title": "Silence Is Not Success",
+      "date": "2026-07-13"
+    },
+    {
+      "slug": "2026-07-13-the-approve-button",
+      "title": "The Approve Button That Wasn't Attached to Anything",
+      "date": "2026-07-13"
+    },
+    {
+      "slug": "2026-07-07-why-ai-governance-starts-too-late",
+      "title": "Why Most AI Governance Starts Too Late",
+      "date": "2026-07-07"
+    },
+    {
+      "slug": "2026-07-06-do-my-agents-learn",
+      "title": "Do My AI Coding Agents Actually Learn? I Built a Way to Measure It",
+      "date": "2026-07-06"
+    },
+    {
+      "slug": "2026-07-03-architecture-fit-is-not-business-justification",
+      "title": "Architecture Fit Is Not Business Justification",
+      "date": "2026-07-03"
+    },
+    {
+      "slug": "2026-06-29-the-alibi-of-a-green-gate",
+      "title": "The Alibi of a Green Gate",
+      "date": "2026-06-29"
+    },
+    {
+      "slug": "2026-06-24-verify-the-verifier-v2",
+      "title": "Verify the Verifier",
+      "date": "2026-06-24"
+    },
+    {
+      "slug": "2026-06-16-the-gate-is-the-product",
+      "title": "The Gate Is the Product",
+      "date": "2026-06-16"
+    },
+    {
+      "slug": "2026-06-09-open-source-the-gate-not-the-verdict",
+      "title": "Open-Source the Gate, Not the Verdict",
+      "date": "2026-06-09"
+    },
+    {
+      "slug": "2026-06-08-authority-gate-made-runnable",
+      "title": "The Authority Gate, Made Runnable: Fail-Closed Merge Admission for Agent-Written Code",
+      "date": "2026-06-08"
+    },
+    {
+      "slug": "2026-06-02-a-governance-claim-you-cannot-run-is-advisory",
+      "title": "A Governance Claim You Cannot Run Is Advisory",
+      "date": "2026-06-02"
+    },
+    {
+      "slug": "2026-05-26-distrust-the-models-own-output-shape",
+      "title": "Distrust the Model's Own Output Shape",
+      "date": "2026-05-26"
+    },
+    {
+      "slug": "2026-05-20-pre-execution-authority-gates",
+      "title": "Pre-Execution Authority Gates: Why Governance Must Be Evaluated Before State Mutation",
+      "date": "2026-05-20"
+    },
+    {
+      "slug": "2026-05-19-the-merge-is-a-state-mutation",
+      "title": "The Merge Is a State Mutation",
+      "date": "2026-05-19"
+    },
+    {
+      "slug": "2026-05-12-posted-is-not-published",
+      "title": "Posted Is Not Published",
+      "date": "2026-05-12"
+    },
+    {
+      "slug": "2026-05-05-gated-substrate-is-a-pinned-sha",
+      "title": "Gated Substrate Is a Pinned SHA, Not a Newer State",
+      "date": "2026-05-05"
+    },
+    {
+      "slug": "2026-04-28-content-has-a-substrate-too",
+      "title": "Content Has a Substrate Too",
+      "date": "2026-04-28"
+    },
+    {
+      "slug": "2026-04-21-the-gate-defends-state-from-its-own-author",
+      "title": "The Gate Defends State From Its Own Author",
+      "date": "2026-04-21"
+    },
+    {
+      "slug": "2026-04-14-redact-at-the-boundary-fail-closed",
+      "title": "Redact at the Boundary, Fail-Closed, or the Pipeline Leaks",
+      "date": "2026-04-14"
+    },
+    {
+      "slug": "2026-04-07-a-proof-pack-demonstrates-enforcement",
+      "title": "A Proof Pack Demonstrates Enforcement, It Does Not Add It",
+      "date": "2026-04-07"
+    },
+    {
+      "slug": "2026-03-31-deleting-the-fallback-is-the-enforcement",
+      "title": "Deleting the Fallback Is the Enforcement",
+      "date": "2026-03-31"
+    },
+    {
+      "slug": "2026-03-24-a-reviewer-that-cannot-abstain-is-not-a-gate",
+      "title": "A Reviewer That Cannot Abstain Is Not a Gate",
+      "date": "2026-03-24"
+    },
+    {
+      "slug": "2026-03-17-a-repo-boundary-is-an-enforcement-primitive",
+      "title": "A Repo Boundary Is an Enforcement Primitive",
+      "date": "2026-03-17"
+    },
+    {
+      "slug": "2026-03-10-extraction-without-a-frozen-contract",
+      "title": "Extraction Without a Frozen Contract Is Just Relocation",
+      "date": "2026-03-10"
+    },
+    {
+      "slug": "2026-03-03-memory-is-a-governance-surface",
+      "title": "Memory Is a Governance Surface, Not a Store",
+      "date": "2026-03-03"
+    },
+    {
+      "slug": "2026-02-24-the-choke-point-is-the-control",
+      "title": "The Choke Point Is the Control",
+      "date": "2026-02-24"
+    },
+    {
+      "slug": "2026-02-17-why-enterprise-ai-fails-at-runtime-not-capability",
+      "title": "Why Enterprise AI Fails at Runtime, Not Capability",
+      "date": "2026-02-17"
+    },
+    {
+      "slug": "2026-02-10-the-four-layer-enforcement-stack",
+      "title": "The Four-Layer Enforcement Stack",
+      "date": "2026-02-10"
+    },
+    {
+      "slug": "2026-02-03-receipts-are-not-logs",
+      "title": "Receipts Are Not Logs",
+      "date": "2026-02-03"
+    },
+    {
+      "slug": "2026-01-27-fail-closed-is-not-conservative-it-is-correct",
+      "title": "Fail-Closed Is Not Conservative, It Is Correct",
+      "date": "2026-01-27"
+    },
+    {
+      "slug": "2026-01-20-behavioral-drift-the-slow-failure-mode",
+      "title": "Behavioral Drift: The Slow Failure Mode",
+      "date": "2026-01-20"
+    },
+    {
+      "slug": "2026-01-13-capability-removal-vs-capability-restriction",
+      "title": "Capability Removal vs. Capability Restriction",
+      "date": "2026-01-13"
+    }
+  ],
+  "cta": {
+    "kind": "external",
+    "text": "Work with my agency on one workflow",
+    "url": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+  },
+  "base_commit": "605f3d8c1cee0aad46fd2f7f1005ef93c2bd2ce3",
+  "reviewed_code_tree": "8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9",
+  "static_map_sha256": "d40859b200cc51a20b3b8752a62a922a6d06e6428eec9b3037c56e6905d93336",
+  "native_bundle_blob": "b740b85b95fe773e333894164bd47661eea99515",
+  "native_bundle_sha256": "8087a2783a7ba3dff88461e2bef46dadf5e1be46e03935c3079ba2df8657c388",
+  "adoption": {
+    "base": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+    "head": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+    "status": "identical"
+  }
+}

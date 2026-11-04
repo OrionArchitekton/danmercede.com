@@ -14,6 +14,7 @@ references:
   - siteOrigin.ts
   - docs/reviews/newsletter-hub-reader-native-20261103-attempt1/qualification-closeout.json
   - docs/reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json
   - scripts/newsletterHubReadiness.mjs
   - scripts/compileContent.ts
   - scripts/verifyProductionDeployment.mjs
@@ -287,3 +288,21 @@ preserves the first attempt unchanged. Full parity and the exact attributed CTA
 passed; owned-tab/client cleanup and normal release were clean, followed by a
 down/unheld reader state. This page also had zero images. The receipt is read-only
 qualification, with no new writer, policy or production authority.
+
+
+Explicit default ports are validated from the raw numeric authority before URL
+normalization: `ws:80` and `wss:443` remain valid, and the exact owned WebSocket
+endpoint is passed through unchanged. The derived discovery origin may omit its
+standard port without changing the destination. Missing, zero, overflow,
+noncanonical, aliased or otherwise disallowed authorities still hold.
+
+
+The PR239 raw-port normalization repair was qualified once on the ordinary leased
+E14 reader route at November 4, 02:04:01–02:04:17 UTC (November 3 Pacific).
+[Its separate receipt](../reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json)
+binds reviewed functional tree `8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9` and
+the exact static code map, not just the earlier base HEAD. Full initial/hydrated
+parity, exact attributed CTA and clean normal release passed against public73;
+all prior attempts remain unchanged. Explicit 80/443 cases remain hermetic-only,
+and this image-free page does not qualify native image guards. No browser config,
+writer, policy or production authority changed.

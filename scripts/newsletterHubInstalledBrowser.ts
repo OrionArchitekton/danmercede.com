@@ -35,10 +35,12 @@ function jsonResult(result: any) {
 }
 function ownedEndpoint(value: string) {
   try {
+    // URL.port normalizes explicit ws:80/wss:443 to empty, so validate the raw authority first.
+    const raw = /^(ws|wss):\/\/(127\.0\.0\.1|\[::1\]):([1-9][0-9]{0,4})(\/devtools\/browser\/[A-Za-z0-9_-]{1,128})$/.exec(value);
+    insist(raw && raw[0] === value && Number(raw[3]) <= 65535, 'browser-reader-endpoint-unusable');
     const address = new URL(value);
-    insist(['ws:', 'wss:'].includes(address.protocol) && ['127.0.0.1', '[::1]'].includes(address.hostname), 'browser-reader-endpoint-unusable');
-    insist(/^[0-9]+$/.test(address.port) && Number(address.port) >= 1 && Number(address.port) <= 65535, 'browser-reader-endpoint-unusable');
-    insist(/^\/devtools\/browser\/[A-Za-z0-9_-]{1,128}$/.test(address.pathname) && !address.username && !address.password && !address.search && !address.hash && address.href === value, 'browser-reader-endpoint-unusable');
+    const effectivePort = address.port || (address.protocol === 'ws:' ? '80' : '443');
+    insist(address.protocol === `${raw[1]}:` && address.hostname === raw[2] && effectivePort === raw[3] && address.pathname === raw[4] && !address.username && !address.password && !address.search && !address.hash, 'browser-reader-endpoint-unusable');
     return address;
   } catch { throw Error('browser-reader-endpoint-unusable'); }
 }
