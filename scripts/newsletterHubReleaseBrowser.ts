@@ -38,9 +38,47 @@ export async function readHydratedHub(input: BrowserInput, runtime?: BrowserRunt
         insist(index.capture_kind === 'index' && new URL(index.url).pathname === '/thoughts' && index.target_count > 0 && Number.isFinite(index.time_origin), 'hydrated-index-unverified');
         await evaluate(`(()=>{const link=Array.from(document.querySelectorAll('a')).find(a=>a.getAttribute('href')===${JSON.stringify('/thoughts/' + input.slug)});if(!link)throw Error('target missing');link.click();return JSON.stringify({clicked:true});})()`);
         await command(['wait', '--url', url]);
-        const article = await evaluate(`JSON.stringify({capture_kind:'article',url:location.href,time_origin:performance.timeOrigin,article_html:document.querySelector('#root article')?.outerHTML||'',article_visible:(()=>{const a=document.querySelector('#root article');if(!a)return false;return [a,...a.children].every(e=>{if(!Array.from(e.getClientRects()).some(r=>r.width>0&&r.height>0))return false;for(let n=e;n;n=n.parentElement){const s=getComputedStyle(n);if(s.display==='none'||s.visibility==='hidden'||s.visibility==='collapse'||Number(s.opacity||'1')<=0)return false;}return true;});})(),latest_hrefs:${JSON.stringify(index.latest_hrefs)},cta_href:Array.from(document.querySelectorAll('#root article a')).find(a=>a.textContent===${JSON.stringify(input.cta.text)})?.href||null})`);
+        const imageLoad = await evaluate(`(async()=>{
+            const images=Array.from(document.querySelectorAll('#root article img'));
+            if(images.length>24)throw Error('image-count-unbounded');
+            const prior=[scrollX,scrollY],deadline=Date.now()+10000;
+            try {
+                for(const image of images){
+                    image.scrollIntoView({block:'center'});
+                    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+                    await new Promise((resolve,reject)=>{
+                        const timer=setTimeout(()=>reject(Error('image-load-timeout')),Math.max(1,deadline-Date.now()));
+                        image.decode().then(resolve,reject).finally(()=>clearTimeout(timer));
+                    });
+                    if(!image.complete||image.naturalWidth<=0||image.naturalHeight<=0)throw Error('image-unavailable');
+                }
+                return JSON.stringify({images_loaded:true,image_count:images.length});
+            }catch{throw Error('image-unavailable');}
+            finally{scrollTo(prior[0],prior[1]);}
+        })()`);
+        insist(imageLoad.images_loaded === true && Number.isSafeInteger(imageLoad.image_count) && imageLoad.image_count >= 0 && imageLoad.image_count <= 24, 'hydrated-images-unready');
+        const article = await evaluate(`(()=>{
+            const article=document.querySelector('#root article');
+            const visible=e=>{
+                if(!Array.from(e.getClientRects()).some(r=>r.width>0&&r.height>0))return false;
+                for(let n=e;n;n=n.parentElement){
+                    const style=getComputedStyle(n);
+                    if(style.display==='none'||style.visibility==='hidden'||style.visibility==='collapse'||Number(style.opacity||'1')<=0)return false;
+                }
+                return true;
+            };
+            return JSON.stringify({
+                capture_kind:'article',url:location.href,time_origin:performance.timeOrigin,
+                article_html:article?.outerHTML||'',
+                article_visible:!!article&&[article,...article.children].every(visible),
+                images_ready:Array.from(article?.querySelectorAll('img')||[]).every(image=>image.complete&&image.naturalWidth>0&&image.naturalHeight>0&&visible(image)),
+                latest_hrefs:${JSON.stringify(index.latest_hrefs)},
+                cta_href:Array.from(document.querySelectorAll('#root article a')).find(a=>a.textContent===${JSON.stringify(input.cta.text)})?.href||null
+            });
+        })()`);
         insist(article.capture_kind === 'article' && article.url === url && article.time_origin === index.time_origin && article.article_html, 'hydrated-client-navigation-unverified');
         insist(article.article_visible === true, 'hydrated-article-not-visible');
+        insist(article.images_ready === true, 'hydrated-images-unready');
         const revision = await evaluate(`(async()=>{const r=await fetch('/deployment-revision.json',{cache:'no-store',credentials:'omit',redirect:'error'});if(!r.ok||!r.headers.get('cache-control')?.split(',').some(v=>v.trim()==='no-store'))throw Error('revision missing');return JSON.stringify(await r.json());})()`);
         insist(revision.schemaVersion === 1 && revision.sha === input.sha, 'hydrated-revision-mismatch');
         let cta = { kind: input.cta.kind, form_submitted: false, actual_href: article.cta_href, final_url: null as string | null };
@@ -52,7 +90,7 @@ export async function readHydratedHub(input: BrowserInput, runtime?: BrowserRunt
             insist(destination.url === input.cta.url && destination.readiness_scan === true, 'hydrated-cta-destination-unverified');
             cta.final_url = destination.url;
         }
-        capture = { profile_id: profile.id, qualification_ref: profile.qualification_ref, tool_sha256: profile.tool_sha256, recipe: HUB_BROWSER_RECIPE, client_navigation_proven: true, ...article, revision_sha: revision.sha, cta, trace };
+        capture = { profile_id: profile.id, qualification_ref: profile.qualification_ref, tool_sha256: profile.tool_sha256, recipe: HUB_BROWSER_RECIPE, client_navigation_proven: true, ...article, image_count: imageLoad.image_count, revision_sha: revision.sha, cta, trace };
     }
     finally {
         await command(['close']);

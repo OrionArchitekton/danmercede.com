@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { Markdown } from '../components/Markdown.tsx';
 import { selectLatestThoughts } from '../thoughtsIndex.ts';
-import { renderRss, renderAtom } from './renderFeed.ts';
+import { renderRss, renderAtom } from './renderFeedCore.ts';
 import { observeProductionDeployment } from './verifyProductionDeployment.mjs';
 import { readHydratedHub } from './newsletterHubReleaseBrowser.ts';
 import { digest, insist } from './newsletterHubReleaseJournal.ts';
@@ -55,6 +55,10 @@ function feedEntry(xml: string, expected: string, url: string, atom = false) {
     const names = atom ? ['id', 'title', 'published', 'updated', 'summary', 'content'] : ['title', 'link', 'guid', 'pubDate', 'description', 'content:encoded'];
     for (const name of names)
         insist(a[0].getElementsByTagName(name)[0]?.textContent === e[0].getElementsByTagName(name)[0]?.textContent, 'public-feed-entry-mismatch');
+    if (atom) {
+        const alternate = (entry: Element) => Array.from(entry.getElementsByTagName('link')).filter(link => (link.getAttribute('rel') ?? 'alternate') === 'alternate').map(link => link.getAttribute('href'));
+        insist(JSON.stringify(alternate(a[0])) === JSON.stringify(alternate(e[0])), 'public-feed-entry-mismatch');
+    }
     return true;
 }
 export async function verifyHubReader(input: any, deps: any) {
@@ -95,9 +99,10 @@ export async function verifyHubReader(input: any, deps: any) {
     else
         insist(article!.lastElementChild?.textContent === input.cta.text, 'public-comment-question-mismatch');
     const initialProof = { production, initial, latest_slugs: latest, canonical: true, sitemap: true, rss: true, atom: true, invalid_route_status: 404, cta, article_sha256: page.sha256, index_sha256: index.sha256, scope: 'initial-html-parity' };
-    if (!deps.browserRuntime)
+    if (!deps.browserRuntime && !deps.readHydratedBrowser)
         return { public_delivery: 'unknown', stage: 'hydrated-reader-unqualified', initial: initialProof, holds: ['hydrated-reader-unqualified'] };
-    const hydrated = await readHydratedHub({ operation_id: input.operation_id, input_sha256: input.input_sha256, sha: input.main_sha, slug: target.slug, cta: input.cta }, deps.browserRuntime);
+    const browserInput = { operation_id: input.operation_id, input_sha256: input.input_sha256, sha: input.main_sha, slug: target.slug, cta: input.cta };
+    const hydrated = deps.readHydratedBrowser ? await deps.readHydratedBrowser(browserInput) : await readHydratedHub(browserInput, deps.browserRuntime);
     articleParity(document(hydrated.article_html).querySelector('article'), target);
     insist(JSON.stringify(hydrated.latest_hrefs) === JSON.stringify(latest.map(slug => `/thoughts/${slug}`)), 'hydrated-latest-order-mismatch');
     const after = await revision();

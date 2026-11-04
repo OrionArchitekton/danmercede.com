@@ -1,0 +1,171 @@
+{
+  "edition": "ed14",
+  "started_at": "2026-11-04T00:25:56.619Z",
+  "browser_attempted": true,
+  "scope": "full-actual-verifyHubReader-consumer",
+  "completed_at": "2026-11-04T00:26:11.466Z",
+  "browser_completed": true,
+  "public_delivery": "verified",
+  "proof": {
+    "public_delivery": "verified",
+    "stage": "public-delivery-verified",
+    "initial": {
+      "production": {
+        "deploymentId": 7529274970,
+        "url": "https://danmercede-jpev72m24-dan-mercedes-projects.vercel.app",
+        "projectUrl": "https://vercel.com/dan-mercedes-projects/danmercede-com/9S755fFQFzZajekHSwjXWtRWh4xF",
+        "sha": "df65ef115c39cff31d96126ff40f2add2cc64b63"
+      },
+      "initial": {
+        "title": true,
+        "metadata": true,
+        "preview": true,
+        "body": true,
+        "headings": [
+          "The installer and the worker had different access",
+          "A tool name is only the start of the handoff",
+          "Put acceptance in the worker's environment",
+          "A denial deserves a decision",
+          "Follow the result back to the request",
+          "Try the handoff you expect someone else to use"
+        ],
+        "anchors": [
+          {
+            "text": "Work with my agency on one workflow",
+            "href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+          }
+        ]
+      },
+      "latest_slugs": [
+        "2026-10-26-who-gets-to-interrupt-your-ai-work",
+        "2026-10-19-the-tool-worked-the-agent-couldnt-use-it",
+        "2026-10-12-the-transcript-looked-complete"
+      ],
+      "canonical": true,
+      "sitemap": true,
+      "rss": true,
+      "atom": true,
+      "invalid_route_status": 404,
+      "cta": {
+        "kind": "external",
+        "form_submitted": false,
+        "actual_href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14",
+        "final_url": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+      },
+      "article_sha256": "b9910186d36b10a8f619df877dfc0dda212d4ae11db3005c9db9f27a0abc848b",
+      "index_sha256": "ba66d976c56c4084cd582defddaa561e68d707bd8a28313de40890f47610ff84",
+      "scope": "initial-html-parity"
+    },
+    "hydrated": {
+      "profile_id": "fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c",
+      "qualification_ref": "installed-reader-cli-contract-v1",
+      "tool_sha256": "02d26f105a9d8e203f8f966acfeb4bab191cfa4625431a535b8be5f8f5905472",
+      "recipe": "hub-public-reader-v1",
+      "client_navigation_proven": true,
+      "capture_kind": "article",
+      "url": "https://www.danmercede.com/thoughts/2026-10-19-the-tool-worked-the-agent-couldnt-use-it",
+      "time_origin": 1793751961521.1,
+      "article_html": "<article class=\"border-l-2 border-copper-500 pl-6 max-w-3xl\"><div class=\"flex items-center gap-4 mb-4\"><span class=\"text-xs font-mono uppercase tracking-widest text-copper-400\">Architecture</span><span class=\"text-xs font-mono text-slate-400\">2026-10-19</span></div><h1 class=\"text-3xl md:text-4xl font-bold text-white mb-6\">The Tool Worked. The Agent Couldn't Use It.</h1><p class=\"text-slate-300 text-lg leading-relaxed mb-8 italic\">A successful integration test establishes access for the executor that ran it; accepting a workflow requires evidence from its intended executor through the permitted route.</p><p class=\"my-4 leading-relaxed text-slate-300\">Your team delivers an AI integration. The developer runs it, gets a response, and marks the work complete. On Monday, the person responsible for the workflow asks the agent to use it. The agent cannot reach the tool.</p><p class=\"my-4 leading-relaxed text-slate-300\">The operations lead now owns a capability the team expected to have and still cannot use. Someone has to stop their work, reconstruct the developer's setup, and decide whether the missing access is a configuration problem or a boundary that should stay closed. If a customer is waiting on the result, the handoff has become their delay too.</p><p class=\"my-4 leading-relaxed text-slate-300\">That customer consequence is hypothetical. The access failure came from my own operation. We had a working tool, a successful host test, and an agent that could not run the same command from its own environment.</p><p class=\"my-4 leading-relaxed text-slate-300\">The host test answered a narrower question than the handoff required.</p><h2 id=\"the-installer-and-the-worker-had-different-access\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">The installer and the worker had different access</h2><p class=\"my-4 leading-relaxed text-slate-300\">The integration connected a local AI assistant to an existing task relay. A small command-line adapter submitted an explicitly requested task and collected the response. The command lived in Linux under Windows Subsystem for Linux. The agent expected to use it was running through a Windows PowerShell executor with its own restrictions.</p><p class=\"my-4 leading-relaxed text-slate-300\">The adapter worked from the environment used to install and test it. That established something useful: the command was present and the tested route could run it. It did not establish that the consuming agent could read the files, invoke Linux, or reach the command through an approved interface.</p><p class=\"my-4 leading-relaxed text-slate-300\">We added a narrow Windows launcher for the adapter. It fixed the distribution, Linux user, interpreter, and command rather than exposing a general shell. A help check from the Windows host succeeded. From the agent's restricted executor, the reported error was <code class=\"rounded-sm bg-slate-800/70 px-1.5 py-0.5 font-mono text-[0.85em] text-copper-300\">Wsl/Service/E_ACCESSDENIED</code>. Adapter help never appeared.</p><p class=\"my-4 leading-relaxed text-slate-300\">So the second green check had the same limit as the first. We had proved another route from an environment we controlled. The intended worker still lacked a verified route.</p><p class=\"my-4 leading-relaxed text-slate-300\">The recovery needed a separately approved invocation from that worker. A reported help check then succeeded through the approved route. Later, a retained consumer check reported successful collection from the agent's native Linux executor, with the request and returned value compared against the existing local response. Those observations belong to their respective environments. A later success does not make the earlier host test sufficient.</p><h2 id=\"a-tool-name-is-only-the-start-of-the-handoff\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">A tool name is only the start of the handoff</h2><p class=\"my-4 leading-relaxed text-slate-300\">When you ask whether an agent has a tool, the answer needs an actor and an operation. Can this worker, under this identity, perform this permitted action from the environment where the work will run?</p><p class=\"my-4 leading-relaxed text-slate-300\">You can install the same command on a machine and get different answers from an interactive terminal, a restricted desktop agent, a scheduled job, and a service account. They can differ in visible files, executable paths, network access, credentials, and approval requirements. Sharing a physical machine does not make their access equivalent.</p><p class=\"my-4 leading-relaxed text-slate-300\">An operations leader should not need to diagnose each of those differences personally. But someone has to own acceptance across them. If engineering hands over a successful terminal session and operations accepts a working business process, the two teams have agreed to different deliverables.</p><h2 id=\"put-acceptance-in-the-worker-s-environment\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">Put acceptance in the worker's environment</h2><p class=\"my-4 leading-relaxed text-slate-300\">For one AI workflow, name the executor that will do the work. Be specific enough to distinguish a developer's terminal from the agent's actual runtime and account. Then name the allowed operation and the result someone will inspect.</p><p class=\"my-4 leading-relaxed text-slate-300\">For our adapter, displaying command help answered an access question. It did not establish that a task could be submitted, that the response would arrive, or that the response belonged to the request. Each of those needed its own evidence and the appropriate authority to run the check.</p><p class=\"my-4 leading-relaxed text-slate-300\">For a hypothetical invoice workflow, the equivalent distinction is between opening the invoice system and creating the intended draft under the correct business account. If the workflow stops at a draft for a person to approve, acceptance should stop there too. A developer's ability to send a live invoice supplies neither permission nor a requirement for the agent to do so.</p><p class=\"my-4 leading-relaxed text-slate-300\">Start with the least consequential check that answers the open question. Reading help can establish that a command starts. A permitted test record can establish a particular write path. A retained request identifier and matching result can establish the observed round trip. Keep the claim as narrow as the observation.</p><p class=\"my-4 leading-relaxed text-slate-300\">If you cannot run the required check without new authority, record that boundary explicitly. The work can be installed while acceptance remains open. That gives the workflow owner an accurate decision instead of a green status that conceals unfinished delivery.</p><h2 id=\"a-denial-deserves-a-decision\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">A denial deserves a decision</h2><p class=\"my-4 leading-relaxed text-slate-300\">An access failure creates pressure to make the demonstration work. Someone suggests a broader account, a copied credential, or a general execution bridge. The missing capability can quietly become permission to expand what the agent may do.</p><p class=\"my-4 leading-relaxed text-slate-300\">Treat the denial as evidence about the current route. First determine whether the intended operation belongs within the worker's authority. Then identify the smallest approved interface that supports it. If the owner has not approved that access, keep the operation blocked and make the requested decision precise.</p><p class=\"my-4 leading-relaxed text-slate-300\">Our launcher was deliberately narrow. That reduced what it exposed, but it did not make the surrounding executor's restrictions disappear. Fixing the command's interface and authorizing the caller to invoke it were separate concerns.</p><p class=\"my-4 leading-relaxed text-slate-300\">Engineers should preserve that distinction in the result they return. A permission denial should retain its cause and identify the blocked step. If an agent silently tries a more powerful route, the eventual success can conceal a change in authority that the workflow owner never accepted.</p><p class=\"my-4 leading-relaxed text-slate-300\">Fail-closed behavior also needs an owner for the next move. Name who can approve the missing access, choose another permitted route, or decide the workflow should remain manual. Otherwise a correct refusal leaves the business waiting without a person responsible for resolving it.</p><h2 id=\"follow-the-result-back-to-the-request\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">Follow the result back to the request</h2><p class=\"my-4 leading-relaxed text-slate-300\">Reaching the tool still leaves the result to verify. An accepted submission, an available response file, and a correctly interpreted result answer different questions. The worker needs the answer in a form it can use and associate with the original request.</p><p class=\"my-4 leading-relaxed text-slate-300\">The adapter retained a request identifier and caller attribution. For its bounded live check, the response had to carry the matching identity and expected value. Caller attribution helped connect the records; it was not authentication. A successful process exit alone was insufficient.</p><p class=\"my-4 leading-relaxed text-slate-300\">We also encountered a response the transport had returned but the adapter had not recognized. The repair was to correct the parser and collect the existing response. Sending the task again would have tested another action while leaving the original result unresolved.</p><p class=\"my-4 leading-relaxed text-slate-300\">That recovery detail matters to whoever operates the workflow after delivery. They need to know where to look when the agent has no usable answer, how to distinguish an access failure from an unresolved submission, and when a retry could create a second action. The integration handoff should include that path alongside the successful one.</p><p class=\"my-4 leading-relaxed text-slate-300\">This evidence establishes specific observed invocations. It does not certify every operation, future account change, or surrounding workflow. Keep the records identifiable so a later operator can see what was actually tested.</p><h2 id=\"try-the-handoff-you-expect-someone-else-to-use\" class=\"mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white\">Try the handoff you expect someone else to use</h2><p class=\"my-4 leading-relaxed text-slate-300\">Choose one AI capability your team already considers delivered. Identify its intended worker and one harmless operation within that worker's existing authority. Ask for the check from that environment, without borrowing the developer's account or adding access to get through it.</p><p class=\"my-4 leading-relaxed text-slate-300\">Follow the result to the place the next person uses it. If the check stops, identify the exact boundary and who owns the next decision. If it succeeds, record which operation and route succeeded. One observation establishes that path; it does not clear every path the agent might later need.</p><p class=\"my-4 leading-relaxed text-slate-300\">Then look at the delivery record. Does it name the actual executor, the permitted action, the result that was inspected, and the person responsible when it fails? Those details let operations distinguish an installed component from a workflow they can depend on.</p><p class=\"my-4 leading-relaxed text-slate-300\">I want the acceptance check to follow the person or agent expected to do the work. That is where the promise of the integration gets tested, and where its limitations become useful information.</p><p class=\"my-4 leading-relaxed text-slate-300\">If your team has an AI integration caught between a successful demo and daily use, the Readiness Scan my agency offers maps one workflow, its failure modes, and who owns its handoffs. <a href=\"https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&amp;utm_medium=newsletter&amp;utm_campaign=readiness_scan&amp;utm_content=fcn_ed14\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-copper-400 underline decoration-copper-500/40 underline-offset-2 hover:text-copper-300\">Work with my agency on one workflow</a>.</p></article>",
+      "article_visible": true,
+      "images_ready": true,
+      "latest_hrefs": [
+        "/thoughts/2026-10-26-who-gets-to-interrupt-your-ai-work",
+        "/thoughts/2026-10-19-the-tool-worked-the-agent-couldnt-use-it",
+        "/thoughts/2026-10-12-the-transcript-looked-complete"
+      ],
+      "cta_href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14",
+      "image_count": 0,
+      "revision_sha": "df65ef115c39cff31d96126ff40f2add2cc64b63",
+      "cta": {
+        "kind": "external",
+        "form_submitted": false,
+        "actual_href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14",
+        "final_url": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+      },
+      "trace": [
+        {
+          "argv_sha256": "7b4c66dd4140e2019619858fc7c575c3b37327ca2368c271c91cf3f63019eb5a",
+          "stdout_sha256": "1bdfb71a532a9598f07b257f60823a5430f1f7e55c67127b5fbed125169298fb",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:1"
+        },
+        {
+          "argv_sha256": "54dbd87ff05e9644f98a34c291cb9a3fe76998e874bd8bdab3d6da0116b46696",
+          "stdout_sha256": "777dbb4cc2e6548e11830a61832be01b67d3b36cb31a2e7d7abe42c88fc5bdfe",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:2"
+        },
+        {
+          "argv_sha256": "55792f33b774881d009bca591e9dc8e4a296aaa7f5e7ac066d4563f1f94a3cfe",
+          "stdout_sha256": "8bf90fdc55136fd95dd180c9466179748195cce66fae6ae7b0401dadeffa49a6",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:3"
+        },
+        {
+          "argv_sha256": "18f7c4089c2cda7b78ace49a2010d61e8481ef1fdc49663f5eaa0e1b7e70817b",
+          "stdout_sha256": "5185e556e2bfe59837ed027b2d3be3ec111393c6f352eecac3ffb2fdf5396554",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:4"
+        },
+        {
+          "argv_sha256": "4f5918ba5bc6571dbae2a9e6a6ea6e1edd4ec4a70e16cf19eef6af6dac2077ee",
+          "stdout_sha256": "6cc4db51a3a3a4a6c500f2e7ab639aba2db1b3cde5f3ceec4edf5b46282709a2",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:5"
+        },
+        {
+          "argv_sha256": "495dd7aca9d979eb8669992778af6565398f2b58039b485a8aed3604bed2872d",
+          "stdout_sha256": "e20e736ec38c0920c19c2c593c01db22c715e5965962a2b7a3d5ffc0da148e3f",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:6"
+        },
+        {
+          "argv_sha256": "af4b3370602a89bbe808f7c24e331a7c920b7729dc011706dd7e1a6aa2a33b8a",
+          "stdout_sha256": "905c6d62ac37529e9723afbcf3997de41db491d7b38de427e8ddd41c06922eee",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:7"
+        },
+        {
+          "argv_sha256": "24616209b980248fcc309057b228adb21fddbaa0ba686bf42a22253847f6e951",
+          "stdout_sha256": "760e60ab39b965924bc0d871406a3985473361f21fe52c69ec83306fb76f31b7",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:8"
+        },
+        {
+          "argv_sha256": "9758991d49f3edbe77a6adbfa24d9e71b50c51cecf20390c73b0b362aa836fa3",
+          "stdout_sha256": "4f52d20a5091060d5fe5c5cd23cea33cbca4dfde31766e85a9b186ee90f8ea1d",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:9"
+        },
+        {
+          "argv_sha256": "30f4917790f5aa5da27f521723c264ca043ad7ccf6e6cfbb11b5ec68db8ff529",
+          "stdout_sha256": "2e5a84acebf03d62e845b69440aa08ac9c5b792173c3886dbfebe18248c35aa3",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:10"
+        },
+        {
+          "argv_sha256": "ddea47ad1678146593583ea49a2a53d24be6c3ef16a1d0d6b4fa7f19f0a09741",
+          "stdout_sha256": "551391d317fcef2ce48f53f3ceee517edbb28f13ae7fe2f00f3d32e71caa82fe",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:11"
+        },
+        {
+          "argv_sha256": "a93e334e29a56d83a0da5893c84e9b3b4ab5eb3b7cc1dcc05fbd9ef03caf1e71",
+          "stdout_sha256": "cdc94a08bfd4926069509aeabf884bd20f997bc2b16c4c856d14b48c303d6c78",
+          "run_id": "local-process:fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c:12"
+        }
+      ],
+      "isolated_session_closed": true,
+      "installed_reader": {
+        "browser": "reader",
+        "holder": "fcn-reader-e28ae5e0-8281-4ad8-b3f5-0ce3f71fe62c",
+        "tool_versions": {
+          "pool": "0.1.0",
+          "agent": "0.25.4"
+        },
+        "tool_sha256": {
+          "pool": "4a1c02e4b983c02b43c15cfd71db7e1a8fba51c82699a9bb12230828129b6b39",
+          "agent": "02d26f105a9d8e203f8f966acfeb4bab191cfa4625431a535b8be5f8f5905472"
+        },
+        "non_headless_user_agent": true,
+        "user_agent_sha256": "7021af2ac2331c0383b85cd532f383e2e944b91f1d6ee8a3a62445ff92ef3c33",
+        "signed_out_purpose_verified": true,
+        "dedicated_tab_closed": true,
+        "target_identity_sha256": "821625bdfcc1014f0d6083962505e9c6209db5b5115f151a681d5a1a98558dd3",
+        "lease_released": true,
+        "release_stop": "clean"
+      }
+    },
+    "verification_scope": "initial-and-hydrated-reader-parity",
+    "holds": []
+  }
+}

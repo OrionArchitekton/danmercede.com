@@ -1,0 +1,49 @@
+{
+  "kind": "real-readonly-hub-reader-qualification",
+  "started_at": "2026-11-04T00:25:41.294Z",
+  "completed_at": "2026-11-04T00:26:11.466Z",
+  "reviewed_code_tree": "f681d33cc635d156535db3fb30b72862a32db379",
+  "native_main": "df65ef115c39cff31d96126ff40f2add2cc64b63",
+  "results": [
+    {
+      "edition": "ed15",
+      "public_delivery": "verified",
+      "browser_attempted": true,
+      "browser_completed": true,
+      "failure": null
+    },
+    {
+      "edition": "ed14",
+      "public_delivery": "verified",
+      "browser_attempted": true,
+      "browser_completed": true,
+      "failure": null
+    }
+  ],
+  "artifacts": [
+    {
+      "ref": "source-inputs.json",
+      "sha256": "f6f33731f9604548f5fbee4869aa84180ad4286701c07e65ba332a7e113d7100"
+    },
+    {
+      "ref": "ed15-input.json",
+      "sha256": "2adc4a09c64574b5346c508fdbba28a39fe1c8eedcf6b39edcf73fbaad9ae3da"
+    },
+    {
+      "ref": "ed15-observation.json",
+      "sha256": "ebc9aac4111e9618dd323e631888b5f07e0ebe4c56924ca0e9d1efbc664b940c"
+    },
+    {
+      "ref": "ed14-input.json",
+      "sha256": "a10210599b7e2a06a91179a72a52e63a959e680fa93fdd9f7d138db1f7dab895"
+    },
+    {
+      "ref": "ed14-observation.json",
+      "sha256": "a31aaf23709426445e2bb48d75ffb5f08402a70d0149ca47363cf74ea062b6f7"
+    }
+  ],
+  "mutations": 0,
+  "forms_submitted": 0,
+  "credentials_accessed": false,
+  "lease_capabilities_saved": false
+}

@@ -6,7 +6,8 @@ import type { Diagram } from './types';
 // (scripts/injectRouteMeta.ts), so the runtime head and the crawler-facing
 // static head can never drift.
 
-export const SITE_ORIGIN = 'https://www.danmercede.com';
+import { SITE_ORIGIN } from './siteOrigin';
+export { SITE_ORIGIN } from './siteOrigin';
 // The verified, live social card (1200x630 JPEG). Unifies the previous
 // static-vs-runtime og:image mismatch onto one asset.
 export const DEFAULT_OG_IMAGE_PATH = '/dan-mercede-og-card.jpg';

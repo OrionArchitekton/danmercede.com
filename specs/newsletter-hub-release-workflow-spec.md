@@ -116,3 +116,50 @@ Run installed dependency setup, typecheck, full tests, production-guarded build,
 built-output tests and staged/range secret checks. Root behavior spec and operator
 runbook ship together. No timer, service, dependency, credentials, actual edition
 admission or production configuration is changed by source implementation.
+
+## Installed public browser
+
+After source/native/initial-reader parity, normal reconciliation may use the
+existing installed reader pool and agent-browser tools. It leases only the
+signed-out `reader` identity for a bounded five minutes under a unique holder,
+checks exact supported versions, identity/purpose/expiry and a non-headless Chrome
+user agent before public navigation, and owns one dedicated blank tab. The fixed
+recipe is the only command producer. Changed/foreign tabs, expiry or refusal hold
+without alternate identity or retry. Close the owned tab and unique CDP session,
+then release the same holder normally in `finally`; cleanup uncertainty keeps
+public delivery unknown. Never expose lease capabilities/endpoints in artifacts
+or process errors. No cookie/credential/state export, form submission, sends,
+installation, update, timer or new mutation authority is added.
+
+The process seam tests installed-version JSON shapes, ordering, busy refusal,
+wrong identity/headless/version/expiry/tab drift, capability scrubbing and cleanup.
+A later explicitly directed native public-reader qualification remains separate.
+
+
+## Reader and reconciliation integrity
+
+The reader's static import graph contains no executable generated corpus. Pure
+feed projection accepts explicit already-verified data; the existing public feed
+API/default CLI preserves its bytes. A replaced generated file cannot execute
+before controller qualification. Reconciliation rechecks the exact freshly
+emitted plan name/hash and operation binding through the admitted root before
+semantic use. Saved dispatch uncertainty remains visible without another send.
+
+The installed reader preserves the exact owned loopback WebSocket lease URL and
+uses same-origin read-only target discovery to bind a nonce-created persistent
+CDP target to its unique tab mapping and expected URL. Detected identity/URL/target drift holds and prevents further index-based commands or tab closure. Checks run before and after commands under the exclusive lease; the installed index-only protocol does not provide an atomic target transaction against an actor violating that lease. The unique client disconnects even
+when owned-tab cleanup cannot proceed; normal lease release remains mandatory.
+Every nested article image must load/decode and remain effectively visible,
+including through ancestors. The Atom alternate link must match the intended
+entry; missing rel is treated as alternate.
+
+A crash-left second journal link can be removed only in an explicitly mutating
+private operation after strict same-inode/content/ownership verification. Payloads
+and unrelated files never change; strict inspection remains read-only.
+
+
+A trusted navigation may be pending on the same owned target. Within a bounded
+wait, admit only the exact source and destination URLs while rechecking lease,
+baseline and persistent target identity. Continue only when both native and CLI
+observations reach the destination. A replacement or unapproved third URL holds;
+a timeout stays unverified and still cleans up the original owned target safely.

@@ -1,0 +1,43 @@
+{
+  "kind": "native-hub-reader-qualification-closeout",
+  "observed_at": "2026-11-04T00:27:27.781607+00:00",
+  "original_manifest_sha256": "5dbb5e41c1b7183b62fa534cabd29d3bb07c7ba7c73a6c56430ae241c67b2723",
+  "reviewed_code_tree": "f681d33cc635d156535db3fb30b72862a32db379",
+  "native_main_and_public_revision": "df65ef115c39cff31d96126ff40f2add2cc64b63",
+  "consumer": "Actual verifyHubReader with actual installed readInstalledHubBrowser; no provider/browser fixture adapter",
+  "scope": "initial-and-hydrated-reader-parity on already-live E15 and E14; exact title/metadata/preview/body/headings/anchors/canonical/latest/sitemap/RSS/Atom/404/revision/CTA plus owned reader cleanup",
+  "results": [
+    {
+      "edition": "ed15",
+      "public_delivery": "verified",
+      "browser_attempted": true,
+      "browser_completed": true,
+      "failure": null
+    },
+    {
+      "edition": "ed14",
+      "public_delivery": "verified",
+      "browser_attempted": true,
+      "browser_completed": true,
+      "failure": null
+    }
+  ],
+  "browser_leases": 2,
+  "normal_pool_releases": 2,
+  "owned_tab_closes": 2,
+  "postcheck_reader_state": {
+    "browser": "reader",
+    "state": "down",
+    "holder": null,
+    "observed_with": "orion-browser --json status reader after both runs"
+  },
+  "github_or_public_content_mutations": 0,
+  "form_submissions": 0,
+  "credentials_accessed_or_exported": false,
+  "capabilities_or_discovery_urls_saved": false,
+  "limitations": [
+    "Both real articles contain zero nested inline images; broken/hidden/lazy-image refusal is covered by source regressions, not exercised on these live pages.",
+    "This qualifies public hub reading only; it grants no newsletter publication, admission, merge, workflow dispatch, production deployment, timer, runtime installation or GitHub writer authority.",
+    "Existing installed CLI is index-based; surrounding persistent-target and URL checks operate under its exclusive lease and do not claim atomic target dispatch against an actor violating that lease."
+  ]
+}

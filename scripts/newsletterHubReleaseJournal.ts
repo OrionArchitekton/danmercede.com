@@ -9,14 +9,14 @@ export function insist(ok: unknown, code = 'unsupported-data'): asserts ok {
     if (!ok)
         throw new Error(code);
 }
-export async function readPrivateJson(path: string) {
+async function readStablePrivateJson(path: string, links: number) {
     insist(isAbsolute(path), 'absolute-private-path-required');
     const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     try {
         const before = await handle.stat();
-        insist(before.isFile() && before.nlink === 1 && before.uid === process.getuid?.() && (before.mode & 0o077) === 0 && before.size <= 2 * 1024 * 1024, 'private-file-unusable');
+        insist(before.isFile() && before.nlink === links && before.uid === process.getuid?.() && (before.mode & 0o077) === 0 && before.size <= 2 * 1024 * 1024, 'private-file-unusable');
         const bytes = Buffer.alloc(before.size + 1), read = await handle.read(bytes, 0, bytes.length, 0), after = await handle.stat();
-        insist(read.bytesRead === before.size && before.size === after.size && before.mtimeMs === after.mtimeMs && before.ctimeMs === after.ctimeMs && after.nlink === 1 && after.uid === before.uid && after.mode === before.mode, 'private-file-changed');
+        insist(read.bytesRead === before.size && before.size === after.size && before.mtimeMs === after.mtimeMs && before.ctimeMs === after.ctimeMs && after.nlink === links && after.uid === before.uid && after.mode === before.mode, 'private-file-changed');
         const raw = bytes.subarray(0, read.bytesRead), text = new TextDecoder('utf-8', { fatal: true }).decode(raw);
         const value = JSON.parse(text);
         yaml.load(text, { schema: yaml.JSON_SCHEMA });
@@ -29,11 +29,15 @@ export async function readPrivateJson(path: string) {
                 for (const child of Object.values(v))
                     pending.push([child, depth + 1]);
         }
-        return { value, bytes: raw };
+        return { value, bytes: raw, stat: after };
     }
     finally {
         await handle.close();
     }
+}
+export async function readPrivateJson(path: string) {
+    const { value, bytes } = await readStablePrivateJson(path, 1);
+    return { value, bytes };
 }
 /** Retain every no-follow ancestor, then verify the same descriptor chain. */
 async function directoryChain(path: string) {
@@ -59,7 +63,7 @@ async function directoryChain(path: string) {
         throw error;
     }
 }
-export async function privateRoot(path: string) {
+export async function privateRoot(path: string, options: { recoverCrashLinks?: boolean } = {}) {
     const chain = await directoryChain(path);
     const handle = chain.handles.at(-1)!;
     const bound = `/proc/self/fd/${handle.fd}`;
@@ -68,6 +72,29 @@ export async function privateRoot(path: string) {
             const current = await lstat(`${entry.parent}/${entry.name}`);
             insist(current.isDirectory() && current.dev === entry.stat.dev && current.ino === entry.stat.ino && current.uid === entry.stat.uid && current.mode === entry.stat.mode, 'private-root-changed');
         }
+    }
+    async function recoverCrashLink(name: string) {
+        insist(/^hub-[a-z0-9.-]+\.json$/.test(name), 'private-file-unusable');
+        const dest = `${bound}/${name}`, stat = await lstat(dest);
+        insist(stat.isFile() && stat.nlink === 2, 'private-file-unusable');
+        const names = await readdir(bound);
+        insist(names.length <= 1000, 'private-journal-unbounded');
+        const matching: string[] = [];
+        for (const candidate of names.filter(n => /^\.hub-[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(n))) {
+            const temp = await lstat(`${bound}/${candidate}`);
+            if (temp.isFile() && temp.dev === stat.dev && temp.ino === stat.ino && temp.nlink === 2) matching.push(candidate);
+        }
+        insist(matching.length === 1, 'private-file-unusable');
+        const verified = await readStablePrivateJson(dest, 2);
+        const kinds = ['hub-operation', 'hub-admission-action', 'hub-native-intent', 'hub-native-response', 'hub-native-readback', 'hub-sync-intent', 'hub-sync-transport-returned', 'newsletter-hub-stage'];
+        insist(verified.value.schema_version === 1 && kinds.includes(verified.value.kind) && /^[a-f0-9]{64}$/.test(verified.value.input_sha256), 'private-file-unusable');
+        if (name.startsWith('hub-plan-')) insist(name === `hub-plan-${digest(verified.bytes)}.json`, 'artifact-digest-mismatch');
+        await check();
+        const temp = `${bound}/${matching[0]}`, before = await lstat(temp), current = await lstat(dest);
+        insist(before.isFile() && before.dev === verified.stat.dev && before.ino === verified.stat.ino && before.nlink === 2 && current.dev === before.dev && current.ino === before.ino && current.nlink === 2, 'private-file-changed');
+        // Remove only the verified second link; never touch another inode or journal payload.
+        await unlink(temp);
+        await handle.sync();
     }
     async function get(name: string) {
         insist(/^[a-z0-9][a-z0-9.-]{0,230}\.json$/.test(name), 'private-record-name');
@@ -78,6 +105,10 @@ export async function privateRoot(path: string) {
         catch (e: any) {
             if (e.code === 'ENOENT')
                 return null;
+            if (e.message === 'private-file-unusable' && options.recoverCrashLinks === true) {
+                await recoverCrashLink(name);
+                return await readPrivateJson(`${bound}/${name}`);
+            }
             throw e;
         }
     }
@@ -105,7 +136,7 @@ export async function privateRoot(path: string) {
         }
         finally {
             await file.close();
-            await unlink(temp);
+            try { await unlink(temp); } catch (error: any) { if (error.code !== 'ENOENT') throw error; }
         }
         const stored = await get(name);
         insist(stored, 'private-record-missing');
