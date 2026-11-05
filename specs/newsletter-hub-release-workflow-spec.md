@@ -307,3 +307,31 @@ an explicit nonzero valid port and the exact owned browser WebSocket path.
 Hostname aliases, noncanonical spellings, credentials and extra URL components
 hold before discovery or CDP client commands; no never-started client is created
 just for cleanup, while normal same-holder lease release still runs.
+
+## Explicit authenticated writer capability
+
+The source may construct an opaque authenticated writer capability and explicitly
+inject it into advancement alongside the existing current authorizer. Construction
+performs no native call. It exposes no callable writer, endpoint, repository, body,
+branch or workflow override. The existing raw fixture writer remains separate;
+ambiguous or forged capabilities hold before effects. The default CLI constructs
+no capability and remains held.
+
+Only the existing coordinator's fixed admission sequence can consume the capability:
+exact admission JSON blob, tree, commit, operation branch and draft PR, plus its
+bounded main sync recovery dispatch. Every effect retains the original request,
+plan, publication/168-hour eligibility, current source, authorization/STOP, expiry,
+drain, intent and exact native readback checks. An uncertain effect is reconciled
+against its original intent, never retried; restart creates neither a duplicate
+admission PR nor a second dispatch. This adds no merge or public-release authority.
+
+The test seam is the complete advancement/reconciliation boundary with a private
+fixture journal, fake read-only native facts and an injected transport that records
+fixed GitHub CLI argv/stdin. Positive fixture delivery and negative/uncertain restart
+cases prove source behavior only. Native calls, account qualification, runtime
+adoption and protected merge require separate exact approval.
+
+Writer resolution retains the caller's original dependency object, existing
+callback invocation semantics and inherited reader selection. Authorizer and raw
+writer receivers remain unchanged; capability injection must not copy dependencies
+into a plain object or select default readers accidentally.

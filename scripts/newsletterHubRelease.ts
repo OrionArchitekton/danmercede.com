@@ -16,6 +16,43 @@ import { budgetKbFor } from './imageBudgets.mjs';
 const REPOSITORY = 'OrionArchitekton/danmercede.com';
 const PILOT_DRAIN_CUTOFF = '2026-12-09T07:59:00Z';
 const executeRead = promisify(execFile);
+type HubWriterCall = { file: 'gh'; args: string[]; input: string; timeout: number; maxBuffer: number };
+type HubWriterTransport = (call: HubWriterCall) => Promise<{ stdout: string }>;
+const authenticatedHubWriters = new WeakMap<object, HubWriterTransport>();
+/** Inert opaque capability. Only advancement's reserved fixed-effect seam can consume it. */
+export function createAuthenticatedHubWriter(options: { transport?: HubWriterTransport } = {}): Readonly<object> {
+    insist(options && Object.getPrototypeOf(options) === Object.prototype && Object.keys(options).every(key => key === 'transport'), 'invalid-writer-factory-options');
+    insist(options.transport === undefined || typeof options.transport === 'function', 'invalid-writer-factory-options');
+    const capability = Object.freeze({});
+    authenticatedHubWriters.set(capability, options.transport ?? (call => new Promise((resolve, reject) => {
+        const child = execFile(call.file, call.args, { timeout: call.timeout, maxBuffer: call.maxBuffer, encoding: 'utf8' }, (error, stdout) => {
+            if (error) reject(new Error('native-writer-transport-unknown'));
+            else resolve({ stdout });
+        });
+        child.stdin?.on('error', () => reject(new Error('native-writer-transport-unknown')));
+        child.stdin?.end(call.input);
+    })));
+    return capability;
+}
+function capabilityWriter(capability: object) {
+    const transport = authenticatedHubWriters.get(capability);
+    if (!transport) return null;
+    return async (method: string, path: string, body: any) => {
+        insist(method === 'POST' && [
+            `${nativePrefix}/git/blobs`, `${nativePrefix}/git/trees`, `${nativePrefix}/git/commits`,
+            `${nativePrefix}/git/refs`, `${nativePrefix}/pulls`,
+            `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`,
+        ].includes(path), 'unsupported-native-effect');
+        const result = await transport({ file: 'gh', args: ['api', '--hostname', 'github.com', '--method', 'POST', path, '--input', '-'], input: JSON.stringify(body), timeout: 10000, maxBuffer: 2 * 1024 * 1024 });
+        insist(typeof result?.stdout === 'string' && Buffer.byteLength(result.stdout) <= 2 * 1024 * 1024, 'native-write-response-unusable');
+        return result.stdout.trim() ? JSON.parse(result.stdout) : null;
+    };
+}
+function injectedWriter(deps: Dependencies) {
+    if (deps.authenticatedWriter !== undefined)
+        return typeof deps.writeGitHub === 'function' ? null : capabilityWriter(deps.authenticatedWriter);
+    return typeof deps.writeGitHub === 'function' ? deps.writeGitHub.bind(deps) : null;
+}
 async function readNativeReviewThreads(number: number) {
     insist(Number.isSafeInteger(number) && number > 0, 'invalid-pr-number');
     let cursor: string | null = null;
@@ -500,10 +537,11 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
     if (!reservation.created)
         throw new UnknownAttempt(step);
     try {
-        insist(typeof deps.writeGitHub === 'function', 'native-writer-unavailable');
+        const write = injectedWriter(deps);
+        insist(write, 'native-writer-unavailable');
         freshGrantTime(authorization.grant, deps);
         budget.used++;
-        const response = await deps.writeGitHub(method, path, body);
+        const response = await write(method, path, body);
         const pointer = step === 'pr' ? { number: response?.number } : { sha: response?.sha };
         if (step === 'ref') {
             pointer.sha = response?.object?.sha;
@@ -605,9 +643,10 @@ async function recoverSyncAction(root: any, options: AdvanceOptions, binding: an
     if (!reserved.created)
         throw new UnknownAttempt('sync');
     try {
-        insist(typeof deps.writeGitHub === 'function', 'native-writer-unavailable');
+        const write = injectedWriter(deps);
+        insist(write, 'native-writer-unavailable');
         freshGrantTime(reservationAuthorization.grant, deps);
-        await deps.writeGitHub('POST', `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`, body);
+        await write('POST', `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`, body);
         await boundRecord(root, 'hub-sync-response.json', { ...intent, kind: 'hub-sync-transport-returned', attributed: false, native_run_id: null });
     }
     catch {
@@ -619,7 +658,7 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
     const binding = await load(options);
     if (typeof deps.authorize !== 'function')
         return envelope(binding, 'held', [], ['runtime-authority-unadmitted']);
-    if (typeof deps.writeGitHub !== 'function')
+    if (!injectedWriter(deps))
         return envelope(binding, 'held', [], ['native-writer-unqualified']);
     insist(['prepare-admission', 'recover-sync'].includes(options.action) && Number.isSafeInteger(options.maxActions) && options.maxActions >= 1 && options.maxActions <= 6, 'invalid-advance-action');
     const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });

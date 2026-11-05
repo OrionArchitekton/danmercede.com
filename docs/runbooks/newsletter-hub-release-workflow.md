@@ -496,3 +496,38 @@ parity, exact attributed CTA and clean normal release passed against public73;
 all prior attempts remain unchanged. Explicit 80/443 cases remain hermetic-only,
 and this image-free page does not qualify native image guards. No browser config,
 writer, policy or production authority changed.
+
+## Explicit authenticated writer source capability
+
+`createAuthenticatedHubWriter()` constructs an inert opaque object. An attended,
+separately admitted integration must explicitly inject it as `authenticatedWriter`
+alongside the existing current `authorize` dependency. The CLI never constructs it.
+Existing injected fixture callbacks remain supported; supplying both a capability
+and a raw writer holds rather than selecting a fallback. Forged or cloned objects
+are not capabilities. No endpoint, body, repository, branch, workflow, account or
+credential selector is accepted by the factory. Its optional transport seam is for
+isolated qualification fixtures; it is not runtime/provider qualification.
+
+Only the coordinator's reserved fixed effects can consume the object. Production
+transport uses existing `gh api --hostname github.com --method POST` with the fixed
+repository endpoint, JSON on stdin, a ten-second timeout and bounded output. It
+loads no credential itself and does not log stderr or request bodies. Existing
+original-operation intents, exact native readbacks, current authorizer, protected
+source, publication age, STOP, expiry, recovery grace and pilot drain checks remain
+the authority boundary. Transport errors remain unknown and verification-only;
+never replace an intent or repeat an uncertain effect. A sync transport return does
+not attribute a run or prove delivery.
+
+This source addition authorizes zero native calls or runtime activation. Before a
+future native canary, obtain exact source/runtime, original eligible operation/root,
+account, action budget, stop state, expiry and readback approval. Missing, denied,
+stopped, stale, mismatched or unreserved authority must first demonstrate zero
+effects. Protected merge, content promotion, close/delete, deployment, browser
+sends and publication remain separate and unadmitted. Rollback removes explicit
+injection first, then reverts reviewed source; retain every native ID and intent,
+including unknown outcomes. Source rollback does not delete native objects.
+
+Writer resolution retains the caller's original dependency object, existing
+callback invocation semantics and inherited reader selection. Authorizer and raw
+writer receivers remain unchanged; capability injection must not copy dependencies
+into a plain object or select default readers accidentally.

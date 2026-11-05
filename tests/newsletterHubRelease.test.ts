@@ -19,6 +19,7 @@ import { privateRoot } from '../scripts/newsletterHubReleaseJournal.ts';
 import { verifyHubReader } from '../scripts/newsletterHubReleaseReader.ts';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, generateOutput, HUB_ESSAY_ALLOWLIST } from '../scripts/compileContent.ts';
 import { budgetKbFor } from '../scripts/imageBudgets.mjs';
+import * as hubRelease from '../scripts/newsletterHubRelease.ts';
 import { planHubRelease, inspectHubRelease, advanceHubRelease, reconcileHubRelease, verifyTrustedHubCheck } from '../scripts/newsletterHubRelease.ts';
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const slug = '2026-11-02-before-your-ai-tries-again';
@@ -1821,5 +1822,249 @@ test('generation holds expose only fixed source-owned diagnostics and never raw 
         if (example.raw) assert.equal(raw.includes(example.raw), false);
         assert.equal(accessorCalls, 0);
         assert.equal(native.writes.length, 0);
+    });
+});
+
+test('explicit opaque authenticated capability uses only reserved fixed admission effects', async (t) => {
+    const create = (hubRelease as any).createAuthenticatedHubWriter;
+    assert.equal(typeof create, 'function');
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z';
+    const options = { requestPath: f.path, jobDir: f.dir, now };
+    const plan = await planHubRelease(options, native), calls: any[] = [];
+    const capability = create({ transport: async (call: any) => {
+        assert.equal(call.file, 'gh');
+        assert.deepEqual(call.args.slice(0, 5), ['api', '--hostname', 'github.com', '--method', 'POST']);
+        assert.deepEqual(call.args.slice(6), ['--input', '-']);
+        const path = call.args[5], body = JSON.parse(call.input);
+        const step = ['git/blobs','git/trees','git/commits','git/refs','pulls'][calls.length];
+        assert.equal(path, '/repos/OrionArchitekton/danmercede.com/' + step);
+        const names = ['blob','tree','commit','ref','pr'];
+        const intent = JSON.parse(await readFile(join(f.dir, `hub-admission-${names[calls.length]}-intent.json`), 'utf8'));
+        assert.equal(intent.payload_sha256, sha(JSON.stringify({method:'POST',path,body})));
+        calls.push(call);
+        return { stdout: JSON.stringify(await native.writeGitHub('POST', path, body)) };
+    }});
+    assert.equal(typeof capability, 'object');
+    assert.ok(Object.isFrozen(capability));
+    assert.deepEqual(Object.keys(capability), []);
+    assert.equal(calls.length, 0);
+    const { writeGitHub: _fixtureWriter, ...readOnly } = native;
+    const deps = { ...readOnly, authenticatedWriter: capability, clock: () => Date.parse(now),
+        authorize: async (context: any) => ({admitted:true,...context,checked_at:now,expires_at:'2026-11-09T15:10:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'}) };
+    const advance = {...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+    const result = await advanceHubRelease(advance,deps);
+    const stage = JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+    assert.equal(stage.stage,'admission-pr-awaiting-merge');
+    assert.equal(stage.merge_gate,'HUMAN_REQUIRED');
+    assert.equal(stage.public_delivery,'unknown');
+    assert.equal(calls.length,5);
+    assert.equal(native.prs.length,1);
+    assert.equal(native.prs[0].draft,true);
+    await advanceHubRelease(advance,deps);
+    assert.equal(calls.length,5);
+});
+
+function authenticatedFixture(native: ReturnType<typeof nativeFixture>, options: any, transport?: (call:any)=>Promise<any>) {
+    const calls:any[]=[];
+    const capability=hubRelease.createAuthenticatedHubWriter({transport:async call=>{
+        calls.push(call);
+        if(transport)return transport(call);
+        const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+        return {stdout:value===null?'':JSON.stringify(value)};
+    }});
+    const {writeGitHub:_fixture,...readOnly}=native;
+    return {calls,capability,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
+        authorize:async(context:any)=>({admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T17:00:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'})}};
+}
+test('opaque authenticated recovery reserves one fixed main dispatch and never attributes or repeats it',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const writer=authenticatedFixture(native,options);
+    let plan=await planHubRelease(options,native);
+    await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+    assert.equal(writer.calls.length,5);
+    native.mergeAdmission();
+    options.now='2026-11-09T16:25:00Z';
+    plan=await planHubRelease(options,native);
+    const dispatch={...options,action:'recover-sync',planSha256:plan.artifacts[0].sha256,maxActions:1};
+    const result=await advanceHubRelease(dispatch,writer.deps);
+    assert.equal(result.status,'unknown');
+    assert.equal(writer.calls.length,6);
+    assert.deepEqual(native.writes.at(-1),{method:'POST',path:'/repos/OrionArchitekton/danmercede.com/actions/workflows/substrate-sync.yml/dispatches',body:{ref:'main'}});
+    const intent=JSON.parse(await readFile(join(f.dir,'hub-sync-intent.json'),'utf8'));
+    assert.equal(intent.attributed,false);
+    assert.equal(intent.main_sha,native.prs[0].merge_commit_sha);
+    const restarted=authenticatedFixture(native,options);
+    assert.equal((await advanceHubRelease(dispatch,restarted.deps)).status,'unknown');
+    const observed=await reconcileHubRelease(options,restarted.deps);
+    assert.equal(observed.status,'unknown');
+    assert.equal(restarted.calls.length,0);
+    assert.equal(native.writes.length,6);
+});
+
+test('opaque writer rejects forged ambiguous foreign unreserved and unauthorized requests with zero transport effects',async t=>{
+    for(const scenario of ['missing-authorizer','denied','stopped','stale','expired','foreign-grant','forged','cloned','ambiguous','foreign-plan','foreign-operation','unreserved','changed-main','young-publication','drained'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(native,options),deps:any={...writer.deps};
+        const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+        const authorize=deps.authorize;
+        if(scenario==='missing-authorizer')delete deps.authorize;
+        if(['denied','stopped','stale','expired','foreign-grant'].includes(scenario))deps.authorize=async(context:any)=>{
+            const grant=await authorize(context);
+            if(scenario==='denied')grant.admitted=false;
+            if(scenario==='stopped')grant.stopped=true;
+            if(scenario==='stale')grant.checked_at='2026-11-09T15:03:59Z';
+            if(scenario==='expired')grant.expires_at=options.now;
+            if(scenario==='foreign-grant')grant.operation_id='foreign-operation';
+            return grant;
+        };
+        if(scenario==='forged')deps.authenticatedWriter={};
+        if(scenario==='cloned')deps.authenticatedWriter={...writer.capability};
+        if(scenario==='ambiguous')deps.writeGitHub=native.writeGitHub;
+        if(scenario==='foreign-plan')advance.planSha256='a'.repeat(64);
+        if(scenario==='foreign-operation'){
+            const request=JSON.parse(await readFile(f.path,'utf8'));request.operation_id='foreign-operation';await writeFile(f.path,JSON.stringify(request),{mode:0o600});
+        }
+        if(scenario==='unreserved')advance.action='arbitrary-endpoint';
+        if(scenario==='changed-main')native.moveMain();
+        if(scenario==='young-publication')deps.clock=()=>Date.parse('2026-11-09T15:02:44Z');
+        if(scenario==='drained')deps.clock=()=>Date.parse('2026-12-09T07:59:00Z');
+        try {const outcome=await advanceHubRelease(advance,deps);assert.equal(outcome.status,'held');}
+        catch(error:any){assert.ok(['invalid-advance-action'].includes(error.message));}
+        assert.equal(writer.calls.length,0);
+        assert.equal(native.writes.length,0);
+    });
+});
+test('opaque writer stops between effects and reconciles each original uncertain attempt without replay',async t=>{
+    for(const lostStep of ['blob','tree','commit','ref','pr'])await t.test(lostStep,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),index=['blob','tree','commit','ref','pr'].indexOf(lostStep),advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+        let attempted=0;
+        const writer=authenticatedFixture(native,options,async call=>{
+            const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+            if(attempted++===index)throw Error('private lost transport detail');
+            return {stdout:JSON.stringify(value)};
+        });
+        assert.equal((await advanceHubRelease(advance,writer.deps)).status,'unknown');
+        assert.equal(writer.calls.length,index+1);
+        const restarted=authenticatedFixture(native,options);
+        assert.equal((await advanceHubRelease(advance,restarted.deps)).status,'unknown');
+        assert.equal(restarted.calls.length,0);
+        await reconcileHubRelease(options,restarted.deps);
+        assert.equal(restarted.calls.length,0);
+        const next=await advanceHubRelease(advance,restarted.deps);
+        if(['tree','commit'].includes(lostStep)){
+            assert.equal(next.status,'unknown');assert.equal(restarted.calls.length,0);
+        }else{
+            assert.equal(next.status,'held');assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+        }
+        const artifacts=(await readdir(f.dir)).filter(n=>n.startsWith('hub-plan-'));
+        for(const name of artifacts)assert.ok(!(await readFile(join(f.dir,name),'utf8')).includes('private lost transport detail'));
+    });
+    await t.test('current-STOP-after-first-effect',async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'},writer=authenticatedFixture(native,options);
+        const plan=await planHubRelease(options,native),authorize=writer.deps.authorize;
+        writer.deps.authorize=async(context:any)=>({...await authorize(context),stopped:writer.calls.length>0});
+        const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        assert.equal(outcome.status,'held');assert.equal(writer.calls.length,1);
+        assert.ok(!(await readdir(f.dir)).includes('hub-admission-tree-intent.json'));
+    });
+});
+test('factory offers no native selectors or direct callable effect and CLI stays held',async t=>{
+    const capability=hubRelease.createAuthenticatedHubWriter();
+    assert.equal(typeof capability,'object');assert.deepEqual(Object.getOwnPropertyNames(capability),[]);
+    for(const key of ['repository','path','method','body','branch','workflow','credentials','account'])assert.throws(()=>hubRelease.createAuthenticatedHubWriter({[key]:'arbitrary'} as any),/invalid-writer-factory-options/);
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native);
+    const result=await hubRelease.main(['advance','--request',f.path,'--job-dir',f.dir,'--now',options.now,'--execute-action','prepare-admission','--plan-sha256',plan.artifacts[0].sha256,'--max-actions','5']);
+    assert.equal(result.status,'held');assert.deepEqual(result.holds,['runtime-authority-unadmitted']);assert.equal(native.writes.length,0);
+});
+
+test('default authenticated transport executes only an owned gh fixture with fixed argv and JSON stdin',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native),bin=join(f.dir,'bin'),record=join(f.dir,'transport-fixture.json');
+    await mkdir(bin,{mode:0o700});
+    await writeFile(join(bin,'gh'),`#!${process.execPath}
+const fs=require('node:fs'),crypto=require('node:crypto');
+const input=fs.readFileSync(0,'utf8'),body=JSON.parse(input);
+fs.writeFileSync(${JSON.stringify(record)},JSON.stringify({args:process.argv.slice(2),input,executable:process.execPath}),{mode:0o600,flag:'wx'});
+const sha=crypto.createHash('sha1').update('blob '+Buffer.byteLength(body.content)+'\\0').update(body.content).digest('hex');
+process.stdout.write(JSON.stringify({sha}));
+`,{mode:0o700});
+    const oldPath=process.env.PATH;process.env.PATH=bin+':'+oldPath;
+    t.after(()=>{process.env.PATH=oldPath;});
+    const {writeGitHub:_fixture,readGitHub,...readOnly}=native;
+    let reflected=false;
+    const deps={...readOnly,authenticatedWriter:hubRelease.createAuthenticatedHubWriter(),clock:()=>Date.parse(options.now),
+        readGitHub:async(path:string)=>{
+            if(path.includes('/git/blobs/')&&!reflected){
+                const call=JSON.parse(await readFile(record,'utf8'));reflected=true;
+                await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+            }
+            return readGitHub(path);
+        },
+        authorize:async(context:any)=>({admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T15:10:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'})};
+    const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:1},deps);
+    const saved=JSON.parse(await readFile(record,'utf8'));
+    assert.equal(saved.executable,process.execPath);
+    assert.deepEqual(saved.args,['api','--hostname','github.com','--method','POST','/repos/OrionArchitekton/danmercede.com/git/blobs','--input','-']);
+    assert.equal(native.writes.length,1);
+    assert.equal(reflected,true);
+    assert.equal(outcome.status,'held');
+    assert.ok(outcome.holds.includes('action-budget-exhausted'));
+});
+
+test('authenticated capability rechecks source publication expiry and drain before subsequent effects',async t=>{
+    for(const scenario of ['source-moved','publication-changed','expired','drained'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native);
+        let calls=0;
+        const writer=authenticatedFixture(native,options,async call=>{
+            const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));calls++;
+            if(scenario==='source-moved')native.moveMain();
+            if(scenario==='expired')options.now='2026-11-09T17:00:00Z';
+            if(scenario==='drained')options.now='2026-12-09T07:59:00Z';
+            if(scenario==='publication-changed'){
+                const request=JSON.parse(await readFile(f.path,'utf8'));
+                await writeFile(request.publication_snapshot.path,'{}',{mode:0o600});
+            }
+            return {stdout:JSON.stringify(value)};
+        });
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        assert.equal(result.status,'held');assert.equal(calls,1);assert.equal(native.writes.length,1);
+        assert.ok(!(await readdir(f.dir)).includes('hub-admission-tree-intent.json'));
+    });
+});
+
+test('authenticated capability preserves inherited dependencies and original callback receivers',async t=>{
+    for(const shape of ['inherited-authorizer','private-class-authorizer','inherited-reader'])for(const mode of ['raw','capability'])await t.test(`${shape}:${mode}`,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(native,options);
+        const bin=join(f.dir,'deny-bin'),unexpected=join(f.dir,'unexpected-default-gh.json');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').appendFileSync(${JSON.stringify(unexpected)},JSON.stringify(process.argv.slice(2))+'\\n',{mode:0o600});
+process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin+':'+oldPath;t.after(()=>{process.env.PATH=oldPath;});
+        const {authorize,readGitHub,clock,...rest}=writer.deps;
+        let current:any,authorizations=0;
+        const boundAuthorize=async function(this:any,context:any){assert.equal(this,current);authorizations++;return authorize(context);};
+        if(shape==='private-class-authorizer'){
+            class GrantDependencies {
+                #count=0;
+                async authorize(context:any){this.#count++;authorizations++;assert.equal(this,current);return authorize(context);}
+            }
+            current=Object.assign(new GrantDependencies(),rest,{readGitHub,clock});
+        }else if(shape==='inherited-reader')current=Object.assign(Object.create({readGitHub,clock}),rest,{authorize:boundAuthorize});
+        else current=Object.assign(Object.create({authorize:boundAuthorize,readGitHub,clock}),rest);
+        if(mode==='raw'){
+            delete current.authenticatedWriter;
+            current.writeGitHub=async function(this:any,method:string,path:string,body:any){assert.equal(this,current);return native.writeGitHub(method,path,body);};
+        }
+        const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},current);
+        const stage=JSON.parse(await readFile(join(f.dir,outcome.artifacts[0].ref),'utf8'));
+        assert.equal(stage.stage,'admission-pr-awaiting-merge');
+        assert.equal(authorizations,6);assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+        assert.equal((await readdir(f.dir)).includes('unexpected-default-gh.json'),false);
     });
 });
