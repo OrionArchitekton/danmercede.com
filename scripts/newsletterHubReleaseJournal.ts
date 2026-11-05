@@ -86,9 +86,10 @@ export async function privateRoot(path: string, options: { recoverCrashLinks?: b
         }
         insist(matching.length === 1, 'private-file-unusable');
         const verified = await readStablePrivateJson(dest, 2);
-        const kinds = ['hub-operation', 'hub-admission-action', 'hub-native-intent', 'hub-native-response', 'hub-native-readback', 'hub-sync-intent', 'hub-sync-transport-returned', 'newsletter-hub-stage'];
+        const kinds = ['hub-operation', 'hub-admission-action', 'hub-native-intent', 'hub-native-response', 'hub-native-readback', 'hub-sync-intent', 'hub-sync-transport-returned', 'newsletter-hub-stage', 'newsletter-hub-generation-proof', 'newsletter-hub-original-plan', 'newsletter-hub-transition'];
         insist(verified.value.schema_version === 1 && kinds.includes(verified.value.kind) && /^[a-f0-9]{64}$/.test(verified.value.input_sha256), 'private-file-unusable');
         if (name.startsWith('hub-plan-')) insist(name === `hub-plan-${digest(verified.bytes)}.json`, 'artifact-digest-mismatch');
+        if (name.startsWith('hub-generation-')) insist(name === `hub-generation-${digest(verified.bytes)}.json`, 'artifact-digest-mismatch');
         await check();
         const temp = `${bound}/${matching[0]}`, before = await lstat(temp), current = await lstat(dest);
         insist(before.isFile() && before.dev === verified.stat.dev && before.ino === verified.stat.ino && before.nlink === 2 && current.dev === before.dev && current.ino === before.ino && current.nlink === 2, 'private-file-changed');
@@ -149,10 +150,16 @@ export async function privateRoot(path: string, options: { recoverCrashLinks?: b
         insist(names.length <= 1000, 'private-journal-unbounded');
         return names.filter(name => /^hub-plan-[a-f0-9]{64}\.json$/.test(name));
     }
+    async function generationProofs() {
+        await check();
+        const names = await readdir(bound);
+        insist(names.length <= 1000, 'private-journal-unbounded');
+        return names.filter(name => /^hub-generation-[a-f0-9]{64}\.json$/.test(name));
+    }
     async function order(name: string) {
         insist(/^hub-plan-[a-f0-9]{64}\.json$/.test(name), 'private-record-name');
         await check();
         return (await lstat(`${bound}/${name}`, { bigint: true })).ctimeNs;
     }
-    return { get, put, list, order, check, close: async () => { for (const h of [...chain.handles].reverse()) await h.close(); } };
+    return { get, put, list, generationProofs, order, check, close: async () => { for (const h of [...chain.handles].reverse()) await h.close(); } };
 }

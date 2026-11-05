@@ -1,8 +1,10 @@
 ---
-verified: 2026-11-03
-review_after: 2026-11-10
+verified: 2026-11-04
+review_after: 2026-11-11
 topics: [newsletter, hub, release, recovery, production-verification]
 references:
+  - scripts/hubEssayAdmissions.mjs
+  - data/hub-essay-admissions.json
   - specs/newsletter-hub-release-workflow-spec.md
   - scripts/newsletterHubRelease.ts
   - scripts/newsletterHubReleaseJournal.ts
@@ -13,8 +15,11 @@ references:
   - scripts/renderFeed.ts
   - siteOrigin.ts
   - docs/reviews/newsletter-hub-reader-native-20261103-attempt1/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json
+  - docs/reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json
   - scripts/newsletterHubReadiness.mjs
   - scripts/compileContent.ts
+  - scripts/imageBudgets.mjs
   - scripts/verifyProductionDeployment.mjs
   - .github/workflows/substrate-sync.yml
   - .github/workflows/substrate-verify.yml
@@ -103,7 +108,7 @@ read-only canary after final source review.
 ## Recovery and monitoring
 
 Admission reserves separate blob/tree/commit/ref/PR intents. Readbacks verify the
-single compiler insertion and unchanged complete base tree. Existing foreign work
+single requested slug addition in the protected admission-data file and unchanged complete base tree. Existing foreign work
 holds; there is no overwrite, force push, branch reset or replacement PR. A fully
 prepared PR waits for the separate human merge boundary. Strict sync remains the
 only generated-content writer; its existing trusted base compiler is unchanged.
@@ -124,9 +129,38 @@ recovery. Verify resulting content independently instead of inventing attributio
 A content PR must preserve the complete unrelated corpus/tree, newer editions and
 latest order, have exact current base/head, all five strict required checks from
 native check runs including trusted substrate verification bound through native check/run/suite IDs, exact repository/head/branch/workflow and success. Native run/suite PR arrays may be empty; those arrays cannot substitute for or defeat positive suite association. Require complete resolved
-review threads. It still requires a human merge. This version conservatively
-holds changes outside the bundle; editions requiring newly materialized assets
-need separate supported asset preparation rather than an approximate acceptance.
+review threads. It still requires a human merge. A target may add at most two
+explicitly referenced canonical-owned image blobs alongside its bundle entry.
+The immutable original plan and content-merged proof retain `target_assets` with
+source/served paths, mode/type, Git blob, SHA256 and size. Verify source ancestry
+through trees at the exact canonical commit and actual copied hub binary bytes.
+The shared compiler reference mapper supplies the expected served body. Missing,
+extra, changed, symlinked, executable or unrelated asset leaves hold; existing
+assets cannot be replaced or pruned as part of this release. Conservative adapter
+bounds are at least one byte and at most the smaller of 524288 bytes or the
+shared `imageBudgets.mjs` extension budget (KB × 1024), two distinct sources, 512 path characters
+and eight simple ASCII components under `publishing/assets/<requested-slug>/`,
+using the compiler's supported image extensions. An unsupported source holds;
+do not broaden it or substitute a later asset. Other compiler consumers preserve
+their existing soft-fail behavior. Current default newsletter copy has no inline
+images, so its asset array is empty.
+
+Inline/fenced literal code examples are not image candidates. Asset contexts
+follow the bounded renderer's line-start fences (including leading whitespace),
+trimmed triple-backtick closer and quote/list scopes. An unclosed fence remains
+literal through its containing block's EOF. Inline code stays within its actual
+inline block; delimiters in prose or separate image alt/title text cannot hide
+a later rendered figure. The delinker approximation is not reused for this.
+Figure captions are separate inline scopes at their original source offsets;
+alt text stays literal. Code examples in external, already-served or owned
+figure captions trigger no asset callback or copy. The owned outer image and
+non-code caption references keep their existing mapping, and caption delimiters
+cannot spill into another figure.
+Examples trigger no source asset fetch, rewrite, copy, skip diagnostic or count.
+Real images elsewhere retain all existing controls, including real alt/title
+text containing backticks. These fixes change no renderer, wiki-link or dash
+rules and regenerate no committed body or asset. Oversized images hold; do not
+substitute, re-encode or change the shared budget during reconciliation.
 
 After the content merge, reader reconciliation requires the exact native Vercel
 project/production SHA, public no-store revision bookends, actual initial article,
@@ -266,3 +300,199 @@ mutation authorizer, publication, admission, merge, dispatch, deployment, timer 
 runtime-installation authority, and does not certify future content or changed
 installed tools. Subsequent changes must preserve the exact code/tool/data
 boundaries and be verified at their own requested consumer boundary.
+
+
+## Essay admission data
+
+`data/hub-essay-admissions.json` carries only version 1 and the ordered
+`essay_slugs` array. The fixed parser rejects unknown/duplicate keys, duplicate
+slugs, invalid versions/slugs and oversized data. This overrides only essay
+surface targeting; all other compiler gates and diagram admission are unchanged.
+Invalid data yields consumer SKIPPED with the old generated bundle untouched;
+strict compilation exits nonzero. Exported mapping/reader APIs reject invalid
+configuration, and the exported list cannot be consumed as an empty fallback.
+
+Admission plans bind protected main, the original data Git blob and SHA256, and
+the proposed Git blob and SHA256 to the original immutable request/plan. The
+injected writer rechecks the base tree and appends exactly the requested slug;
+its tree contains one changed data leaf. Unrequested entries, removals, reorder,
+base movement and unrelated tree edits hold. The normal compiler code closure
+therefore remains fixed across later legitimate data-only admissions. Trusted
+verification uses its base checkout's data; PR-supplied policy/code never executes
+in that lane. Admission and content PRs remain separate and HUMAN_REQUIRED.
+
+This source change does not install or qualify a writer. `advance` still requires
+both an explicitly injected authorizer and bounded writer; the default CLI holds.
+No authenticated GitHub writer fallback is provided. The weekly controller needs
+a separately reviewed extension to its protected mutable-data receipt plus new
+fixed code pins before consuming this source generation. The numeric endpoint
+repair from PR239 is included in this combined source. Its earlier native
+receipts bind their recorded code maps; this combined generation still requires
+separate protected-source adoption and consumer qualification.
+
+Roll out through reviewed source, verify migration parity and fake-GitHub
+plan/advance/reconcile tests, then qualify the consumer separately. Monitor held
+stages and original intent/readbacks without resending unknown attempts. Roll
+back source through a reviewed revert; never delete reservations or remove live
+admission data as an operational rollback, and never edit generated bundles by
+hand. No source merge alone changes runtime, schedule, public delivery or grants.
+
+
+## Collecting merged data generations
+
+Use the existing read-only `reconcile` command on the original request and job
+root. A completed plan is preparation evidence, not public delivery. The first
+full plan receives an exclusive `hub-original-plan.json` anchor binding its exact
+immutable plan ref/digest to the operation, week and input. Later plans never
+replace that anchor. An old root without the anchor and with prior full plans
+holds; this is not authority to reconstruct, migrate or rebind a historical job.
+A crash between writing the sole first plan and its anchor may finish only that
+same original binding.
+
+If the initial plan return was lost, final held reconciliation retains the
+detailed fields freshly validated in that invocation. Its result stage still
+wins and public delivery remains unknown. An early native/source read failure
+does not acquire missing detailed fields from an old plan. Consumers must compare
+the actual returned detailed fields with the immutable original and independent
+native facts; `operation-held` alone does not establish that comparison. No
+extra CLI, unreferenced-artifact search, new grant or resend is involved.
+
+`prepare-admission` accepts only the exact saved ref/digest in that valid original
+anchor, checked before any authorizer call or native intent. A freshly observed
+plan on a moved base does not authorize rebasing the admission. Do not replace
+the anchor to make it fit. Fresh `recover-sync` plans retain their existing
+current-state behavior and may differ from that original digest.
+
+Malformed JSON, duplicate keys or invalid UTF-8 in the original anchor become
+`original-plan-unverified`. Direct planning keeps that error; `reconcile` returns
+a bound held artifact and preserves the bad bytes. It does not repair, chmod or
+replace the anchor. Permission, changed-file, unbounded-input and other artifact
+parse errors retain their existing failures; never treat those as an approved
+anchor repair.
+
+Reconciliation reads fixed-repository closed PRs and their actual head/base/merge
+commit/tree and protected ancestry. It appends at most two logical handoffs:
+
+- `admission-merged`: the exact original planned JSON append, with all other tree
+  leaves unchanged.
+- `content-merged`: the exact original compiler-derived target Thought entry,
+  preserving every other Thought, Diagram, Guide and unrelated tree leaf. The
+  existing trusted required-check origin, check completeness, copy parity and
+  resolved-thread checks also run against the merged content PR head.
+
+Each `hub-generation-<SHA256>.json` is immutable and names its transition,
+operation/week/input, original plan ref/digest, predecessor proof ref/digest (or
+null), predecessor/successor commit/tree and the three data blob/SHA256 records,
+and actual PR/head/base/merge identities. Content proofs retain check/parity
+validation evidence. Stage `data_generations` refs expose the ordered chain;
+the proof files are supporting private artifacts, not additional publication
+operations. Repeated collection re-verifies native provenance without rewriting
+prior proofs. Unknown write reservations retain their prior no-resend behavior.
+
+Closed branch history may span at most three pages of 100 records. Selection
+waits for a terminal short page and validates every listed native ID, closed
+state, fixed branch/repository/base and SHA shape, rejecting duplicate IDs.
+Three full pages, malformed/unavailable/overlong pages or ambiguous exact
+base/marker matches hold even when an apparent candidate was already seen.
+Do not widen the cap, skip records or select the first match during recovery.
+The selected PR still needs all original detailed commit/tree/ancestry checks.
+
+Missing, ambiguous, foreign, non-ancestor, changed-copy or unrelated-file evidence
+holds with public delivery unknown. Proofs do not grant a write, protected merge,
+runtime admission or publication. The held full artifact may include optional
+`generation_error`, restricted to the fixed audited source generation-code list
+or `unclassified`; raw native/transient/parse messages are not retained there.
+Its stage and `merged-generation-unverified` hold stay unchanged. It conveys no
+authority, and older artifacts or bounded summaries may omit this data-only field.
+The default CLI still lacks an authorizer and
+writer. A main readback after the asynchronous authorizer also prevents a stale
+base grant from reaching setup or a new native write; remote concurrency after a
+completed check remains bounded by subsequent native readbacks, not an atomic
+GitHub transaction or host-wide attestation.
+
+Only after the merged generation chain verifies does reconciliation call the
+existing independent initial/hydrated public-reader verifier. Source fixtures
+exercise these readers with injected transport; they do not establish a real
+public deployment. Protected adoption of this combined source and the weekly
+controller's separately reviewed proof consumer remain qualification
+dependencies. Earlier native reader receipts do not qualify the combined code
+generation. Rollback is
+a reviewed source revert, never deleting anchors, generation proofs, original
+plans or uncertain write intents. These source changes activate no runtime.
+
+
+### Fresh admission and stable transition identity
+
+Authorization time is sampled again after the awaited authorizer and final main
+readback. The same bound grant is checked for age, expiry, stop and fixed drain
+at subsequent reservation/effect boundaries, including after recovery's awaited
+publication/inventory work. Intent timestamps use the fresh clock. These are
+bounded preflight checks, not an atomic transaction with GitHub or authority to
+renew a grant. Expired or late work holds; uncertain reserved effects remain
+collection-only.
+
+A fixed exclusive `hub-transition-admission-merged.json` or
+`hub-transition-content-merged.json` freezes each transition's original proof
+payload and digest before that proof file is materialized. A later successful
+same-head check rerun or changed check ordering requalifies the current native
+facts but reuses the original proof/ref. Its new check snapshot appears only in
+the fresh stage's `generation_observations`. A crash after the anchor can
+materialize only its exact original payload after fresh native verification.
+Unanchored earlier proofs, changed identities, corrupt pointers or missing
+provenance hold rather than mint a replacement or migrate a historical job.
+
+Before either transition, source readbacks independently verify the original
+protected commit/tree and every leaf. The original admission flags/list,
+Thought/Diagram baseline and compiler-derived target are rebound to actual
+protected data and pinned canonical bytes. A self-consistent local plan/hash is
+not proof that an unrelated code or corpus change was preserved.
+
+
+Recovery also refreshes the existing current authorizer after awaited native
+inventory and before any new sync reservation. This rechecks the same operation,
+input, plan, main and time binding and observes a STOP raised during that wait;
+a cached grant's `stopped: false` is not current STOP evidence. The earlier decision must still be valid when refresh begins, after the final
+journal await. A fresh current decision may finish after that earlier decision
+expires, while the standing policy, STOP, expiry and drain bounds remain valid;
+this does not extend policy, reset a budget or revive an expired refresh entry.
+An existing uncertain intent remains collection-only and never uses this refresh
+to send again. No new authority model, distributed lock or atomicity guarantee is
+introduced.
+
+
+Endpoint admission accepts only the exact numeric loopback literals `127.0.0.1`
+and `[::1]`, an explicit valid nonzero port and the owned browser DevTools path.
+Hostname aliases such as `localhost`, alternate/noncanonical numeric spellings,
+credentials, query/fragment additions and non-loopback addresses hold before
+CDP commands or discovery. Normal release still uses the same unique lease
+holder; a client that was never started needs no disconnect command. A started
+client retains the independent disconnect cleanup described above.
+
+
+The final numeric-only endpoint guard was also qualified once against the live
+E14 page at November 4, 01:03:44–01:04:01 UTC (November 3 Pacific), using the
+actual consumer and installed helper. Its
+[separate second receipt](../reviews/newsletter-hub-reader-native-20261103-attempt2/qualification-closeout.json)
+binds reviewed functional tree `307119980d398f36f4631198dc1e9dc71598383a` and
+preserves the first attempt unchanged. Full parity and the exact attributed CTA
+passed; owned-tab/client cleanup and normal release were clean, followed by a
+down/unheld reader state. This page also had zero images. The receipt is read-only
+qualification, with no new writer, policy or production authority.
+
+
+Explicit default ports are validated from the raw numeric authority before URL
+normalization: `ws:80` and `wss:443` remain valid, and the exact owned WebSocket
+endpoint is passed through unchanged. The derived discovery origin may omit its
+standard port without changing the destination. Missing, zero, overflow,
+noncanonical, aliased or otherwise disallowed authorities still hold.
+
+
+The PR239 raw-port normalization repair was qualified once on the ordinary leased
+E14 reader route at November 4, 02:04:01–02:04:17 UTC (November 3 Pacific).
+[Its separate receipt](../reviews/newsletter-hub-reader-native-20261103-pr239-port/qualification-closeout.json)
+binds reviewed functional tree `8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9` and
+the exact static code map, not just the earlier base HEAD. Full initial/hydrated
+parity, exact attributed CTA and clean normal release passed against public73;
+all prior attempts remain unchanged. Explicit 80/443 cases remain hermetic-only,
+and this image-free page does not qualify native image guards. No browser config,
+writer, policy or production authority changed.

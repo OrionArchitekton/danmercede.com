@@ -1,0 +1,74 @@
+{
+  "kind": "PR239-default-port-reader-qualification-closeout",
+  "observed_at": "2026-11-04T02:05:37.333053+00:00",
+  "reviewed_functional_tree": "8d7f646bb9c0f0419b12de44d1c5de0b55b8abb9",
+  "static_code_map_sha256": "d40859b200cc51a20b3b8752a62a922a6d06e6428eec9b3037c56e6905d93336",
+  "base_commit_not_a_substitute_for_code_pin": "605f3d8c1cee0aad46fd2f7f1005ef93c2bd2ce3",
+  "observed_started_at": "2026-11-04T02:04:01.617Z",
+  "observed_completed_at": "2026-11-04T02:04:17.649Z",
+  "public_delivery": "verified",
+  "verification_scope": "initial-and-hydrated-reader-parity",
+  "native_and_public_revision": "73b6e62aeffc3af19fddded60a0587d69ba2ba4a",
+  "copy_parity": {
+    "title": true,
+    "metadata": true,
+    "preview": true,
+    "body": true,
+    "headings": [
+      "The installer and the worker had different access",
+      "A tool name is only the start of the handoff",
+      "Put acceptance in the worker's environment",
+      "A denial deserves a decision",
+      "Follow the result back to the request",
+      "Try the handoff you expect someone else to use"
+    ],
+    "anchors": [
+      {
+        "text": "Work with my agency on one workflow",
+        "href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+      }
+    ]
+  },
+  "cta": {
+    "kind": "external",
+    "form_submitted": false,
+    "actual_href": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14",
+    "final_url": "https://www.orionintelligenceagency.com/readiness-scan?utm_source=linkedin&utm_medium=newsletter&utm_campaign=readiness_scan&utm_content=fcn_ed14"
+  },
+  "image_count": 0,
+  "cleanup": {
+    "browser": "reader",
+    "holder": "fcn-reader-64f79c52-4edf-4471-8e81-9915ba11a3a4",
+    "tool_versions": {
+      "pool": "0.1.0",
+      "agent": "0.25.4"
+    },
+    "tool_sha256": {
+      "pool": "4a1c02e4b983c02b43c15cfd71db7e1a8fba51c82699a9bb12230828129b6b39",
+      "agent": "02d26f105a9d8e203f8f966acfeb4bab191cfa4625431a535b8be5f8f5905472"
+    },
+    "non_headless_user_agent": true,
+    "user_agent_sha256": "7021af2ac2331c0383b85cd532f383e2e944b91f1d6ee8a3a62445ff92ef3c33",
+    "signed_out_purpose_verified": true,
+    "dedicated_tab_closed": true,
+    "target_identity_sha256": "dc7480cfcb76ed5c86ef304f03e664237e1cc059d107beba83245e26b5dd8b9a",
+    "lease_released": true,
+    "release_stop": "clean"
+  },
+  "postcheck_reader_state": {
+    "state": "down",
+    "holder": null
+  },
+  "all_prior_attempts_preserved": true,
+  "forms_submitted": 0,
+  "github_or_public_content_mutations": 0,
+  "credential_access": false,
+  "capabilities_saved": false,
+  "forced_browser_configuration": false,
+  "authority_granted": false,
+  "limitations": [
+    "Explicit ws80/wss443 positive cases remain hermetic tests only; this run used the ordinary existing leased browser endpoint and did not force ports or change browser configuration.",
+    "The live article has zero nested images; lazy/broken/hidden-image guards remain source-regression coverage.",
+    "This qualifies the read-only observer against production73. It does not claim the pending PR239 fix is merged/deployed or grant any writer, policy, merge, dispatch, publication, timer or runtime authority."
+  ]
+}

@@ -24,6 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
+import { parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 
 // Parse frontmatter with js-yaml's JSON_SCHEMA. This disables YAML's default
 // `!!timestamp` type-coercion, so unquoted YAML dates like
@@ -72,27 +73,14 @@ const ACCEPTED_TYPES = new Set<string>(['essay-long']);
 // status / type / required-field / date gates still apply. INVARIANT: the lane's
 // [syndication] backfill_slugs MUST be a subset of this list (an essay may only
 // carry a .com canonical if it has a real .com page).
-export const HUB_ESSAY_ALLOWLIST: readonly string[] = [
-  '2026-06-08-authority-gate-made-runnable',
-  '2026-05-20-pre-execution-authority-gates',
-  '2026-06-29-the-alibi-of-a-green-gate',
-  '2026-07-06-do-my-agents-learn',
-  '2026-07-13-the-approve-button',
-  '2026-07-20-nobody-owned-the-workflow',
-  '2026-07-27-the-machines-came-back',
-  '2026-08-03-the-alarm-that-always-fires',
-  '2026-08-10-five-tests-between-an-ai-demo-and-an-owned-workflow',
-  '2026-09-01-gate-what-you-cannot-undo',
-  '2026-09-07-the-plan-checked-itself-and-passed',
-  '2026-09-14-the-fix-never-reached-the-customer',
-  '2026-09-21-approved-but-not-the-version-that-shipped',
-  '2026-09-28-the-alert-fired-nobody-was-there',
-  '2026-10-05-the-assistant-was-only-supposed-to-read',
-  // Edition 13: published 2026-10-12T14:03:06Z; seven full days elapsed 2026-10-19T14:03:06Z.
-  '2026-10-12-the-transcript-looked-complete',
-  '2026-10-19-the-tool-worked-the-agent-couldnt-use-it',
-  '2026-10-26-who-gets-to-interrupt-your-ai-work',
-];
+let essayAdmissionError: unknown;
+export const HUB_ESSAY_ALLOWLIST: readonly string[] = (() => {
+  try { return parseEssayAdmissions(fs.readFileSync(new URL('../data/hub-essay-admissions.json', import.meta.url), 'utf8')); }
+  catch (error) {
+    essayAdmissionError = error;
+    return new Proxy(Object.freeze([]), { get() { throw Error('invalid-essay-admission-data'); } });
+  }
+})();
 
 // Hub-side consumer allowlist for DIAGRAMS — the diagram analogue of
 // HUB_ESSAY_ALLOWLIST. The substrate's type:diagram canonicals are immutable and
@@ -425,6 +413,7 @@ export function mapSubstrateToEntry(
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
   const slugRaw = data['slug'];
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const allowlisted = typeof slugRaw === 'string' && essayAllowlist.includes(slugRaw);
   if (!surfaceTargeted && !allowlisted) {
     log(`   ℹ️  substrate canonical skipped (surface_targets): ${filename}`);
@@ -549,6 +538,7 @@ export function mapSubstrateToDiagram(
   const surfaceTargeted =
     Array.isArray(surfaceTargets) && surfaceTargets.includes(THIS_SURFACE);
   const slugRaw = data['slug'];
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const allowlisted = typeof slugRaw === 'string' && allowlist.includes(slugRaw);
   if (!surfaceTargeted && !allowlisted) {
     console.log(`   ℹ️  substrate diagram skipped (surface_targets): ${filename}`);
@@ -632,6 +622,7 @@ export interface ReadResult {
  * is preserved for tests + back-compat.
  */
 export function readSubstrateWithDiagnostics(substratePath: string): ReadResult {
+  if (essayAdmissionError) throw Error('invalid-essay-admission-data');
   const diagnostics: SubstrateDiagnostic[] = [];
   const canonicalDir = path.join(substratePath, 'publishing', 'canonical');
   if (!fs.existsSync(canonicalDir)) {
@@ -851,6 +842,165 @@ export function copyDiagramAsset(
 // the bundle over an embellishment.
 const _ESSAY_BODY_IMAGE_REF = /(!\[[^\]]*\]\()(publishing\/assets\/[^)\s"']+)((?:\s+(?:"[^"]*"|'[^']*'))?\s*\))/g;
 
+// Asset-only literal contexts follow the bounded Markdown renderer. Keep the
+// delinker/dash approximation separate: its unanchored fences can span figures.
+function essayLiteralCodeRanges(body: string): number[][] {
+  type Line = { text: string; start: number; end: number };
+  const lines: Line[] = [...body.matchAll(/[^\n]*(?:\n|$)/g)].filter(m => m[0]).map(m => ({ text: m[0].replace(/\r?\n$/, ''), start: m.index ?? 0, end: (m.index ?? 0) + m[0].length }));
+  const ranges: number[][] = [];
+  const fence = /^(\s*)```(.*)$/, heading = /^(#{1,6})\s+(.+)$/, image = /^!\[([^\]]*)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)\s*$/;
+  const quote = /^>\s?(.*)$/, unordered = /^(\s*)[-*]\s+(.*)$/, ordered = /^(\s*)(\d+)\.\s+(.*)$/, hr = /^\s*---+\s*$/, tableSep = /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/;
+  const indent = (text: string) => text.length - text.trimStart().length;
+  const special = (text: string) => fence.test(text) || heading.test(text) || image.test(text) || quote.test(text) || unordered.test(text) || ordered.test(text) || (hr.test(text) && !text.includes('|')) || text.trim().startsWith('|');
+  const sliced = (line: Line, count: number): Line => ({ ...line, text: line.text.slice(count), start: line.start + Math.min(count, line.text.length) });
+  function inline(parts: Line[]) {
+    let text = '';
+    const offsets: number[] = [];
+    for (const line of parts) {
+      const value = line.text.trim(), start = line.start + indent(line.text);
+      if (text) { text += ' '; offsets.push(line.start); }
+      text += value;
+      for (let p = 0; p < value.length; p++) offsets.push(start + p);
+    }
+    // Same earliest-token order and recursive inline scopes as parseInline.
+    const patterns = [/`([^`]+)`/, /\*\*([^*]+)\*\*/, /\*([^*]+)\*/, /\[([^\]]+)\]\(([^\s)]+)\)/];
+    function visit(start: number, end: number) {
+      let cursor = start;
+      while (cursor < end) {
+        let best: { match: RegExpExecArray; kind: number } | null = null;
+        for (const [kind, pattern] of patterns.entries()) {
+          const match = pattern.exec(text.slice(cursor, end));
+          if (match && (!best || match.index < best.match.index)) best = { match, kind };
+        }
+        if (!best) return;
+        const { match, kind } = best, first = cursor + match.index, last = first + match[0].length;
+        if (kind === 0) ranges.push([offsets[first], offsets[last - 1] + 1]);
+        else { const inner = first + (kind === 1 ? 2 : 1); visit(inner, inner + match[1].length); }
+        cursor = last;
+      }
+    }
+    visit(0, text.length);
+  }
+  function blocks(input: Line[]) {
+    let i = 0;
+    while (i < input.length) {
+      const line = input[i], text = line.text;
+      if (!text.trim()) { i++; continue; }
+      if (fence.test(text)) {
+        const first = i++;
+        while (i < input.length && input[i].text.trim() !== '```') i++;
+        ranges.push([input[first].start, input[Math.min(i, input.length - 1)].end]);
+        if (i < input.length) i++;
+        continue;
+      }
+      const h = heading.exec(text);
+      if (h) { inline([{ ...line, text: h[2], start: line.start + text.length - h[2].length }]); i++; continue; }
+      // Alt text is literal; the renderer parses each caption in its own scope.
+      const figure = image.exec(text);
+      if (figure) {
+        if (figure[3]) {
+          const end = text.lastIndexOf('"');
+          inline([{ text: figure[3], start: line.start + end - figure[3].length, end: line.start + end }]);
+        }
+        i++; continue;
+      }
+      if (hr.test(text) && !text.includes('|')) { i++; continue; }
+      if (quote.test(text)) {
+        const children: Line[] = [];
+        while (i < input.length) {
+          const current = input[i];
+          if (!current.text.trim()) {
+            if (i + 1 < input.length && quote.test(input[i + 1].text)) { children.push(current); i++; continue; }
+            break;
+          }
+          const match = quote.exec(current.text);
+          if (!match) break;
+          children.push(sliced(current, current.text.length - match[1].length)); i++;
+        }
+        blocks(children); continue;
+      }
+      if (text.trim().startsWith('|') && i + 1 < input.length && tableSep.test(input[i + 1].text)) {
+        const rows: Line[] = [];
+        while (i < input.length && input[i].text.trim().startsWith('|')) rows.push(input[i++]);
+        for (const [rowIndex, row] of rows.entries()) {
+          if (rowIndex === 1) continue;
+          const trimmed = row.text.trim(), left = indent(row.text) + (trimmed.startsWith('|') ? 1 : 0);
+          const value = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+          let at = row.start + left;
+          for (const cell of value.split('|')) { inline([{ text: cell, start: at, end: at + cell.length }]); at += cell.length + 1; }
+        }
+        continue;
+      }
+      if (unordered.test(text) || ordered.test(text)) {
+        const pattern = ordered.test(text) ? ordered : unordered, orderedList = pattern === ordered, base = indent(text);
+        while (i < input.length) {
+          const current = input[i], match = pattern.exec(current.text);
+          if (!match || indent(current.text) !== base) break;
+          const content = match[orderedList ? 3 : 2], width = current.text.length - content.length - base;
+          const children = [sliced(current, base + width)]; i++;
+          while (i < input.length) {
+            const next = input[i];
+            if (!next.text.trim()) {
+              if (i + 1 < input.length && indent(input[i + 1].text) > base) { children.push(next); i++; continue; }
+              break;
+            }
+            const depth = indent(next.text), sibling = pattern.test(next.text) && depth === base;
+            if (depth > base && !sibling) { children.push(sliced(next, base + width)); i++; continue; }
+            break;
+          }
+          blocks(children);
+        }
+        continue;
+      }
+      const paragraph = [input[i++]];
+      while (i < input.length && input[i].text.trim() && !special(input[i].text)) paragraph.push(input[i++]);
+      inline(paragraph);
+    }
+  }
+  blocks(lines);
+  return ranges.sort((a, b) => a[0] - b[0]);
+}
+
+/** Pure reference mapping; a resolver proves the source before rewriting. */
+export function rewriteEssayBodyAssetReferences(
+  body: string,
+  slug: string,
+  resolve: (sourcePath: string, publicPath: string) => boolean,
+  skip: (reason: string) => void = () => {}
+): string {
+  if (!body || !body.includes('publishing/assets/')) return body;
+  if (!isSafeSlug(slug)) {
+    skip(`unsafe slug "${String(slug)}"`);
+    return body;
+  }
+  const code = essayLiteralCodeRanges(body);
+  let codeIndex = 0;
+  const destSources = new Map<string, string>();
+  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix, offset) => {
+    while (codeIndex < code.length && code[codeIndex][1] <= offset) codeIndex++;
+    if (codeIndex < code.length && code[codeIndex][0] <= offset) return whole;
+    if (!isSafeRelativePath(assetPath)) {
+      skip(`unsafe asset path "${assetPath}"`);
+      return whole;
+    }
+    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
+    const ext = path.extname(safeAssetPath).toLowerCase();
+    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
+      skip(`unsupported asset extension "${ext}"`);
+      return whole;
+    }
+    const publicName = path.basename(safeAssetPath), priorSource = destSources.get(publicName);
+    if (priorSource && priorSource !== safeAssetPath) {
+      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
+      return whole;
+    }
+    const publicPath = `public/assets/thoughts/${slug}/${publicName}`;
+    if (!resolve(safeAssetPath, publicPath)) return whole;
+    destSources.set(publicName, safeAssetPath);
+    return `${prefix}/${publicPath.slice('public/'.length)}${suffix}`;
+  });
+}
+
 export function rewriteEssayBodyAssets(
   body: string,
   slug: string,
@@ -877,55 +1027,34 @@ export function rewriteEssayBodyAssets(
   }
 
   const substrateRoot = path.resolve(substratePath);
-  // Basename-collision guard: refs are flattened to basenames under one dir
-  // per essay, so two DIFFERENT sources sharing a basename would silently
-  // overwrite each other and show the wrong image. First source wins; later
-  // colliding refs stay unrewritten with a diagnostic.
-  const destSources = new Map<string, string>();
-  return body.replace(_ESSAY_BODY_IMAGE_REF, (whole, prefix, assetPath, suffix) => {
-    if (!isSafeRelativePath(assetPath)) {
-      skip(`unsafe asset path "${assetPath}"`);
-      return whole;
-    }
-    const safeAssetPath = normalizeSafeRelativePath(assetPath) as string;
-    const ext = path.extname(safeAssetPath).toLowerCase();
-    if (!ALLOWED_DIAGRAM_EXT.has(ext)) {
-      skip(`unsupported asset extension "${ext}"`);
-      return whole;
-    }
+  return rewriteEssayBodyAssetReferences(body, slug, (safeAssetPath, publicPath) => {
     const source = path.resolve(substrateRoot, safeAssetPath);
     const relativeSource = path.relative(substrateRoot, source);
     if (relativeSource.startsWith('..') || path.isAbsolute(relativeSource)) {
       skip('asset path escapes substrate root');
-      return whole;
+      return false;
     }
     const publicDir = path.join(projectRoot, 'public', 'assets', 'thoughts', slug);
     const publicName = path.basename(safeAssetPath);
-    const priorSource = destSources.get(publicName);
-    if (priorSource && priorSource !== safeAssetPath) {
-      skip(`basename collision: "${safeAssetPath}" and "${priorSource}" both map to ${publicName}`);
-      return whole;
-    }
-    const dest = path.join(publicDir, publicName);
+    const dest = path.join(projectRoot, publicPath);
     const relativeDest = path.relative(publicDir, dest);
     if (relativeDest.startsWith('..') || path.isAbsolute(relativeDest) || relativeDest.includes(path.sep)) {
       skip(`destination "${publicName}" escapes public/assets/thoughts/${slug}/`);
-      return whole;
+      return false;
     }
     try {
       if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
         skip(`asset missing at ${safeAssetPath}`);
-        return whole;
+        return false;
       }
       fs.mkdirSync(publicDir, { recursive: true });
       fs.copyFileSync(source, dest);
-      destSources.set(publicName, safeAssetPath);
-      return `${prefix}/assets/thoughts/${slug}/${publicName}${suffix}`;
+      return true;
     } catch (e) {
       skip(`failed to copy asset (${e})`);
-      return whole;
+      return false;
     }
-  });
+  }, skip);
 }
 
 /**
@@ -1133,6 +1262,12 @@ export function main(): void {
   //   danmercede.com matches and the committed seed is intentional.
   const strict = process.argv.includes('--strict');
   const requireMatches = process.argv.includes('--require-matches');
+  if (essayAdmissionError) {
+    if (strict) { console.error('Invalid hub essay admission data'); process.exit(1); return; }
+    fs.writeFileSync(path.join(projectRoot(), COMPILE_STATUS_FILENAME), 'SKIPPED\n');
+    console.log('Invalid hub essay admission data; preserving committed bundle');
+    return;
+  }
   const root = projectRoot();
   const substratePath = resolveSubstratePath(root);
 

@@ -1,0 +1,31 @@
+{
+  "kind": "numeric-only-readonly-e14-qualification-attempt2",
+  "started_at": "2026-11-04T01:03:43.439Z",
+  "completed_at": "2026-11-04T01:04:01.565Z",
+  "reviewed_code_tree": "307119980d398f36f4631198dc1e9dc71598383a",
+  "native_main": "df65ef115c39cff31d96126ff40f2add2cc64b63",
+  "public_delivery": "verified",
+  "browser_attempted": true,
+  "browser_completed": true,
+  "failure": null,
+  "artifacts": [
+    {
+      "ref": "code-sha256.json",
+      "sha256": "b002102257f1276dbae9ae41b4496b745d4b2f12c60ff7426ee1ef3f5891e531"
+    },
+    {
+      "ref": "input.json",
+      "sha256": "e302a2234c4fa1f8b1b29a0c91a757778c7e0417042c8d17e81fd35d37173690"
+    },
+    {
+      "ref": "observation.json",
+      "sha256": "d1bd81e8c46dab8407eb1cc0b2604e7ded5ea82c785138fadb9ea08bc9bf88ec"
+    }
+  ],
+  "github_or_public_content_mutations": 0,
+  "forms_submitted": 0,
+  "credentials_accessed": false,
+  "lease_capabilities_saved": false,
+  "attempt1_unchanged": true,
+  "authority_granted": false
+}

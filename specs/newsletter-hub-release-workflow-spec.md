@@ -50,6 +50,15 @@ source/native PR/run/deployment/reader evidence, stage, explicit
 `merge_gate:"HUMAN_REQUIRED"` and `public_delivery:"unknown"|"verified"`.
 No consumer may infer public delivery from the outer completed status.
 
+The final held reconciliation artifact retains the detailed plan actually
+validated during that same invocation, while the reconciliation result overrides
+its stage and public delivery stays unknown. This permits exact recovery after a
+lost initial plan return without searching unreferenced artifacts. A native or
+source read failure before detailed validation does not supply those missing
+fields. The shared held label alone proves no original-plan validation, authority
+or public delivery; consumers still verify the immutable original binding and
+fresh detailed fields independently.
+
 ## Observable scenarios
 
 1. A request's exact bytes bind every artifact and persistent record. Unsafe,
@@ -61,9 +70,9 @@ No consumer may infer public delivery from the outer completed status.
    the week. E16's earliest instant is `2026-11-09T15:02:46Z`. A recovery dispatch
    additionally waits until Monday 08:10 Pacific plus explicit existing 15-minute
    grace. No date-only, intended schedule or later draft substitutes for evidence.
-3. Planning reads pinned main/compiler/bundle/workflow and complete global
+3. Planning reads pinned main/admission-data/bundle/workflow and complete global
    workflow/ref/PR inventories through the existing checker. It previews an
-   admission-only compiler patch with all other bytes unchanged, and maps the
+   admission-only data patch appending exactly the requested slug, preserving existing order and all other tree leaves, and maps the
    pinned canonical using the trusted local compiler. It never hand-edits the
    generated bundle or sealed source. Bundle presence without allowlist membership
    remains valid; absent override alone does not establish absent direct targeting.
@@ -85,7 +94,12 @@ No consumer may infer public delivery from the outer completed status.
    compiler-produced title/date/preview/category/body must
    match the pinned canonical. Every unrelated current Thought and Diagram stays
    byte-equivalent; additions/removals/changes outside this release hold. Preserve
-   newer already present editions and their newest-first presentation. Changes requiring new materialized assets hold in this version; no incomplete asset release is accepted. Green CI
+   newer already present editions and their newest-first presentation. At most two
+   explicitly referenced images owned by the requested canonical may accompany
+   the target entry. The compiler's shared pure reference mapper derives the
+   served body; pinned regular source blobs and exact copied hub blobs must
+   agree. Other asset changes, pruning, substitutions or incomplete copies hold.
+   Green CI
    does not replace content equivalence. Unknown, stale or failing checks/threads
    remain holds and current merge classification always remains human-required.
 7. Restarts reuse immutable action/sub-write intents and readbacks. An exclusive
@@ -163,3 +177,133 @@ wait, admit only the exact source and destination URLs while rechecking lease,
 baseline and persistent target identity. Continue only when both native and CLI
 observations reach the destination. A replacement or unapproved third URL holds;
 a timeout stays unverified and still cleans up the original owned target safely.
+
+
+## Merged data-generation proofs
+
+Fresh read-only reconciliation preserves the original operation, request, root,
+plans and write reservations. It may append only two typed generation proofs:
+`admission-merged` for exactly the original planned JSON append, and
+`content-merged` for exactly the original compiler-derived target entry. Each
+proof binds the original plan digest, predecessor proof digest (if any), original
+operation/input, actual PR/head/base/merge identities and commit/tree/data blobs.
+Native fixed-repository readbacks must prove protected ancestry, exact tree
+changes and preservation of all unrelated entries/files; candidate declarations
+or a scheduled row never suffice. The content proof also retains the existing
+trusted required-check/review-thread and content-parity verification.
+
+Missing or ambiguous merged proof holds before public delivery verification.
+That held stage may carry optional `generation_error`, drawn only from the
+source's fixed audited generation-failure whitelist or the literal
+`unclassified`. Unknown/native/transient/parse messages are never echoed. This
+data-only diagnostic changes no status, hold code, public-delivery judgment or
+authority; old artifacts without it remain valid and summaries may omit it.
+Read-only reconciliation may collect these proofs and fresh reader evidence;
+historical inspection remains historical. Proofs convey no writer, merge,
+publication or runtime authority. The default CLI writer remains unadmitted.
+Immutable proofs and earlier observations survive restarts and uncertain write
+responses; no unknown native write is resent. Source tests exercise the existing
+fake-GitHub plan/advance/reconcile seam with external fixture merges and exact
+negative controls. Actual source adoption and native reader qualification remain
+separate from synthetic evidence.
+
+The full original plan and content-merged proof carry a separate `target_assets`
+array; the three existing data-file identities retain their meaning. Each asset
+binds `source_path`, served-tree `path`, regular `mode`/`type`, Git `blob`,
+`sha256` and `size`. Source paths must stay under the exact canonical's
+`publishing/assets/<slug>/`, contain at most eight simple ASCII path components
+and 512 characters, and use a compiler-supported image extension. No-follow Git
+tree traversal at the pinned canonical commit must prove every ancestor is a
+tree and each source is a regular non-executable blob. The adapter admits at most
+two distinct sources, each at least one byte and no larger than the smaller of
+524288 bytes and the existing shared per-extension committed-image budget. The
+same budget applies to actual source and copied hub binary readbacks; no image
+is re-encoded or replaced by this adapter. Missing, oversized, unsafe or colliding
+sources hold before acceptance. Repeated references to one source retain their
+captions and share one asset record. Native binary blob content is decoded and
+rehashed; filenames or declared hashes alone do not establish parity. Original
+asset plans are independently recomputed before either merged handoff. Existing
+assets may remain identical but cannot be replaced or removed by this release;
+all unrelated files stay identical. A source-synced target still requires exact
+asset identity before reader verification. These are conservative newsletter
+adapter holds; other compiler consumers retain the existing soft-fail image
+behavior and supported path breadth. The default newsletter has no inline images.
+
+Literal asset contexts follow the bounded renderer: a fence opens only at the
+start of a logical line, allowing leading whitespace, and closes only on a
+trimmed triple-backtick line. Unclosed fences end at the containing block's EOF;
+quoted/list containers retain their existing scope. Inline code is separate and
+cannot span unrelated block, figure alt or title contexts. Those image examples remain byte-for-byte
+unchanged and consume no asset read, path guard, copy or count. A real image in
+the same document still follows every existing guard. Backticks within a real
+image's alt or title do not turn the whole image into a code example. The shared
+visitor applies the same mapping in filesystem compilation and release planning;
+renderer, wiki-link and dash normalization behavior is unchanged.
+
+Each figure caption has its own inline scope at the original source offsets;
+the alt remains literal. Caption code contributes no candidate, read or copy,
+including when the outer image is external or already served. An owned outer
+image still maps normally, non-code caption references retain their existing
+mapping, and caption delimiters cannot affect another figure.
+
+
+The original full plan has an exclusive immutable anchor. A missing anchor in a
+root containing earlier full plans holds rather than selecting a new origin from
+file metadata. A first-plan crash may finish only its exact first binding.
+Preparing admission requires the saved candidate's exact ref and digest to equal
+that valid original anchor before consulting mutation authority or reserving any
+effect. A later observation cannot rebase the admission. Fresh recovery plans
+retain their existing current-state semantics; their digest need not equal the
+original admission-plan digest. Malformed JSON, duplicate-key JSON or invalid
+UTF-8 in this original anchor map only to `original-plan-unverified`; direct
+planning retains that error contract and reconciliation emits its bound held
+artifact without rewriting the bad bytes. Other private-file, bounds or artifact
+parse failures retain their existing error behavior.
+An awaited authorizer is followed by a fresh exact-main readback before setup or
+a native write; a changed base grants no stale operation. The admission migration
+test preserves the legacy prefix and full JSON/export consistency, while an
+isolated real compile demonstrates that a later valid data-only append succeeds
+without compiler changes.
+
+
+Fresh authorization checks use the trusted time after asynchronous admission and
+readbacks, and recheck the same grant after recovery inventory and before an
+intent/effect. A fresh valid checked-at value succeeds; grant expiry or drain
+crossings observed before reservation create no new native intent/effect. An
+already valid reservation that outlives its grant stays preserved and cannot
+send a new effect or authorize a resend. No clock check claims distributed
+atomicity or grants renewal authority.
+
+Each logical transition has a fixed immutable anchor freezing its original proof
+payload/ref before materialization. Same-head successful CI reruns and check
+ordering changes qualify fresh observations without changing that identity.
+Restart after an anchor-only crash restores exactly its original proof. An
+unanchored, corrupt or changed transition holds. Original native commit/tree/all
+leaves and admission flags/baseline/canonical-derived target are checked
+unconditionally before either handoff, including content-only release paths.
+
+
+For a new recovery reservation, current admission is refreshed through the
+existing authorizer after asynchronous inventory. A STOP already visible at that
+boundary prevents dispatch and creates no new sync intent. The original operation
+and any existing unknown intent are preserved. The prior decision must be valid
+at refresh entry after the final journal await; a fresh current decision may
+finish later under unchanged standing policy/STOP/expiry/drain bounds. This does
+not revive an expired entry, reset a budget or resend an uncertain attempt.
+
+Closed PR history is read completely before selecting either merged handoff,
+using at most three pages of 100 records. A terminal short page proves bounded
+completeness; three full pages hold even if an apparent match appeared earlier.
+Every listed record must have a unique positive safe integer ID, closed state,
+the fixed repository/branch/base and well-formed native SHA identities. Duplicate,
+malformed, unavailable, overlong or incomplete inventories hold; multiple exact
+base/marker matches remain ambiguous. Detailed PR/head/merge/tree/protected
+ancestry checks remain mandatory after selection. Pagination grants no write or
+retry authority.
+
+
+Endpoint admission uses only exact numeric `127.0.0.1` or `[::1]` loopback literals,
+an explicit nonzero valid port and the exact owned browser WebSocket path.
+Hostname aliases, noncanonical spellings, credentials and extra URL components
+hold before discovery or CDP client commands; no never-started client is created
+just for cleanup, while normal same-holder lease release still runs.

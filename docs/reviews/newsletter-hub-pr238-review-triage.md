@@ -33,3 +33,14 @@ modules from the actual hub import graph while preserving default feed APIs,
 CLI and fixed-fixture bytes. An actual CLI-import regression proves malicious
 replacement corpora do not execute. This source proof is separate from later
 native read-only reader qualification, merge, deployment or runtime activation.
+
+
+Cycle two also ended `FINDINGS_REMAIN`: both code engines completed, retaining the
+intentional compiler-compatibility decline and identifying one genuine endpoint
+guard issue. The guard now admits only exact numeric loopback literals and a valid
+explicit port; hostname aliases are refused before discovery/CDP commands. Tests
+cover localhost, other addresses, credentials, invalid/missing ports, paths and
+URL additions, and preserve a numeric IPv6 positive case. Raw cycle-two output
+and context were copied and SHA256-bound privately before any later cycle; that
+historical result is not relabeled clean. Final source review/native qualification
+of the narrowed guard remain separately observed.

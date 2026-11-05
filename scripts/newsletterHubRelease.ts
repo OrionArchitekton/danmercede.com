@@ -1,15 +1,18 @@
 /** Hub-specific release coordinator. CLI writers remain runtime-unadmitted. */
-import { isAbsolute } from 'node:path';
+import { isAbsolute, extname } from 'node:path';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify, parseArgs } from 'node:util';
 import ts from 'typescript';
+import { ESSAY_ADMISSION_PATH, parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 import { digest, insist, readPrivateJson, privateRoot } from './newsletterHubReleaseJournal.ts';
 import { parsePublicationSnapshot, collectHubFacts, decideHubReadiness, readHubGitHub, decodeHubSource, parseHubInstant } from './newsletterHubReadiness.mjs';
-import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput } from './compileContent.ts';
+import { parseCanonicalMarkdown, mapSubstrateToEntry, delinkWikiLinks, generateOutput, rewriteEssayBodyAssetReferences } from './compileContent.ts';
 import { selectLatestThoughts } from '../thoughtsIndex.ts';
 import { verifyHubReader } from './newsletterHubReleaseReader.ts';
 import { readInstalledHubBrowser } from './newsletterHubInstalledBrowser.ts';
+import { budgetKbFor } from './imageBudgets.mjs';
 const REPOSITORY = 'OrionArchitekton/danmercede.com';
 const PILOT_DRAIN_CUTOFF = '2026-12-09T07:59:00Z';
 const executeRead = promisify(execFile);
@@ -120,17 +123,15 @@ function rows(source: string, name: string) {
     insist(new Set(result.map(row => row.slug)).size === result.length, 'duplicate-bundle-slug');
     return result;
 }
+function gitBlob(raw: string | Buffer) {
+    return createHash('sha1').update(`blob ${Buffer.byteLength(raw)}\0`).update(raw).digest('hex');
+}
 function admissionPatch(source: string, slug: string) {
-    const array = arrayDeclaration(source, 'HUB_ESSAY_ALLOWLIST');
-    const existing = array.elements.map(e => {
-        insist(ts.isStringLiteral(e), 'unsupported-allowlist');
-        return e.text;
-    });
-    insist(new Set(existing).size === existing.length, 'duplicate-allowlist');
-    if (existing.includes(slug))
-        return { patch: source, insertion: '', allowlist: existing };
-    const end = array.end - 1, insertion = `${array.elements.length && !array.elements.hasTrailingComma ? ',' : ''}\n  '${slug}',\n`;
-    return { patch: source.slice(0, end) + insertion + source.slice(end), insertion, allowlist: [...existing, slug] };
+    const existing = parseEssayAdmissions(source);
+    const allowlist = existing.includes(slug) ? existing : [...existing, slug];
+    const patch = existing.includes(slug) ? source : JSON.stringify({ schema_version: 1, essay_slugs: allowlist }, null, 2) + '\n';
+    parseEssayAdmissions(patch); // The appended proposal must satisfy the same bounded data contract.
+    return { patch, allowlist, data_path: ESSAY_ADMISSION_PATH, original_blob_sha: gitBlob(source), original_sha256: digest(source), proposed_blob_sha: gitBlob(patch), patch_sha256: digest(patch) };
 }
 async function trustedCanonical(binding: any, read: (path: string) => Promise<any>) {
     const r = binding.request;
@@ -151,16 +152,70 @@ async function trustedCanonical(binding: any, read: (path: string) => Promise<an
     insist(after?.object?.sha === trustedMain, 'canonical-main-moved');
     return { raw, trusted_main_sha: trustedMain, blob_sha: pinned.sha };
 }
+const MAX_TARGET_ASSETS = 2, MAX_TARGET_ASSET_BYTES = 512 * 1024;
+function binaryBlob(data: any, expected: string, assetPath: string) {
+    const budget = budgetKbFor(extname(assetPath));
+    insist(Number.isSafeInteger(budget) && budget > 0, 'target-asset-unverified');
+    const limit = Math.min(MAX_TARGET_ASSET_BYTES, budget * 1024);
+    insist(data?.sha === expected && data.encoding === 'base64' && Number.isSafeInteger(data.size) && data.size > 0 && data.size <= limit && typeof data.content === 'string' && data.content.length <= 2 * MAX_TARGET_ASSET_BYTES && /^[A-Za-z0-9+/=\r\n]*$/.test(data.content), 'target-asset-unverified');
+    const compact = data.content.replace(/[\r\n]/g, ''), bytes = Buffer.from(compact, 'base64');
+    insist(bytes.length === data.size && bytes.toString('base64') === compact && gitBlob(bytes) === expected, 'target-asset-unverified');
+    return bytes;
+}
+async function targetAssetPlan(binding: any, body: string, read: (path: string) => Promise<any>) {
+    const candidates = new Map<string, string>();
+    rewriteEssayBodyAssetReferences(body, binding.request.slug, (source, dest) => {
+        insist(source.startsWith(`publishing/assets/${binding.request.slug}/`) && source.length <= 512 && source.split('/').length <= 8 && source.split('/').every(part => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part)), 'target-asset-path-unverified');
+        insist(![...candidates.values()].includes(dest) || candidates.get(source) === dest, 'target-asset-path-unverified');
+        candidates.set(source, dest);
+        insist(candidates.size <= MAX_TARGET_ASSETS, 'target-asset-count-unverified');
+        return false;
+    }, () => { throw Error('target-asset-path-unverified'); });
+    if (!candidates.size) return { body, target_assets: [] };
+    const prefix = '/repos/OrionArchitekton/dan-mercede-substrate';
+    const commit = await read(`${prefix}/git/commits/${binding.request.canonical.commit}`);
+    insist(commit?.sha === binding.request.canonical.commit && SHA.test(commit.tree?.sha), 'target-asset-source-unverified');
+    const trees = new Map<string, any>(), target_assets = [];
+    for (const [source_path, path] of candidates) {
+        let tree = commit.tree.sha, leaf: any;
+        const components = source_path.split('/');
+        for (const [index, component] of components.entries()) {
+            if (!trees.has(tree)) trees.set(tree, await read(`${prefix}/git/trees/${tree}`));
+            const data = trees.get(tree);
+            insist(data?.sha === tree && data.truncated === false && Array.isArray(data.tree) && data.tree.length <= 10000, 'target-asset-tree-unverified');
+            const matches = data.tree.filter((entry: any) => entry.path === component);
+            insist(matches.length === 1 && SHA.test(matches[0].sha), 'target-asset-source-unverified');
+            leaf = matches[0];
+            if (index < components.length - 1) { insist(leaf.type === 'tree' && leaf.mode === '040000', 'target-asset-source-unverified'); tree = leaf.sha; }
+            else insist(leaf.type === 'blob' && leaf.mode === '100644', 'target-asset-source-unverified');
+        }
+        const bytes = binaryBlob(await read(`${prefix}/git/blobs/${leaf.sha}`), leaf.sha, source_path);
+        target_assets.push({ source_path, path, mode: '100644', type: 'blob', blob: leaf.sha, sha256: digest(bytes), size: bytes.length });
+    }
+    const rewritten = rewriteEssayBodyAssetReferences(body, binding.request.slug, source => candidates.has(source));
+    return { body: rewritten, target_assets };
+}
+async function verifyTargetAssets(assets: any[], tree: any[], read: (path: string) => Promise<any>) {
+    insist(Array.isArray(assets) && assets.length <= MAX_TARGET_ASSETS, 'content-pr-assets-unverified');
+    for (const asset of assets) {
+        const leaf = tree.find(e => e.path === asset.path);
+        insist(JSON.stringify(leaf) === JSON.stringify({ path: asset.path, mode: '100644', type: 'blob', sha: asset.blob }), 'content-pr-assets-unverified');
+        const bytes = binaryBlob(await read(`${nativePrefix}/git/blobs/${asset.blob}`), asset.blob, asset.path);
+        insist(bytes.length === asset.size && digest(bytes) === asset.sha256, 'content-pr-assets-unverified');
+    }
+}
 async function detailedPlan(binding: any, facts: any, read: (path: string) => Promise<any>, pub: any) {
     const r = binding.request, main = facts.source.main_sha, prefix = `/repos/${REPOSITORY}`;
-    const compiler = decodeHubSource(await read(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`));
+    const admissionData = decodeHubSource(await read(`${prefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${main}`));
     const baselineSource = decodeHubSource(await read(`${prefix}/contents/constants.generated.ts?ref=${main}`));
     const trusted = await trustedCanonical(binding, read);
     const raw = trusted.raw;
-    const parsed = parseCanonicalMarkdown(raw), patch = admissionPatch(compiler, r.slug);
+    const parsed = parseCanonicalMarkdown(raw), patch = admissionPatch(admissionData, r.slug);
     const entry = mapSubstrateToEntry(parsed.data, delinkWikiLinks(parsed.content.trim()), r.canonical.path, [], patch.allowlist, () => {
     });
     insist(entry && entry.slug === r.slug && entry.title === pub.title, 'canonical-not-admissible');
+    const assets = await targetAssetPlan(binding, entry.body, read);
+    entry.body = assets.body;
     const expected = rows(generateOutput([entry!]), 'THOUGHTS')[0];
     insist(expected.date === r.week, 'canonical-week-mismatch');
     insist(expected.body.includes(r.cta.text), 'cta-not-in-pinned-body');
@@ -168,10 +223,13 @@ async function detailedPlan(binding: any, facts: any, read: (path: string) => Pr
     const commit = await read(`${prefix}/git/commits/${main}`);
     insist(commit?.sha === main && SHA.test(commit.tree?.sha), 'base-commit-unusable');
     const baseTree = await leafTree(read, commit.tree.sha);
+    insist(baseTree.some((e: any) => e.path === ESSAY_ADMISSION_PATH && e.mode === '100644' && e.type === 'blob' && e.sha === patch.original_blob_sha), 'admission-data-base-mismatch');
     const current = baseline.thoughts.find((e: any) => e.slug === r.slug);
-    if (current)
+    if (current) {
         insist(JSON.stringify(current) === JSON.stringify(expected), 'target-copy-mismatch');
-    return { expected, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, compiler_sha256: digest(compiler), patch: patch.patch, insertion: patch.insertion, patch_sha256: digest(patch.patch) } };
+        await verifyTargetAssets(assets.target_assets, baseTree, read);
+    }
+    return { expected, target_assets: assets.target_assets, canonical: { commit: r.canonical.commit, sha256: r.canonical.sha256, trusted_main_sha: trusted.trusted_main_sha, blob_sha: trusted.blob_sha, surface_targeted: Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com') }, baseline, admission: { base_sha: main, base_tree_sha: commit.tree.sha, base_tree: baseTree, branch: `codex/fcn-hub-admission-${r.slug}`, ...patch } };
 }
 async function leafTree(read: (path: string) => Promise<any>, sha: string) {
     const data = await read(`/repos/${REPOSITORY}/git/trees/${sha}?recursive=1`);
@@ -194,15 +252,23 @@ export async function verifyTrustedHubCheck(pr: any, check: any, read: (path: st
     insist(suite?.id === check.check_suite.id && suite.head_sha === pr.head.sha && suite.app?.id === 15368 && suite.repository?.full_name === REPOSITORY && suite.status === 'completed' && suite.conclusion === 'success', 'trusted-check-origin-unverified');
     insist(run.path === '.github/workflows/substrate-verify.yml' && run.event === 'pull_request_target' && run.head_sha === pr.head.sha && run.head_branch === pr.head.ref && run.status === 'completed' && run.conclusion === 'success', 'trusted-check-origin-unverified');
 }
-async function contentPrPlan(binding: any, detail: any, facts: any, read: (path: string) => Promise<any>, deps: Dependencies) {
+async function contentPrPlan(binding: any, detail: any, facts: any, read: (path: string) => Promise<any>, deps: Dependencies, merged = false) {
     insist(facts.existing.prs.length === 1, 'content-pr-ambiguous');
     const meta = facts.existing.prs[0], pr = await read(`${nativePrefix}/pulls/${meta.number}`);
-    insist(pr?.number === meta.number && pr.state === 'open' && pr.head?.sha === meta.head_sha && pr.head.ref === 'codex/substrate-sync' && pr.head.repo?.full_name === REPOSITORY && pr.base?.ref === 'main' && pr.base.sha === facts.source.main_sha && pr.base.repo?.full_name === REPOSITORY, 'content-pr-stale-or-foreign');
+    insist(pr?.number === meta.number && pr.state === (merged ? 'closed' : 'open') && (!merged || (pr.merged === true && SHA.test(pr.merge_commit_sha))) && pr.head?.sha === meta.head_sha && pr.head.ref === 'codex/substrate-sync' && pr.head.repo?.full_name === REPOSITORY && pr.base?.ref === 'main' && pr.base.sha === facts.source.main_sha && pr.base.repo?.full_name === REPOSITORY, 'content-pr-stale-or-foreign');
     const commit = await read(`${nativePrefix}/git/commits/${pr.head.sha}`);
     insist(commit?.parents?.length === 1 && commit.parents[0].sha === facts.source.main_sha && SHA.test(commit.tree?.sha), 'content-pr-base-mismatch');
     const tree = await leafTree(read, commit.tree.sha), base = detail.admission.base_tree;
-    const unaffected = (entries: any[]) => entries.filter(e => e.path !== 'constants.generated.ts');
+    insist(Array.isArray(detail.target_assets) && detail.target_assets.length <= MAX_TARGET_ASSETS, 'content-pr-assets-unverified');
+    const assetPaths = new Set(detail.target_assets.map((asset: any) => asset.path));
+    const unaffected = (entries: any[]) => entries.filter(e => e.path !== 'constants.generated.ts' && !assetPaths.has(e.path));
     insist(JSON.stringify(unaffected(tree)) === JSON.stringify(unaffected(base)), 'content-pr-unrelated-files');
+    await verifyTargetAssets(detail.target_assets, tree, read);
+    for (const asset of detail.target_assets) {
+        const prior = base.find((e: any) => e.path === asset.path);
+        const expectedLeaf = { path: asset.path, mode: '100644', type: 'blob', sha: asset.blob };
+        insist(!prior || JSON.stringify(prior) === JSON.stringify(expectedLeaf), 'content-pr-assets-unverified');
+    }
     const source = decodeHubSource(await read(`${nativePrefix}/contents/constants.generated.ts?ref=${pr.head.sha}`)), thoughts = rows(source, 'THOUGHTS'), diagrams = rows(source, 'DIAGRAMS');
     const targets = thoughts.filter((e: any) => e.slug === binding.request.slug);
     insist(targets.length === 1 && JSON.stringify(targets[0]) === JSON.stringify(detail.expected), 'content-pr-target-mismatch');
@@ -226,6 +292,20 @@ async function contentPrPlan(binding: any, detail: any, facts: any, read: (path:
     insist(threads?.head_sha === pr.head.sha && threads.complete === true && Array.isArray(threads.threads) && threads.threads.length <= 300 && threads.threads.every((t: any) => typeof t.id === 'string' && t.id.length > 0 && t.isResolved === true) && new Set(threads.threads.map((t: any) => t.id)).size === threads.threads.length, 'review-threads-unverified');
     return { number: pr.number, head_sha: pr.head.sha, base_sha: pr.base.sha, copy_parity: true, unrelated_corpus_preserved: true, required_checks_passed: true, required_checks: required, unresolved_threads: 0, latest_slugs: selectLatestThoughts(thoughts as any).map(t => t.slug), merge_gate: 'HUMAN_REQUIRED' };
 }
+async function originalPlanAnchor(root: any, binding: any) {
+    let anchor: any;
+    try { anchor = await root.get('hub-original-plan.json'); }
+    catch (error: any) {
+        if (error instanceof SyntaxError || error?.name === 'YAMLException' || error?.code === 'ERR_ENCODING_INVALID_ENCODED_DATA') throw Error('original-plan-unverified');
+        throw error;
+    }
+    if (!anchor) return null;
+    const value = anchor.value;
+    insist(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).sort().join('|') === 'input_sha256|kind|operation_id|plan|schema_version|week' && value.schema_version === 1 && value.kind === 'newsletter-hub-original-plan' && value.operation_id === binding.request.operation_id && value.week === binding.request.week && value.input_sha256 === binding.input_sha256, 'original-plan-unverified');
+    const ref = value.plan;
+    insist(ref && typeof ref === 'object' && !Array.isArray(ref) && Object.keys(ref).sort().join('|') === 'ref|sha256' && HASH.test(ref.sha256) && ref.ref === `hub-plan-${ref.sha256}.json`, 'original-plan-unverified');
+    return anchor;
+}
 async function artifact(options: Options, binding: any, data: any, status: string, holds: string[]) {
     const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     try {
@@ -233,6 +313,21 @@ async function artifact(options: Options, binding: any, data: any, status: strin
         const name = `hub-plan-${digest(Buffer.from(JSON.stringify(value, null, 2) + '\n'))}.json`;
         const stored = await root.put(name, value);
         insist(digest(stored.bytes) === digest(Buffer.from(JSON.stringify(value, null, 2) + '\n')), 'artifact-conflict');
+        if (value.admission?.data_path === ESSAY_ADMISSION_PATH && value.expected && value.baseline && value.source?.main_sha) {
+            let anchor = await originalPlanAnchor(root, binding);
+            if (!anchor) {
+                // Recover only a first-plan crash, never silently rebase an existing job.
+                for (const prior of await root.list()) {
+                    if (prior === name) continue;
+                    const previous = await root.get(prior);
+                    insist(previous && prior === `hub-plan-${digest(previous.bytes)}.json`, 'artifact-digest-mismatch');
+                    insist(!previous.value.admission || !previous.value.expected, 'original-plan-unverified');
+                }
+                await root.put('hub-original-plan.json', { schema_version: 1, kind: 'newsletter-hub-original-plan', operation_id: binding.request.operation_id, week: binding.request.week, input_sha256: binding.input_sha256, plan: { ref: name, sha256: stored.sha256 } });
+                anchor = await originalPlanAnchor(root, binding);
+            }
+            insist(anchor, 'original-plan-unverified');
+        }
         return envelope(binding, status, [{ ref: name, sha256: stored.sha256 }], holds);
     }
     finally {
@@ -317,7 +412,18 @@ async function loadPlan(root: any, options: AdvanceOptions, binding: any) {
     insist(HASH.test(options.planSha256), 'invalid-plan-digest');
     const saved = await root.get(`hub-plan-${options.planSha256}.json`);
     insist(saved && digest(saved.bytes) === options.planSha256 && saved.value.input_sha256 === binding.input_sha256 && saved.value.operation_id === binding.request.operation_id, 'plan-binding-mismatch');
+    if (options.action === 'prepare-admission') {
+        const anchor = await originalPlanAnchor(root, binding);
+        insist(anchor?.value.plan.sha256 === options.planSha256 && anchor.value.plan.ref === `hub-plan-${options.planSha256}.json`, 'original-plan-unverified');
+    }
     return saved.value;
+}
+function freshGrantTime(grant: any, deps: Dependencies) {
+    const now = new Date((deps.clock ?? Date.now)()).toISOString();
+    insist(parseHubInstant(now) < parseHubInstant(PILOT_DRAIN_CUTOFF), 'pilot-drain-expired');
+    insist(grant?.admitted === true && grant.stopped === false && typeof grant.grant_ref === 'string', 'runtime-authority-unadmitted');
+    insist(parseHubInstant(grant.checked_at) <= Date.parse(now) && Date.parse(now) - parseHubInstant(grant.checked_at) <= 60000 && parseHubInstant(grant.expires_at) > Date.parse(now) && parseHubInstant(grant.expires_at) <= parseHubInstant(PILOT_DRAIN_CUTOFF), 'runtime-authority-expired');
+    return now;
 }
 async function authorizeWrite(options: AdvanceOptions, binding: any, plan: any, deps: Dependencies) {
     insist(typeof deps.authorize === 'function', 'runtime-authority-unadmitted');
@@ -334,8 +440,9 @@ async function authorizeWrite(options: AdvanceOptions, binding: any, plan: any, 
     insist(grant?.admitted === true && grant.stopped === false && typeof grant.grant_ref === 'string', 'runtime-authority-unadmitted');
     for (const [key, value] of Object.entries(context))
         insist(grant[key] === value, 'runtime-authority-binding-mismatch');
-    insist(parseHubInstant(grant.checked_at) <= Date.parse(now) && Date.parse(now) - parseHubInstant(grant.checked_at) <= 60000 && parseHubInstant(grant.expires_at) > Date.parse(now) && parseHubInstant(grant.expires_at) <= parseHubInstant(PILOT_DRAIN_CUTOFF), 'runtime-authority-expired');
-    return now;
+    const afterAuthorization = await read(`${nativePrefix}/git/ref/heads/main`);
+    insist(afterAuthorization?.object?.sha === plan.source.main_sha, 'current-base-changed');
+    return { grant, now: freshGrantTime(grant, deps) };
 }
 async function boundRecord(root: any, name: string, value: any) {
     const saved = await root.put(name, value);
@@ -386,13 +493,15 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
     }
     insist(!deps.reconcileOnly, 'unstarted-native-substep');
     insist(budget.used < options.maxActions, 'action-budget-exhausted');
-    const now = await authorizeWrite(options, binding, plan, deps);
+    const authorization = await authorizeWrite(options, binding, plan, deps);
+    const now = freshGrantTime(authorization.grant, deps);
     const intent = { schema_version: 1, kind: 'hub-native-intent', input_sha256: binding.input_sha256, action: options.action, plan_sha256: options.planSha256, step, payload_sha256, started_at: now };
     const reservation = await boundRecord(root, names.intent, intent);
     if (!reservation.created)
         throw new UnknownAttempt(step);
     try {
         insist(typeof deps.writeGitHub === 'function', 'native-writer-unavailable');
+        freshGrantTime(authorization.grant, deps);
         budget.used++;
         const response = await deps.writeGitHub(method, path, body);
         const pointer = step === 'pr' ? { number: response?.number } : { sha: response?.sha };
@@ -411,14 +520,24 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
         throw new UnknownAttempt(step);
     }
 }
-async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies) {
+async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies, authorization?: any) {
     insist(plan.stage === 'admission-preparation-ready', 'admission-plan-not-ready');
     const read = deps.readGitHub ?? readHubGitHub, a = plan.admission, budget = { used: 0 };
+    const original = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${a.base_sha}`));
+    const checked = admissionPatch(original, binding.request.slug);
+    insist(a.base_sha === plan.source.main_sha, 'admission-data-base-mismatch');
+    const currentBase = await read(`${nativePrefix}/git/commits/${a.base_sha}`);
+    insist(currentBase?.sha === a.base_sha && currentBase.tree?.sha === a.base_tree_sha, 'admission-data-base-mismatch');
+    const currentLeaves = await leafTree(read, a.base_tree_sha);
+    insist(JSON.stringify(currentLeaves) === JSON.stringify(a.base_tree) && currentLeaves.some((e: any) => e.path === ESSAY_ADMISSION_PATH && e.mode === '100644' && e.type === 'blob' && e.sha === checked.original_blob_sha), 'admission-data-base-mismatch');
+    for (const key of ['data_path', 'original_blob_sha', 'original_sha256', 'proposed_blob_sha', 'patch_sha256', 'patch']) insist(a[key] === checked[key], 'admission-data-binding-mismatch');
+    insist(JSON.stringify(a.allowlist) === JSON.stringify(checked.allowlist), 'admission-data-binding-mismatch');
     const operation = await root.get('hub-operation.json');
     if (operation)
         insist(operation.value.input_sha256 === binding.input_sha256, 'operation-input-changed');
     else {
         insist(!deps.reconcileOnly, 'operation-not-started');
+        freshGrantTime(authorization?.grant, deps);
         await root.put('hub-operation.json', { schema_version: 1, kind: 'hub-operation', operation_id: binding.request.operation_id, input_sha256: binding.input_sha256, week: binding.request.week, slug: binding.request.slug });
     }
     const prior = await root.get('hub-admission-action.json');
@@ -427,6 +546,7 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
         const prs = await read(`${nativePrefix}/pulls?state=all&base=main&head=${encodeURIComponent('OrionArchitekton:' + a.branch)}&per_page=100&page=1`);
         insist(Array.isArray(refs) && refs.length === 0 && Array.isArray(prs) && prs.length === 0, 'existing-admission-work');
     }
+    if (!deps.reconcileOnly) freshGrantTime(authorization?.grant, deps);
     await boundRecord(root, 'hub-admission-action.json', { schema_version: 1, kind: 'hub-admission-action', input_sha256: binding.input_sha256, action: options.action, plan_sha256: options.planSha256, main_sha: plan.source.main_sha });
     const blobSha = (await import('node:crypto')).createHash('sha1').update(`blob ${Buffer.byteLength(a.patch)}\0`).update(a.patch).digest('hex');
     const blob = await nativeStep(root, options, binding, plan, deps, 'blob', 'POST', `${nativePrefix}/git/blobs`, { content: a.patch, encoding: 'utf-8' }, async (response) => {
@@ -435,15 +555,15 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
         insist(decodeHubSource({ ...data, type: 'file' }) === a.patch, 'blob-readback-mismatch');
         return { sha: response.sha };
     }, budget);
-    const tree = await nativeStep(root, options, binding, plan, deps, 'tree', 'POST', `${nativePrefix}/git/trees`, { base_tree: a.base_tree_sha, tree: [{ path: 'scripts/compileContent.ts', mode: '100644', type: 'blob', sha: blob.sha }] }, async (response) => {
-        const actual = await leafTree(read, response.sha), expected = a.base_tree.map((e: any) => e.path === 'scripts/compileContent.ts' ? { ...e, sha: blob.sha } : e);
+    const tree = await nativeStep(root, options, binding, plan, deps, 'tree', 'POST', `${nativePrefix}/git/trees`, { base_tree: a.base_tree_sha, tree: [{ path: ESSAY_ADMISSION_PATH, mode: '100644', type: 'blob', sha: blob.sha }] }, async (response) => {
+        const actual = await leafTree(read, response.sha), expected = a.base_tree.map((e: any) => e.path === ESSAY_ADMISSION_PATH ? { ...e, sha: blob.sha } : e);
         insist(JSON.stringify(actual) === JSON.stringify(expected), 'admission-tree-unrelated-change');
         return { sha: response.sha };
     }, budget);
     const commit = await nativeStep(root, options, binding, plan, deps, 'commit', 'POST', `${nativePrefix}/git/commits`, { message: `Admit ${binding.request.slug} [${binding.request.operation_id}:${binding.input_sha256}]`, tree: tree.sha, parents: [a.base_sha] }, async (response) => {
         const data = await read(`${nativePrefix}/git/commits/${response.sha}`);
         insist(data?.sha === response.sha && data.tree?.sha === tree.sha && data.parents?.length === 1 && data.parents[0].sha === a.base_sha, 'commit-readback-mismatch');
-        insist(decodeHubSource(await read(`${nativePrefix}/contents/scripts/compileContent.ts?ref=${response.sha}`)) === a.patch, 'commit-copy-mismatch');
+        insist(decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${response.sha}`)) === a.patch, 'commit-copy-mismatch');
         return { sha: response.sha };
     }, budget);
     const ref = await nativeStep(root, options, binding, plan, deps, 'ref', 'POST', `${nativePrefix}/git/refs`, { ref: `refs/heads/${a.branch}`, sha: commit.sha }, async (response) => {
@@ -463,22 +583,30 @@ async function recoverSyncAction(root: any, options: AdvanceOptions, binding: an
     if (await root.get('hub-sync-intent.json'))
         throw new UnknownAttempt('sync');
     insist(plan.stage === 'dispatch-if-authorized', 'recovery-not-ready');
-    const now = await authorizeWrite(options, binding, plan, deps), pub = await publication(binding, now);
-    insist(Date.parse(now) >= Date.parse(pub.recovery_due_at), 'nominal-sync-grace-pending');
+    const authorization = await authorizeWrite(options, binding, plan, deps), pub = await publication(binding, authorization.now);
     const read = deps.readGitHub ?? readHubGitHub, facts = await collectHubFacts(read, { slug: binding.request.slug });
+    const now = freshGrantTime(authorization.grant, deps);
+    insist(Date.parse(now) >= Date.parse(pub.recovery_due_at), 'nominal-sync-grace-pending');
     const decision = decideHubReadiness({ ...facts, source: { ...facts.source, admitted: facts.source.admitted || plan.canonical.surface_targeted }, publication: pub, now });
     insist(decision.state === 'dispatch-if-authorized' && facts.source.main_sha === plan.source.main_sha, 'existing-or-uncertain-sync-work');
     const operation = await root.get('hub-operation.json');
     if (operation)
         insist(operation.value.input_sha256 === binding.input_sha256, 'operation-input-changed');
-    else
+    // Inventory awaits may outlive a STOP decision even while the earlier
+    // immutable grant remains within its time window. Refresh current admission.
+    freshGrantTime(authorization.grant, deps);
+    const reservationAuthorization = await authorizeWrite(options, binding, plan, deps);
+    if (!operation) {
+        freshGrantTime(reservationAuthorization.grant, deps);
         await root.put('hub-operation.json', { schema_version: 1, kind: 'hub-operation', operation_id: binding.request.operation_id, input_sha256: binding.input_sha256, week: binding.request.week, slug: binding.request.slug });
-    const body = { ref: 'main' }, intent = { schema_version: 1, kind: 'hub-sync-intent', input_sha256: binding.input_sha256, action: options.action, plan_sha256: options.planSha256, started_at: now, main_sha: plan.source.main_sha, dedupe_key: decision.operation?.dedupe_key, payload_sha256: digest(JSON.stringify(body)), attributed: false };
+    }
+    const body = { ref: 'main' }, intent = { schema_version: 1, kind: 'hub-sync-intent', input_sha256: binding.input_sha256, action: options.action, plan_sha256: options.planSha256, started_at: freshGrantTime(reservationAuthorization.grant, deps), main_sha: plan.source.main_sha, dedupe_key: decision.operation?.dedupe_key, payload_sha256: digest(JSON.stringify(body)), attributed: false };
     const reserved = await boundRecord(root, 'hub-sync-intent.json', intent);
     if (!reserved.created)
         throw new UnknownAttempt('sync');
     try {
         insist(typeof deps.writeGitHub === 'function', 'native-writer-unavailable');
+        freshGrantTime(reservationAuthorization.grant, deps);
         await deps.writeGitHub('POST', `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`, body);
         await boundRecord(root, 'hub-sync-response.json', { ...intent, kind: 'hub-sync-transport-returned', attributed: false, native_run_id: null });
     }
@@ -500,14 +628,14 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
         plan = await loadPlan(root, options, binding);
         if (options.action === 'recover-sync' && await root.get('hub-sync-intent.json'))
             throw new UnknownAttempt('sync');
-        await authorizeWrite(options, binding, plan, deps);
+        const authorization = await authorizeWrite(options, binding, plan, deps);
         if (options.action === 'prepare-admission')
-            result = await admissionAction(root, options, binding, plan, deps);
+            result = await admissionAction(root, options, binding, plan, deps, authorization);
         else
             result = await recoverSyncAction(root, options, binding, plan, deps);
     }
     catch (e: any) {
-        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
+        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'original-plan-unverified', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
     }
     finally {
         await root.close();
@@ -515,9 +643,197 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
     const unknown = result.stage === 'unknown-native-attempt';
     return artifact(options, binding, { ...result, source: plan?.source ?? null }, unknown ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
 }
+const HUB_DATA_PATHS = [ESSAY_ADMISSION_PATH, 'constants.generated.ts', 'constants.guides.generated.ts'];
+// Only audited source-owned generation failures may appear in held diagnostics.
+// Native/transient/parse messages and future unlisted failures stay unclassified.
+const GENERATION_ERROR_CODES = new Set([
+    'original-plan-unverified', 'original-target-changed', 'original-base-unverified',
+    'original-admission-unverified', 'original-baseline-unverified', 'original-canonical-unverified', 'original-target-unverified',
+    'generation-data-unusable', 'generation-data-unproved', 'generation-main-moved',
+    'generation-anchor-unverified', 'generation-identity-changed', 'generation-proof-unusable', 'generation-proof-conflict',
+    'merged-pr-inventory-unusable', 'merged-pr-inventory-incomplete', 'merged-pr-unverified',
+    'merged-pr-head-unverified', 'merged-pr-tree-unverified', 'merged-pr-not-protected',
+    'admission-merge-unrelated-change', 'admission-merge-copy-mismatch',
+    'content-pr-ambiguous', 'content-pr-stale-or-foreign', 'content-pr-base-mismatch',
+    'content-pr-unrelated-files', 'content-pr-assets-unverified', 'content-pr-target-mismatch', 'content-pr-unrelated-content',
+    'required-check-inventory-unverified', 'required-checks-unverified', 'trusted-check-origin-unverified', 'review-threads-unverified',
+    'target-asset-count-unverified', 'target-asset-path-unverified', 'target-asset-source-unverified',
+    'target-asset-tree-unverified', 'target-asset-unverified',
+    'canonical-main-unverified', 'canonical-not-on-protected-main', 'canonical-pin-changed',
+    'canonical-protected-main-mismatch', 'canonical-main-moved',
+    'tree-inventory-unusable', 'tree-entry-unusable', 'tree-duplicate-path',
+]);
+async function generationData(read: (path: string) => Promise<any>, commit: string, tree: any[]) {
+    const files = [];
+    for (const path of HUB_DATA_PATHS) {
+        const leaf = tree.find(e => e.path === path);
+        insist(leaf?.mode === '100644' && leaf.type === 'blob', 'generation-data-unusable');
+        const raw = decodeHubSource(await read(`${nativePrefix}/contents/${path}?ref=${commit}`));
+        insist(gitBlob(raw) === leaf.sha, 'generation-data-unusable');
+        files.push({ path, blob: leaf.sha, sha256: digest(raw) });
+    }
+    return files;
+}
+async function mergedPull(read: (path: string) => Promise<any>, branch: string, base: string, protectedMain: string, marker?: string) {
+    const candidates: any[] = [], seen = new Set<number>();
+    let complete = false;
+    for (let page = 1; page <= 3; page++) {
+        const records = await read(`${nativePrefix}/pulls?state=closed&base=main&head=${encodeURIComponent('OrionArchitekton:' + branch)}&per_page=100&page=${page}`);
+        insist(Array.isArray(records) && records.length <= 100, 'merged-pr-inventory-unusable');
+        for (const record of records) {
+            insist(Number.isSafeInteger(record?.number) && record.number > 0 && !seen.has(record.number) && record.state === 'closed' && record.head?.ref === branch && SHA.test(record.head.sha) && record.head.repo?.full_name === REPOSITORY && record.base?.ref === 'main' && SHA.test(record.base.sha) && record.base.repo?.full_name === REPOSITORY, 'merged-pr-inventory-unusable');
+            seen.add(record.number);
+            candidates.push(record);
+        }
+        if (records.length < 100) { complete = true; break; }
+    }
+    insist(complete, 'merged-pr-inventory-incomplete');
+    const matches = candidates.filter(p => p.base?.sha === base && (!marker || p.body === marker));
+    insist(matches.length === 1 && Number.isSafeInteger(matches[0].number) && matches[0].number > 0, 'merged-pr-unverified');
+    const pr = await read(`${nativePrefix}/pulls/${matches[0].number}`);
+    insist(pr?.number === matches[0].number && pr.state === 'closed' && pr.merged === true && SHA.test(pr.merge_commit_sha) && pr.head?.ref === branch && SHA.test(pr.head.sha) && pr.head.repo?.full_name === REPOSITORY && pr.base?.ref === 'main' && pr.base.sha === base && pr.base.repo?.full_name === REPOSITORY && (!marker || pr.body === marker), 'merged-pr-unverified');
+    const head = await read(`${nativePrefix}/git/commits/${pr.head.sha}`), merge = await read(`${nativePrefix}/git/commits/${pr.merge_commit_sha}`);
+    insist(head?.sha === pr.head.sha && head.parents?.length === 1 && head.parents[0].sha === base && SHA.test(head.tree?.sha), 'merged-pr-head-unverified');
+    insist(merge?.sha === pr.merge_commit_sha && merge.tree?.sha === head.tree.sha && Array.isArray(merge.parents) && [1, 2].includes(merge.parents.length) && merge.parents[0].sha === base && (merge.parents.length === 1 || merge.parents[1].sha === pr.head.sha), 'merged-pr-tree-unverified');
+    const ancestry = await read(`${nativePrefix}/compare/${merge.sha}...${protectedMain}`);
+    insist(['ahead', 'identical'].includes(ancestry?.status) && ancestry.base_commit?.sha === merge.sha && ancestry.merge_base_commit?.sha === merge.sha, 'merged-pr-not-protected');
+    return { pr, head, merge, tree: await leafTree(read, merge.tree.sha) };
+}
+function transitionIdentity(proof: any) {
+    const { content_validation: _freshObservation, ...identity } = proof;
+    return JSON.stringify(identity);
+}
+async function retainGeneration(root: any, proof: any) {
+    insist(['admission-merged', 'content-merged'].includes(proof.transition), 'generation-proof-unusable');
+    const name = `hub-transition-${proof.transition}.json`;
+    let anchor = await root.get(name);
+    if (!anchor) {
+        for (const ref of await root.generationProofs()) {
+            const record = await root.get(ref);
+            insist(record && ref === `hub-generation-${digest(record.bytes)}.json`, 'generation-proof-unusable');
+            insist(record.value.operation_id !== proof.operation_id || record.value.input_sha256 !== proof.input_sha256 || record.value.transition !== proof.transition, 'generation-anchor-unverified');
+        }
+        const hash = digest(Buffer.from(JSON.stringify(proof, null, 2) + '\n'));
+        // Freeze identity and original observation before materializing its proof.
+        await root.put(name, { schema_version: 1, kind: 'newsletter-hub-transition', transition: proof.transition, operation_id: proof.operation_id, week: proof.week, input_sha256: proof.input_sha256, proof: { ref: `hub-generation-${hash}.json`, sha256: hash }, payload: proof });
+        anchor = await root.get(name);
+    }
+    const value = anchor?.value;
+    fields(value, 'schema_version kind transition operation_id week input_sha256 proof payload');
+    insist(value.schema_version === 1 && value.kind === 'newsletter-hub-transition' && value.transition === proof.transition && value.operation_id === proof.operation_id && value.week === proof.week && value.input_sha256 === proof.input_sha256 && transitionIdentity(value.payload) === transitionIdentity(proof), 'generation-identity-changed');
+    fields(value.proof, 'ref sha256');
+    const bytes = Buffer.from(JSON.stringify(value.payload, null, 2) + '\n');
+    insist(HASH.test(value.proof.sha256) && value.proof.sha256 === digest(bytes) && value.proof.ref === `hub-generation-${value.proof.sha256}.json`, 'generation-proof-unusable');
+    const saved = await root.put(value.proof.ref, value.payload);
+    insist(digest(saved.bytes) === value.proof.sha256, 'generation-proof-conflict');
+    return value.proof;
+}
+async function verifyOriginalPlan(binding: any, original: any, protectedMain: string, read: (path: string) => Promise<any>) {
+    fields(original.source, 'repository main_sha allowlisted admitted bundle_slug_present content_equivalence');
+    fields(original.baseline, 'thoughts diagrams');
+    fields(original.canonical, 'commit sha256 trusted_main_sha blob_sha surface_targeted');
+    fields(original.admission, 'base_sha base_tree_sha base_tree branch patch allowlist data_path original_blob_sha original_sha256 proposed_blob_sha patch_sha256');
+    const a = original.admission, base = await read(`${nativePrefix}/git/commits/${original.source.main_sha}`);
+    insist(original.kind === 'newsletter-hub-stage' && original.merge_gate === 'HUMAN_REQUIRED' && original.source.repository === REPOSITORY && base?.sha === original.source.main_sha && SHA.test(base.tree?.sha) && a.base_sha === base.sha && a.base_tree_sha === base.tree.sha, 'original-base-unverified');
+    const tree = await leafTree(read, base.tree.sha);
+    insist(JSON.stringify(tree) === JSON.stringify(a.base_tree), 'original-base-unverified');
+    const ancestry = await read(`${nativePrefix}/compare/${base.sha}...${protectedMain}`);
+    insist(['ahead', 'identical'].includes(ancestry?.status) && ancestry.base_commit?.sha === base.sha && ancestry.merge_base_commit?.sha === base.sha, 'original-base-unverified');
+    const admissionData = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${base.sha}`));
+    const patch = admissionPatch(admissionData, binding.request.slug), allowed = parseEssayAdmissions(admissionData).includes(binding.request.slug);
+    for (const key of ['data_path', 'original_blob_sha', 'original_sha256', 'proposed_blob_sha', 'patch_sha256', 'patch']) insist(a[key] === (patch as any)[key], 'original-admission-unverified');
+    insist(a.branch === `codex/fcn-hub-admission-${binding.request.slug}` && JSON.stringify(a.allowlist) === JSON.stringify(patch.allowlist), 'original-admission-unverified');
+    const corpus = decodeHubSource(await read(`${nativePrefix}/contents/constants.generated.ts?ref=${base.sha}`));
+    const baseline = { thoughts: rows(corpus, 'THOUGHTS'), diagrams: rows(corpus, 'DIAGRAMS') };
+    insist(JSON.stringify(original.baseline) === JSON.stringify(baseline) && original.source.allowlisted === allowed && original.source.admitted === (allowed ? true : null) && original.source.bundle_slug_present === baseline.thoughts.some(row => row.slug === binding.request.slug) && original.source.content_equivalence === 'not-checked', 'original-baseline-unverified');
+    const canonical = await trustedCanonical(binding, read), parsed = parseCanonicalMarkdown(canonical.raw);
+    const targeted = Array.isArray(parsed.data.surface_targets) && parsed.data.surface_targets.includes('danmercede.com');
+    insist(original.canonical.commit === binding.request.canonical.commit && original.canonical.sha256 === binding.request.canonical.sha256 && original.canonical.blob_sha === canonical.blob_sha && original.canonical.surface_targeted === targeted && SHA.test(original.canonical.trusted_main_sha), 'original-canonical-unverified');
+    if (original.canonical.trusted_main_sha !== canonical.trusted_main_sha) {
+        const prior = await read(`/repos/OrionArchitekton/dan-mercede-substrate/compare/${original.canonical.trusted_main_sha}...${canonical.trusted_main_sha}`);
+        insist(['ahead', 'identical'].includes(prior?.status) && prior.base_commit?.sha === original.canonical.trusted_main_sha && prior.merge_base_commit?.sha === original.canonical.trusted_main_sha, 'original-canonical-unverified');
+        insist(decodeHubSource(await read(`/repos/OrionArchitekton/dan-mercede-substrate/contents/${binding.request.canonical.path}?ref=${original.canonical.trusted_main_sha}`)) === canonical.raw, 'original-canonical-unverified');
+    }
+    const entry = mapSubstrateToEntry(parsed.data, delinkWikiLinks(parsed.content.trim()), binding.request.canonical.path, [], patch.allowlist, () => {});
+    insist(entry && entry.slug === binding.request.slug, 'original-target-unverified');
+    const assets = await targetAssetPlan(binding, entry.body, read);
+    entry.body = assets.body;
+    const expected = rows(generateOutput([entry!]), 'THOUGHTS')[0];
+    insist(JSON.stringify(original.expected) === JSON.stringify(expected) && JSON.stringify(original.target_assets) === JSON.stringify(assets.target_assets) && expected.date === binding.request.week && expected.body.includes(binding.request.cta.text), 'original-target-unverified');
+    return base;
+}
+async function mergedDataGenerations(options: Options, binding: any, current: any, deps: Dependencies) {
+    if (!current.source?.main_sha || !current.admission || !current.expected) return { references: [], observations: [] };
+    const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
+    try {
+        const anchor = await originalPlanAnchor(root, binding);
+        insist(anchor, 'original-plan-unverified');
+        const originalPlan = anchor.value.plan;
+        fields(originalPlan, 'ref sha256');
+        insist(HASH.test(originalPlan.sha256) && originalPlan.ref === `hub-plan-${originalPlan.sha256}.json`, 'original-plan-unverified');
+        const first = await root.get(originalPlan.ref);
+        insist(first && digest(first.bytes) === originalPlan.sha256, 'original-plan-unverified');
+        const original = first.value;
+        insist(original.operation_id === binding.request.operation_id && original.week === binding.request.week && original.input_sha256 === binding.input_sha256 && original.admission?.data_path === ESSAY_ADMISSION_PATH && original.expected && original.baseline && original.source?.main_sha, 'original-plan-unverified');
+        insist(JSON.stringify(current.expected) === JSON.stringify(original.expected), 'original-target-changed');
+        insist(JSON.stringify(current.target_assets) === JSON.stringify(original.target_assets), 'original-target-changed');
+        const read = deps.readGitHub ?? readHubGitHub;
+        const originalBase = await verifyOriginalPlan(binding, original, current.source.main_sha, read);
+        if (current.source.main_sha === original.source.main_sha) return { references: [], observations: [] };
+        const generations = [], observations = [];
+        let predecessor = { commit: original.admission.base_sha, tree: original.admission.base_tree_sha, leaves: original.admission.base_tree };
+        const oldData = await generationData(read, predecessor.commit, predecessor.leaves);
+        const currentCommit = await read(`${nativePrefix}/git/commits/${current.source.main_sha}`);
+        insist(currentCommit?.sha === current.source.main_sha && SHA.test(currentCommit.tree?.sha), 'generation-data-unusable');
+        const currentData = await generationData(read, current.source.main_sha, await leafTree(read, currentCommit.tree.sha));
+        if (JSON.stringify(oldData) === JSON.stringify(currentData)) return { references: [], observations: [] };
+        if (!original.source.allowlisted && !original.canonical.surface_targeted) {
+            const a = original.admission;
+            insist(a.base_sha === original.source.main_sha, 'original-plan-unverified');
+            const base = originalBase;
+            const originalData = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${a.base_sha}`));
+            const checked = admissionPatch(originalData, binding.request.slug);
+            for (const key of ['data_path', 'original_blob_sha', 'original_sha256', 'proposed_blob_sha', 'patch_sha256', 'patch']) insist(a[key] === checked[key], 'original-admission-unverified');
+            const marker = `Hub release ${binding.request.operation_id}; input ${binding.input_sha256}; canonical ${binding.request.canonical.sha256}. HUMAN_REQUIRED; no content bundle or release is authorized by this PR.`;
+            const verified = await mergedPull(read, a.branch, a.base_sha, current.source.main_sha, marker);
+            const expected = a.base_tree.map((e: any) => e.path === ESSAY_ADMISSION_PATH ? { ...e, sha: a.proposed_blob_sha } : e);
+            insist(JSON.stringify(verified.tree) === JSON.stringify(expected), 'admission-merge-unrelated-change');
+            insist(decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${verified.merge.sha}`)) === a.patch, 'admission-merge-copy-mismatch');
+            const proof = { schema_version: 1, kind: 'newsletter-hub-generation-proof', transition: 'admission-merged', operation_id: binding.request.operation_id, week: binding.request.week, input_sha256: binding.input_sha256, original_plan: originalPlan, predecessor_proof: null,
+                predecessor: { commit: base.sha, tree: base.tree.sha, files: await generationData(read, base.sha, a.base_tree) },
+                successor: { commit: verified.merge.sha, tree: verified.merge.tree.sha, files: await generationData(read, verified.merge.sha, verified.tree) },
+                pr: { number: verified.pr.number, head_sha: verified.head.sha, base_sha: base.sha, merge_sha: verified.merge.sha, merge_tree_sha: verified.merge.tree.sha } };
+            generations.push(await retainGeneration(root, proof));
+            predecessor = { commit: verified.merge.sha, tree: verified.merge.tree.sha, leaves: verified.tree };
+        }
+        if (current.source.bundle_slug_present && !original.source.bundle_slug_present) {
+            const verified = await mergedPull(read, 'codex/substrate-sync', predecessor.commit, current.source.main_sha);
+            const detail = { ...original, admission: { ...original.admission, base_tree: predecessor.leaves } };
+            const facts = { source: { main_sha: predecessor.commit }, existing: { prs: [{ number: verified.pr.number, head_sha: verified.head.sha }] } };
+            const validation = await contentPrPlan(binding, detail, facts, read, deps, true);
+            const proof = { schema_version: 1, kind: 'newsletter-hub-generation-proof', transition: 'content-merged', operation_id: binding.request.operation_id, week: binding.request.week, input_sha256: binding.input_sha256, original_plan: originalPlan, predecessor_proof: generations.at(-1) ?? null,
+                predecessor: { commit: predecessor.commit, tree: predecessor.tree, files: await generationData(read, predecessor.commit, predecessor.leaves) },
+                successor: { commit: verified.merge.sha, tree: verified.merge.tree.sha, files: await generationData(read, verified.merge.sha, verified.tree) },
+                pr: { number: verified.pr.number, head_sha: verified.head.sha, base_sha: predecessor.commit, merge_sha: verified.merge.sha, merge_tree_sha: verified.merge.tree.sha }, target_assets: original.target_assets, content_validation: validation };
+            const reference = await retainGeneration(root, proof);
+            generations.push(reference);
+            observations.push({ transition: 'content-merged', proof: reference, content_validation: validation });
+            predecessor = { commit: verified.merge.sha, tree: verified.merge.tree.sha, leaves: verified.tree };
+        }
+        insist(JSON.stringify(await generationData(read, predecessor.commit, predecessor.leaves)) === JSON.stringify(currentData), 'generation-data-unproved');
+        const after = await read(`${nativePrefix}/git/ref/heads/main`);
+        insist(after?.object?.sha === current.source.main_sha, 'generation-main-moved');
+        return { references: generations, observations };
+    } finally { await root.close(); }
+}
 export async function reconcileHubRelease(options: Options, deps: Dependencies = {}) {
     const binding = await load(options);
-    const fresh = await planHubRelease(options, deps);
+    let fresh: any;
+    try { fresh = await planHubRelease(options, deps); }
+    catch (error: any) {
+        if (error.message !== 'original-plan-unverified') throw error;
+        return artifact(options, binding, { stage: 'data-generation-unverified' }, 'held', ['original-plan-unverified']);
+    }
     insist(fresh.input_sha256 === binding.input_sha256 && fresh.operation_id === binding.request.operation_id, 'operation-input-changed');
     const freshRoot = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     let current: any, syncAttempt: any = null;
@@ -534,6 +850,15 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
             syncAttempt = { ...sync.value, attributed: false, native_run_id: null };
         }
     } finally { await freshRoot.close(); }
+    try {
+        const generations = await mergedDataGenerations(options, binding, current, deps);
+        if (generations.references.length) current = { ...current, data_generations: generations.references, generation_observations: generations.observations };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? Object.getOwnPropertyDescriptor(error, 'message')?.value : undefined;
+        const generation_error = typeof message === 'string' && GENERATION_ERROR_CODES.has(message) ? message : 'unclassified';
+        return artifact(options, binding, { ...current, stage: 'data-generation-unverified', public_delivery: 'unknown', generation_error }, 'held', ['merged-generation-unverified']);
+    }
+    if (current.data_generations?.length && !syncAttempt && current.stage !== 'already-source-synced') return artifact(options, binding, current, fresh.status, fresh.holds);
     if (current?.stage === 'content-pr-awaiting-merge' || current?.stage === 'content-pr-unverified') {
         return syncAttempt ? artifact(options, binding, { ...current, sync_attempt: syncAttempt }, 'held', fresh.holds) : fresh;
     }
@@ -573,7 +898,7 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
     finally {
         await root.close();
     }
-    return artifact(options, binding, result, result.stage === 'unknown-native-attempt' ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
+    return artifact(options, binding, { ...current, ...result, public_delivery: 'unknown' }, result.stage === 'unknown-native-attempt' ? 'unknown' : 'held', [result.reason ?? 'HUMAN_REQUIRED']);
 }
 export async function main(argv: string[], dependencies: Dependencies = {}) {
     const command = argv[0];

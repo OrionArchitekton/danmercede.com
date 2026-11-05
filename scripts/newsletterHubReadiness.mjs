@@ -8,13 +8,14 @@ import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
 import yaml from 'js-yaml';
 import ts from 'typescript';
+import { ESSAY_ADMISSION_PATH, parseEssayAdmissions } from './hubEssayAdmissions.mjs';
 const LIMIT = 1024 * 1024;
 const WEEK = 168 * 60 * 60 * 1000;
 const REPO = 'OrionArchitekton/danmercede.com';
 const WORKFLOW = '.github/workflows/substrate-sync.yml';
 // Reviewed main contract, normalized as YAML data (comments/key order excluded).
 // Requalify this diagnostic in a reviewed PR when the workflow contract changes.
-const WORKFLOW_CONTRACT_SHA256 = '3b276d591bb0f3c8cbc4eb9bc3eb6263c1646323de7ce2aacf7af90c7b8ee933';
+const WORKFLOW_CONTRACT_SHA256 = 'a029ead27ca5a410d96722e001f5bbb65ee6e9ccab495ec9779fbe8d2d61ecb0';
 const COVERAGE = new Set(['identity', 'publication_time', 'title', 'body', 'headings', 'anchor', 'cover', 'caption', 'commentary', 'cta']);
 const SHA = /^[a-f0-9]{40}$/;
 const DIGEST = /^[a-f0-9]{64}$/;
@@ -219,7 +220,7 @@ const ACTIVE = new Set(['queued', 'requested', 'pending', 'waiting', 'in_progres
 const CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'neutral', 'stale', 'startup_failure']);
 export async function collectHubFacts(readGitHub, { slug }) {
     const prefix = `/repos/${REPO}`, main = mainSha(await readGitHub(`${prefix}/git/ref/heads/main`));
-    const allowlisted = literalExport(sourceContent(await readGitHub(`${prefix}/contents/scripts/compileContent.ts?ref=${main}`)), 'HUB_ESSAY_ALLOWLIST').includes(slug);
+    const allowlisted = parseEssayAdmissions(sourceContent(await readGitHub(`${prefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${main}`))).includes(slug);
     const synced = literalExport(sourceContent(await readGitHub(`${prefix}/contents/constants.generated.ts?ref=${main}`)), 'THOUGHTS', true).includes(slug);
     workflowContract(sourceContent(await readGitHub(`${prefix}/contents/${WORKFLOW}?ref=${main}`)));
     const workflow = await readGitHub(`${prefix}/actions/workflows/substrate-sync.yml`);

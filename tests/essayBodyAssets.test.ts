@@ -16,6 +16,10 @@ import assert from 'node:assert/strict';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { JSDOM } from 'jsdom';
+import { Markdown } from '../components/Markdown.tsx';
 
 import { rewriteEssayBodyAssets, type SubstrateDiagnostic } from '../scripts/compileContent.ts';
 
@@ -136,4 +140,83 @@ test('basename collision: first source wins, later ref stays unrewritten (cycle-
   assert.equal(diags.length, 1);
   assert.match(diags[0].reason, /collision/);
   assert.equal(fs.readFileSync(path.join(project, 'public', 'assets', 'thoughts', 'test-essay', 'fig.svg'), 'utf8'), '<svg/>', 'first copy must not be overwritten');
+});
+
+test('filesystem compile preserves resolvable code examples and copies only a real image with backticks', () => {
+  const { substrate, project } = makeFixture();
+  const code = '`![Inline](publishing/assets/test-essay/fig.svg)`\n\n```markdown\n![Fenced](publishing/assets/test-essay/fig.svg)\n```';
+  const real = '![A `literal` alt](publishing/assets/test-essay/fig.svg "A `literal` caption")';
+  const body = code + '\n\n' + real, diagnostics: SubstrateDiagnostic[] = [];
+  const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md', diagnostics);
+  assert.equal(out, code + '\n\n' + real.replace('publishing/assets/test-essay/', '/assets/thoughts/test-essay/'));
+  assert.deepEqual(diagnostics, []);
+  assert.equal(fs.readFileSync(path.join(project, 'public', 'assets', 'thoughts', 'test-essay', 'fig.svg'), 'utf8'), '<svg/>');
+});
+
+test('filesystem compile performs no copy or skip diagnostic for code-only image examples', () => {
+  const { substrate, project } = makeFixture();
+  const body = '`![Inline](publishing/assets/test-essay/fig.svg)`\n\n```markdown\n![Missing](publishing/assets/foreign/missing.svg)\n```';
+  const diagnostics: SubstrateDiagnostic[] = [];
+  assert.equal(rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md', diagnostics), body);
+  assert.deepEqual(diagnostics, []);
+  assert.equal(fs.existsSync(path.join(project, 'public', 'assets', 'thoughts')), false);
+});
+
+test('filesystem asset copying agrees with actual renderer literal boundaries', () => {
+  const one = 'publishing/assets/test-essay/one.svg', two = 'publishing/assets/test-essay/two.svg';
+  const examples = [
+    `Prose \`\`\`inline opener\n\n![Real](${one})\n\n\`\`\``,
+    `Prose \`\`\`inline opener\n\n![Real](${one})\n\n\`\`\` `,
+    `![First \`\`\`](${one})\n\n![Second \`\`\`](${two})`,
+    `![First](${one} "Opening \`\`\` title")\n\n![Second](${two} "Closing \`\`\` title")`,
+    `  \`\`\`markdown\n  ![Literal](${one})`,
+    `> \`\`\`markdown\n> ![Literal](publishing/assets/foreign/missing.svg)\n> \`\`\`\n\n![Real](${one})`,
+    `> \`\`\`markdown\n> ![Literal](publishing/assets/foreign/missing.svg)\n\n![Real](${one})`,
+    `- \`\`\`markdown\n  ![Literal](publishing/assets/foreign/missing.svg)\n  \`\`\`\n\n![Real](${one})`,
+    `- \`\`\`markdown\n  ![Literal](publishing/assets/foreign/missing.svg)\n\n![Real](${one})`,
+    `Inline \`example\nwith ![Literal](publishing/assets/foreign/missing.svg)\nends\`.\n\n![Real](${one})`,
+  ];
+  for (const body of examples) {
+    const { substrate, project } = makeFixture(), assetDir = path.join(substrate, 'publishing/assets/test-essay');
+    fs.writeFileSync(path.join(assetDir, 'one.svg'), '<svg id="one"/>');
+    fs.writeFileSync(path.join(assetDir, 'two.svg'), '<svg id="two"/>');
+    const before = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: body }))).window.document;
+    const diagnostics: SubstrateDiagnostic[] = [];
+    const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md', diagnostics);
+    const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: out }))).window.document;
+    assert.deepEqual(diagnostics, [], body);
+    assert.equal(after.querySelectorAll('img').length, before.querySelectorAll('img').length, body);
+    assert.ok([...after.querySelectorAll('img')].every(img => img.getAttribute('src')!.startsWith('/assets/thoughts/test-essay/')), body);
+    assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent), body);
+    for (const img of after.querySelectorAll('img')) {
+      const file = path.basename(img.getAttribute('src')!);
+      assert.equal(fs.readFileSync(path.join(project, 'public/assets/thoughts/test-essay', file), 'utf8'), fs.readFileSync(path.join(assetDir, file), 'utf8'));
+    }
+    if (!before.querySelectorAll('img').length) {
+      assert.equal(out, body);
+      assert.equal(fs.existsSync(path.join(project, 'public/assets/thoughts')), false);
+    }
+  }
+});
+
+test('caption code never copies its example for external served or owned figures', () => {
+  const outer = 'publishing/assets/test-essay/outer.svg', literal = 'publishing/assets/test-essay/code.svg';
+  for (const kind of ['external', 'served', 'owned']) {
+    const { substrate, project } = makeFixture(), assetDir = path.join(substrate, 'publishing/assets/test-essay');
+    fs.writeFileSync(path.join(assetDir, 'outer.svg'), '<svg id="outer"/>');
+    fs.writeFileSync(path.join(assetDir, 'code.svg'), '<svg id="code"/>');
+    const src = kind === 'external' ? 'https://example.com/Try.png' : kind === 'served' ? '/assets/thoughts/previous/existing.svg' : outer;
+    const body = `![Try \`literal\`](${src} " Try \`![Literal](${literal})\` ")`, diagnostics: SubstrateDiagnostic[] = [];
+    const before = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: body }))).window.document;
+    const out = rewriteEssayBodyAssets(body, 'test-essay', substrate, project, 'test-essay.md', diagnostics);
+    const after = new JSDOM(renderToStaticMarkup(React.createElement(Markdown, { source: out }))).window.document;
+    assert.deepEqual([...after.querySelectorAll('code')].map(e => e.textContent), [...before.querySelectorAll('code')].map(e => e.textContent), kind);
+    assert.equal(after.querySelector('img')!.getAttribute('alt'), 'Try `literal`');
+    assert.deepEqual(diagnostics, []);
+    assert.equal(fs.existsSync(path.join(project, 'public/assets/thoughts/test-essay/code.svg')), false, kind);
+    if (kind === 'owned') {
+      assert.equal(out, body.replace(outer, '/assets/thoughts/test-essay/outer.svg'));
+      assert.equal(fs.readFileSync(path.join(project, 'public/assets/thoughts/test-essay/outer.svg'), 'utf8'), '<svg id="outer"/>');
+    } else assert.equal(out, body);
+  }
 });
