@@ -1889,16 +1889,25 @@ function mockAuthenticatedTransport(t: any, transport: (call: any) => Promise<an
     return mocked;
 }
 function authenticatedFixture(t: any, native: ReturnType<typeof nativeFixture>, options: any, transport?: (call:any)=>Promise<any>) {
-    const calls:any[]=[];
+    const calls:any[]=[],syncReservations:boolean[]=[];
     const execMock=mockAuthenticatedTransport(t,async call=>{
         calls.push(call);
+        if(call.args[5].endsWith('/actions/workflows/substrate-sync.yml/dispatches')){
+            let reserved=false;
+            try{
+                const saved=JSON.parse(await readFile(join(options.jobDir,'hub-sync-intent.json'),'utf8'));
+                reserved=saved.kind==='hub-sync-intent'&&saved.action==='recover-sync'&&saved.input_sha256===sha(await readFile(options.requestPath))&&saved.payload_sha256===sha(call.input);
+            }catch{}
+            syncReservations.push(reserved);
+            assert.ok(reserved,'durable bound sync intent must precede the fixture effect');
+        }
         if(transport)return transport(call);
         const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
         return {stdout:value===null?'':JSON.stringify(value)};
     });
     const capability=hubRelease.createAuthenticatedHubWriter();
     const {writeGitHub:_fixture,...readOnly}=native;
-    return {calls,capability,execMock,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
+    return {calls,capability,execMock,syncReservations,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
         authorize:async(context:any)=>{
             assertFixtureExecBinding();
             return {admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T17:00:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'};
@@ -1917,6 +1926,7 @@ test('opaque authenticated recovery reserves one fixed main dispatch and never a
     const result=await advanceHubRelease(dispatch,writer.deps);
     assert.equal(result.status,'unknown');
     assert.equal(writer.calls.length,6);
+    assert.deepEqual(writer.syncReservations,[true]);
     assert.deepEqual(native.writes.at(-1),{method:'POST',path:'/repos/OrionArchitekton/danmercede.com/actions/workflows/substrate-sync.yml/dispatches',body:{ref:'main'}});
     const intent=JSON.parse(await readFile(join(f.dir,'hub-sync-intent.json'),'utf8'));
     assert.equal(intent.attributed,false);
@@ -1930,11 +1940,14 @@ test('opaque authenticated recovery reserves one fixed main dispatch and never a
 });
 
 test('opaque writer rejects forged ambiguous foreign unreserved and unauthorized requests with zero transport effects',async t=>{
-    for(const scenario of ['missing-authorizer','denied','stopped','stale','expired','foreign-grant','forged','cloned','ambiguous','foreign-plan','foreign-operation','unreserved','changed-main','young-publication','drained'])await t.test(scenario,async t=>{
+    for(const scenario of ['missing-authorizer','denied','stopped','stale','expired','foreign-grant','forged','cloned','ambiguous','foreign-plan','foreign-operation','unreserved','changed-main','young-publication','drained','legacy-readonly'])await t.test(scenario,async t=>{
         const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
         const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options),deps:any={...writer.deps};
         const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
-        const authorize=deps.authorize;
+        let authCalls=0;
+        const originalAuthorize=deps.authorize;
+        const authorize=async(context:any)=>{authCalls++;return originalAuthorize(context);};
+        deps.authorize=authorize;
         if(scenario==='missing-authorizer')delete deps.authorize;
         if(['denied','stopped','stale','expired','foreign-grant'].includes(scenario))deps.authorize=async(context:any)=>{
             const grant=await authorize(context);
@@ -1956,8 +1969,23 @@ test('opaque writer rejects forged ambiguous foreign unreserved and unauthorized
         if(scenario==='changed-main')native.moveMain();
         if(scenario==='young-publication')deps.clock=()=>Date.parse('2026-11-09T15:02:44Z');
         if(scenario==='drained')deps.clock=()=>Date.parse('2026-12-09T07:59:00Z');
-        try {const outcome=await advanceHubRelease(advance,deps);assert.equal(outcome.status,'held');}
-        catch(error:any){assert.ok(['invalid-advance-action'].includes(error.message));}
+        if(scenario==='legacy-readonly')deps.reconcileOnly=true;
+        const expected:Record<string,[string,number]>={
+            'missing-authorizer':['runtime-authority-unadmitted',0],
+            denied:['runtime-authority-unadmitted',1],stopped:['runtime-authority-unadmitted',1],
+            stale:['runtime-authority-expired',1],expired:['runtime-authority-expired',1],
+            'foreign-grant':['runtime-authority-binding-mismatch',1],
+            forged:['native-writer-unqualified',0],cloned:['native-writer-unqualified',0],ambiguous:['native-writer-unqualified',0],
+            'foreign-plan':['operation-precondition-unverified',0],'foreign-operation':['operation-precondition-unverified',0],
+            'changed-main':['current-base-changed',0],'young-publication':['operation-precondition-unverified',0],
+            drained:['pilot-drain-expired',0],'legacy-readonly':['operation-precondition-unverified',1],
+        };
+        if(scenario==='unreserved')await assert.rejects(()=>advanceHubRelease(advance,deps),{message:'invalid-advance-action'});
+        else{
+            const outcome=await advanceHubRelease(advance,deps);
+            assert.equal(outcome.status,'held');assert.deepEqual(outcome.holds,[expected[scenario][0]]);
+        }
+        assert.equal(authCalls,scenario==='unreserved'?0:expected[scenario][1]);
         assert.equal(writer.calls.length,0);
         assert.equal(native.writes.length,0);
     });
@@ -2082,4 +2110,38 @@ process.exit(88);
         assert.equal(authorizations,6);assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
         assert.equal((await readdir(f.dir)).includes('unexpected-default-gh.json'),false);
     });
+});
+
+test('read-only reconciliation preserves inherited reader for the original uncertain admission ref',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const bin=join(f.dir,'deny-bin'),unexpected=join(f.dir,'unexpected-default-reader.json');
+    await mkdir(bin,{mode:0o700});
+    await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').appendFileSync(${JSON.stringify(unexpected)},JSON.stringify(process.argv.slice(2))+'\\n',{mode:0o600});
+process.exit(88);
+`,{mode:0o700});
+    const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+    const plan=await planHubRelease(options,native);
+    const writer=authenticatedFixture(t,native,options,async call=>{
+        const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+        if(call.args[5].endsWith('/git/refs'))throw Error('owned lost ref response');
+        return {stdout:JSON.stringify(value)};
+    });
+    const {readGitHub,...own}=writer.deps,deps=Object.assign(Object.create({readGitHub}),own);
+    const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+    assertFixtureExecBinding();
+    assert.equal((await advanceHubRelease(advance,deps)).status,'unknown');
+    assert.equal(native.writes.length,4);
+    const original=await readFile(join(f.dir,'hub-admission-ref-intent.json'));
+    const result=await reconcileHubRelease(options,deps);
+    const stage=JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+    assert.equal(stage.reason,'unstarted-native-substep');
+    const receipt=JSON.parse(await readFile(join(f.dir,'hub-admission-ref-receipt.json'),'utf8'));
+    assert.equal(receipt.reconciled,true);
+    assert.deepEqual(await readFile(join(f.dir,'hub-admission-ref-intent.json')),original);
+    assert.equal(native.writes.length,4);assert.equal(writer.calls.length,4);
+    assert.equal((await readdir(f.dir)).includes('unexpected-default-reader.json'),false);
+    assertFixtureExecBinding();
+    const resumed=await advanceHubRelease(advance,deps);
+    assert.equal(resumed.status,'held');assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
 });

@@ -436,6 +436,7 @@ type AdvanceOptions = Options & {
     planSha256: string;
     maxActions: number;
 };
+type AdmissionMode = 'advance' | 'reconcile';
 const nativePrefix = `/repos/${REPOSITORY}`;
 class UnknownAttempt extends Error {
     constructor(public step: string) {
@@ -488,7 +489,7 @@ function stepNames(step: string) {
 }
 async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies, step: string, method: string, path: string, body: any, verify: (response: any) => Promise<any>, budget: {
     used: number;
-}) {
+}, mode: AdmissionMode) {
     const names = stepNames(step), payload_sha256 = digest(JSON.stringify({ method, path, body }));
     const receipt = await root.get(names.receipt);
     if (receipt) {
@@ -499,7 +500,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
     const pending = await root.get(names.intent);
     if (pending) {
         insist(pending.value.input_sha256 === binding.input_sha256 && pending.value.payload_sha256 === payload_sha256 && pending.value.plan_sha256 === options.planSha256, 'intent-binding-conflict');
-        if (!deps.reconcileOnly)
+        if (mode !== 'reconcile' && !deps.reconcileOnly)
             throw new UnknownAttempt(step);
         const response = await root.get(names.response);
         let pointer = response?.value.native;
@@ -525,7 +526,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
             throw new UnknownAttempt(step);
         }
     }
-    insist(!deps.reconcileOnly, 'unstarted-native-substep');
+    insist(mode !== 'reconcile' && !deps.reconcileOnly, 'unstarted-native-substep');
     insist(budget.used < options.maxActions, 'action-budget-exhausted');
     const authorization = await authorizeWrite(options, binding, plan, deps);
     const now = freshGrantTime(authorization.grant, deps);
@@ -555,7 +556,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
         throw new UnknownAttempt(step);
     }
 }
-async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies, authorization?: any) {
+async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies, authorization?: any, mode: AdmissionMode = 'advance') {
     insist(plan.stage === 'admission-preparation-ready', 'admission-plan-not-ready');
     const read = deps.readGitHub ?? readHubGitHub, a = plan.admission, budget = { used: 0 };
     const original = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${a.base_sha}`));
@@ -571,7 +572,7 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
     if (operation)
         insist(operation.value.input_sha256 === binding.input_sha256, 'operation-input-changed');
     else {
-        insist(!deps.reconcileOnly, 'operation-not-started');
+        insist(mode !== 'reconcile' && !deps.reconcileOnly, 'operation-not-started');
         freshGrantTime(authorization?.grant, deps);
         await root.put('hub-operation.json', { schema_version: 1, kind: 'hub-operation', operation_id: binding.request.operation_id, input_sha256: binding.input_sha256, week: binding.request.week, slug: binding.request.slug });
     }
@@ -581,7 +582,7 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
         const prs = await read(`${nativePrefix}/pulls?state=all&base=main&head=${encodeURIComponent('OrionArchitekton:' + a.branch)}&per_page=100&page=1`);
         insist(Array.isArray(refs) && refs.length === 0 && Array.isArray(prs) && prs.length === 0, 'existing-admission-work');
     }
-    if (!deps.reconcileOnly) freshGrantTime(authorization?.grant, deps);
+    if (mode !== 'reconcile' && !deps.reconcileOnly) freshGrantTime(authorization?.grant, deps);
     await boundRecord(root, 'hub-admission-action.json', { schema_version: 1, kind: 'hub-admission-action', input_sha256: binding.input_sha256, action: options.action, plan_sha256: options.planSha256, main_sha: plan.source.main_sha });
     const blobSha = (await import('node:crypto')).createHash('sha1').update(`blob ${Buffer.byteLength(a.patch)}\0`).update(a.patch).digest('hex');
     const blob = await nativeStep(root, options, binding, plan, deps, 'blob', 'POST', `${nativePrefix}/git/blobs`, { content: a.patch, encoding: 'utf-8' }, async (response) => {
@@ -589,29 +590,29 @@ async function admissionAction(root: any, options: AdvanceOptions, binding: any,
         const data = await read(`${nativePrefix}/git/blobs/${response.sha}`);
         insist(decodeHubSource({ ...data, type: 'file' }) === a.patch, 'blob-readback-mismatch');
         return { sha: response.sha };
-    }, budget);
+    }, budget, mode);
     const tree = await nativeStep(root, options, binding, plan, deps, 'tree', 'POST', `${nativePrefix}/git/trees`, { base_tree: a.base_tree_sha, tree: [{ path: ESSAY_ADMISSION_PATH, mode: '100644', type: 'blob', sha: blob.sha }] }, async (response) => {
         const actual = await leafTree(read, response.sha), expected = a.base_tree.map((e: any) => e.path === ESSAY_ADMISSION_PATH ? { ...e, sha: blob.sha } : e);
         insist(JSON.stringify(actual) === JSON.stringify(expected), 'admission-tree-unrelated-change');
         return { sha: response.sha };
-    }, budget);
+    }, budget, mode);
     const commit = await nativeStep(root, options, binding, plan, deps, 'commit', 'POST', `${nativePrefix}/git/commits`, { message: `Admit ${binding.request.slug} [${binding.request.operation_id}:${binding.input_sha256}]`, tree: tree.sha, parents: [a.base_sha] }, async (response) => {
         const data = await read(`${nativePrefix}/git/commits/${response.sha}`);
         insist(data?.sha === response.sha && data.tree?.sha === tree.sha && data.parents?.length === 1 && data.parents[0].sha === a.base_sha, 'commit-readback-mismatch');
         insist(decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${response.sha}`)) === a.patch, 'commit-copy-mismatch');
         return { sha: response.sha };
-    }, budget);
+    }, budget, mode);
     const ref = await nativeStep(root, options, binding, plan, deps, 'ref', 'POST', `${nativePrefix}/git/refs`, { ref: `refs/heads/${a.branch}`, sha: commit.sha }, async (response) => {
         const data = await read(`${nativePrefix}/git/matching-refs/heads/${encodeURIComponent(a.branch)}`);
         insist(Array.isArray(data) && data.length === 1 && data[0].ref === `refs/heads/${a.branch}` && data[0].object?.sha === commit.sha && response.sha === commit.sha, 'ref-readback-mismatch');
         return { sha: commit.sha };
-    }, budget);
+    }, budget, mode);
     const marker = `Hub release ${binding.request.operation_id}; input ${binding.input_sha256}; canonical ${binding.request.canonical.sha256}. HUMAN_REQUIRED; no content bundle or release is authorized by this PR.`;
     const pr = await nativeStep(root, options, binding, plan, deps, 'pr', 'POST', `${nativePrefix}/pulls`, { head: a.branch, base: 'main', draft: true, title: `Admit newsletter: ${plan.expected.title}`, body: marker }, async (response) => {
         const data = await read(`${nativePrefix}/pulls/${response.number}`);
         insist(data?.number === response.number && data.head?.sha === ref.sha && data.head.ref === a.branch && data.head.repo?.full_name === REPOSITORY && data.base?.ref === 'main' && data.base.repo?.full_name === REPOSITORY && data.body === marker, 'pr-readback-mismatch');
         return { number: data.number, head_sha: data.head.sha, url: data.html_url };
-    }, budget);
+    }, budget, mode);
     return { stage: 'admission-pr-awaiting-merge', admission_pr: pr, native_writes: budget.used };
 }
 async function recoverSyncAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies) {
@@ -926,7 +927,7 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
         const action = await root.get('hub-admission-action.json');
         insist(action, 'operation-not-started');
         const advance = { ...options, action: 'prepare-admission', planSha256: action.value.plan_sha256, maxActions: 1 }, plan = await loadPlan(root, advance, binding);
-        result = await admissionAction(root, advance, binding, plan, { ...deps, reconcileOnly: true });
+        result = await admissionAction(root, advance, binding, plan, deps, undefined, 'reconcile');
     }
     catch (e: any) {
         result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['unstarted-native-substep', 'operation-not-started'].includes(e.message) ? e.message : 'reconciliation-unverified' };

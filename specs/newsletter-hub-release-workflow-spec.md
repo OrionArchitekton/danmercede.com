@@ -339,3 +339,8 @@ Writer resolution retains the caller's original dependency object, existing
 callback invocation semantics and inherited reader selection. Authorizer and raw
 writer receivers remain unchanged; capability injection must not copy dependencies
 into a plain object or select default readers accidentally.
+
+Read-only admission reconciliation keeps the original dependency object and its
+existing reader invocation semantics, including inherited reader selection. An
+explicit private reconcile mode prevents new native substeps; it does not copy
+dependencies, select a new default reader or relax existing read-only constraints.

@@ -540,3 +540,8 @@ Fixtures mock `node:child_process.execFile`, assert the mock and live imported
 binding identity before positive advancement, and never delegate to the real CLI.
 Existing raw writer callbacks remain trusted code injection, not an untrusted-data
 security boundary. The new production factory provides no callback selector.
+
+Read-only admission reconciliation keeps the original dependency object and its
+existing reader invocation semantics, including inherited reader selection. An
+explicit private reconcile mode prevents new native substeps; it does not copy
+dependencies, select a new default reader or relax existing read-only constraints.
