@@ -20,6 +20,7 @@ import { privateRoot } from '../scripts/newsletterHubReleaseJournal.ts';
 import { verifyHubReader } from '../scripts/newsletterHubReleaseReader.ts';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, generateOutput, HUB_ESSAY_ALLOWLIST } from '../scripts/compileContent.ts';
 import { budgetKbFor } from '../scripts/imageBudgets.mjs';
+import { readHubGitHub } from '../scripts/newsletterHubReadiness.mjs';
 import * as hubRelease from '../scripts/newsletterHubRelease.ts';
 import { planHubRelease, inspectHubRelease, advanceHubRelease, reconcileHubRelease, verifyTrustedHubCheck } from '../scripts/newsletterHubRelease.ts';
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -2144,4 +2145,97 @@ process.exit(88);
     assertFixtureExecBinding();
     const resumed=await advanceHubRelease(advance,deps);
     assert.equal(resumed.status,'held');assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+});
+
+
+test('authenticated capability requires an explicit trusted reader before any admission work',async t=>{
+    for(const scenario of ['absent','nonfunction','default'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any={...writer.deps};let grants=0;
+        deps.authorize=async()=>{grants++;throw Error('must not authorize');};
+        if(scenario==='absent')delete deps.readGitHub;
+        else deps.readGitHub=scenario==='default'?readHubGitHub:42;
+        const before=(await readdir(f.dir)).sort();
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.deepEqual(result.holds,['native-reader-unqualified']);
+        assert.equal(result.status,'held');assert.equal(grants,0);assert.equal(writer.calls.length,0);assert.equal(native.writes.length,0);
+        assert.deepEqual((await readdir(f.dir)).sort(),before);
+        const recovered=await reconcileHubRelease(options,deps);
+        assert.deepEqual(recovered.holds,['native-reader-unqualified']);
+        assert.deepEqual((await readdir(f.dir)).sort(),before);
+    });
+});
+
+
+test('authenticated capability never restores the default reader between effects',async t=>{
+    for(const replacement of ['absent','nonfunction','default'])await t.test(replacement,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any=writer.deps;let grants=0;const authorize=deps.authorize;
+        deps.authorize=async(context:any)=>{grants++;return authorize(context);};
+        deps.readGitHub=async(path:string)=>{
+            const result=await native.readGitHub(path);
+            if(writer.calls.length===1&&path.includes('/git/blobs/')){
+                if(replacement==='absent')delete deps.readGitHub;
+                else deps.readGitHub=replacement==='default'?readHubGitHub:42;
+            }
+            return result;
+        };
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.equal(result.status,'held');assert.deepEqual(result.holds,['native-reader-unqualified']);assert.equal(writer.calls.length,1);assert.equal(native.writes.length,1);
+        assert.equal(grants,2);
+        assert.equal((await readdir(f.dir)).includes('hub-admission-tree-intent.json'),false);
+        assert.equal((await readdir(f.dir)).includes('unexpected-reader'),false,'PATH reader must never be restored');
+    });
+});
+
+
+test('authenticated capability revalidates a reader lost inside authorization before reserving effects',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+    const deps:any=writer.deps,authorize=deps.authorize;let grants=0;
+    deps.authorize=async(context:any)=>{grants++;const grant=await authorize(context);delete deps.readGitHub;return grant;};
+    const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+    assert.deepEqual(result.holds,['native-reader-unqualified']);assert.equal(grants,1);
+    assert.equal(writer.calls.length,0);assert.equal(native.writes.length,0);
+    assert.equal((await readdir(f.dir)).some(name=>name.endsWith('-intent.json')),false);
+});
+
+
+test('authenticated capability requires on-demand explicit review-thread reader',async t=>{
+    for(const scenario of ['absent','nonfunction','inherited'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),first=JSON.parse(await readFile(join(f.dir,plan.artifacts[0].ref),'utf8'));
+        const writer=authenticatedFixture(t,native,options);
+        await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        native.mergeAdmission();native.openContent(first.expected);
+        const bin=join(f.dir,'deny-thread-bin'),unexpected=join(f.dir,'unexpected-thread-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const {readReviewThreads,...own}=writer.deps;let threadReads=0;
+        const deps:any=scenario==='inherited'?Object.assign(Object.create({readReviewThreads:async(number:number)=>{threadReads++;return readReviewThreads(number);}}),own):own;
+        if(scenario==='nonfunction')deps.readReviewThreads=42;
+        const result=await reconcileHubRelease(options,deps),stage=JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+        assert.equal(result.status,'held');assert.equal(writer.calls.length,5);assert.equal(native.writes.length,5);
+        assert.deepEqual(result.holds,scenario==='inherited'?['HUMAN_REQUIRED']:['native-reader-unqualified']);
+        assert.equal(stage.stage,scenario==='inherited'?'content-pr-awaiting-merge':'content-pr-unverified');
+        assert.equal(threadReads,scenario==='inherited'?1:0);
+        assert.equal((await readdir(f.dir)).includes('unexpected-thread-reader'),false,'capability path never selects default GraphQL reader');
+    });
 });

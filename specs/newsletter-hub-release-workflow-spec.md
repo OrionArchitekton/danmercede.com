@@ -344,3 +344,22 @@ Read-only admission reconciliation keeps the original dependency object and its
 existing reader invocation semantics, including inherited reader selection. An
 explicit private reconcile mode prevents new native substeps; it does not copy
 dependencies, select a new default reader or relax existing read-only constraints.
+
+
+Capability-backed advancement and reconciliation require an explicitly injected,
+trusted read-only GitHub callback, including inherited callbacks. An absent or
+non-function reader, or the known PATH-based default reader, holds with
+`native-reader-unqualified` before facts, authorization or new operation records.
+Each capability-backed read resolves the current dependency again; losing or
+replacing it with the default between effects cannot restore a PATH fallback.
+Reader presence is also checked immediately before a reserved effect. Existing
+trusted raw-writer callbacks retain their prior reader selection and invocation
+semantics. A callback remains trusted injected code: this guard does not qualify
+its transport, account or provenance. Those qualifications and all native calls
+remain outside this source-only change and require the separate native checkpoint.
+
+When capability-backed content-PR validation needs the review-thread inventory,
+it similarly requires the existing explicit trusted `readReviewThreads` callback
+on demand, rejecting an absent, non-function or known PATH default before any
+GraphQL subprocess. Admission-only work does not require that callback. This is
+a source precondition, not proof of native reader, account or runtime qualification.

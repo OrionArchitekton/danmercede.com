@@ -50,6 +50,18 @@ function injectedWriter(deps: Dependencies) {
         return typeof deps.writeGitHub === 'function' ? null : capabilityWriter(deps.authenticatedWriter);
     return typeof deps.writeGitHub === 'function' ? deps.writeGitHub.bind(deps) : null;
 }
+function readerIsQualified(deps: Dependencies) {
+    return deps.authenticatedWriter === undefined || (typeof deps.readGitHub === 'function' && deps.readGitHub !== readHubGitHub);
+}
+/** Re-resolve each read so mutable dependencies cannot restore the PATH fallback. */
+function currentReader(deps: Dependencies) {
+    if (deps.authenticatedWriter === undefined) return deps.readGitHub ?? readHubGitHub;
+    return (path: string) => {
+        insist(readerIsQualified(deps), 'native-reader-unqualified');
+        const read = deps.readGitHub ?? readHubGitHub;
+        return read(path);
+    };
+}
 async function readNativeReviewThreads(number: number) {
     insist(Number.isSafeInteger(number) && number > 0, 'invalid-pr-number');
     let cursor: string | null = null;
@@ -322,7 +334,9 @@ async function contentPrPlan(binding: any, detail: any, facts: any, read: (path:
             await verifyTrustedHubCheck(pr, check, read);
         }
     }
-    const threads = await (deps.readReviewThreads ?? readNativeReviewThreads)(pr.number);
+    const readThreads = deps.readReviewThreads;
+    insist(deps.authenticatedWriter === undefined || (typeof readThreads === 'function' && readThreads !== readNativeReviewThreads), 'native-reader-unqualified');
+    const threads = await (readThreads ?? readNativeReviewThreads)(pr.number);
     insist(threads?.head_sha === pr.head.sha && threads.complete === true && Array.isArray(threads.threads) && threads.threads.length <= 300 && threads.threads.every((t: any) => typeof t.id === 'string' && t.id.length > 0 && t.isResolved === true) && new Set(threads.threads.map((t: any) => t.id)).size === threads.threads.length, 'review-threads-unverified');
     return { number: pr.number, head_sha: pr.head.sha, base_sha: pr.base.sha, copy_parity: true, unrelated_corpus_preserved: true, required_checks_passed: true, required_checks: required, unresolved_threads: 0, latest_slugs: selectLatestThoughts(thoughts as any).map(t => t.slug), merge_gate: 'HUMAN_REQUIRED' };
 }
@@ -380,7 +394,7 @@ export async function planHubRelease(options: Options, deps: Dependencies = {}) 
     if (!pub.eligible)
         return artifact(options, binding, { stage: 'too-early', publication: pub }, 'held', ['seven-days-not-elapsed']);
     let facts: any;
-    const read = deps.readGitHub ?? readHubGitHub;
+    const read = currentReader(deps);
     try {
         facts = await collectHubFacts(read, { slug: binding.request.slug });
     }
@@ -400,7 +414,7 @@ export async function planHubRelease(options: Options, deps: Dependencies = {}) 
             return artifact(options, binding, { stage: 'content-pr-awaiting-merge', publication: pub, ...facts, ...detail, content_pr }, 'held', ['HUMAN_REQUIRED']);
         }
         catch (e: any) {
-            return artifact(options, binding, { stage: 'content-pr-unverified', publication: pub, ...facts, ...detail }, 'held', [['content-pr-target-mismatch', 'content-pr-unrelated-files', 'content-pr-unrelated-content', 'required-checks-unverified', 'trusted-check-origin-unverified', 'review-threads-unverified', 'content-pr-stale-or-foreign'].includes(e.message) ? e.message : 'content-pr-unverified']);
+            return artifact(options, binding, { stage: 'content-pr-unverified', publication: pub, ...facts, ...detail }, 'held', [['native-reader-unqualified', 'content-pr-target-mismatch', 'content-pr-unrelated-files', 'content-pr-unrelated-content', 'required-checks-unverified', 'trusted-check-origin-unverified', 'review-threads-unverified', 'content-pr-stale-or-foreign'].includes(e.message) ? e.message : 'content-pr-unverified']);
         }
     }
     if (!facts.source.allowlisted && !facts.source.bundle_slug_present && !detail.canonical.surface_targeted)
@@ -462,7 +476,7 @@ function freshGrantTime(grant: any, deps: Dependencies) {
 }
 async function authorizeWrite(options: AdvanceOptions, binding: any, plan: any, deps: Dependencies) {
     insist(typeof deps.authorize === 'function', 'runtime-authority-unadmitted');
-    const now = new Date((deps.clock ?? Date.now)()).toISOString(), read = deps.readGitHub ?? readHubGitHub;
+    const now = new Date((deps.clock ?? Date.now)()).toISOString(), read = currentReader(deps);
     insist(parseHubInstant(now) < parseHubInstant(PILOT_DRAIN_CUTOFF), 'pilot-drain-expired');
     const pub = await publication(binding, now);
     const canonical = await trustedCanonical(binding, read);
@@ -509,7 +523,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
         if (!pointer && step === 'ref')
             pointer = { sha: body.sha };
         if (!pointer && step === 'pr') {
-            const candidates = await (deps.readGitHub ?? readHubGitHub)(`${nativePrefix}/pulls?state=all&base=main&head=${encodeURIComponent('OrionArchitekton:' + body.head)}&per_page=100&page=1`);
+            const candidates = await currentReader(deps)(`${nativePrefix}/pulls?state=all&base=main&head=${encodeURIComponent('OrionArchitekton:' + body.head)}&per_page=100&page=1`);
             insist(Array.isArray(candidates) && candidates.length < 100, 'pr-reconciliation-incomplete');
             const matches = candidates.filter((p: any) => p.body === body.body && p.head?.ref === body.head);
             if (matches.length === 1)
@@ -537,6 +551,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
     try {
         const write = injectedWriter(deps);
         insist(write, 'native-writer-unavailable');
+        insist(readerIsQualified(deps), 'native-reader-unqualified');
         freshGrantTime(authorization.grant, deps);
         budget.used++;
         const response = await write(method, path, body);
@@ -558,7 +573,7 @@ async function nativeStep(root: any, options: AdvanceOptions, binding: any, plan
 }
 async function admissionAction(root: any, options: AdvanceOptions, binding: any, plan: any, deps: Dependencies, authorization?: any, mode: AdmissionMode = 'advance') {
     insist(plan.stage === 'admission-preparation-ready', 'admission-plan-not-ready');
-    const read = deps.readGitHub ?? readHubGitHub, a = plan.admission, budget = { used: 0 };
+    const read = currentReader(deps), a = plan.admission, budget = { used: 0 };
     const original = decodeHubSource(await read(`${nativePrefix}/contents/${ESSAY_ADMISSION_PATH}?ref=${a.base_sha}`));
     const checked = admissionPatch(original, binding.request.slug);
     insist(a.base_sha === plan.source.main_sha, 'admission-data-base-mismatch');
@@ -620,7 +635,7 @@ async function recoverSyncAction(root: any, options: AdvanceOptions, binding: an
         throw new UnknownAttempt('sync');
     insist(plan.stage === 'dispatch-if-authorized', 'recovery-not-ready');
     const authorization = await authorizeWrite(options, binding, plan, deps), pub = await publication(binding, authorization.now);
-    const read = deps.readGitHub ?? readHubGitHub, facts = await collectHubFacts(read, { slug: binding.request.slug });
+    const read = currentReader(deps), facts = await collectHubFacts(read, { slug: binding.request.slug });
     const now = freshGrantTime(authorization.grant, deps);
     insist(Date.parse(now) >= Date.parse(pub.recovery_due_at), 'nominal-sync-grace-pending');
     const decision = decideHubReadiness({ ...facts, source: { ...facts.source, admitted: facts.source.admitted || plan.canonical.surface_targeted }, publication: pub, now });
@@ -643,6 +658,7 @@ async function recoverSyncAction(root: any, options: AdvanceOptions, binding: an
     try {
         const write = injectedWriter(deps);
         insist(write, 'native-writer-unavailable');
+        insist(readerIsQualified(deps), 'native-reader-unqualified');
         freshGrantTime(reservationAuthorization.grant, deps);
         await write('POST', `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`, body);
         await boundRecord(root, 'hub-sync-response.json', { ...intent, kind: 'hub-sync-transport-returned', attributed: false, native_run_id: null });
@@ -658,6 +674,8 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
         return envelope(binding, 'held', [], ['runtime-authority-unadmitted']);
     if (!injectedWriter(deps))
         return envelope(binding, 'held', [], ['native-writer-unqualified']);
+    if (!readerIsQualified(deps))
+        return envelope(binding, 'held', [], ['native-reader-unqualified']);
     insist(['prepare-admission', 'recover-sync'].includes(options.action) && Number.isSafeInteger(options.maxActions) && options.maxActions >= 1 && options.maxActions <= 6, 'invalid-advance-action');
     const root = await privateRoot(options.jobDir, { recoverCrashLinks: true });
     let plan: any, result: any;
@@ -672,7 +690,7 @@ export async function advanceHubRelease(options: AdvanceOptions, deps: Dependenc
             result = await recoverSyncAction(root, options, binding, plan, deps);
     }
     catch (e: any) {
-        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'original-plan-unverified', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
+        result = { stage: e instanceof UnknownAttempt ? 'unknown-native-attempt' : 'operation-held', step: e instanceof UnknownAttempt ? e.step : null, reason: e instanceof UnknownAttempt ? 'unknown-native-attempt' : ['native-reader-unqualified', 'action-budget-exhausted', 'existing-admission-work', 'current-base-changed', 'operation-input-changed', 'original-plan-unverified', 'runtime-authority-unadmitted', 'runtime-authority-binding-mismatch', 'runtime-authority-expired', 'pilot-drain-expired', 'nominal-sync-grace-pending', 'recovery-not-ready', 'existing-or-uncertain-sync-work'].includes(e.message) ? e.message : 'operation-precondition-unverified' };
     }
     finally {
         await root.close();
@@ -814,7 +832,7 @@ async function mergedDataGenerations(options: Options, binding: any, current: an
         insist(original.operation_id === binding.request.operation_id && original.week === binding.request.week && original.input_sha256 === binding.input_sha256 && original.admission?.data_path === ESSAY_ADMISSION_PATH && original.expected && original.baseline && original.source?.main_sha, 'original-plan-unverified');
         insist(JSON.stringify(current.expected) === JSON.stringify(original.expected), 'original-target-changed');
         insist(JSON.stringify(current.target_assets) === JSON.stringify(original.target_assets), 'original-target-changed');
-        const read = deps.readGitHub ?? readHubGitHub;
+        const read = currentReader(deps);
         const originalBase = await verifyOriginalPlan(binding, original, current.source.main_sha, read);
         if (current.source.main_sha === original.source.main_sha) return { references: [], observations: [] };
         const generations = [], observations = [];
@@ -865,6 +883,8 @@ async function mergedDataGenerations(options: Options, binding: any, current: an
 }
 export async function reconcileHubRelease(options: Options, deps: Dependencies = {}) {
     const binding = await load(options);
+    if (!readerIsQualified(deps))
+        return envelope(binding, 'held', [], ['native-reader-unqualified']);
     let fresh: any;
     try { fresh = await planHubRelease(options, deps); }
     catch (error: any) {
@@ -911,7 +931,7 @@ export async function reconcileHubRelease(options: Options, deps: Dependencies =
                 target: current.expected,
                 thoughts: current.baseline.thoughts,
                 cta: binding.request.cta,
-            }, { ...deps, readGitHub: deps.readGitHub ?? readHubGitHub, readHydratedBrowser: deps.readHydratedBrowser ?? (deps.browserRuntime ? undefined : readInstalledHubBrowser) });
+            }, { ...deps, readGitHub: currentReader(deps), readHydratedBrowser: deps.readHydratedBrowser ?? (deps.browserRuntime ? undefined : readInstalledHubBrowser) });
             return artifact(options, binding, { ...current, observed_at: options.now, stage: proof.stage, public_delivery: proof.public_delivery, reader: proof, ...(syncAttempt ? { sync_attempt: syncAttempt } : {}) }, proof.public_delivery === 'verified' ? 'completed' : 'held', proof.holds);
         }
         catch (error: any) {
