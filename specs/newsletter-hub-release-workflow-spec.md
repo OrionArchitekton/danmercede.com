@@ -310,10 +310,12 @@ just for cleanup, while normal same-holder lease release still runs.
 
 ## Explicit authenticated writer capability
 
-The source may construct an opaque authenticated writer capability and explicitly
+The source may construct a zero-argument opaque authenticated writer capability and explicitly
 inject it into advancement alongside the existing current authorizer. Construction
 performs no native call. It exposes no callable writer, endpoint, repository, body,
-branch or workflow override. The existing raw fixture writer remains separate;
+branch, workflow, executable or transport override. Production uses only the
+existing absolute `/usr/bin/gh`; PATH cannot select its writer. The existing raw
+fixture writer remains separate;
 ambiguous or forged capabilities hold before effects. The default CLI constructs
 no capability and remains held.
 
@@ -326,8 +328,10 @@ against its original intent, never retried; restart creates neither a duplicate
 admission PR nor a second dispatch. This adds no merge or public-release authority.
 
 The test seam is the complete advancement/reconciliation boundary with a private
-fixture journal, fake read-only native facts and an injected transport that records
-fixed GitHub CLI argv/stdin. Positive fixture delivery and negative/uncertain restart
+fixture journal, fake read-only native facts and a mocked builtin subprocess that
+records fixed GitHub CLI argv/stdin. Before any positive advancement, fixtures
+assert the builtin mock and live imported binding are identical; the mock never
+delegates to the real CLI. Positive fixture delivery and negative/uncertain restart
 cases prove source behavior only. Native calls, account qualification, runtime
 adoption and protected merge require separate exact approval.
 

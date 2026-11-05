@@ -16,36 +16,33 @@ import { budgetKbFor } from './imageBudgets.mjs';
 const REPOSITORY = 'OrionArchitekton/danmercede.com';
 const PILOT_DRAIN_CUTOFF = '2026-12-09T07:59:00Z';
 const executeRead = promisify(execFile);
-type HubWriterCall = { file: 'gh'; args: string[]; input: string; timeout: number; maxBuffer: number };
-type HubWriterTransport = (call: HubWriterCall) => Promise<{ stdout: string }>;
-const authenticatedHubWriters = new WeakMap<object, HubWriterTransport>();
+const GH_EXECUTABLE = '/usr/bin/gh';
+const authenticatedHubWriters = new WeakSet<object>();
 /** Inert opaque capability. Only advancement's reserved fixed-effect seam can consume it. */
-export function createAuthenticatedHubWriter(options: { transport?: HubWriterTransport } = {}): Readonly<object> {
-    insist(options && Object.getPrototypeOf(options) === Object.prototype && Object.keys(options).every(key => key === 'transport'), 'invalid-writer-factory-options');
-    insist(options.transport === undefined || typeof options.transport === 'function', 'invalid-writer-factory-options');
+export function createAuthenticatedHubWriter(): Readonly<object> {
+    insist(arguments.length === 0, 'invalid-writer-factory-options');
     const capability = Object.freeze({});
-    authenticatedHubWriters.set(capability, options.transport ?? (call => new Promise((resolve, reject) => {
-        const child = execFile(call.file, call.args, { timeout: call.timeout, maxBuffer: call.maxBuffer, encoding: 'utf8' }, (error, stdout) => {
-            if (error) reject(new Error('native-writer-transport-unknown'));
-            else resolve({ stdout });
-        });
-        child.stdin?.on('error', () => reject(new Error('native-writer-transport-unknown')));
-        child.stdin?.end(call.input);
-    })));
+    authenticatedHubWriters.add(capability);
     return capability;
 }
 function capabilityWriter(capability: object) {
-    const transport = authenticatedHubWriters.get(capability);
-    if (!transport) return null;
+    if (!authenticatedHubWriters.has(capability)) return null;
     return async (method: string, path: string, body: any) => {
         insist(method === 'POST' && [
             `${nativePrefix}/git/blobs`, `${nativePrefix}/git/trees`, `${nativePrefix}/git/commits`,
             `${nativePrefix}/git/refs`, `${nativePrefix}/pulls`,
             `${nativePrefix}/actions/workflows/substrate-sync.yml/dispatches`,
         ].includes(path), 'unsupported-native-effect');
-        const result = await transport({ file: 'gh', args: ['api', '--hostname', 'github.com', '--method', 'POST', path, '--input', '-'], input: JSON.stringify(body), timeout: 10000, maxBuffer: 2 * 1024 * 1024 });
-        insist(typeof result?.stdout === 'string' && Buffer.byteLength(result.stdout) <= 2 * 1024 * 1024, 'native-write-response-unusable');
-        return result.stdout.trim() ? JSON.parse(result.stdout) : null;
+        const stdout = await new Promise<string>((resolve, reject) => {
+            const child = execFile(GH_EXECUTABLE, ['api', '--hostname', 'github.com', '--method', 'POST', path, '--input', '-'], { timeout: 10000, maxBuffer: 2 * 1024 * 1024, encoding: 'utf8' }, (error, output) => {
+                if (error) reject(new Error('native-writer-transport-unknown'));
+                else resolve(output);
+            });
+            child.stdin?.on('error', () => reject(new Error('native-writer-transport-unknown')));
+            child.stdin?.end(JSON.stringify(body));
+        });
+        insist(typeof stdout === 'string' && Buffer.byteLength(stdout) <= 2 * 1024 * 1024, 'native-write-response-unusable');
+        return stdout.trim() ? JSON.parse(stdout) : null;
     };
 }
 function injectedWriter(deps: Dependencies) {

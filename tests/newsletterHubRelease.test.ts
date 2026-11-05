@@ -4,7 +4,8 @@ import { mkdtemp, writeFile, readFile, rm, chmod, readdir, mkdir, rename, symlin
 import { tmpdir } from 'node:os';
 import { join, isAbsolute, basename, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import childProcess, { execFile } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { promisify } from 'node:util';
 import fsPromises from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
@@ -1831,8 +1832,8 @@ test('explicit opaque authenticated capability uses only reserved fixed admissio
     const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z';
     const options = { requestPath: f.path, jobDir: f.dir, now };
     const plan = await planHubRelease(options, native), calls: any[] = [];
-    const capability = create({ transport: async (call: any) => {
-        assert.equal(call.file, 'gh');
+    const writer = authenticatedFixture(t, native, options, async (call: any) => {
+        assert.equal(call.file, '/usr/bin/gh');
         assert.deepEqual(call.args.slice(0, 5), ['api', '--hostname', 'github.com', '--method', 'POST']);
         assert.deepEqual(call.args.slice(6), ['--input', '-']);
         const path = call.args[5], body = JSON.parse(call.input);
@@ -1843,14 +1844,13 @@ test('explicit opaque authenticated capability uses only reserved fixed admissio
         assert.equal(intent.payload_sha256, sha(JSON.stringify({method:'POST',path,body})));
         calls.push(call);
         return { stdout: JSON.stringify(await native.writeGitHub('POST', path, body)) };
-    }});
+    });
+    const capability = writer.capability;
     assert.equal(typeof capability, 'object');
     assert.ok(Object.isFrozen(capability));
     assert.deepEqual(Object.keys(capability), []);
     assert.equal(calls.length, 0);
-    const { writeGitHub: _fixtureWriter, ...readOnly } = native;
-    const deps = { ...readOnly, authenticatedWriter: capability, clock: () => Date.parse(now),
-        authorize: async (context: any) => ({admitted:true,...context,checked_at:now,expires_at:'2026-11-09T15:10:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'}) };
+    const deps = writer.deps;
     const advance = {...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
     const result = await advanceHubRelease(advance,deps);
     const stage = JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
@@ -1864,21 +1864,49 @@ test('explicit opaque authenticated capability uses only reserved fixed admissio
     assert.equal(calls.length,5);
 });
 
-function authenticatedFixture(native: ReturnType<typeof nativeFixture>, options: any, transport?: (call:any)=>Promise<any>) {
+const fixtureExecMocks = new WeakSet<Function>();
+function assertFixtureExecBinding() {
+    assert.equal(execFile, childProcess.execFile, 'live builtin ESM binding must match mocked method');
+    assert.ok(fixtureExecMocks.has(execFile), 'positive advancement requires a registered fixture-only execFile mock');
+}
+function mockAuthenticatedTransport(t: any, transport: (call: any) => Promise<any>) {
+    const mocked = t.mock.method(childProcess, 'execFile', (file: any, args: any, options: any, callback: any) => {
+        assert.equal(file, '/usr/bin/gh', 'never delegate any call to the real executable');
+        const stdin: any = new EventEmitter();
+        let ended = false;
+        stdin.end = (input: string) => {
+            assert.equal(ended, false); ended = true;
+            void Promise.resolve().then(() => transport({ file, args, input, timeout: options.timeout, maxBuffer: options.maxBuffer }))
+                .then(value => callback(null, value.stdout, ''), error => callback(error, '', ''));
+        };
+        return { stdin };
+    });
+    fixtureExecMocks.add(mocked);
+    syncBuiltinESMExports();
+    assert.equal(execFile, mocked, 'source uses the same live node:child_process ESM export');
+    assertFixtureExecBinding();
+    t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+    return mocked;
+}
+function authenticatedFixture(t: any, native: ReturnType<typeof nativeFixture>, options: any, transport?: (call:any)=>Promise<any>) {
     const calls:any[]=[];
-    const capability=hubRelease.createAuthenticatedHubWriter({transport:async call=>{
+    const execMock=mockAuthenticatedTransport(t,async call=>{
         calls.push(call);
         if(transport)return transport(call);
         const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
         return {stdout:value===null?'':JSON.stringify(value)};
-    }});
+    });
+    const capability=hubRelease.createAuthenticatedHubWriter();
     const {writeGitHub:_fixture,...readOnly}=native;
-    return {calls,capability,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
-        authorize:async(context:any)=>({admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T17:00:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'})}};
+    return {calls,capability,execMock,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
+        authorize:async(context:any)=>{
+            assertFixtureExecBinding();
+            return {admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T17:00:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'};
+        }}};
 }
 test('opaque authenticated recovery reserves one fixed main dispatch and never attributes or repeats it',async t=>{
     const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
-    const writer=authenticatedFixture(native,options);
+    const writer=authenticatedFixture(t,native,options);
     let plan=await planHubRelease(options,native);
     await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
     assert.equal(writer.calls.length,5);
@@ -1893,7 +1921,7 @@ test('opaque authenticated recovery reserves one fixed main dispatch and never a
     const intent=JSON.parse(await readFile(join(f.dir,'hub-sync-intent.json'),'utf8'));
     assert.equal(intent.attributed,false);
     assert.equal(intent.main_sha,native.prs[0].merge_commit_sha);
-    const restarted=authenticatedFixture(native,options);
+    const restarted=authenticatedFixture(t,native,options);
     assert.equal((await advanceHubRelease(dispatch,restarted.deps)).status,'unknown');
     const observed=await reconcileHubRelease(options,restarted.deps);
     assert.equal(observed.status,'unknown');
@@ -1904,7 +1932,7 @@ test('opaque authenticated recovery reserves one fixed main dispatch and never a
 test('opaque writer rejects forged ambiguous foreign unreserved and unauthorized requests with zero transport effects',async t=>{
     for(const scenario of ['missing-authorizer','denied','stopped','stale','expired','foreign-grant','forged','cloned','ambiguous','foreign-plan','foreign-operation','unreserved','changed-main','young-publication','drained'])await t.test(scenario,async t=>{
         const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
-        const plan=await planHubRelease(options,native),writer=authenticatedFixture(native,options),deps:any={...writer.deps};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options),deps:any={...writer.deps};
         const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
         const authorize=deps.authorize;
         if(scenario==='missing-authorizer')delete deps.authorize;
@@ -1939,14 +1967,14 @@ test('opaque writer stops between effects and reconciles each original uncertain
         const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
         const plan=await planHubRelease(options,native),index=['blob','tree','commit','ref','pr'].indexOf(lostStep),advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
         let attempted=0;
-        const writer=authenticatedFixture(native,options,async call=>{
+        const writer=authenticatedFixture(t,native,options,async call=>{
             const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
             if(attempted++===index)throw Error('private lost transport detail');
             return {stdout:JSON.stringify(value)};
         });
         assert.equal((await advanceHubRelease(advance,writer.deps)).status,'unknown');
         assert.equal(writer.calls.length,index+1);
-        const restarted=authenticatedFixture(native,options);
+        const restarted=authenticatedFixture(t,native,options);
         assert.equal((await advanceHubRelease(advance,restarted.deps)).status,'unknown');
         assert.equal(restarted.calls.length,0);
         await reconcileHubRelease(options,restarted.deps);
@@ -1961,7 +1989,7 @@ test('opaque writer stops between effects and reconciles each original uncertain
         for(const name of artifacts)assert.ok(!(await readFile(join(f.dir,name),'utf8')).includes('private lost transport detail'));
     });
     await t.test('current-STOP-after-first-effect',async t=>{
-        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'},writer=authenticatedFixture(native,options);
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'},writer=authenticatedFixture(t,native,options);
         const plan=await planHubRelease(options,native),authorize=writer.deps.authorize;
         writer.deps.authorize=async(context:any)=>({...await authorize(context),stopped:writer.calls.length>0});
         const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
@@ -1972,45 +2000,32 @@ test('opaque writer stops between effects and reconciles each original uncertain
 test('factory offers no native selectors or direct callable effect and CLI stays held',async t=>{
     const capability=hubRelease.createAuthenticatedHubWriter();
     assert.equal(typeof capability,'object');assert.deepEqual(Object.getOwnPropertyNames(capability),[]);
-    for(const key of ['repository','path','method','body','branch','workflow','credentials','account'])assert.throws(()=>hubRelease.createAuthenticatedHubWriter({[key]:'arbitrary'} as any),/invalid-writer-factory-options/);
+    for(const key of ['repository','path','method','body','branch','workflow','credentials','account'])assert.throws(()=>(hubRelease.createAuthenticatedHubWriter as any)({[key]:'arbitrary'}),/invalid-writer-factory-options/);
     const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
     const plan=await planHubRelease(options,native);
     const result=await hubRelease.main(['advance','--request',f.path,'--job-dir',f.dir,'--now',options.now,'--execute-action','prepare-admission','--plan-sha256',plan.artifacts[0].sha256,'--max-actions','5']);
     assert.equal(result.status,'held');assert.deepEqual(result.holds,['runtime-authority-unadmitted']);assert.equal(native.writes.length,0);
 });
 
-test('default authenticated transport executes only an owned gh fixture with fixed argv and JSON stdin',async t=>{
+test('authenticated production transport uses fixed absolute executable and JSON stdin despite PATH',async t=>{
     const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
-    const plan=await planHubRelease(options,native),bin=join(f.dir,'bin'),record=join(f.dir,'transport-fixture.json');
-    await mkdir(bin,{mode:0o700});
-    await writeFile(join(bin,'gh'),`#!${process.execPath}
-const fs=require('node:fs'),crypto=require('node:crypto');
-const input=fs.readFileSync(0,'utf8'),body=JSON.parse(input);
-fs.writeFileSync(${JSON.stringify(record)},JSON.stringify({args:process.argv.slice(2),input,executable:process.execPath}),{mode:0o600,flag:'wx'});
-const sha=crypto.createHash('sha1').update('blob '+Buffer.byteLength(body.content)+'\\0').update(body.content).digest('hex');
-process.stdout.write(JSON.stringify({sha}));
-`,{mode:0o700});
-    const oldPath=process.env.PATH;process.env.PATH=bin+':'+oldPath;
+    const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+    const oldPath=process.env.PATH;process.env.PATH='/nonexistent-owned-fixture-path';
     t.after(()=>{process.env.PATH=oldPath;});
-    const {writeGitHub:_fixture,readGitHub,...readOnly}=native;
-    let reflected=false;
-    const deps={...readOnly,authenticatedWriter:hubRelease.createAuthenticatedHubWriter(),clock:()=>Date.parse(options.now),
-        readGitHub:async(path:string)=>{
-            if(path.includes('/git/blobs/')&&!reflected){
-                const call=JSON.parse(await readFile(record,'utf8'));reflected=true;
-                await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
-            }
-            return readGitHub(path);
-        },
-        authorize:async(context:any)=>({admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T15:10:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'})};
-    const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:1},deps);
-    const saved=JSON.parse(await readFile(record,'utf8'));
-    assert.equal(saved.executable,process.execPath);
-    assert.deepEqual(saved.args,['api','--hostname','github.com','--method','POST','/repos/OrionArchitekton/danmercede.com/git/blobs','--input','-']);
+    assertFixtureExecBinding();
+    const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:1},writer.deps);
+    assert.equal(writer.execMock.mock.calls[0].arguments[0],'/usr/bin/gh');
+    const call=writer.calls[0];
+    assert.deepEqual(call.args,['api','--hostname','github.com','--method','POST','/repos/OrionArchitekton/danmercede.com/git/blobs','--input','-']);
+    assert.equal(call.timeout,10000);assert.equal(call.maxBuffer,2*1024*1024);
+    assert.equal(JSON.parse(call.input).encoding,'utf-8');
     assert.equal(native.writes.length,1);
-    assert.equal(reflected,true);
-    assert.equal(outcome.status,'held');
-    assert.ok(outcome.holds.includes('action-budget-exhausted'));
+    assert.equal(outcome.status,'held');assert.ok(outcome.holds.includes('action-budget-exhausted'));
+});
+test('production factory rejects a caller supplied transport callback without invoking it',()=>{
+    let calls=0;
+    assert.throws(()=>(hubRelease.createAuthenticatedHubWriter as any)({transport:()=>{calls++;}}),/invalid-writer-factory-options/);
+    assert.equal(calls,0);
 });
 
 test('authenticated capability rechecks source publication expiry and drain before subsequent effects',async t=>{
@@ -2018,7 +2033,7 @@ test('authenticated capability rechecks source publication expiry and drain befo
         const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
         const plan=await planHubRelease(options,native);
         let calls=0;
-        const writer=authenticatedFixture(native,options,async call=>{
+        const writer=authenticatedFixture(t,native,options,async call=>{
             const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));calls++;
             if(scenario==='source-moved')native.moveMain();
             if(scenario==='expired')options.now='2026-11-09T17:00:00Z';
@@ -2038,7 +2053,7 @@ test('authenticated capability rechecks source publication expiry and drain befo
 test('authenticated capability preserves inherited dependencies and original callback receivers',async t=>{
     for(const shape of ['inherited-authorizer','private-class-authorizer','inherited-reader'])for(const mode of ['raw','capability'])await t.test(`${shape}:${mode}`,async t=>{
         const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
-        const plan=await planHubRelease(options,native),writer=authenticatedFixture(native,options);
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
         const bin=join(f.dir,'deny-bin'),unexpected=join(f.dir,'unexpected-default-gh.json');
         await mkdir(bin,{mode:0o700});
         await writeFile(join(bin,'gh'),`#!${process.execPath}

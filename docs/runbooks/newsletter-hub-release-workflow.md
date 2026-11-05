@@ -504,12 +504,13 @@ separately admitted integration must explicitly inject it as `authenticatedWrite
 alongside the existing current `authorize` dependency. The CLI never constructs it.
 Existing injected fixture callbacks remain supported; supplying both a capability
 and a raw writer holds rather than selecting a fallback. Forged or cloned objects
-are not capabilities. No endpoint, body, repository, branch, workflow, account or
-credential selector is accepted by the factory. Its optional transport seam is for
-isolated qualification fixtures; it is not runtime/provider qualification.
+are not capabilities. The zero-argument factory accepts no endpoint, body, repository, branch, workflow,
+account, credential, executable or transport selector. Test subprocess mocks are
+not runtime/provider qualification.
 
 Only the coordinator's reserved fixed effects can consume the object. Production
-transport uses existing `gh api --hostname github.com --method POST` with the fixed
+transport uses only the existing absolute `/usr/bin/gh api --hostname github.com
+--method POST` with the fixed
 repository endpoint, JSON on stdin, a ten-second timeout and bounded output. It
 loads no credential itself and does not log stderr or request bodies. Existing
 original-operation intents, exact native readbacks, current authorizer, protected
@@ -531,3 +532,11 @@ Writer resolution retains the caller's original dependency object, existing
 callback invocation semantics and inherited reader selection. Authorizer and raw
 writer receivers remain unchanged; capability injection must not copy dependencies
 into a plain object or select default readers accidentally.
+
+The fixed executable must be independently qualified for the exact future native
+canary; this source change neither installs nor replaces it. Missing transport
+remains held/unknown with the original intent preserved, with no PATH fallback.
+Fixtures mock `node:child_process.execFile`, assert the mock and live imported
+binding identity before positive advancement, and never delegate to the real CLI.
+Existing raw writer callbacks remain trusted code injection, not an untrusted-data
+security boundary. The new production factory provides no callback selector.
