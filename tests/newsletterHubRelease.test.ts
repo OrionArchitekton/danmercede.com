@@ -4,7 +4,8 @@ import { mkdtemp, writeFile, readFile, rm, chmod, readdir, mkdir, rename, symlin
 import { tmpdir } from 'node:os';
 import { join, isAbsolute, basename, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import childProcess, { execFile } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { promisify } from 'node:util';
 import fsPromises from 'node:fs/promises';
 import { syncBuiltinESMExports } from 'node:module';
@@ -19,6 +20,8 @@ import { privateRoot } from '../scripts/newsletterHubReleaseJournal.ts';
 import { verifyHubReader } from '../scripts/newsletterHubReleaseReader.ts';
 import { parseCanonicalMarkdown, mapSubstrateToEntry, generateOutput, HUB_ESSAY_ALLOWLIST } from '../scripts/compileContent.ts';
 import { budgetKbFor } from '../scripts/imageBudgets.mjs';
+import { readHubGitHub } from '../scripts/newsletterHubReadiness.mjs';
+import * as hubRelease from '../scripts/newsletterHubRelease.ts';
 import { planHubRelease, inspectHubRelease, advanceHubRelease, reconcileHubRelease, verifyTrustedHubCheck } from '../scripts/newsletterHubRelease.ts';
 const sha = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const slug = '2026-11-02-before-your-ai-tries-again';
@@ -1821,5 +1824,437 @@ test('generation holds expose only fixed source-owned diagnostics and never raw 
         if (example.raw) assert.equal(raw.includes(example.raw), false);
         assert.equal(accessorCalls, 0);
         assert.equal(native.writes.length, 0);
+    });
+});
+
+test('explicit opaque authenticated capability uses only reserved fixed admission effects', async (t) => {
+    const create = (hubRelease as any).createAuthenticatedHubWriter;
+    assert.equal(typeof create, 'function');
+    const f = await fixture(t), native = nativeFixture(), now = '2026-11-09T15:05:00Z';
+    const options = { requestPath: f.path, jobDir: f.dir, now };
+    const plan = await planHubRelease(options, native), calls: any[] = [];
+    const writer = authenticatedFixture(t, native, options, async (call: any) => {
+        assert.equal(call.file, '/usr/bin/gh');
+        assert.deepEqual(call.args.slice(0, 5), ['api', '--hostname', 'github.com', '--method', 'POST']);
+        assert.deepEqual(call.args.slice(6), ['--input', '-']);
+        const path = call.args[5], body = JSON.parse(call.input);
+        const step = ['git/blobs','git/trees','git/commits','git/refs','pulls'][calls.length];
+        assert.equal(path, '/repos/OrionArchitekton/danmercede.com/' + step);
+        const names = ['blob','tree','commit','ref','pr'];
+        const intent = JSON.parse(await readFile(join(f.dir, `hub-admission-${names[calls.length]}-intent.json`), 'utf8'));
+        assert.equal(intent.payload_sha256, sha(JSON.stringify({method:'POST',path,body})));
+        calls.push(call);
+        return { stdout: JSON.stringify(await native.writeGitHub('POST', path, body)) };
+    });
+    const capability = writer.capability;
+    assert.equal(typeof capability, 'object');
+    assert.ok(Object.isFrozen(capability));
+    assert.deepEqual(Object.keys(capability), []);
+    assert.equal(calls.length, 0);
+    const deps = writer.deps;
+    const advance = {...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+    const result = await advanceHubRelease(advance,deps);
+    const stage = JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+    assert.equal(stage.stage,'admission-pr-awaiting-merge');
+    assert.equal(stage.merge_gate,'HUMAN_REQUIRED');
+    assert.equal(stage.public_delivery,'unknown');
+    assert.equal(calls.length,5);
+    assert.equal(native.prs.length,1);
+    assert.equal(native.prs[0].draft,true);
+    await advanceHubRelease(advance,deps);
+    assert.equal(calls.length,5);
+});
+
+const fixtureExecMocks = new WeakSet<Function>();
+function assertFixtureExecBinding() {
+    assert.equal(execFile, childProcess.execFile, 'live builtin ESM binding must match mocked method');
+    assert.ok(fixtureExecMocks.has(execFile), 'positive advancement requires a registered fixture-only execFile mock');
+}
+function mockAuthenticatedTransport(t: any, transport: (call: any) => Promise<any>) {
+    const mocked = t.mock.method(childProcess, 'execFile', (file: any, args: any, options: any, callback: any) => {
+        assert.equal(file, '/usr/bin/gh', 'never delegate any call to the real executable');
+        const stdin: any = new EventEmitter();
+        let ended = false;
+        stdin.end = (input: string) => {
+            assert.equal(ended, false); ended = true;
+            void Promise.resolve().then(() => transport({ file, args, input, timeout: options.timeout, maxBuffer: options.maxBuffer }))
+                .then(value => callback(null, value.stdout, ''), error => callback(error, '', ''));
+        };
+        return { stdin };
+    });
+    fixtureExecMocks.add(mocked);
+    syncBuiltinESMExports();
+    assert.equal(execFile, mocked, 'source uses the same live node:child_process ESM export');
+    assertFixtureExecBinding();
+    t.after(() => { t.mock.restoreAll(); syncBuiltinESMExports(); });
+    return mocked;
+}
+function authenticatedFixture(t: any, native: ReturnType<typeof nativeFixture>, options: any, transport?: (call:any)=>Promise<any>) {
+    const calls:any[]=[],syncReservations:boolean[]=[];
+    const execMock=mockAuthenticatedTransport(t,async call=>{
+        calls.push(call);
+        if(call.args[5].endsWith('/actions/workflows/substrate-sync.yml/dispatches')){
+            let reserved=false;
+            try{
+                const saved=JSON.parse(await readFile(join(options.jobDir,'hub-sync-intent.json'),'utf8'));
+                reserved=saved.kind==='hub-sync-intent'&&saved.action==='recover-sync'&&saved.input_sha256===sha(await readFile(options.requestPath))&&saved.payload_sha256===sha(call.input);
+            }catch{}
+            syncReservations.push(reserved);
+            assert.ok(reserved,'durable bound sync intent must precede the fixture effect');
+        }
+        if(transport)return transport(call);
+        const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+        return {stdout:value===null?'':JSON.stringify(value)};
+    });
+    const capability=hubRelease.createAuthenticatedHubWriter();
+    const {writeGitHub:_fixture,...readOnly}=native;
+    return {calls,capability,execMock,syncReservations,deps:{...readOnly,authenticatedWriter:capability,clock:()=>Date.parse(options.now),
+        authorize:async(context:any)=>{
+            assertFixtureExecBinding();
+            return {admitted:true,...context,checked_at:options.now,expires_at:'2026-11-09T17:00:00Z',stopped:false,grant_ref:'fixture:scoped-authorizer'};
+        }}};
+}
+test('opaque authenticated recovery reserves one fixed main dispatch and never attributes or repeats it',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const writer=authenticatedFixture(t,native,options);
+    let plan=await planHubRelease(options,native);
+    await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+    assert.equal(writer.calls.length,5);
+    native.mergeAdmission();
+    options.now='2026-11-09T16:25:00Z';
+    plan=await planHubRelease(options,native);
+    const dispatch={...options,action:'recover-sync',planSha256:plan.artifacts[0].sha256,maxActions:1};
+    const result=await advanceHubRelease(dispatch,writer.deps);
+    assert.equal(result.status,'unknown');
+    assert.equal(writer.calls.length,6);
+    assert.deepEqual(writer.syncReservations,[true]);
+    assert.deepEqual(native.writes.at(-1),{method:'POST',path:'/repos/OrionArchitekton/danmercede.com/actions/workflows/substrate-sync.yml/dispatches',body:{ref:'main'}});
+    const intent=JSON.parse(await readFile(join(f.dir,'hub-sync-intent.json'),'utf8'));
+    assert.equal(intent.attributed,false);
+    assert.equal(intent.main_sha,native.prs[0].merge_commit_sha);
+    const restarted=authenticatedFixture(t,native,options);
+    assert.equal((await advanceHubRelease(dispatch,restarted.deps)).status,'unknown');
+    const observed=await reconcileHubRelease(options,restarted.deps);
+    assert.equal(observed.status,'unknown');
+    assert.equal(restarted.calls.length,0);
+    assert.equal(native.writes.length,6);
+});
+
+test('opaque writer rejects forged ambiguous foreign unreserved and unauthorized requests with zero transport effects',async t=>{
+    for(const scenario of ['missing-authorizer','denied','stopped','stale','expired','foreign-grant','forged','cloned','ambiguous','foreign-plan','foreign-operation','unreserved','changed-main','young-publication','drained','legacy-readonly'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options),deps:any={...writer.deps};
+        const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+        let authCalls=0;
+        const originalAuthorize=deps.authorize;
+        const authorize=async(context:any)=>{authCalls++;return originalAuthorize(context);};
+        deps.authorize=authorize;
+        if(scenario==='missing-authorizer')delete deps.authorize;
+        if(['denied','stopped','stale','expired','foreign-grant'].includes(scenario))deps.authorize=async(context:any)=>{
+            const grant=await authorize(context);
+            if(scenario==='denied')grant.admitted=false;
+            if(scenario==='stopped')grant.stopped=true;
+            if(scenario==='stale')grant.checked_at='2026-11-09T15:03:59Z';
+            if(scenario==='expired')grant.expires_at=options.now;
+            if(scenario==='foreign-grant')grant.operation_id='foreign-operation';
+            return grant;
+        };
+        if(scenario==='forged')deps.authenticatedWriter={};
+        if(scenario==='cloned')deps.authenticatedWriter={...writer.capability};
+        if(scenario==='ambiguous')deps.writeGitHub=native.writeGitHub;
+        if(scenario==='foreign-plan')advance.planSha256='a'.repeat(64);
+        if(scenario==='foreign-operation'){
+            const request=JSON.parse(await readFile(f.path,'utf8'));request.operation_id='foreign-operation';await writeFile(f.path,JSON.stringify(request),{mode:0o600});
+        }
+        if(scenario==='unreserved')advance.action='arbitrary-endpoint';
+        if(scenario==='changed-main')native.moveMain();
+        if(scenario==='young-publication')deps.clock=()=>Date.parse('2026-11-09T15:02:44Z');
+        if(scenario==='drained')deps.clock=()=>Date.parse('2026-12-09T07:59:00Z');
+        if(scenario==='legacy-readonly')deps.reconcileOnly=true;
+        const expected:Record<string,[string,number]>={
+            'missing-authorizer':['runtime-authority-unadmitted',0],
+            denied:['runtime-authority-unadmitted',1],stopped:['runtime-authority-unadmitted',1],
+            stale:['runtime-authority-expired',1],expired:['runtime-authority-expired',1],
+            'foreign-grant':['runtime-authority-binding-mismatch',1],
+            forged:['native-writer-unqualified',0],cloned:['native-writer-unqualified',0],ambiguous:['native-writer-unqualified',0],
+            'foreign-plan':['operation-precondition-unverified',0],'foreign-operation':['operation-precondition-unverified',0],
+            'changed-main':['current-base-changed',0],'young-publication':['operation-precondition-unverified',0],
+            drained:['pilot-drain-expired',0],'legacy-readonly':['operation-precondition-unverified',1],
+        };
+        if(scenario==='unreserved')await assert.rejects(()=>advanceHubRelease(advance,deps),{message:'invalid-advance-action'});
+        else{
+            const outcome=await advanceHubRelease(advance,deps);
+            assert.equal(outcome.status,'held');assert.deepEqual(outcome.holds,[expected[scenario][0]]);
+        }
+        assert.equal(authCalls,scenario==='unreserved'?0:expected[scenario][1]);
+        assert.equal(writer.calls.length,0);
+        assert.equal(native.writes.length,0);
+    });
+});
+test('opaque writer stops between effects and reconciles each original uncertain attempt without replay',async t=>{
+    for(const lostStep of ['blob','tree','commit','ref','pr'])await t.test(lostStep,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),index=['blob','tree','commit','ref','pr'].indexOf(lostStep),advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+        let attempted=0;
+        const writer=authenticatedFixture(t,native,options,async call=>{
+            const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+            if(attempted++===index)throw Error('private lost transport detail');
+            return {stdout:JSON.stringify(value)};
+        });
+        assert.equal((await advanceHubRelease(advance,writer.deps)).status,'unknown');
+        assert.equal(writer.calls.length,index+1);
+        const restarted=authenticatedFixture(t,native,options);
+        assert.equal((await advanceHubRelease(advance,restarted.deps)).status,'unknown');
+        assert.equal(restarted.calls.length,0);
+        await reconcileHubRelease(options,restarted.deps);
+        assert.equal(restarted.calls.length,0);
+        const next=await advanceHubRelease(advance,restarted.deps);
+        if(['tree','commit'].includes(lostStep)){
+            assert.equal(next.status,'unknown');assert.equal(restarted.calls.length,0);
+        }else{
+            assert.equal(next.status,'held');assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+        }
+        const artifacts=(await readdir(f.dir)).filter(n=>n.startsWith('hub-plan-'));
+        for(const name of artifacts)assert.ok(!(await readFile(join(f.dir,name),'utf8')).includes('private lost transport detail'));
+    });
+    await t.test('current-STOP-after-first-effect',async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'},writer=authenticatedFixture(t,native,options);
+        const plan=await planHubRelease(options,native),authorize=writer.deps.authorize;
+        writer.deps.authorize=async(context:any)=>({...await authorize(context),stopped:writer.calls.length>0});
+        const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        assert.equal(outcome.status,'held');assert.equal(writer.calls.length,1);
+        assert.ok(!(await readdir(f.dir)).includes('hub-admission-tree-intent.json'));
+    });
+});
+test('factory offers no native selectors or direct callable effect and CLI stays held',async t=>{
+    const capability=hubRelease.createAuthenticatedHubWriter();
+    assert.equal(typeof capability,'object');assert.deepEqual(Object.getOwnPropertyNames(capability),[]);
+    for(const key of ['repository','path','method','body','branch','workflow','credentials','account'])assert.throws(()=>(hubRelease.createAuthenticatedHubWriter as any)({[key]:'arbitrary'}),/invalid-writer-factory-options/);
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native);
+    const result=await hubRelease.main(['advance','--request',f.path,'--job-dir',f.dir,'--now',options.now,'--execute-action','prepare-admission','--plan-sha256',plan.artifacts[0].sha256,'--max-actions','5']);
+    assert.equal(result.status,'held');assert.deepEqual(result.holds,['runtime-authority-unadmitted']);assert.equal(native.writes.length,0);
+});
+
+test('authenticated production transport uses fixed absolute executable and JSON stdin despite PATH',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+    const oldPath=process.env.PATH;process.env.PATH='/nonexistent-owned-fixture-path';
+    t.after(()=>{process.env.PATH=oldPath;});
+    assertFixtureExecBinding();
+    const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:1},writer.deps);
+    assert.equal(writer.execMock.mock.calls[0].arguments[0],'/usr/bin/gh');
+    const call=writer.calls[0];
+    assert.deepEqual(call.args,['api','--hostname','github.com','--method','POST','/repos/OrionArchitekton/danmercede.com/git/blobs','--input','-']);
+    assert.equal(call.timeout,10000);assert.equal(call.maxBuffer,2*1024*1024);
+    assert.equal(JSON.parse(call.input).encoding,'utf-8');
+    assert.equal(native.writes.length,1);
+    assert.equal(outcome.status,'held');assert.ok(outcome.holds.includes('action-budget-exhausted'));
+});
+test('production factory rejects a caller supplied transport callback without invoking it',()=>{
+    let calls=0;
+    assert.throws(()=>(hubRelease.createAuthenticatedHubWriter as any)({transport:()=>{calls++;}}),/invalid-writer-factory-options/);
+    assert.equal(calls,0);
+});
+
+test('authenticated capability rechecks source publication expiry and drain before subsequent effects',async t=>{
+    for(const scenario of ['source-moved','publication-changed','expired','drained'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native);
+        let calls=0;
+        const writer=authenticatedFixture(t,native,options,async call=>{
+            const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));calls++;
+            if(scenario==='source-moved')native.moveMain();
+            if(scenario==='expired')options.now='2026-11-09T17:00:00Z';
+            if(scenario==='drained')options.now='2026-12-09T07:59:00Z';
+            if(scenario==='publication-changed'){
+                const request=JSON.parse(await readFile(f.path,'utf8'));
+                await writeFile(request.publication_snapshot.path,'{}',{mode:0o600});
+            }
+            return {stdout:JSON.stringify(value)};
+        });
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        assert.equal(result.status,'held');assert.equal(calls,1);assert.equal(native.writes.length,1);
+        assert.ok(!(await readdir(f.dir)).includes('hub-admission-tree-intent.json'));
+    });
+});
+
+test('authenticated capability preserves inherited dependencies and original callback receivers',async t=>{
+    for(const shape of ['inherited-authorizer','private-class-authorizer','inherited-reader'])for(const mode of ['raw','capability'])await t.test(`${shape}:${mode}`,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-bin'),unexpected=join(f.dir,'unexpected-default-gh.json');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').appendFileSync(${JSON.stringify(unexpected)},JSON.stringify(process.argv.slice(2))+'\\n',{mode:0o600});
+process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin+':'+oldPath;t.after(()=>{process.env.PATH=oldPath;});
+        const {authorize,readGitHub,clock,...rest}=writer.deps;
+        let current:any,authorizations=0;
+        const boundAuthorize=async function(this:any,context:any){assert.equal(this,current);authorizations++;return authorize(context);};
+        if(shape==='private-class-authorizer'){
+            class GrantDependencies {
+                #count=0;
+                async authorize(context:any){this.#count++;authorizations++;assert.equal(this,current);return authorize(context);}
+            }
+            current=Object.assign(new GrantDependencies(),rest,{readGitHub,clock});
+        }else if(shape==='inherited-reader')current=Object.assign(Object.create({readGitHub,clock}),rest,{authorize:boundAuthorize});
+        else current=Object.assign(Object.create({authorize:boundAuthorize,readGitHub,clock}),rest);
+        if(mode==='raw'){
+            delete current.authenticatedWriter;
+            current.writeGitHub=async function(this:any,method:string,path:string,body:any){assert.equal(this,current);return native.writeGitHub(method,path,body);};
+        }
+        const outcome=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},current);
+        const stage=JSON.parse(await readFile(join(f.dir,outcome.artifacts[0].ref),'utf8'));
+        assert.equal(stage.stage,'admission-pr-awaiting-merge');
+        assert.equal(authorizations,6);assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+        assert.equal((await readdir(f.dir)).includes('unexpected-default-gh.json'),false);
+    });
+});
+
+test('read-only reconciliation preserves inherited reader for the original uncertain admission ref',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const bin=join(f.dir,'deny-bin'),unexpected=join(f.dir,'unexpected-default-reader.json');
+    await mkdir(bin,{mode:0o700});
+    await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').appendFileSync(${JSON.stringify(unexpected)},JSON.stringify(process.argv.slice(2))+'\\n',{mode:0o600});
+process.exit(88);
+`,{mode:0o700});
+    const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+    const plan=await planHubRelease(options,native);
+    const writer=authenticatedFixture(t,native,options,async call=>{
+        const value=await native.writeGitHub('POST',call.args[5],JSON.parse(call.input));
+        if(call.args[5].endsWith('/git/refs'))throw Error('owned lost ref response');
+        return {stdout:JSON.stringify(value)};
+    });
+    const {readGitHub,...own}=writer.deps,deps=Object.assign(Object.create({readGitHub}),own);
+    const advance={...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5};
+    assertFixtureExecBinding();
+    assert.equal((await advanceHubRelease(advance,deps)).status,'unknown');
+    assert.equal(native.writes.length,4);
+    const original=await readFile(join(f.dir,'hub-admission-ref-intent.json'));
+    const result=await reconcileHubRelease(options,deps);
+    const stage=JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+    assert.equal(stage.reason,'unstarted-native-substep');
+    const receipt=JSON.parse(await readFile(join(f.dir,'hub-admission-ref-receipt.json'),'utf8'));
+    assert.equal(receipt.reconciled,true);
+    assert.deepEqual(await readFile(join(f.dir,'hub-admission-ref-intent.json')),original);
+    assert.equal(native.writes.length,4);assert.equal(writer.calls.length,4);
+    assert.equal((await readdir(f.dir)).includes('unexpected-default-reader.json'),false);
+    assertFixtureExecBinding();
+    const resumed=await advanceHubRelease(advance,deps);
+    assert.equal(resumed.status,'held');assert.equal(native.writes.length,5);assert.equal(native.prs.length,1);
+});
+
+
+test('authenticated capability requires an explicit trusted reader before any admission work',async t=>{
+    for(const scenario of ['absent','nonfunction','default'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any={...writer.deps};let grants=0;
+        deps.authorize=async()=>{grants++;throw Error('must not authorize');};
+        if(scenario==='absent')delete deps.readGitHub;
+        else deps.readGitHub=scenario==='default'?readHubGitHub:42;
+        const before=(await readdir(f.dir)).sort();
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.deepEqual(result.holds,['native-reader-unqualified']);
+        assert.equal(result.status,'held');assert.equal(grants,0);assert.equal(writer.calls.length,0);assert.equal(native.writes.length,0);
+        assert.deepEqual((await readdir(f.dir)).sort(),before);
+        const recovered=await reconcileHubRelease(options,deps);
+        assert.deepEqual(recovered.holds,['native-reader-unqualified']);
+        assert.deepEqual((await readdir(f.dir)).sort(),before);
+    });
+});
+
+
+test('authenticated capability never restores the default reader between effects',async t=>{
+    for(const replacement of ['absent','nonfunction','default'])await t.test(replacement,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any=writer.deps;let grants=0;const authorize=deps.authorize;
+        deps.authorize=async(context:any)=>{grants++;return authorize(context);};
+        deps.readGitHub=async(path:string)=>{
+            const result=await native.readGitHub(path);
+            if(writer.calls.length===1&&path.includes('/git/blobs/')){
+                if(replacement==='absent')delete deps.readGitHub;
+                else deps.readGitHub=replacement==='default'?readHubGitHub:42;
+            }
+            return result;
+        };
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.equal(result.status,'held');assert.deepEqual(result.holds,['native-reader-unqualified']);assert.equal(writer.calls.length,1);assert.equal(native.writes.length,1);
+        assert.equal(grants,2);
+        assert.equal((await readdir(f.dir)).includes('hub-admission-tree-intent.json'),false);
+        assert.equal((await readdir(f.dir)).includes('unexpected-reader'),false,'PATH reader must never be restored');
+    });
+});
+
+
+test('authenticated capability reads an accessor reader once per call so a later undefined never selects the PATH reader',async t=>{
+    for(const qualifiedReads of [1,2,3,4,5,6])await t.test(`qualified for ${qualifiedReads} reads`,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any=writer.deps,trusted=async(path:string)=>native.readGitHub(path);let reads=0;
+        Object.defineProperty(deps,'readGitHub',{configurable:true,enumerable:true,get(){reads++;return reads<=qualifiedReads?trusted:undefined;}});
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.equal((await readdir(f.dir)).includes('unexpected-reader'),false,'accessor must not pass the check and then fall back to the PATH reader');
+        assert.equal(result.status,'held');assert.deepEqual(result.holds,['native-reader-unqualified']);
+    });
+});
+
+
+test('authenticated capability revalidates a reader lost inside authorization before reserving effects',async t=>{
+    const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+    const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+    const deps:any=writer.deps,authorize=deps.authorize;let grants=0;
+    deps.authorize=async(context:any)=>{grants++;const grant=await authorize(context);delete deps.readGitHub;return grant;};
+    const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+    assert.deepEqual(result.holds,['native-reader-unqualified']);assert.equal(grants,1);
+    assert.equal(writer.calls.length,0);assert.equal(native.writes.length,0);
+    assert.equal((await readdir(f.dir)).some(name=>name.endsWith('-intent.json')),false);
+});
+
+
+test('authenticated capability requires on-demand explicit review-thread reader',async t=>{
+    for(const scenario of ['absent','nonfunction','inherited'])await t.test(scenario,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),first=JSON.parse(await readFile(join(f.dir,plan.artifacts[0].ref),'utf8'));
+        const writer=authenticatedFixture(t,native,options);
+        await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},writer.deps);
+        native.mergeAdmission();native.openContent(first.expected);
+        const bin=join(f.dir,'deny-thread-bin'),unexpected=join(f.dir,'unexpected-thread-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const {readReviewThreads,...own}=writer.deps;let threadReads=0;
+        const deps:any=scenario==='inherited'?Object.assign(Object.create({readReviewThreads:async(number:number)=>{threadReads++;return readReviewThreads(number);}}),own):own;
+        if(scenario==='nonfunction')deps.readReviewThreads=42;
+        const result=await reconcileHubRelease(options,deps),stage=JSON.parse(await readFile(join(f.dir,result.artifacts[0].ref),'utf8'));
+        assert.equal(result.status,'held');assert.equal(writer.calls.length,5);assert.equal(native.writes.length,5);
+        assert.deepEqual(result.holds,scenario==='inherited'?['HUMAN_REQUIRED']:['native-reader-unqualified']);
+        assert.equal(stage.stage,scenario==='inherited'?'content-pr-awaiting-merge':'content-pr-unverified');
+        assert.equal(threadReads,scenario==='inherited'?1:0);
+        assert.equal((await readdir(f.dir)).includes('unexpected-thread-reader'),false,'capability path never selects default GraphQL reader');
     });
 });
