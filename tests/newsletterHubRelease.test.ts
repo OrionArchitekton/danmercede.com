@@ -2203,6 +2203,25 @@ require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mod
 });
 
 
+test('authenticated capability reads an accessor reader once per call so a later undefined never selects the PATH reader',async t=>{
+    for(const qualifiedReads of [1,2,3,4,5,6])await t.test(`qualified for ${qualifiedReads} reads`,async t=>{
+        const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
+        const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);
+        const bin=join(f.dir,'deny-reader-bin'),unexpected=join(f.dir,'unexpected-reader');
+        await mkdir(bin,{mode:0o700});
+        await writeFile(join(bin,'gh'),`#!${process.execPath}
+require('node:fs').writeFileSync(${JSON.stringify(unexpected)},'unexpected',{mode:0o600});process.exit(88);
+`,{mode:0o700});
+        const oldPath=process.env.PATH;process.env.PATH=bin;t.after(()=>{process.env.PATH=oldPath;});
+        const deps:any=writer.deps,trusted=async(path:string)=>native.readGitHub(path);let reads=0;
+        Object.defineProperty(deps,'readGitHub',{configurable:true,enumerable:true,get(){reads++;return reads<=qualifiedReads?trusted:undefined;}});
+        const result=await advanceHubRelease({...options,action:'prepare-admission',planSha256:plan.artifacts[0].sha256,maxActions:5},deps);
+        assert.equal((await readdir(f.dir)).includes('unexpected-reader'),false,'accessor must not pass the check and then fall back to the PATH reader');
+        assert.equal(result.status,'held');assert.deepEqual(result.holds,['native-reader-unqualified']);
+    });
+});
+
+
 test('authenticated capability revalidates a reader lost inside authorization before reserving effects',async t=>{
     const f=await fixture(t),native=nativeFixture(),options={requestPath:f.path,jobDir:f.dir,now:'2026-11-09T15:05:00Z'};
     const plan=await planHubRelease(options,native),writer=authenticatedFixture(t,native,options);

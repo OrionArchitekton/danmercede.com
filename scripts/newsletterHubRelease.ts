@@ -57,8 +57,9 @@ function readerIsQualified(deps: Dependencies) {
 function currentReader(deps: Dependencies) {
     if (deps.authenticatedWriter === undefined) return deps.readGitHub ?? readHubGitHub;
     return (path: string) => {
-        insist(readerIsQualified(deps), 'native-reader-unqualified');
-        const read = deps.readGitHub ?? readHubGitHub;
+        // Snapshot once: a second property read (e.g. an accessor) could pass the check and then restore the PATH reader.
+        const read = deps.readGitHub;
+        insist(typeof read === 'function' && read !== readHubGitHub, 'native-reader-unqualified');
         return read(path);
     };
 }
