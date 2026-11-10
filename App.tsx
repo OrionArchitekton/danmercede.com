@@ -511,7 +511,7 @@ const EcosystemPage = () => {
           <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             {venture.name}
             <span className="text-slate-400 font-light">·</span>
-            <span className="text-copper-400 font-light">{venture.role}</span>
+            <span className="text-slate-300 font-light">{venture.role}</span>
           </h3>
           <div className="space-y-6">
             <div>
@@ -605,12 +605,12 @@ const EcosystemPage = () => {
                     </span>
                   </div>
                   <div className="grow">
-                    <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isCosmocrat ? 'text-copper-500' : 'text-copper-400'}`}>
-                      {venture.role}
-                    </p>
-                    <h2 className="text-2xl font-bold mb-4 text-white">
+                    <h2 className="text-2xl font-bold mb-1 text-white">
                       {venture.name}
                     </h2>
+                    <p className={`${META_ACCENT} mb-4`}>
+                      {venture.role}
+                    </p>
                     <p className="text-slate-400 text-sm leading-relaxed">
                       {venture.description}
                     </p>
@@ -708,8 +708,8 @@ const EcosystemPage = () => {
                       </span>
                     </div>
                     <div className="grow">
-                      <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-400">{venture.role}</p>
-                      <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
+                      <h3 className="text-xl font-bold mb-1 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
+                      <p className={`${META} mb-3`}>{venture.role}</p>
                       <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
                     </div>
                     <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
