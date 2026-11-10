@@ -53,36 +53,43 @@ function over(fg: string, alpha: number, bg: string): string {
 
 // --- configured tokens, read from the files that define them ---------------
 
-const config = read('tailwind.config.js');
+// Comments are removed first, so a commented-out value is never read.
+const config = read('tailwind.config.js')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
+const css = read('index.css').replace(/\/\*[\s\S]*?\*\//g, '');
+
+// Each token must be declared exactly once: a second declaration (a later
+// override or a duplicate block) fails here instead of being silently ignored.
+function only(source: string, re: RegExp, what: string): RegExpMatchArray {
+  const all = [...source.matchAll(re)];
+  assert.equal(all.length, 1, `${what}: expected exactly one declaration, found ${all.length}`);
+  return all[0];
+}
 
 function group(name: string): Record<string, string> {
-  const m = config.match(new RegExp(`\\b${name}:\\s*\\{([^}]*)\\}`));
-  assert.ok(m, `tailwind.config.js defines a ${name} colour group`);
+  const m = only(config, new RegExp(`\\b${name}:\\s*\\{([^}]*)\\}`, 'g'), `tailwind.config.js ${name} colour group`);
   const out: Record<string, string> = {};
-  for (const [, key, hex] of m![1].matchAll(/['"]?([\w-]+)['"]?\s*:\s*['"](#[0-9a-fA-F]{6})['"]/g)) {
+  for (const [, key, hex] of m[1].matchAll(/['"]?([\w-]+)['"]?\s*:\s*['"](#[0-9a-fA-F]{6})['"]/g)) {
     out[key] = hex;
   }
   return out;
 }
 
 function single(name: string): string {
-  const m = config.match(new RegExp(`\\b${name}:\\s*['"](#[0-9a-fA-F]{6})['"]`));
-  assert.ok(m, `tailwind.config.js defines ${name}`);
-  return m![1];
+  return only(config, new RegExp(`\\b${name}:\\s*['"](#[0-9a-fA-F]{6})['"]`, 'g'), `tailwind.config.js ${name}`)[1];
 }
 
-const css = read('index.css');
-
 function themeColor(name: string): string {
-  const m = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`));
-  assert.ok(m, `index.css @theme pins --color-${name}`);
-  return m![1];
+  return only(css, new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`, 'g'), `index.css --color-${name}`)[1];
 }
 
 function bodyBackground(): string {
-  const m = css.match(/body\s*\{[^}]*background-color:\s*(#[0-9a-fA-F]{6})/);
-  assert.ok(m, 'index.css sets the body background-color');
-  return m![1];
+  return only(
+    css,
+    /(^|[\s};])body\s*\{[^}]*background(-color)?:\s*(#[0-9a-fA-F]{6})/g,
+    'index.css body background',
+  )[3];
 }
 
 const same = (a: string, b: string, what: string) => assert.equal(a.toLowerCase(), b.toLowerCase(), what);
@@ -151,16 +158,26 @@ function knownGaps(): Pair[] {
   return [
     { name: 'white on copper-500 (skip link focus state, text selection)', fg: LOGO_PACK.white, bg: group('copper')['500'], min: 4.5 },
     { name: 'slate-500 text on the page', fg: themeColor('slate-500'), bg: page, min: 4.5 },
+    {
+      name: 'copper-500/70 ordered-list numbers (marker:text-copper-500/70, Markdown.tsx)',
+      fg: over(group('copper')['500'], 0.7, page),
+      bg: page,
+      min: 4.5,
+    },
   ];
 }
 
 test('known AA gaps are real and listed as open questions in DESIGN.md', () => {
-  const design = read('DESIGN.md');
+  const openQuestions = read('DESIGN.md').split(/^## Open questions[^\n]*$/m)[1]?.split(/^## /m)[0] ?? '';
+  assert.ok(openQuestions.trim(), 'DESIGN.md has an "Open questions" section');
   for (const gap of knownGaps()) {
     const ratio = contrast(gap.fg, gap.bg);
     assert.ok(ratio < gap.min, `${gap.name} now passes (${ratio.toFixed(2)}:1): drop it from knownGaps and DESIGN.md`);
     const label = `${gap.fg} on ${gap.bg}`;
-    assert.ok(design.toLowerCase().includes(label.toLowerCase()), `DESIGN.md lists ${gap.name} as "${label}"`);
+    assert.ok(
+      openQuestions.toLowerCase().includes(label.toLowerCase()),
+      `DESIGN.md open questions list ${gap.name} as "${label}"`,
+    );
   }
 });
 
@@ -176,19 +193,52 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+// A variant prefix (hover:, md:, focus:) still counts, and so does `/100`, which
+// is opaque; any other opacity is a tint, covered by the pairs above.
+const solidCopperFill = /(^|[\s'"`:])bg-copper-(300|400|500|600)(\/100)?(?![\/\w-])/;
+const whiteText = /(^|[\s'"`:])text-white(\/100)?(?![\/\w-])/;
+
+// Only the known gaps' own classes are set aside, so anything else added to the
+// same class string is still checked.
+function withoutKnownGaps(classes: string): string {
+  let rest = classes.replace(/(^|\s)selection:(bg-copper-500|text-white)(?=\s|$)/g, ' ');
+  if (/(^|\s)sr-only focus:not-sr-only(\s|$)/.test(rest)) {
+    rest = rest.replace(/(^|\s)focus:(bg-copper-500|text-white)(?=\s|$)/g, ' ');
+  }
+  return rest;
+}
+
+const whiteOnCopper = (classes: string) => {
+  const rest = withoutKnownGaps(classes);
+  return solidCopperFill.test(rest) && whiteText.test(rest);
+};
+
+test('the copper fill guard catches the shapes it claims to', () => {
+  assert.ok(whiteOnCopper('px-4 bg-copper-500 text-white'), 'plain classes');
+  assert.ok(whiteOnCopper('hover:bg-copper-600 hover:text-white'), 'variant-prefixed classes');
+  assert.ok(whiteOnCopper('bg-copper-400/100 text-white/100'), 'explicit /100 opacity');
+  assert.ok(whiteOnCopper('selection:bg-copper-500 selection:text-white bg-copper-500 text-white'), 'extra classes next to the selection gap');
+  assert.ok(
+    whiteOnCopper('sr-only focus:not-sr-only focus:bg-copper-500 focus:text-white bg-copper-600 text-white'),
+    'extra classes next to the skip link gap',
+  );
+  assert.ok(!whiteOnCopper('bg-copper-500 text-slate-950'), 'navy label on copper');
+  assert.ok(!whiteOnCopper('bg-copper-500/10 text-white'), 'white on a translucent tint');
+  assert.ok(!whiteOnCopper('selection:bg-copper-500 selection:text-white'), 'the selection gap alone');
+  assert.ok(!whiteOnCopper('sr-only focus:not-sr-only focus:bg-copper-500 focus:text-white'), 'the skip link gap alone');
+});
+
+// Limit: classes for one element split across several string literals (for
+// example clsx arguments) are not joined; each literal is checked alone so the
+// two arms of a conditional are not read as one element.
 test('no white text on a solid copper fill outside the known gaps', () => {
-  const solidCopperFill = /(^|[\s'"`:])bg-copper-(300|400|500|600)(?![\/\w-])/;
-  const whiteText = /(^|[\s'"`:])text-white(?![\/\w-])/;
-  const allowed = [/sr-only focus:not-sr-only/, /selection:bg-copper-500/];
   const hits: string[] = [];
   for (const file of ['App.tsx', ...sourceFiles('components')]) {
     read(file)
       .split('\n')
       .forEach((line, i) => {
         for (const [literal] of line.matchAll(/'[^']*'|"[^"]*"|`[^`]*`/g)) {
-          if (solidCopperFill.test(literal) && whiteText.test(literal) && !allowed.some((a) => a.test(literal))) {
-            hits.push(`${file}:${i + 1}`);
-          }
+          if (whiteOnCopper(literal.slice(1, -1))) hits.push(`${file}:${i + 1}`);
         }
       });
   }

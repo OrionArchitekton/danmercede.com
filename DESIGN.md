@@ -52,8 +52,8 @@ typography:
     6xl: "60px"
     7xl: "72px"
 rounded:
-  sm: "2px"
-  base: "4px"
+  xs: "2px"
+  sm: "4px"
   md: "6px"
   lg: "8px"
   full: "9999px"
@@ -73,7 +73,7 @@ pull request that changes a token.
 | Copper scale, navy, void, font families | `tailwind.config.js` (loaded by `@config` in `index.css`) |
 | Page background, slate, amber, emerald | `index.css` (`@theme` block and the `body` rule) |
 | Browser theme color | `index.html` `theme-color` meta and `public/site.webmanifest` |
-| Guard | `tests/brandContrast.test.ts`: tokens equal the logo pack, and every brand pair meets WCAG AA |
+| Guard | `tests/brandContrast.test.ts`: tokens equal the logo pack; the listed brand pairs meet WCAG AA; the three pairs that fail AA today stay listed under the open questions until fixed |
 
 ## Palette
 
@@ -100,8 +100,11 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 - Copper text on Midnight Navy: Copper Light 12.16:1, `copper-400` 8.57:1, Copper Mid 7.07:1.
 - Navy labels on copper fills: on Copper Mid 7.07:1, on the `copper-400` hover 8.57:1.
 - `copper-400` text on the translucent copper tints (10, 15, 20 percent): 7.73, 7.19 and 6.59 to 1.
-- White on Copper Dark: 4.93:1, so Copper Dark may carry white text. Copper Dark on Midnight Navy is 3.94:1: large
-  text and UI only, never body text.
+- White on Copper Dark measures 4.93:1 (AA), but the site keeps one rule for every solid copper fill, Copper Dark
+  included: its text is Midnight Navy, never white. Copper Dark on Midnight Navy is 3.94:1: large text and UI only,
+  never body text.
+- Ordered-list numbers (`marker:text-copper-500/70` in `components/Markdown.tsx`) composite to `#A25E3F` and measure
+  3.89:1 on the page, below AA (open question 3).
 - Rule: text on a solid copper fill is Midnight Navy, never white.
 
 ## Typography
@@ -113,8 +116,9 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 
 ## Shape
 
-Small radii: `rounded-sm` (2px) for buttons and chips, `rounded-lg` (8px) for panels and media, `rounded-full` for
-pills and avatars.
+Small radii, on the Tailwind v4 scale: `rounded-xs` (2px) for image frames and small tags, `rounded-sm` (4px) for
+buttons, chips and the skip link, `rounded-lg` (8px) for panels and media, `rounded-full` for pills and avatars.
+Tailwind v4 shifted these names: its `rounded-xs` is v3's `rounded-sm`, and its `rounded-sm` is v3's plain `rounded`.
 
 ## Open questions for Dan
 
@@ -123,10 +127,12 @@ pills and avatars.
    change). The site's own button pattern, a navy label on copper, would give 7.07:1.
 2. BLOCKING, accessibility: `slate-500` text on the page, `#64748b on #020B29`, is 4.08:1 (it was 4.24:1 on the old
    `#020617` background; it failed AA before and after). It is used for small metadata labels.
-3. Inter: keep it, or choose a brand typeface? The logo pack defines none, and Inter is on common overused-font lists.
-4. `copper-400` `#F0975A` has no logo pack value but carries most accent text. Keep it as a site-only step, or map it?
-5. Deep Navy is defined but unused. Should raised surfaces (now `slate-900` and `slate-800`) move to it?
-6. The legacy slate, amber and emerald values have no logo pack counterparts. Keep, or fold into a navy-based scale?
-7. The 10px mono labels sit under the 11px floor that the Impeccable detector uses for functional text.
-8. `docs/one-sheets/speaking-one-sheet.html` (the printable one-sheet, outside the site build) still uses the old
+3. Accessibility: ordered-list numbers in guide and essay bodies, `#A25E3F on #020B29`, are 3.89:1 (copper-500 at 70
+   percent; 4.00:1 on the old background, below AA before and after). Full-strength Copper Mid would give 7.07:1.
+4. Inter: keep it, or choose a brand typeface? The logo pack defines none, and Inter is on common overused-font lists.
+5. `copper-400` `#F0975A` has no logo pack value but carries most accent text. Keep it as a site-only step, or map it?
+6. Deep Navy is defined but unused. Should raised surfaces (now `slate-900` and `slate-800`) move to it?
+7. The legacy slate, amber and emerald values have no logo pack counterparts. Keep, or fold into a navy-based scale?
+8. The 10px mono labels sit under the 11px floor that the Impeccable detector uses for functional text.
+9. `docs/one-sheets/speaking-one-sheet.html` (the printable one-sheet, outside the site build) still uses the old
    copper `#c2632c`.
