@@ -69,7 +69,7 @@ export const WorkCard = ({ work }: { work: Work }) => (
         </a>
       )}
       {work.license && (
-        <span className="text-xs font-mono text-slate-500 uppercase tracking-wider ml-auto">{work.license}</span>
+        <span className="text-xs font-mono text-slate-400 uppercase tracking-wider ml-auto">{work.license}</span>
       )}
     </div>
   </div>
