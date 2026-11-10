@@ -840,12 +840,9 @@ const EVIDENCE_TIER_ICON: Record<string, React.ComponentType<{ className?: strin
 const EvidenceSection = () => (
   <div id="evidence" className="mb-16">
     <div className="border-l-2 border-copper-500 pl-6 mb-8">
-      <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">
-        Evidence
-      </span>
       <h2 className="text-2xl font-bold text-white mb-1">Checkable Claims</h2>
       <p className="text-sm text-slate-400">
-        Every checkable claim below carries the command or source that confirms it. The limits are labelled as limits.
+        <span className="text-copper-400">Evidence.</span> Every checkable claim below carries the command or source that confirms it. The limits are labelled as limits.
       </p>
     </div>
 
@@ -913,10 +910,10 @@ const EvidenceSection = () => (
 // artifact (2026-09-29 site audit).
 const DownloadCard = ({ resource }: { resource: Resource }) => (
   <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
-    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mb-3">
+    <h3 className="text-lg font-semibold text-white mb-1">{resource.title}</h3>
+    <span className={`${META_ACCENT} mb-3`}>
       {resource.downloadLabel ?? resource.title} · {resource.fileType.toUpperCase()}
     </span>
-    <h3 className="text-lg font-semibold text-white mb-2">{resource.title}</h3>
     <p className="text-sm text-slate-400 mb-5 leading-relaxed grow">{resource.description}</p>
     <a
       href={resource.filePath}
@@ -1169,10 +1166,9 @@ const ResourcesPage = () => {
           {/* Old layer deep links (#authority, #receipts, #drift, #substrate) land here. */}
           <span id="authority" /><span id="receipts" /><span id="drift" /><span id="substrate" />
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Approach</span>
             <h2 className="text-2xl font-bold text-white mb-1">How the systems are built</h2>
             <p className="text-sm text-slate-400">
-              These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
+              <span className="text-copper-400">Approach.</span> These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
               <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">Cosmocrat OS: Platform</a>.
             </p>
           </div>
@@ -1222,9 +1218,8 @@ const ResourcesPage = () => {
         {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Conceptual</span>
             <h2 className="text-2xl font-bold text-white mb-1">Gated Execution Pipeline</h2>
-            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Conceptual.</span> PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">In this design, each state mutation passes three gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
@@ -1247,9 +1242,8 @@ const ResourcesPage = () => {
         {/* Diagram, conceptual economics framework (above Case Studies) */}
         <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics (conceptual)</span>
             <h2 className="text-2xl font-bold text-white mb-1">How Governance Could Change the Economics of Risk</h2>
-            <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Economics (conceptual).</span> Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">The framework describes how governance could turn operational risk into predictable unit economics.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
@@ -1270,7 +1264,6 @@ const ResourcesPage = () => {
         {CASE_STUDIES.length > 0 && (
           <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Reference Architectures</span>
               <h2 className="text-2xl font-bold text-white mb-1">Reference Enforcement Architectures</h2>
               <p className="text-sm text-slate-400">Reference enforcement architectures by industry and regulatory surface. Illustrative patterns, not measured client outcomes.</p>
             </div>
@@ -1318,9 +1311,8 @@ const ResourcesPage = () => {
         {/* Commercial and speaking: the speaker one-sheet and the route to Contact, kept apart from evidence */}
         <div id="commercial" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Commercial and speaking</span>
             <h2 className="text-2xl font-bold text-white mb-1">Working together</h2>
-            <p className="text-sm text-slate-400">The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Commercial and speaking.</span> The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {RESOURCES.filter((r) => proofGroupFor(r) === 'commercial').map((resource) => (
@@ -1363,8 +1355,8 @@ const CaseStudyPage = () => {
         </div>
 
         <div className="border-l-2 border-copper-500 pl-6 mb-12">
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-2">{study.industry}</span>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{study.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{study.title}</h1>
+          <p className={`${META} mb-4`}>{study.industry}</p>
           <p className="text-sm font-semibold text-copper-400 mb-4">{REFERENCE_ARCHITECTURE_NOTICE}</p>
           <p className="text-slate-400 max-w-3xl leading-relaxed">{study.description}</p>
         </div>
