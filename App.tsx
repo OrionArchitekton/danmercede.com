@@ -60,9 +60,15 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outli
 const SectionHeader: React.FC<{ title: string; subtitle?: string; as?: 'h1' | 'h2' }> = ({ title, subtitle, as: Heading = 'h2' }) => (
   <div className="mb-16 border-l-2 border-copper-500 pl-6">
     <Heading className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">{title}</Heading>
-    {subtitle && <p className="text-copper-400 font-mono text-sm tracking-widest uppercase">{subtitle}</p>}
+    {subtitle && <p className="text-copper-400 font-mono text-sm">{subtitle}</p>}
   </div>
 );
+
+// Headings lead. A category, status or date follows its title as quiet mono
+// metadata in sentence case; no label sits above a heading. Navigation, buttons,
+// chips and badges keep the tracked-capitals voice.
+const META = "font-mono text-xs text-slate-400";
+const META_ACCENT = "font-mono text-xs text-copper-400";
 
 // --- Layout Components ---
 
@@ -186,8 +192,8 @@ const IntentRouter = () => (
         const cardClass = "flex flex-col items-start p-6 border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-copper-500/30 transition-all group h-full";
         const inner = (
           <>
-            <p className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{route.audience}</p>
-            <h3 className="text-white font-semibold mb-2">{route.prompt}</h3>
+            <h3 className="text-white font-semibold mb-1">{route.prompt}</h3>
+            <p className={`${META_ACCENT} mb-3`}>{route.audience}</p>
             <p className="text-slate-400 text-sm leading-relaxed mb-4 grow">{route.description}</p>
             <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400 transition-colors">
               {route.cta}
@@ -216,9 +222,6 @@ const HomePage = () => {
         <div className="grow flex items-center my-12 md:my-0">
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">{FOOTER_DATA.role}</span>
-              </div>
               <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
               </h1>
@@ -297,8 +300,8 @@ const HomePage = () => {
                 {...linkTargetProps(work.href)}
                 className="flex flex-col p-6 border border-white/10 bg-slate-900/40 hover:border-copper-500/50 transition-colors group h-full"
               >
-                <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>
-                <h3 className="text-2xl font-bold text-white mb-3">{work.title}</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{work.title}</h3>
+                <span className={`${META_ACCENT} mb-3`}>{work.status}</span>
                 <p className="text-slate-300 leading-relaxed mb-4 grow">{work.summary}</p>
                 <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
                 <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
@@ -367,7 +370,6 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to own one workflow?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Work with OIA on one workflow
           </h3>
