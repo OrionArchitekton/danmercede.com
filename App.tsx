@@ -1854,16 +1854,13 @@ const GuidesPage = () => {
             }}
           />
           <div className="relative z-10 max-w-5xl">
-            <p className="mb-7 flex items-center gap-3 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-copper-400">
-              <span className="h-2 w-2 rounded-full bg-copper-500 shadow-[0_0_16px_rgba(230,130,73,.8)]" aria-hidden="true" />
-              Field notes on governed AI
-            </p>
             <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none lg:text-7xl/none">
               Build agents that can act
-              <span className="block text-copper-400">and prove what happened.</span>
+              <span className="block">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
+                <span className="text-copper-400">Field notes on governed AI.</span>{' '}
                 Long-form technical guides for AI systems that remain legible under pressure:
                 authority, evidence, observability, and fail-closed execution.
               </p>
@@ -1880,7 +1877,6 @@ const GuidesPage = () => {
       <Section className="pt-6 md:pt-8">
         <div className="mb-10 grid gap-5 md:grid-cols-[1fr_22rem] md:items-end">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">01 / Selected work</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Start with the signal.</h2>
           </div>
           <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
@@ -1898,8 +1894,8 @@ const GuidesPage = () => {
                 <span className="absolute bottom-5 left-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-200">{guide.category}</span>
               </div>
               <div className="flex flex-1 flex-col p-6">
-                <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-copper-400">Guide · {guide.date}</p>
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
+                <p className={`${META} mt-2`}>Guide · {guide.date}</p>
                 <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
                 <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
                   Read field note <ArrowRight size={14} aria-hidden="true" />
@@ -1913,7 +1909,6 @@ const GuidesPage = () => {
       <Section id="guide-library" className="pt-8 md:pt-12">
         <div className="mb-9 grid gap-7 md:grid-cols-[1fr_minmax(20rem,32rem)] md:items-end">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">02 / Guide library</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Follow the question.</h2>
           </div>
           <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
@@ -1975,7 +1970,6 @@ const GuidesPage = () => {
       <Section className="pt-8 md:pt-12">
         <div className="grid gap-10 border-t border-white/10 pt-12 lg:grid-cols-[22rem_1fr]">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">03 / Recurring themes</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-4xl">The same hard questions, from different angles.</h2>
             <p className="mt-5 text-sm leading-relaxed text-slate-400">The formats change. The doctrine does not. Use a theme as a lens into the corpus.</p>
           </div>
@@ -2044,14 +2038,14 @@ const GuideDetailPage = () => {
           </div>
 
           <article>
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
-              <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-4 leading-tight tracking-tight">{guide.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
+              <span className={META_ACCENT}>{guide.category}</span>
+              <span className={META}>{guide.date}</span>
               {guide.reviewed && (
-                <span className="text-xs font-mono text-slate-400">Reviewed {guide.reviewed}</span>
+                <span className={META}>Reviewed {guide.reviewed}</span>
               )}
             </div>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
             <p className="text-slate-300 text-lg md:text-xl/7 leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
             {guide.youtube && <GuideVideo key={guide.slug} id={guide.youtube} title={guide.title} />}
             <Markdown source={guide.body} />
