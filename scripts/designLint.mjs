@@ -211,7 +211,7 @@ async function main(argv) {
   const origin = argValue(argv, '--origin', 'http://127.0.0.1:4173');
   const outDir = argValue(argv, '--out', 'design-lint');
   const bin = argValue(argv, '--detector', join(repoRoot, 'node_modules', '.bin', 'impeccable'));
-  const timeoutMs = Number(argValue(argv, '--timeout-ms', String(25 * 60_000)));
+  const timeoutMs = Number(argValue(argv, '--timeout-ms', String(15 * 60_000)));
   mkdirSync(outDir, { recursive: true });
 
   const listed = existsSync(buildDir) ? listBuiltPages(buildDir, origin) : [];

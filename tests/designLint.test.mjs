@@ -190,3 +190,14 @@ test('the design-lint job is report-only, pinned and runs without telemetry', ()
   assert.match(WORKFLOW, /persist-credentials:\s*false/);
   assert.doesNotMatch(WORKFLOW, /secrets\./, 'untrusted lane carries no secrets');
 });
+
+test('the detector watchdog fires well inside the job deadline, so NOT RUN is still reported', () => {
+  const WORKFLOW = readRepo('.github/workflows/design-lint.yml');
+  const jobMinutes = Number(WORKFLOW.match(/^\s+timeout-minutes:\s*(\d+)/m)?.[1]);
+  const scanMs = Number(WORKFLOW.match(/--timeout-ms\s+(\d+)/)?.[1]);
+  assert.ok(jobMinutes > 0, 'the job declares timeout-minutes');
+  assert.ok(scanMs > 0, 'the scan step passes an explicit --timeout-ms');
+  // Install, build and serve run first and the artifact upload runs after, so
+  // leave at least 8 minutes of the job budget outside the scan.
+  assert.ok(scanMs <= (jobMinutes - 8) * 60_000, `scan ${scanMs} ms must fit inside ${jobMinutes} min with headroom`);
+});

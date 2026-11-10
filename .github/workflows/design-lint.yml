@@ -83,7 +83,9 @@ jobs:
             export IMPECCABLE_BROWSER="$browser"
           fi
           echo "browser: ${browser:-none found}"
-          node scripts/designLint.mjs --build-dir build --origin http://127.0.0.1:4173 --out design-lint
+          # The scan watchdog (15 min) fires well inside the job deadline (25 min), so a
+          # hung scan still writes its NOT RUN report and the artifact still uploads.
+          node scripts/designLint.mjs --build-dir build --origin http://127.0.0.1:4173 --out design-lint --timeout-ms 900000
 
       - name: Upload design-lint report
         if: always()

@@ -79,6 +79,7 @@ never counted as site findings.
 | `canary page has no primary finding` | Detector rule change or rendering broken | Compare the detector version; run locally (below) |
 | `detector output is not a JSON array` | Detector crash or CLI change | Read `findings.json` and stderr; check the detector changelog |
 | `no pages to scan` | Build emitted no `index.html` | Check the Build step |
+| `detector timed out` | The scan passed its 15 minute watchdog (set by `--timeout-ms`, kept inside the 25 minute job limit) | Check `detector.stderr.txt`; a page that never settles is the usual cause |
 | the preview server did not start | Port or build output problem | Read the printed preview log |
 
 ## Run locally
