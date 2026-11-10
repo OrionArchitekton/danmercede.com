@@ -148,7 +148,7 @@ test('proof checks preserve command whitespace and name repeated source links', 
   const evidenceSource = appSource.slice(sectionStart, sectionEnd);
   assert.ok(
     evidenceSource.includes(
-      'className="text-[11px] font-mono text-slate-500 min-w-0 max-w-full whitespace-pre-wrap break-words"'
+      'className="text-[11px] font-mono text-slate-400 min-w-0 max-w-full whitespace-pre-wrap break-words"'
     ),
     'proof verifier code must preserve newlines and wrap long tokens without overflowing'
   );
