@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>design-lint canary</title>
+<style>
+  body { font-family: Inter, sans-serif; margin: 0; padding: 48px; background: #ffffff; color: #111111; }
+  .eyebrow { display: inline-block; text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; padding: 4px 12px; border-radius: 999px; background: #ede9fe; color: #6d28d9; }
+  h1 { font-size: 64px; background: linear-gradient(90deg, #7c3aed, #a855f7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  p.wide { max-width: none; font-size: 16px; }
+</style>
+</head>
+<body>
+  <!-- Positive control for the report-only design lint (scripts/designLint.mjs).
+       Never deployed: the lint serves it from memory beside the built site and
+       scans it in the same detector run, so a scan that silently stops
+       rendering pages reports NOT RUN instead of a clean result. -->
+  <div class="eyebrow">Ship faster with AI</div>
+  <h1>Build the future today</h1>
+  <p class="wide">This paragraph runs the full width of the viewport on purpose so that the line length rule has a long measure to report, which keeps the canary noisy enough that a working scan always flags it with at least one primary finding.</p>
+</body>
+</html>
