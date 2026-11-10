@@ -140,6 +140,9 @@ function brandPairs(): Pair[] {
     { name: 'slate-200 label on the copper-600/70 guide header', fg: themeColor('slate-200'), bg: copperStrip, min: 4.5 },
     { name: 'white on Copper Dark (logo pack pair)', fg: LOGO_PACK.white, bg: copper['600'], min: 4.5 },
     { name: 'Copper Dark on Midnight Navy, large text and UI only', fg: copper['600'], bg: page, min: 3 },
+    { name: 'slate-400 metadata text on the page', fg: themeColor('slate-400'), bg: page, min: 4.5 },
+    { name: 'copper-500 ordered-list numbers on the page (Markdown.tsx)', fg: copper['500'], bg: page, min: 4.5 },
+    { name: 'navy label on copper-500 (skip link focus state, text selection)', fg: navyText, bg: copper['500'], min: 4.5 },
   ];
 }
 
@@ -151,40 +154,10 @@ test('every brand text and background pair meets WCAG AA', () => {
   assert.deepEqual(failures, []);
 });
 
-// Pairs that fail AA today and are open questions in DESIGN.md, not fixed by the
-// token alignment. Fixed one? Remove it here and from DESIGN.md's open questions.
-function knownGaps(): Pair[] {
-  const page = bodyBackground();
-  return [
-    { name: 'white on copper-500 (skip link focus state, text selection)', fg: LOGO_PACK.white, bg: group('copper')['500'], min: 4.5 },
-    { name: 'slate-500 text on the page', fg: themeColor('slate-500'), bg: page, min: 4.5 },
-    {
-      name: 'copper-500/70 ordered-list numbers (marker:text-copper-500/70, Markdown.tsx)',
-      fg: over(group('copper')['500'], 0.7, page),
-      bg: page,
-      min: 4.5,
-    },
-  ];
-}
-
-test('known AA gaps are real and listed as open questions in DESIGN.md', () => {
-  const openQuestions = read('DESIGN.md').split(/^## Open questions[^\n]*$/m)[1]?.split(/^## /m)[0] ?? '';
-  assert.ok(openQuestions.trim(), 'DESIGN.md has an "Open questions" section');
-  for (const gap of knownGaps()) {
-    const ratio = contrast(gap.fg, gap.bg);
-    assert.ok(ratio < gap.min, `${gap.name} now passes (${ratio.toFixed(2)}:1): drop it from knownGaps and DESIGN.md`);
-    const label = `${gap.fg} on ${gap.bg}`;
-    assert.ok(
-      openQuestions.toLowerCase().includes(label.toLowerCase()),
-      `DESIGN.md open questions list ${gap.name} as "${label}"`,
-    );
-  }
-});
-
 // The retint bug shape: white text on a solid copper fill. Heuristic over the
 // class strings in component source: a single string literal that carries both
-// classes (so the two arms of a conditional are not read as one element). The
-// two known gaps above are the only allowed sites.
+// classes (so the two arms of a conditional are not read as one element). There
+// are no allowed exceptions: the skip link and the text selection use a navy label.
 function sourceFiles(dir: string): string[] {
   return readdirSync(path.join(root, dir)).flatMap((entry) => {
     const rel = path.join(dir, entry);
@@ -198,40 +171,34 @@ function sourceFiles(dir: string): string[] {
 const solidCopperFill = /(^|[\s'"`:])bg-copper-(300|400|500|600)(\/100)?(?![\/\w-])/;
 const whiteText = /(^|[\s'"`:])text-white(\/100)?(?![\/\w-])/;
 
-// Only the known gaps' own classes are set aside, so anything else added to the
-// same class string is still checked.
-function withoutKnownGaps(classes: string): string {
-  let rest = classes.replace(/(^|\s)selection:(bg-copper-500|text-white)(?=\s|$)/g, ' ');
-  if (/(^|\s)sr-only focus:not-sr-only(\s|$)/.test(rest)) {
-    rest = rest.replace(/(^|\s)focus:(bg-copper-500|text-white)(?=\s|$)/g, ' ');
-  }
-  return rest;
-}
+const whiteOnCopper = (classes: string) => solidCopperFill.test(classes) && whiteText.test(classes);
 
-const whiteOnCopper = (classes: string) => {
-  const rest = withoutKnownGaps(classes);
-  return solidCopperFill.test(rest) && whiteText.test(rest);
-};
+// slate-500 text is 4.08:1 on the page, below AA; metadata uses slate-400 (7.57:1).
+const slate500Text = /(^|[\s'"`:])text-slate-500(?![\w-])/;
+// List numbers are text: a translucent copper marker drops below AA (70 percent
+// measured 3.89:1), so the marker stays full strength (7.07:1).
+const fadedCopperMarker = /(^|[\s'"`])marker:text-copper-\d+\/\d+/;
 
-test('the copper fill guard catches the shapes it claims to', () => {
+test('the markup guards catch the shapes they claim to', () => {
   assert.ok(whiteOnCopper('px-4 bg-copper-500 text-white'), 'plain classes');
   assert.ok(whiteOnCopper('hover:bg-copper-600 hover:text-white'), 'variant-prefixed classes');
   assert.ok(whiteOnCopper('bg-copper-400/100 text-white/100'), 'explicit /100 opacity');
-  assert.ok(whiteOnCopper('selection:bg-copper-500 selection:text-white bg-copper-500 text-white'), 'extra classes next to the selection gap');
-  assert.ok(
-    whiteOnCopper('sr-only focus:not-sr-only focus:bg-copper-500 focus:text-white bg-copper-600 text-white'),
-    'extra classes next to the skip link gap',
-  );
+  assert.ok(whiteOnCopper('selection:bg-copper-500 selection:text-white'), 'white text selection on copper');
+  assert.ok(whiteOnCopper('sr-only focus:not-sr-only focus:bg-copper-500 focus:text-white'), 'white skip link on copper');
   assert.ok(!whiteOnCopper('bg-copper-500 text-slate-950'), 'navy label on copper');
+  assert.ok(!whiteOnCopper('selection:bg-copper-500 selection:text-slate-950'), 'navy text selection on copper');
   assert.ok(!whiteOnCopper('bg-copper-500/10 text-white'), 'white on a translucent tint');
-  assert.ok(!whiteOnCopper('selection:bg-copper-500 selection:text-white'), 'the selection gap alone');
-  assert.ok(!whiteOnCopper('sr-only focus:not-sr-only focus:bg-copper-500 focus:text-white'), 'the skip link gap alone');
+  assert.ok(slate500Text.test('font-mono text-slate-500 uppercase'), 'slate-500 text');
+  assert.ok(slate500Text.test('placeholder:text-slate-500'), 'slate-500 placeholder');
+  assert.ok(!slate500Text.test('text-slate-400 border-slate-500'), 'slate-400 text, slate-500 border');
+  assert.ok(fadedCopperMarker.test('pl-6 marker:text-copper-500/70'), 'translucent copper marker');
+  assert.ok(!fadedCopperMarker.test('pl-6 marker:text-copper-500'), 'full-strength copper marker');
 });
 
 // Limit: classes for one element split across several string literals (for
 // example clsx arguments) are not joined; each literal is checked alone so the
 // two arms of a conditional are not read as one element.
-test('no white text on a solid copper fill outside the known gaps', () => {
+test('no white text on a solid copper fill', () => {
   const hits: string[] = [];
   for (const file of ['App.tsx', ...sourceFiles('components')]) {
     read(file)
@@ -240,6 +207,19 @@ test('no white text on a solid copper fill outside the known gaps', () => {
         for (const [literal] of line.matchAll(/'[^']*'|"[^"]*"|`[^`]*`/g)) {
           if (whiteOnCopper(literal.slice(1, -1))) hits.push(`${file}:${i + 1}`);
         }
+      });
+  }
+  assert.deepEqual(hits, []);
+});
+
+test('metadata text and list numbers use the AA colours', () => {
+  const hits: string[] = [];
+  for (const file of ['App.tsx', ...sourceFiles('components')]) {
+    read(file)
+      .split('\n')
+      .forEach((line, i) => {
+        if (slate500Text.test(line)) hits.push(`${file}:${i + 1} text-slate-500 (use text-slate-400)`);
+        if (fadedCopperMarker.test(line)) hits.push(`${file}:${i + 1} translucent copper list marker (use full strength)`);
       });
   }
   assert.deepEqual(hits, []);
