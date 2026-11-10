@@ -30,14 +30,10 @@ const LinkIcon = ({ href }: { href: string }) =>
 
 export const WorkCard = ({ work }: { work: Work }) => (
   <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
-    <div className="mb-4">
-      <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-        {work.category}
-      </span>
-    </div>
-    <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
+    <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-copper-400 transition-colors">
       {work.title}
     </h3>
+    <p className="font-mono text-xs text-copper-400 mb-3">{work.category}</p>
     <p className="text-slate-400 text-sm leading-relaxed grow">{work.description}</p>
     <div className="mt-5 flex flex-wrap items-center gap-4">
       <a

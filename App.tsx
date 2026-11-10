@@ -2083,11 +2083,11 @@ const DiagramsPage = () => {
                 />
               </div>
               <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-copper-400">Diagram</span>
-                  <span className="text-xs font-mono text-slate-400">{diagram.date}</span>
+                <h2 className="text-lg font-semibold text-white mb-1 group-hover:text-copper-400 transition-colors">{diagram.title}</h2>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={META_ACCENT}>Diagram</span>
+                  <span className={META}>{diagram.date}</span>
                 </div>
-                <h2 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">{diagram.title}</h2>
                 <p className="text-slate-400 text-sm leading-relaxed">{diagram.caption}</p>
               </div>
             </Link>
@@ -2129,11 +2129,11 @@ const DiagramDetailPage = () => {
           </div>
 
           <article>
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-400">Diagram</span>
-              <span className="text-xs font-mono text-slate-400">{diagram.date}</span>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-3 leading-tight tracking-tight">{diagram.title}</h1>
+            <div className="flex items-center gap-4 mb-6">
+              <span className={META_ACCENT}>Diagram</span>
+              <span className={META}>{diagram.date}</span>
             </div>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{diagram.title}</h1>
             <figure>
               <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden">
                 <img
