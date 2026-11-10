@@ -1569,11 +1569,11 @@ const ThoughtsPage = () => {
       to={`/thoughts/${thought.slug}`}
       className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
     >
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{thought.category}</span>
-        <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">{thought.title}</h3>
+      <div className="flex items-center gap-3 mb-3">
+        <span className={META_ACCENT}>{thought.category}</span>
+        <span className={META}>{thought.date}</span>
       </div>
-      <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">{thought.title}</h3>
       <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
       <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
         Read &rarr;
@@ -1791,13 +1791,11 @@ const ThoughtDetailPage = () => {
         </div>
 
         <article className="border-l-2 border-copper-500 pl-6 max-w-3xl">
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-              {thought.category}
-            </span>
-            <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{thought.title}</h1>
+          <div className="flex items-center gap-4 mb-6">
+            <span className={META_ACCENT}>{thought.category}</span>
+            <span className={META}>{thought.date}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">{thought.title}</h1>
           <p className="text-slate-300 text-lg leading-relaxed mb-8 italic">{thought.preview}</p>
           <Markdown source={thought.body} />
         </article>
