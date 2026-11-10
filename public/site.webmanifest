@@ -3,8 +3,8 @@
   "short_name": "DM",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "background_color": "#020B29",
+  "theme_color": "#020B29",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

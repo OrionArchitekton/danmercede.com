@@ -34,7 +34,7 @@ test('index.tsx imports the bundled stylesheet (W2)', () => {
 // W13 — theme-color meta + manifest identity/colors
 // ---------------------------------------------------------------------------
 
-const BODY_BG = '#020617';
+const BODY_BG = '#020b29'; // logo pack Midnight Navy
 
 test('index.html declares a theme-color meta matching the served body bg (W13)', () => {
   const html = read('index.html');
