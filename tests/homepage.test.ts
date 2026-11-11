@@ -78,6 +78,12 @@ test('the intent router offers a hiring path and no investor lane', () => {
  * reads as a tag, not a title, so no h1 to h4 may carry both `uppercase` and a
  * `tracking-` class. Nav, buttons, chips and badges are not headings and are
  * not checked here.
+ *
+ * Scope: this reads class strings as written in the source. It reports a tag
+ * that names both classes anywhere, even in exclusive branches (it errs toward
+ * a failure a person then reads), and it cannot see a class that arrives
+ * through a variable. The built-output twin in builtPageRender.test.ts checks
+ * the classes each rendered heading actually carries.
  */
 function capsLabelHeadings(src: string): string[] {
   const hits: string[] = [];

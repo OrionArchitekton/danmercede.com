@@ -136,6 +136,36 @@ test('every published route renders with a clean heading outline', async () => {
   assert.deepEqual(failing, []);
 });
 
+// Headings lead: no rendered heading is a small capitals label. The source check
+// in homepage.test.ts reads class strings as written, so a class that arrives
+// through a variable escapes it and two classes in exclusive branches trip it.
+// The render has neither problem: every class here is one that actually applies.
+const capsLabelHeading = (h: Element) => {
+  const classes = (h.getAttribute('class') ?? '').split(/\s+/);
+  return classes.includes('uppercase') && classes.some((c) => c.startsWith('tracking-'));
+};
+
+test('the rendered capitals-label check reads applied classes (positive control)', () => {
+  const dom = new JSDOM('<h2 class="font-mono uppercase tracking-widest">A</h2><h3 class="tracking-tight">B</h3><p class="uppercase tracking-widest">C</p>');
+  const hits = [...dom.window.document.querySelectorAll('h1, h2, h3, h4, h5, h6')].filter(capsLabelHeading);
+  assert.deepEqual(hits.map((h) => h.textContent), ['A']);
+});
+
+test('no published route renders a heading as a small capitals label', async () => {
+  const render = await loadRender();
+  const failing: string[] = [];
+  let headings = 0;
+  for (const route of ['/', ...collectRoutes().map((r) => r.path)]) {
+    const dom = new JSDOM(`<!doctype html><html><body>${render(route)}</body></html>`);
+    for (const h of dom.window.document.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
+      headings += 1;
+      if (capsLabelHeading(h)) failing.push(`${route}: <${h.tagName.toLowerCase()}> ${(h.textContent ?? '').slice(0, 60)}`);
+    }
+  }
+  assert.ok(headings > 100, `expected to check the site's headings, saw ${headings}`);
+  assert.deepEqual(failing, []);
+});
+
 // The content contracts that once bound the hidden crawl block (homepage,
 // works hub, front door, content boundary, proof, privacy, case studies,
 // diagrams) bind the render the build ships. Review of #184, 2026-09-29;
