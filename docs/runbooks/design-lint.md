@@ -94,21 +94,53 @@ never counted as site findings.
 | the preview server did not start | Port or build output problem; the scan still runs and reports the pages that did not answer | Read the printed preview log |
 | `no pages to scan` after a red Install or Build step | Install (8 minute step limit) or build (6 minute step limit) failed or hung; the scan step still runs (`if: !cancelled()`) so a report and artifact exist | Fix the failing step first; the lint result is not meaningful until the build is green |
 
-## Run locally
+## Run locally (container only, no network)
 
-Use a throwaway copy, not a checkout you will commit from: the build step runs
-the content compile.
+Never run the detector directly on a workstation. Locally it runs only inside a
+container started with `--network none`, from a throwaway copy, never from a
+checkout you commit from (the build step runs the content compile). Step 1
+installs and builds with network access; the detector does not run there.
+Step 2 serves the build and scans it with no network at all.
 
 ```bash
-git archive HEAD | tar -x -C /tmp/dl-copy && cd /tmp/dl-copy
-npm ci && npm run build
-./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort &
-env -u DISPLAY -u WAYLAND_DISPLAY node scripts/designLint.mjs --build-dir build --out /tmp/dl-out
-kill %1
+COPY="$(mktemp -d)" && git archive HEAD | tar -x -C "$COPY"
+IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+
+# 1. Install and build (network on, no detector run).
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$COPY":/work -w /work "$IMAGE" \
+  sh -c 'npm ci --no-audit --no-fund && npm run build'
+
+# 2. Serve and scan (no network).
+docker run --rm --network none --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -e DO_NOT_TRACK=1 -e IMPECCABLE_NO_TELEMETRY=1 -e IMPECCABLE_PRO=off \
+  -v "$COPY":/work -w /work "$IMAGE" sh -c '
+    ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/preview.log 2>&1 &
+    sleep 5
+    export IMPECCABLE_BROWSER="$(ls -d /ms-playwright/chromium-*/chrome-linux64/chrome | head -1)"
+    node scripts/designLint.mjs --build-dir build --out design-lint-local'
+
+jq '{status, reason, exit: .detector.exitCode, pagesScanned, totals}' "$COPY/design-lint-local/report.json"
 ```
 
-On WSL, unset `DISPLAY` and `WAYLAND_DISPLAY` (a dead display breaks headless
-Chromium). Expect about 3 minutes for the full page set.
+The container has no GPU device and no network, so the browser renders in
+software and nothing a page loads can leave the machine. Expect about 5
+minutes for the full page set.
+
+## Detector safety rules
+
+- Official packages only: `impeccable` (npm maintainer `paulbakaus`,
+  repository `pbakaus/impeccable`) and its `@impeccable/cli-*` platform
+  engines (engine 0.1.21 for `impeccable` 4.8.2). These similarly named
+  packages are not the official detector; never install them:
+  `@mp3wizard/impeccable`, `impeccable-reviews`, `pi-impeccable*`,
+  `dsh-impeccable`, `@ai-ecoverse/wasi-impeccable`, `impeccable-pencil`.
+- Never run `impeccable install`, `impeccable link` or its hooks on a
+  maintainer machine: they write agent skills and hooks. Never run
+  `concept-seed` or any other command that sends telemetry.
+- Never use live mode on a machine that holds secrets unless
+  `IMPECCABLE_LIVE_COPY_AGENT=off`.
+- `DO_NOT_TRACK=1` and `IMPECCABLE_NO_TELEMETRY=1` on every run (the
+  workflow and the container command above set both).
 
 ## Updating the detector
 
@@ -119,8 +151,8 @@ Chromium). Expect about 3 minutes for the full page set.
 4. Re-run the job and compare totals with the previous run; rule changes move
    the counts.
 
-Never use `npx impeccable@latest` or any floating install. Never run
-`impeccable install` here: it writes agent skills and hooks into the repo.
+Never use `npx impeccable@latest` or any floating install. The safety rules
+above apply to every update.
 
 ## Promotion (decision, not routine)
 
