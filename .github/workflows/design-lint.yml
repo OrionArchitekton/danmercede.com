@@ -43,6 +43,12 @@ jobs:
       IMPECCABLE_NO_TELEMETRY: "1"
       IMPECCABLE_PRO: "off"
     steps:
+      # One deadline for the route checks and the scan, counted from the job
+      # start so install and build time are included. 20 of the 25 minutes:
+      # a hung scan still writes its NOT RUN report and the artifact uploads.
+      - name: Start the scan clock
+        run: echo "DESIGN_LINT_DEADLINE=$(( $(date +%s) + 20 * 60 ))" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -83,9 +89,7 @@ jobs:
             export IMPECCABLE_BROWSER="$browser"
           fi
           echo "browser: ${browser:-none found}"
-          # The scan watchdog (15 min) fires well inside the job deadline (25 min), so a
-          # hung scan still writes its NOT RUN report and the artifact still uploads.
-          node scripts/designLint.mjs --build-dir build --origin http://127.0.0.1:4173 --out design-lint --timeout-ms 900000
+          node scripts/designLint.mjs --build-dir build --origin http://127.0.0.1:4173 --out design-lint --deadline "$DESIGN_LINT_DEADLINE"
 
       - name: Upload design-lint report
         if: always()

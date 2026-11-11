@@ -37,6 +37,12 @@ protection, never blocks a merge.
   `IMPECCABLE_PRO=off`, `CI` set, `IMPECCABLE_HOME` in the runner temp dir.
 - `--no-config`: repo ignore files and inline ignores are not honored while
   the check is report-only.
+- One scan clock: the first step writes `DESIGN_LINT_DEADLINE` (job start plus
+  20 minutes) and the scan step passes it as `--deadline`. Route checks run
+  concurrently and stop at that deadline, and the detector gets only the time
+  left, so the NOT RUN report and the artifact upload always fit inside the
+  25 minute job. The detector runs as its own process group and the watchdog
+  kills the whole group.
 
 ## Reading a run
 
@@ -79,7 +85,8 @@ never counted as site findings.
 | `canary page has no primary finding` | Detector rule change or rendering broken | Compare the detector version; run locally (below) |
 | `detector output is not a JSON array` | Detector crash or CLI change | Read `findings.json` and stderr; check the detector changelog |
 | `no pages to scan` | Build emitted no `index.html` | Check the Build step |
-| `detector timed out` | The scan passed its 15 minute watchdog (set by `--timeout-ms`, kept inside the 25 minute job limit) | Check `detector.stderr.txt`; a page that never settles is the usual cause |
+| `scan deadline reached before the detector could start` | Install, build or the route checks used up the scan clock (20 of the job's 25 minutes, set by the first step) | Check the step timings; a slow `npm ci` or a preview server that accepts connections but never answers are the usual causes |
+| `detector timed out` | The detector ran past the scan clock (or `--timeout-ms`, 15 minutes by default, whichever comes first); its whole process tree was killed | Check `detector.stderr.txt`; a page that never settles is the usual cause |
 | the preview server did not start | Port or build output problem | Read the printed preview log |
 
 ## Run locally

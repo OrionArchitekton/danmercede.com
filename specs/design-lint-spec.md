@@ -48,6 +48,11 @@ visible on every change before anyone decides to enforce any of them.
 6. **Malformed detector output.** Standard output is not a JSON array, or the
    detector exits with any code other than 0, 1 or 2 (including a signal or
    a timeout). The report status is NOT RUN.
+7. **The scan runs out of time.** The route checks and the detector share
+   one deadline counted from the job start. If too little time is left the
+   detector is not started; if it runs past the deadline its whole process
+   tree is killed. Either way the report is still written, the status is
+   NOT RUN, and the artifact still uploads inside the job's time limit.
 
 ## Constraints
 

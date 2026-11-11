@@ -17,6 +17,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const CANARY_PATH = '/__design-lint-canary/';
 const SCANNED_EXIT_CODES = new Set([0, 2]);
+// Below this much time before the deadline the detector is not started at all.
+const MIN_SCAN_MS = 30_000;
 
 function tally(findings) {
   const bySeverity = {};
@@ -38,7 +40,8 @@ function parseFindings(stdout) {
   }
 }
 
-function notRunReason({ exitCode, signal, timedOut, findings, pages, canaryUrl }) {
+function notRunReason({ exitCode, signal, timedOut, deadlineReached, findings, pages, canaryUrl }) {
+  if (deadlineReached) return 'scan deadline reached before the detector could start';
   if (timedOut) return 'detector timed out';
   if (signal) return `detector killed by ${signal}`;
   if (exitCode === 1) return 'detector exit 1: at least one target could not be scanned';
@@ -54,9 +57,9 @@ function notRunReason({ exitCode, signal, timedOut, findings, pages, canaryUrl }
   return null;
 }
 
-export function buildReport({ exitCode, signal = null, timedOut = false, stdout = '', pages = [], canaryUrl, detectorVersion = null }) {
+export function buildReport({ exitCode, signal = null, timedOut = false, deadlineReached = false, stdout = '', pages = [], canaryUrl, detectorVersion = null }) {
   const all = parseFindings(stdout);
-  const reason = notRunReason({ exitCode, signal, timedOut, findings: all, pages, canaryUrl });
+  const reason = notRunReason({ exitCode, signal, timedOut, deadlineReached, findings: all, pages, canaryUrl });
   const status = reason ? 'NOT_RUN' : 'RAN';
   const findings = all ?? [];
   const canaryFindings = findings.filter((f) => f.file === canaryUrl);
@@ -159,13 +162,30 @@ function argValue(argv, name, fallback) {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback;
 }
 
-async function statusOf(url) {
+async function statusOf(url, timeoutMs) {
   try {
-    const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(15_000) });
+    const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(timeoutMs) });
     return res.status;
   } catch (error) {
     return `error ${error?.cause?.code ?? error?.name ?? 'fetch'}`;
   }
+}
+
+// Checks every route concurrently, each request capped at 15 s and none past
+// the scan deadline, so a stalled server cannot eat the job's time budget.
+async function checkPages(listed, deadlineMs, concurrency = 8) {
+  const pages = listed.map((p) => ({ ...p, status: null }));
+  let next = 0;
+  const worker = async () => {
+    while (next < pages.length) {
+      const p = pages[next];
+      next += 1;
+      const left = deadlineMs - Date.now();
+      p.status = left > 0 ? await statusOf(p.url, Math.min(15_000, left)) : 'error deadline';
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, pages.length) }, worker));
+  return pages;
 }
 
 function serveCanary(html) {
@@ -183,40 +203,72 @@ function serveCanary(html) {
   });
 }
 
-function runDetector(bin, args, env, timeoutMs) {
+// The npm shim runs the platform engine as its own child with inherited stdio,
+// so killing the shim alone would leave the engine holding the output pipes.
+// The detector therefore starts as its own process group, and the watchdog
+// (or an interrupt of this script) kills the whole group.
+export function runDetector(bin, args, env, timeoutMs) {
   return new Promise((resolve) => {
-    const child = spawn(bin, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(bin, args, { env, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
     const out = [];
     const err = [];
     let timedOut = false;
+    let settled = false;
+    let fallback = null;
+    const killGroup = (sig) => {
+      try {
+        process.kill(-child.pid, sig);
+      } catch {
+        child.kill(sig);
+      }
+    };
+    const onInterrupt = (sig) => {
+      killGroup('SIGKILL');
+      process.exit(sig === 'SIGINT' ? 130 : 143);
+    };
+    process.once('SIGINT', onInterrupt);
+    process.once('SIGTERM', onInterrupt);
+    const finish = (exitCode, signal) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearTimeout(fallback);
+      process.off('SIGINT', onInterrupt);
+      process.off('SIGTERM', onInterrupt);
+      child.stdout.destroy();
+      child.stderr.destroy();
+      resolve({ exitCode, signal: timedOut ? null : signal, timedOut, stdout: Buffer.concat(out).toString('utf8'), stderr: Buffer.concat(err).toString('utf8') });
+    };
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGKILL');
+      killGroup('SIGKILL');
+      // Never wait on a descendant that left the group and still holds a pipe.
+      fallback = setTimeout(() => finish(null, null), 5_000);
     }, timeoutMs);
     child.stdout.on('data', (b) => out.push(b));
     child.stderr.on('data', (b) => err.push(b));
     child.on('error', (error) => {
       err.push(Buffer.from(`spawn error: ${error.message}\n`));
     });
-    child.on('close', (exitCode, signal) => {
-      clearTimeout(timer);
-      resolve({ exitCode, signal: timedOut ? null : signal, timedOut, stdout: Buffer.concat(out).toString('utf8'), stderr: Buffer.concat(err).toString('utf8') });
-    });
+    child.on('close', (exitCode, signal) => finish(exitCode, signal));
   });
 }
 
-async function main(argv) {
+export async function main(argv) {
   const repoRoot = fileURLToPath(new URL('..', import.meta.url));
   const buildDir = argValue(argv, '--build-dir', 'build');
   const origin = argValue(argv, '--origin', 'http://127.0.0.1:4173');
   const outDir = argValue(argv, '--out', 'design-lint');
   const bin = argValue(argv, '--detector', join(repoRoot, 'node_modules', '.bin', 'impeccable'));
   const timeoutMs = Number(argValue(argv, '--timeout-ms', String(15 * 60_000)));
+  // One deadline (epoch seconds) covers the route checks and the detector. The
+  // workflow sets it from the job start, so install and build time count too.
+  const deadlineArg = argValue(argv, '--deadline', process.env.DESIGN_LINT_DEADLINE || '');
+  const deadlineMs = deadlineArg ? Number(deadlineArg) * 1000 : Number.POSITIVE_INFINITY;
   mkdirSync(outDir, { recursive: true });
 
   const listed = existsSync(buildDir) ? listBuiltPages(buildDir, origin) : [];
-  const pages = [];
-  for (const p of listed) pages.push({ ...p, status: await statusOf(p.url) });
+  const pages = await checkPages(listed, deadlineMs);
 
   const canaryServer = await serveCanary(readFileSync(join(repoRoot, 'scripts', 'designLintCanary.html'), 'utf8'));
   const canaryUrl = `http://127.0.0.1:${canaryServer.address().port}${CANARY_PATH}`;
@@ -232,12 +284,18 @@ async function main(argv) {
     detectorVersion = null;
   }
 
-  const run = pages.length > 0 ? await runDetector(bin, args, env, timeoutMs) : { exitCode: null, signal: null, timedOut: false, stdout: '', stderr: 'no pages listed; detector not started\n' };
+  const left = deadlineMs - Date.now();
+  const deadlineReached = pages.length > 0 && left < MIN_SCAN_MS;
+  const notStarted = (why) => ({ exitCode: null, signal: null, timedOut: false, stdout: '', stderr: `${why}; detector not started\n` });
+  let run;
+  if (pages.length === 0) run = notStarted('no pages listed');
+  else if (deadlineReached) run = notStarted('scan deadline reached');
+  else run = await runDetector(bin, args, env, Math.min(timeoutMs, left));
   canaryServer.close();
 
   writeFileSync(join(outDir, 'findings.json'), run.stdout);
   writeFileSync(join(outDir, 'detector.stderr.txt'), run.stderr);
-  const report = buildReport({ ...run, pages, canaryUrl, detectorVersion });
+  const report = buildReport({ ...run, deadlineReached, pages, canaryUrl, detectorVersion });
   writeFileSync(join(outDir, 'report.json'), `${JSON.stringify({ ...report, args: args.slice(0, 4), pages }, null, 2)}\n`);
   const summary = renderSummary(report);
   writeFileSync(join(outDir, 'summary.md'), summary);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -191,13 +192,89 @@ test('the design-lint job is report-only, pinned and runs without telemetry', ()
   assert.doesNotMatch(WORKFLOW, /secrets\./, 'untrusted lane carries no secrets');
 });
 
-test('the detector watchdog fires well inside the job deadline, so NOT RUN is still reported', () => {
+test('the scan deadline starts with the job and leaves room for the report and the upload', () => {
   const WORKFLOW = readRepo('.github/workflows/design-lint.yml');
   const jobMinutes = Number(WORKFLOW.match(/^\s+timeout-minutes:\s*(\d+)/m)?.[1]);
-  const scanMs = Number(WORKFLOW.match(/--timeout-ms\s+(\d+)/)?.[1]);
+  const firstStep = WORKFLOW.split(/\n\s+steps:\n/)[1].match(/^\s+- name:[\s\S]*?(?=\n\s+- name:)/m)[0];
+  const clock = firstStep.match(/DESIGN_LINT_DEADLINE=\$\(\(\s*\$\(date \+%s\)\s*\+\s*(\d+)\s*\*\s*60\s*\)\)/);
+  assert.ok(clock, 'the first step, before checkout, sets DESIGN_LINT_DEADLINE from the clock');
+  const deadlineMinutes = Number(clock[1]);
   assert.ok(jobMinutes > 0, 'the job declares timeout-minutes');
-  assert.ok(scanMs > 0, 'the scan step passes an explicit --timeout-ms');
-  // Install, build and serve run first and the artifact upload runs after, so
-  // leave at least 8 minutes of the job budget outside the scan.
-  assert.ok(scanMs <= (jobMinutes - 8) * 60_000, `scan ${scanMs} ms must fit inside ${jobMinutes} min with headroom`);
+  // Report writing and the artifact upload run after the scan.
+  assert.ok(deadlineMinutes <= jobMinutes - 5, `deadline ${deadlineMinutes} min must leave 5 of ${jobMinutes} min`);
+  assert.match(WORKFLOW, /designLint\.mjs[^\n]*--deadline "\$DESIGN_LINT_DEADLINE"/, 'the scan step passes the deadline');
+});
+
+const gone = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return false;
+  } catch {
+    return true;
+  }
+};
+
+test('the watchdog kills the whole detector process tree, so a hung engine cannot hold the report', { timeout: 30_000 }, async () => {
+  const { runDetector } = await load();
+  const dir = mkdtempSync(join(tmpdir(), 'dl-tree-'));
+  const pidFile = join(dir, 'engine.pid');
+  const shim = join(dir, 'shim.mjs');
+  // Like the real npm shim: run the engine synchronously with inherited stdio.
+  const engine = `require('fs').writeFileSync(${JSON.stringify(pidFile)}, String(process.pid)); setInterval(() => {}, 1000);`;
+  writeFileSync(shim, `import { spawnSync } from 'node:child_process';\nspawnSync(process.execPath, ['-e', ${JSON.stringify(engine)}], { stdio: 'inherit' });\n`);
+  const enginePid = () => (existsSync(pidFile) ? Number(readFileSync(pidFile, 'utf8')) : 0);
+  try {
+    const outcome = await Promise.race([
+      runDetector(process.execPath, [shim], { ...process.env }, 1_000),
+      new Promise((resolve) => setTimeout(() => resolve('hung'), 10_000)),
+    ]);
+    assert.notEqual(outcome, 'hung', 'runDetector must resolve soon after the watchdog fires');
+    assert.equal(outcome.timedOut, true);
+    for (let i = 0; i < 20 && !gone(enginePid()); i += 1) await new Promise((r) => setTimeout(r, 100));
+    assert.ok(enginePid() > 0 && gone(enginePid()), 'the engine process was killed with the shim');
+  } finally {
+    if (enginePid() && !gone(enginePid())) process.kill(enginePid(), 'SIGKILL');
+  }
+});
+
+test('a scan that reaches its deadline before the detector starts is NOT RUN', async () => {
+  const { buildReport } = await load();
+  const report = buildReport({ exitCode: null, deadlineReached: true, stdout: '', pages: [page('/')], canaryUrl: CANARY });
+  assert.equal(report.status, 'NOT_RUN');
+  assert.match(report.reason, /deadline/);
+  assert.equal(report.pagesScanned, 0);
+});
+
+test('route checks and the scan share one deadline, so a stalled server still gets a NOT RUN report', { timeout: 60_000 }, async () => {
+  const { main } = await load();
+  const sockets = new Set();
+  const server = createServer(() => {}); // accepts connections, never answers
+  server.on('connection', (s) => sockets.add(s));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const dir = mkdtempSync(join(tmpdir(), 'dl-deadline-'));
+  const build = join(dir, 'build');
+  mkdirSync(build, { recursive: true });
+  writeFileSync(join(build, 'index.html'), 'x');
+  for (let i = 0; i < 20; i += 1) {
+    mkdirSync(join(build, `p${i}`));
+    writeFileSync(join(build, `p${i}`, 'index.html'), 'x');
+  }
+  const out = join(dir, 'out');
+  const savedSummary = process.env.GITHUB_STEP_SUMMARY;
+  delete process.env.GITHUB_STEP_SUMMARY;
+  const started = Date.now();
+  try {
+    const code = await main(['--build-dir', build, '--origin', origin, '--out', out, '--detector', join(dir, 'never-started'), '--deadline', String(Math.floor(Date.now() / 1000) + 3)]);
+    assert.equal(code, 1);
+    assert.ok(Date.now() - started < 15_000, `took ${Date.now() - started} ms; the deadline is 3 s away`);
+    const report = JSON.parse(readFileSync(join(out, 'report.json'), 'utf8'));
+    assert.equal(report.status, 'NOT_RUN');
+    assert.match(report.reason, /deadline/);
+    assert.match(readFileSync(join(out, 'detector.stderr.txt'), 'utf8'), /not started/);
+  } finally {
+    if (savedSummary !== undefined) process.env.GITHUB_STEP_SUMMARY = savedSummary;
+    for (const s of sockets) s.destroy();
+    server.close();
+  }
 });
