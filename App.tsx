@@ -279,7 +279,7 @@ const HomePage = () => {
         <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12">
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
-            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
+            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] md:whitespace-nowrap">
               The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px grow bg-white/5"></div>
