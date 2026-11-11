@@ -60,9 +60,15 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outli
 const SectionHeader: React.FC<{ title: string; subtitle?: string; as?: 'h1' | 'h2' }> = ({ title, subtitle, as: Heading = 'h2' }) => (
   <div className="mb-16 border-l-2 border-copper-500 pl-6">
     <Heading className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">{title}</Heading>
-    {subtitle && <p className="text-copper-400 font-mono text-sm tracking-widest uppercase">{subtitle}</p>}
+    {subtitle && <p className="text-copper-400 font-mono text-sm">{subtitle}</p>}
   </div>
 );
+
+// Headings lead. A category, status or date follows its title as quiet mono
+// metadata in sentence case; no label sits above a heading. Navigation, buttons,
+// chips and badges keep the tracked-capitals voice.
+const META = "font-mono text-xs text-slate-400";
+const META_ACCENT = "font-mono text-xs text-copper-400";
 
 // --- Layout Components ---
 
@@ -186,8 +192,8 @@ const IntentRouter = () => (
         const cardClass = "flex flex-col items-start p-6 border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-copper-500/30 transition-all group h-full";
         const inner = (
           <>
-            <p className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{route.audience}</p>
-            <h3 className="text-white font-semibold mb-2">{route.prompt}</h3>
+            <h3 className="text-white font-semibold mb-1">{route.prompt}</h3>
+            <p className={`${META_ACCENT} mb-3`}>{route.audience}</p>
             <p className="text-slate-400 text-sm leading-relaxed mb-4 grow">{route.description}</p>
             <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400 transition-colors">
               {route.cta}
@@ -216,9 +222,6 @@ const HomePage = () => {
         <div className="grow flex items-center my-12 md:my-0">
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-block px-3 py-1 mb-6 border border-copper-500/30 rounded-full bg-copper-500/5">
-                <span className="text-copper-400 text-xs font-mono tracking-widest uppercase">{FOOTER_DATA.role}</span>
-              </div>
               <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tighter">
                 {HERO_CONTENT.name}
               </h1>
@@ -276,7 +279,7 @@ const HomePage = () => {
         <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12">
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
-            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] whitespace-nowrap">
+            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] md:whitespace-nowrap">
               The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px grow bg-white/5"></div>
@@ -297,8 +300,8 @@ const HomePage = () => {
                 {...linkTargetProps(work.href)}
                 className="flex flex-col p-6 border border-white/10 bg-slate-900/40 hover:border-copper-500/50 transition-colors group h-full"
               >
-                <span className="text-copper-400 text-xs font-mono uppercase tracking-widest mb-3">{work.status}</span>
-                <h3 className="text-2xl font-bold text-white mb-3">{work.title}</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{work.title}</h3>
+                <span className={`${META_ACCENT} mb-3`}>{work.status}</span>
                 <p className="text-slate-300 leading-relaxed mb-4 grow">{work.summary}</p>
                 <p className="text-slate-400 text-sm mb-4">{work.evidence}</p>
                 <span className="inline-flex items-center text-sm font-medium text-copper-500 group-hover:text-copper-400">
@@ -367,7 +370,6 @@ const HomePage = () => {
       {/* Final CTA Strip - Single Conversion Path */}
       <Section className="py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">Ready to own one workflow?</p>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Work with OIA on one workflow
           </h3>
@@ -509,7 +511,7 @@ const EcosystemPage = () => {
           <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             {venture.name}
             <span className="text-slate-400 font-light">·</span>
-            <span className="text-copper-400 font-light">{venture.role}</span>
+            <span className="text-slate-300 font-light">{venture.role}</span>
           </h3>
           <div className="space-y-6">
             <div>
@@ -603,12 +605,12 @@ const EcosystemPage = () => {
                     </span>
                   </div>
                   <div className="grow">
-                    <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isCosmocrat ? 'text-copper-500' : 'text-copper-400'}`}>
-                      {venture.role}
-                    </p>
-                    <h2 className="text-2xl font-bold mb-4 text-white">
+                    <h2 className="text-2xl font-bold mb-1 text-white">
                       {venture.name}
                     </h2>
+                    <p className={`${META_ACCENT} mb-4`}>
+                      {venture.role}
+                    </p>
                     <p className="text-slate-400 text-sm leading-relaxed">
                       {venture.description}
                     </p>
@@ -706,8 +708,8 @@ const EcosystemPage = () => {
                       </span>
                     </div>
                     <div className="grow">
-                      <p className="text-xs font-mono uppercase tracking-widest mb-1 text-slate-400">{venture.role}</p>
-                      <h3 className="text-xl font-bold mb-3 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
+                      <h3 className="text-xl font-bold mb-1 text-slate-300 group-hover:text-white transition-colors">{venture.name}</h3>
+                      <p className={`${META} mb-3`}>{venture.role}</p>
                       <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
                     </div>
                     <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
@@ -838,12 +840,9 @@ const EVIDENCE_TIER_ICON: Record<string, React.ComponentType<{ className?: strin
 const EvidenceSection = () => (
   <div id="evidence" className="mb-16">
     <div className="border-l-2 border-copper-500 pl-6 mb-8">
-      <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">
-        Evidence
-      </span>
       <h2 className="text-2xl font-bold text-white mb-1">Checkable Claims</h2>
       <p className="text-sm text-slate-400">
-        Every checkable claim below carries the command or source that confirms it. The limits are labelled as limits.
+        <span className="text-copper-400">Evidence.</span> Every checkable claim below carries the command or source that confirms it. The limits are labelled as limits.
       </p>
     </div>
 
@@ -911,10 +910,10 @@ const EvidenceSection = () => (
 // artifact (2026-09-29 site audit).
 const DownloadCard = ({ resource }: { resource: Resource }) => (
   <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
-    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mb-3">
+    <h3 className="text-lg font-semibold text-white mb-1">{resource.title}</h3>
+    <span className={`${META_ACCENT} mb-3`}>
       {resource.downloadLabel ?? resource.title} · {resource.fileType.toUpperCase()}
     </span>
-    <h3 className="text-lg font-semibold text-white mb-2">{resource.title}</h3>
     <p className="text-sm text-slate-400 mb-5 leading-relaxed grow">{resource.description}</p>
     <a
       href={resource.filePath}
@@ -1167,10 +1166,9 @@ const ResourcesPage = () => {
           {/* Old layer deep links (#authority, #receipts, #drift, #substrate) land here. */}
           <span id="authority" /><span id="receipts" /><span id="drift" /><span id="substrate" />
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Approach</span>
             <h2 className="text-2xl font-bold text-white mb-1">How the systems are built</h2>
             <p className="text-sm text-slate-400">
-              These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
+              <span className="text-copper-400">Approach.</span> These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
               <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">Cosmocrat OS: Platform</a>.
             </p>
           </div>
@@ -1220,9 +1218,8 @@ const ResourcesPage = () => {
         {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Conceptual</span>
             <h2 className="text-2xl font-bold text-white mb-1">Gated Execution Pipeline</h2>
-            <p className="text-sm text-slate-400">PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Conceptual.</span> PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">In this design, each state mutation passes three gates.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
@@ -1245,9 +1242,8 @@ const ResourcesPage = () => {
         {/* Diagram, conceptual economics framework (above Case Studies) */}
         <div id="economics" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Economics (conceptual)</span>
             <h2 className="text-2xl font-bold text-white mb-1">How Governance Could Change the Economics of Risk</h2>
-            <p className="text-sm text-slate-400">Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Economics (conceptual).</span> Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">The framework describes how governance could turn operational risk into predictable unit economics.</p>
           <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
@@ -1268,7 +1264,6 @@ const ResourcesPage = () => {
         {CASE_STUDIES.length > 0 && (
           <div id="production" className="mb-16">
             <div className="border-l-2 border-copper-500 pl-6 mb-8">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Reference Architectures</span>
               <h2 className="text-2xl font-bold text-white mb-1">Reference Enforcement Architectures</h2>
               <p className="text-sm text-slate-400">Reference enforcement architectures by industry and regulatory surface. Illustrative patterns, not measured client outcomes.</p>
             </div>
@@ -1316,9 +1311,8 @@ const ResourcesPage = () => {
         {/* Commercial and speaking: the speaker one-sheet and the route to Contact, kept apart from evidence */}
         <div id="commercial" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-500 block mb-1">Commercial and speaking</span>
             <h2 className="text-2xl font-bold text-white mb-1">Working together</h2>
-            <p className="text-sm text-slate-400">The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Commercial and speaking.</span> The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {RESOURCES.filter((r) => proofGroupFor(r) === 'commercial').map((resource) => (
@@ -1355,14 +1349,14 @@ const CaseStudyPage = () => {
     <div className="pt-20">
       <Section>
         <div className="mb-6">
-          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
             ← Proof
           </Link>
         </div>
 
         <div className="border-l-2 border-copper-500 pl-6 mb-12">
-          <span className="text-xs font-mono uppercase tracking-widest text-slate-400 block mb-2">{study.industry}</span>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{study.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{study.title}</h1>
+          <p className={`${META} mb-4`}>{study.industry}</p>
           <p className="text-sm font-semibold text-copper-400 mb-4">{REFERENCE_ARCHITECTURE_NOTICE}</p>
           <p className="text-slate-400 max-w-3xl leading-relaxed">{study.description}</p>
         </div>
@@ -1575,11 +1569,11 @@ const ThoughtsPage = () => {
       to={`/thoughts/${thought.slug}`}
       className="block border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group"
     >
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{thought.category}</span>
-        <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">{thought.title}</h3>
+      <div className="flex items-center gap-3 mb-3">
+        <span className={META_ACCENT}>{thought.category}</span>
+        <span className={META}>{thought.date}</span>
       </div>
-      <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">{thought.title}</h3>
       <p className="text-slate-400 text-sm leading-relaxed">{thought.preview}</p>
       <span className="mt-4 inline-block text-copper-500/80 font-mono text-xs uppercase tracking-widest group-hover:text-copper-400">
         Read &rarr;
@@ -1791,19 +1785,17 @@ const ThoughtDetailPage = () => {
     <div className="pt-20">
       <Section>
         <div className="mb-6">
-          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
             ← Thoughts
           </Link>
         </div>
 
         <article className="border-l-2 border-copper-500 pl-6 max-w-3xl">
-          <div className="flex items-center gap-4 mb-4">
-            <span className="text-xs font-mono uppercase tracking-widest text-copper-400">
-              {thought.category}
-            </span>
-            <span className="text-xs font-mono text-slate-400">{thought.date}</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{thought.title}</h1>
+          <div className="flex items-center gap-4 mb-6">
+            <span className={META_ACCENT}>{thought.category}</span>
+            <span className={META}>{thought.date}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">{thought.title}</h1>
           <p className="text-slate-300 text-lg leading-relaxed mb-8 italic">{thought.preview}</p>
           <Markdown source={thought.body} />
         </article>
@@ -1862,16 +1854,13 @@ const GuidesPage = () => {
             }}
           />
           <div className="relative z-10 max-w-5xl">
-            <p className="mb-7 flex items-center gap-3 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-copper-400">
-              <span className="h-2 w-2 rounded-full bg-copper-500 shadow-[0_0_16px_rgba(230,130,73,.8)]" aria-hidden="true" />
-              Field notes on governed AI
-            </p>
             <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none lg:text-7xl/none">
               Build agents that can act
-              <span className="block text-copper-400">and prove what happened.</span>
+              <span className="block">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
+                <span className="text-copper-400">Field notes on governed AI.</span>{' '}
                 Long-form technical guides for AI systems that remain legible under pressure:
                 authority, evidence, observability, and fail-closed execution.
               </p>
@@ -1888,7 +1877,6 @@ const GuidesPage = () => {
       <Section className="pt-6 md:pt-8">
         <div className="mb-10 grid gap-5 md:grid-cols-[1fr_22rem] md:items-end">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">01 / Selected work</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Start with the signal.</h2>
           </div>
           <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
@@ -1903,11 +1891,10 @@ const GuidesPage = () => {
               <div className={'relative h-32 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
                 <span className="absolute left-6 top-5 font-mono text-xs text-slate-300">{String(index + 1).padStart(2, '0')}</span>
                 <Layers size={48} className="absolute bottom-5 right-6 text-white/15" aria-hidden="true" />
-                <span className="absolute bottom-5 left-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-200">{guide.category}</span>
               </div>
               <div className="flex flex-1 flex-col p-6">
-                <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-copper-400">Guide · {guide.date}</p>
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
+                <p className={`${META} mt-2`}>{guide.category} · {guide.date}</p>
                 <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
                 <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
                   Read field note <ArrowRight size={14} aria-hidden="true" />
@@ -1921,7 +1908,6 @@ const GuidesPage = () => {
       <Section id="guide-library" className="pt-8 md:pt-12">
         <div className="mb-9 grid gap-7 md:grid-cols-[1fr_minmax(20rem,32rem)] md:items-end">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">02 / Guide library</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Follow the question.</h2>
           </div>
           <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
@@ -1983,7 +1969,6 @@ const GuidesPage = () => {
       <Section className="pt-8 md:pt-12">
         <div className="grid gap-10 border-t border-white/10 pt-12 lg:grid-cols-[22rem_1fr]">
           <div>
-            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-copper-400">03 / Recurring themes</p>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-4xl">The same hard questions, from different angles.</h2>
             <p className="mt-5 text-sm leading-relaxed text-slate-400">The formats change. The doctrine does not. Use a theme as a lens into the corpus.</p>
           </div>
@@ -2046,20 +2031,20 @@ const GuideDetailPage = () => {
       <Section>
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
-            <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
               ← Guides
             </Link>
           </div>
 
           <article>
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-400">{guide.category}</span>
-              <span className="text-xs font-mono text-slate-400">{guide.date}</span>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-4 leading-tight tracking-tight">{guide.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
+              <span className={META_ACCENT}>{guide.category}</span>
+              <span className={META}>{guide.date}</span>
               {guide.reviewed && (
-                <span className="text-xs font-mono text-slate-400">Reviewed {guide.reviewed}</span>
+                <span className={META}>Reviewed {guide.reviewed}</span>
               )}
             </div>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{guide.title}</h1>
             <p className="text-slate-300 text-lg md:text-xl/7 leading-relaxed mb-10 border-l-2 border-copper-500 pl-5">{guide.lead}</p>
             {guide.youtube && <GuideVideo key={guide.slug} id={guide.youtube} title={guide.title} />}
             <Markdown source={guide.body} />
@@ -2097,11 +2082,11 @@ const DiagramsPage = () => {
                 />
               </div>
               <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono uppercase tracking-widest text-copper-400">Diagram</span>
-                  <span className="text-xs font-mono text-slate-400">{diagram.date}</span>
+                <h2 className="text-lg font-semibold text-white mb-1 group-hover:text-copper-400 transition-colors">{diagram.title}</h2>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={META_ACCENT}>Diagram</span>
+                  <span className={META}>{diagram.date}</span>
                 </div>
-                <h2 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-400 transition-colors">{diagram.title}</h2>
                 <p className="text-slate-400 text-sm leading-relaxed">{diagram.caption}</p>
               </div>
             </Link>
@@ -2137,17 +2122,17 @@ const DiagramDetailPage = () => {
       <Section>
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <Link to="/diagrams" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            <Link to="/diagrams" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
               ← Diagrams
             </Link>
           </div>
 
           <article>
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-xs font-mono uppercase tracking-widest text-copper-400">Diagram</span>
-              <span className="text-xs font-mono text-slate-400">{diagram.date}</span>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-3 leading-tight tracking-tight">{diagram.title}</h1>
+            <div className="flex items-center gap-4 mb-6">
+              <span className={META_ACCENT}>Diagram</span>
+              <span className={META}>{diagram.date}</span>
             </div>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-6 leading-tight tracking-tight">{diagram.title}</h1>
             <figure>
               <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden">
                 <img
