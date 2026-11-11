@@ -779,22 +779,21 @@ const ReadinessScanCTA = () => (
 const RunnableProofCallout = () => (
   <div id="runnable-proof" className="mb-16">
     <div className="border border-copper-500/30 bg-gradient-to-br from-copper-500/[0.07] to-slate-900/40 rounded-lg p-8">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
-          <Layers className="w-3 h-3" />
-          L1: Authority Gate
-        </span>
-      </div>
-
       <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
         failclosed: the Authority Gate, made runnable
       </h2>
       <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
         failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
       </p>
-      <p className="flex items-center gap-2 text-slate-400 text-sm font-mono mb-6">
-        <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
-        Public. Runnable in two minutes. Receipt-backed.
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-400 text-sm font-mono mb-6">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
+          <Layers className="w-3 h-3" aria-hidden="true" />
+          L1: Authority Gate
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
+          Public. Runnable in two minutes. Receipt-backed.
+        </span>
       </p>
 
       <div className="flex flex-wrap items-center gap-4">
