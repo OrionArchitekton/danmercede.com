@@ -60,17 +60,22 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Step timeouts keep a hung install or build inside the scan clock, so
+      # the scan step below still runs and writes its NOT RUN report.
       - name: Install dependencies (detector pinned by the lockfile)
+        timeout-minutes: 8
         run: npm ci
 
       - name: Build
+        timeout-minutes: 6
         run: npm run build
 
       - name: Serve the built site locally
         run: |
           nohup ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
           for i in $(seq 1 60); do
-            if curl -fsS -o /dev/null http://127.0.0.1:4173/; then
+            # Any HTTP answer means the server is up; the scan judges each page.
+            if curl -sS -o /dev/null http://127.0.0.1:4173/; then
               echo "preview server up after ${i}s"
               exit 0
             fi
@@ -81,6 +86,9 @@ jobs:
           exit 1
 
       - name: Scan served pages (report-only)
+        # Runs after an earlier failure too, so a broken install, build or
+        # server still produces a NOT RUN report and an artifact.
+        if: ${{ !cancelled() }}
         env:
           IMPECCABLE_HOME: ${{ runner.temp }}/impeccable-home
         run: |

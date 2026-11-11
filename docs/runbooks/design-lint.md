@@ -43,6 +43,10 @@ protection, never blocks a merge.
   left, so the NOT RUN report and the artifact upload always fit inside the
   25 minute job. The detector runs as its own process group and the watchdog
   kills the whole group.
+- Degraded paths still report: install and build carry step time limits
+  (8 and 6 minutes, inside the 20 minute clock), the readiness probe accepts
+  any HTTP answer, and the scan step runs after an earlier failure (only a
+  cancelled job skips it), so the artifact upload always finds a report.
 
 ## Reading a run
 
@@ -83,11 +87,12 @@ never counted as site findings.
 | `detector exit 1` | A page timed out, or no browser found | Check `detector.stderr.txt`; check the "browser:" log line; re-run once |
 | `pages did not serve HTTP 200` | Build or preview server problem | Check the Build and Serve steps; the `build` check in `ci.yml` usually fails too |
 | `canary page has no primary finding` | Detector rule change or rendering broken | Compare the detector version; run locally (below) |
-| `detector output is not a JSON array` | Detector crash or CLI change | Read `findings.json` and stderr; check the detector changelog |
+| `detector output is not a JSON array of findings` | Detector crash or CLI change | Read `findings.json` and stderr; check the detector changelog |
 | `no pages to scan` | Build emitted no `index.html` | Check the Build step |
 | `scan deadline reached before the detector could start` | Install, build or the route checks used up the scan clock (20 of the job's 25 minutes, set by the first step) | Check the step timings; a slow `npm ci` or a preview server that accepts connections but never answers are the usual causes |
 | `detector timed out` | The detector ran past the scan clock (or `--timeout-ms`, 15 minutes by default, whichever comes first); its whole process tree was killed | Check `detector.stderr.txt`; a page that never settles is the usual cause |
-| the preview server did not start | Port or build output problem | Read the printed preview log |
+| the preview server did not start | Port or build output problem; the scan still runs and reports the pages that did not answer | Read the printed preview log |
+| `no pages to scan` after a red Install or Build step | Install (8 minute step limit) or build (6 minute step limit) failed or hung; the scan step still runs (`if: !cancelled()`) so a report and artifact exist | Fix the failing step first; the lint result is not meaningful until the build is green |
 
 ## Run locally
 

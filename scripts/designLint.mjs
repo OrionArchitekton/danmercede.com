@@ -34,7 +34,10 @@ function tally(findings) {
 function parseFindings(stdout) {
   try {
     const parsed = JSON.parse(stdout);
-    return Array.isArray(parsed) ? parsed : null;
+    // Every entry must be a finding object; anything else means the output
+    // cannot be trusted, so the scan is NOT RUN instead of half counted.
+    const valid = Array.isArray(parsed) && parsed.every((f) => f !== null && typeof f === 'object' && !Array.isArray(f));
+    return valid ? parsed : null;
   } catch {
     return null;
   }
@@ -42,12 +45,12 @@ function parseFindings(stdout) {
 
 function notRunReason({ exitCode, signal, timedOut, deadlineReached, findings, pages, canaryUrl }) {
   if (deadlineReached) return 'scan deadline reached before the detector could start';
+  if (pages.length === 0) return 'no pages to scan';
   if (timedOut) return 'detector timed out';
   if (signal) return `detector killed by ${signal}`;
   if (exitCode === 1) return 'detector exit 1: at least one target could not be scanned';
   if (!SCANNED_EXIT_CODES.has(exitCode)) return `detector exit ${exitCode}: not a scan result`;
-  if (findings === null) return 'detector output is not a JSON array';
-  if (pages.length === 0) return 'no pages to scan';
+  if (findings === null) return 'detector output is not a JSON array of findings';
   const broken = pages.filter((p) => p.status !== 200);
   if (broken.length > 0) {
     return `pages did not serve HTTP 200: ${broken.map((p) => `${p.path} (${p.status})`).join(', ')}`;

@@ -278,3 +278,44 @@ test('route checks and the scan share one deadline, so a stalled server still ge
     server.close();
   }
 });
+
+test('a findings array with a null or non-object entry is NOT RUN, and the report is still built', async () => {
+  const { buildReport, renderSummary } = await load();
+  for (const stdout of [JSON.stringify([null, canaryHit]), JSON.stringify([1]), JSON.stringify([canaryHit, 'x'])]) {
+    const report = buildReport({ exitCode: 2, stdout, pages: [page('/')], canaryUrl: CANARY });
+    assert.equal(report.status, 'NOT_RUN', stdout);
+    assert.match(report.reason, /not a JSON array of findings/);
+    assert.match(renderSummary(report), /NOT RUN/);
+  }
+});
+
+test('a failed or slow install, build or preview still ends in a NOT RUN report and an artifact', () => {
+  const WORKFLOW = readRepo('.github/workflows/design-lint.yml');
+  const step = (name) => WORKFLOW.match(new RegExp(`- name: ${name}[\\s\\S]*?(?=\\n\\s+- name:|$)`))?.[0] ?? '';
+  const minutes = (s) => Number(s.match(/timeout-minutes:\s*(\d+)/)?.[1]);
+  const install = step('Install dependencies');
+  const build = step('Build');
+  assert.ok(minutes(install) > 0 && minutes(build) > 0, 'install and build carry their own step timeouts');
+  const deadline = Number(WORKFLOW.match(/DESIGN_LINT_DEADLINE=\$\(\(\s*\$\(date \+%s\)\s*\+\s*(\d+)\s*\*\s*60/)?.[1]);
+  // Checkout, setup and the 60 s preview wait take about 3 minutes; leave 1 for the scan to report.
+  assert.ok(minutes(install) + minutes(build) + 4 <= deadline, 'a hung install or build fails before the scan deadline');
+  assert.match(step('Scan served pages'), /if:\s*\$\{\{\s*!cancelled\(\)\s*\}\}/, 'the scan step runs after an earlier step fails');
+  assert.doesNotMatch(step('Serve the built site locally'), /curl\s+-[a-zA-Z]*f/, 'readiness must not require / to serve 200');
+});
+
+test('with no build output the scan still writes a NOT RUN report that says so', { timeout: 30_000 }, async () => {
+  const { main } = await load();
+  const dir = mkdtempSync(join(tmpdir(), 'dl-nobuild-'));
+  const out = join(dir, 'out');
+  const savedSummary = process.env.GITHUB_STEP_SUMMARY;
+  delete process.env.GITHUB_STEP_SUMMARY;
+  try {
+    const code = await main(['--build-dir', join(dir, 'missing'), '--out', out, '--detector', join(dir, 'never-started')]);
+    assert.equal(code, 1);
+    const report = JSON.parse(readFileSync(join(out, 'report.json'), 'utf8'));
+    assert.equal(report.status, 'NOT_RUN');
+    assert.match(report.reason, /no pages to scan/);
+  } finally {
+    if (savedSummary !== undefined) process.env.GITHUB_STEP_SUMMARY = savedSummary;
+  }
+});

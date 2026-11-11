@@ -53,6 +53,12 @@ visible on every change before anyone decides to enforce any of them.
    detector is not started; if it runs past the deadline its whole process
    tree is killed. Either way the report is still written, the status is
    NOT RUN, and the artifact still uploads inside the job's time limit.
+8. **An earlier step fails.** Install, build or the preview server fails or
+   hangs. Install and build stop at their own step limits inside the scan
+   clock, and the scan step still runs, so a NOT RUN report (for example
+   `no pages to scan`) and the artifact exist for every run that was not
+   cancelled. A detector output array with an entry that is not a finding
+   object is also NOT RUN, never half counted.
 
 ## Constraints
 
