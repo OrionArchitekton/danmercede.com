@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(path.join(root, rel), 'utf8');
@@ -207,4 +207,96 @@ test('runtime-governance diagram SVG keeps its image/svg+xml Content-Type under 
     /\bimmutable\b/,
     'diagram SVG keeps the immutable year cache',
   );
+});
+
+// ---------------------------------------------------------------------------
+// Typefaces: the theme names them, one stylesheet link loads exactly those
+// ---------------------------------------------------------------------------
+
+// A family stack is [web font, ...local fallbacks]. Only the first entry needs loading.
+async function themeFonts(): Promise<Record<string, string[]>> {
+  const mod = await import(pathToFileURL(path.join(root, 'tailwind.config.js')).href);
+  return mod.default.theme.extend.fontFamily;
+}
+
+const stripHtmlComments = (html: string) => html.replace(/<!--[\s\S]*?-->/g, '');
+const stripCssComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+function fontStylesheetUrl(html: string): URL {
+  const links = [...stripHtmlComments(html).matchAll(/<link\b[^>]*>/g)]
+    .map((m) => m[0])
+    .filter((tag) => /rel=["']stylesheet["']/.test(tag) && /fonts\.googleapis\.com/.test(tag));
+  assert.equal(links.length, 1, `expected exactly one font stylesheet link, found ${links.length}`);
+  const href = /href=["']([^"']+)["']/.exec(links[0]);
+  assert.ok(href, 'the font stylesheet link has an href');
+  return new URL(href[1].replace(/&amp;/g, '&'));
+}
+
+const loadedFamilies = (url: URL) => url.searchParams.getAll('family').map((v) => v.split(':')[0]).sort();
+
+test('the font link parser reads family names and refuses two links (positive control)', () => {
+  const one = '<link href="https://fonts.googleapis.com/css2?family=A+B:wght@400&amp;family=C&display=swap" rel="stylesheet">';
+  assert.deepEqual(loadedFamilies(fontStylesheetUrl(one)), ['A B', 'C']);
+  assert.throws(() => fontStylesheetUrl(one + one), /exactly one font stylesheet link/);
+  assert.throws(() => fontStylesheetUrl(`<!-- ${one} -->`), /exactly one font stylesheet link/);
+});
+
+test('the font stylesheet loads exactly the web fonts the theme names', async () => {
+  const fonts = await themeFonts();
+  const named = Object.values(fonts).map((stack) => stack[0]).sort();
+  const url = fontStylesheetUrl(read('index.html'));
+  assert.deepEqual(loadedFamilies(url), named, 'a theme font that is not loaded falls back silently; a loaded font nobody uses is dead weight');
+  assert.equal(url.searchParams.get('display'), 'swap');
+});
+
+test('typefaces: Newsreader headings, IBM Plex Sans body, JetBrains Mono labels', async () => {
+  const fonts = await themeFonts();
+  assert.equal(fonts.serif?.[0], 'Newsreader');
+  assert.equal(fonts.sans?.[0], 'IBM Plex Sans');
+  assert.equal(fonts.mono?.[0], 'JetBrains Mono');
+  // Everything after the web font must be a local or generic family: a second
+  // web font there would never load and the stack would have no real fallback.
+  assert.deepEqual(fonts.serif, ['Newsreader', 'Georgia', 'serif']);
+  assert.deepEqual(fonts.sans, ['IBM Plex Sans', 'system-ui', 'sans-serif']);
+  assert.deepEqual(fonts.mono, ['JetBrains Mono', 'monospace']);
+});
+
+// The [start, end) span of every `@layer <name> { ... }` block, by brace matching.
+function layerSpans(css: string, name: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const m of css.matchAll(new RegExp(`@layer ${name}\\s*\\{`, 'g'))) {
+    let depth = 1;
+    let i = m.index! + m[0].length;
+    while (i < css.length && depth > 0) {
+      if (css[i] === '{') depth += 1;
+      else if (css[i] === '}') depth -= 1;
+      i += 1;
+    }
+    spans.push([m.index!, i]);
+  }
+  return spans;
+}
+
+test('the layer span reader ends a block at its own closing brace (positive control)', () => {
+  const css = '@layer base { a { b: c } } h1 { d: e }';
+  const [[start, end]] = layerSpans(css, 'base');
+  assert.equal(css.slice(start, end), '@layer base { a { b: c } }');
+  assert.ok(css.indexOf('h1') >= end, 'a rule after the block is outside it');
+});
+
+test('headings take the serif family from one base rule that utilities can override', () => {
+  const css = stripCssComments(read('index.css'));
+  // All six levels: the Markdown renderer can emit h5 and h6 for deep headings.
+  const rules = [...css.matchAll(/(^|[\s{};])h1,\s*h2,\s*h3,\s*h4,\s*h5,\s*h6\s*\{([^}]*)\}/g)];
+  assert.equal(rules.length, 1, `expected exactly one h1 to h6 rule, found ${rules.length}`);
+  assert.match(rules[0][2], /@apply\s+font-serif\s*;/);
+  // The rule sits inside the base layer, so a heading that carries font-mono keeps
+  // the label face. A rule after the layer's closing brace would be unlayered and
+  // would outrank every utility.
+  const at = rules[0].index!;
+  assert.ok(
+    layerSpans(css, 'base').some(([start, end]) => start < at && at < end),
+    'the heading rule sits inside an @layer base block',
+  );
+  assert.doesNotMatch(rules[0][2], /!important/);
 });
