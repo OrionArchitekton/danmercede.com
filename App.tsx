@@ -340,7 +340,7 @@ const HomePage = () => {
           <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.label}</p>
           <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">{SPEAKING.event}</h3>
           <p className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-1">{SPEAKING.date}</p>
-          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.time} · {SPEAKING.track} Track</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">{SPEAKING.time} · {SPEAKING.track} Track</p>
           <p className="text-slate-400 mb-2 max-w-xl mx-auto italic">"{SPEAKING.title}"</p>
           <p className="text-slate-400 text-sm mb-6 max-w-xl mx-auto">{SPEAKING.detail}</p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
@@ -872,7 +872,7 @@ const EvidenceSection = () => (
                   <p className="text-slate-300 text-sm leading-relaxed mb-1.5">{c.claim}</p>
                   {c.kind === 'check' ? (
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <code className="text-[11px] font-mono text-slate-500 min-w-0 max-w-full whitespace-pre-wrap break-words">
+                      <code className="text-[11px] font-mono text-slate-400 min-w-0 max-w-full whitespace-pre-wrap break-words">
                         {c.verify}
                       </code>
                       {(c.sources ?? []).map((src, si) => {
@@ -893,7 +893,7 @@ const EvidenceSection = () => (
                       })}
                     </div>
                   ) : (
-                    <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-slate-400">
                       Stated limitation
                     </span>
                   )}
@@ -1673,9 +1673,9 @@ const ThoughtsPage = () => {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search title, category, or idea"
-              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
           </label>
         </div>
 
@@ -1687,7 +1687,7 @@ const ThoughtsPage = () => {
             would self-collapse and its margin would collapse with the filter row's, halving the
             default view's gap rather than preserving it. */}
         <p
-          className={`font-mono text-[10px] uppercase tracking-widest text-slate-500 ${isLaneGroupedView ? '' : 'mb-6'}`}
+          className={`font-mono text-[10px] uppercase tracking-widest text-slate-400 ${isLaneGroupedView ? '' : 'mb-6'}`}
           aria-live="polite"
         >
           {isLaneGroupedView
@@ -1876,9 +1876,9 @@ const GuidesPage = () => {
                 authority, evidence, observability, and fail-closed execution.
               </p>
               <dl className="grid grid-cols-3 gap-4 text-right">
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
           </div>
@@ -1933,9 +1933,9 @@ const GuidesPage = () => {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search title, category, or idea"
-              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-500"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-500">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
           </label>
         </div>
 
@@ -1952,7 +1952,7 @@ const GuidesPage = () => {
             </button>
           ))}
         </div>
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-slate-500" aria-live="polite">
+        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-slate-400" aria-live="polite">
           {visibleGuides.length} {visibleGuides.length === 1 ? 'guide' : 'guides'}
         </p>
         <div className="border-t border-white/15">
@@ -1963,9 +1963,9 @@ const GuidesPage = () => {
               className="group grid min-h-28 grid-cols-[3rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
             >
               <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
-              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-500 md:block">{guide.category}</span>
+              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-400 md:block">{guide.category}</span>
               <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">{guide.title}</span>
-              <span className="hidden text-right font-mono text-[10px] text-slate-500 md:block">{guide.date}</span>
+              <span className="hidden text-right font-mono text-[10px] text-slate-400 md:block">{guide.date}</span>
               <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           ))}
@@ -2003,7 +2003,7 @@ const GuidesPage = () => {
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
                 <span className="mt-8 block text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
                 <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
                 </span>
               </button>
@@ -2360,7 +2360,7 @@ const App: React.FC = () => {
     <>
       <ScrollToTop />
       <Analytics />
-      <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-white overflow-hidden">
+      <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-copper-500 selection:text-slate-950 overflow-hidden">
         <ConstellationBackground />
         <a
           href="#main-content"
@@ -2375,7 +2375,7 @@ const App: React.FC = () => {
               main.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
             }
           }}
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-white focus:rounded-sm"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-copper-500 focus:text-slate-950 focus:rounded-sm"
         >Skip to content</a>
         <Navigation />
 

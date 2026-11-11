@@ -353,7 +353,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
       out.push(
         <ListTag
           key={nextKey()}
-          className={`my-5 space-y-2 pl-6 text-slate-300 marker:text-copper-500/70 ${
+          className={`my-5 space-y-2 pl-6 text-slate-300 marker:text-copper-500 ${
             ordered ? 'list-decimal' : 'list-disc'
           }`}
         >
