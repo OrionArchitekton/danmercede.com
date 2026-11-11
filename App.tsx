@@ -222,7 +222,7 @@ const HomePage = () => {
         <div className="grow flex items-center my-12 md:my-0">
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tighter">
+              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tight">
                 {HERO_CONTENT.name}
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 mb-4 font-light">
