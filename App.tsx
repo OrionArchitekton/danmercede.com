@@ -1349,7 +1349,7 @@ const CaseStudyPage = () => {
     <div className="pt-20">
       <Section>
         <div className="mb-6">
-          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+          <Link to="/proof" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
             ← Proof
           </Link>
         </div>
@@ -1785,7 +1785,7 @@ const ThoughtDetailPage = () => {
     <div className="pt-20">
       <Section>
         <div className="mb-6">
-          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+          <Link to="/thoughts" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
             ← Thoughts
           </Link>
         </div>
@@ -2032,7 +2032,7 @@ const GuideDetailPage = () => {
       <Section>
         <div className="max-w-3xl mx-auto">
           <div className="mb-6">
-            <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            <Link to="/guides" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
               ← Guides
             </Link>
           </div>
@@ -2123,7 +2123,7 @@ const DiagramDetailPage = () => {
       <Section>
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <Link to="/diagrams" className="text-copper-500 hover:text-copper-400 font-mono text-xs uppercase tracking-widest inline-flex items-center gap-1">
+            <Link to="/diagrams" className="text-copper-500 hover:text-copper-400 font-mono text-sm inline-flex items-center gap-1">
               ← Diagrams
             </Link>
           </div>
