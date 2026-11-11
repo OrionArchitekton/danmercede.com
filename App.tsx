@@ -1486,7 +1486,7 @@ const WorksPage = () => {
           ))}
         </ul>
         <div className="mt-6 max-w-3xl">
-          <Link to="/thoughts" className="inline-flex items-center text-copper-500/80 font-mono text-xs uppercase tracking-widest hover:text-copper-400">
+          <Link to="/thoughts" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
             Full archive <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
           </Link>
         </div>
