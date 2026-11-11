@@ -1986,7 +1986,7 @@ const GuidesPage = () => {
                 className="group bg-slate-950 p-6 text-left hover:bg-slate-900"
               >
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
-                <span className="mt-8 block text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
+                <span className="mt-8 block font-serif text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
                 <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
                 <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
