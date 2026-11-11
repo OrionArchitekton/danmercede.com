@@ -22,15 +22,15 @@ colors:
   emerald-500: "#10B981"
 typography:
   display:
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "72px"
     fontWeight: 700
   heading:
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "Newsreader, Georgia, serif"
     fontSize: "36px"
     fontWeight: 700
   body:
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "IBM Plex Sans, system-ui, sans-serif"
     fontSize: "16px"
     fontWeight: 400
   label:
@@ -111,9 +111,14 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 
 ## Typography
 
-- Inter is the current sans for display, headings and body (300 to 700 from Google Fonts). The logo pack defines no
-  typeface, so Inter stays unchanged for now (open question below).
-- JetBrains Mono carries labels, metadata and section kickers, mostly uppercase with wide tracking.
+- Newsreader is the serif for display and headings (300 to 700, with its optical-size axis, from Google Fonts). One
+  base rule in `index.css` sets `h1` to `h4` in it; a heading that carries `font-mono` or `font-sans` keeps that face.
+- IBM Plex Sans is the sans for body and interface text (300 to 700 from Google Fonts).
+- JetBrains Mono carries labels and metadata. Metadata lines under titles are sentence case; nav, buttons, chips and
+  badges keep uppercase with wide tracking.
+- The logo pack defines no typeface. The owner chose this pairing on 2026-11-10 from three rendered options.
+- `tailwind.config.js` names each web font first with local fallbacks after it, and the one Google Fonts link in
+  `index.html` loads exactly those families (`tests/headHygiene.test.ts` fails when they drift apart).
 - The scale lists the sizes the pages use, from the 10px and 11px mono labels to the 72px hero heading.
 
 ## Shape
@@ -124,7 +129,7 @@ Tailwind v4 shifted these names: its `rounded-xs` is v3's `rounded-sm`, and its 
 
 ## Open questions for Dan
 
-1. Inter: keep it, or choose a brand typeface? The logo pack defines none, and Inter is on common overused-font lists.
+1. Resolved 2026-11-10: Newsreader for headings and IBM Plex Sans for body replace Inter (see Typography).
 2. `copper-400` `#F0975A` has no logo pack value but carries most accent text. Keep it as a site-only step, or map it?
 3. Deep Navy is defined but unused. Should raised surfaces (now `slate-900` and `slate-800`) move to it?
 4. The legacy slate, amber and emerald values have no logo pack counterparts. Keep, or fold into a navy-based scale?
