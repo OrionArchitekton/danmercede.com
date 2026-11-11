@@ -100,9 +100,9 @@ export const SPEAKING = {
 };
 
 export const BELIEFS: Belief[] = [
-  { statement: "INTELLIGENCE AUGMENTS HUMANS", detail: "Operator authority stays in the loop." },
-  { statement: "TRUST REQUIRES TRACEABILITY", detail: "If it can’t be audited, it can’t be trusted." },
-  { statement: "AUTOMATION MUST BE GOVERNED", detail: "Fail closed. Log everything. Degrade safely." },
+  { statement: "Intelligence augments humans", detail: "Operator authority stays in the loop." },
+  { statement: "Trust requires traceability", detail: "If it can’t be audited, it can’t be trusted." },
+  { statement: "Automation must be governed", detail: "Fail closed. Log everything. Degrade safely." },
 ];
 
 export const VENTURES: Venture[] = [

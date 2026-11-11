@@ -72,3 +72,41 @@ test('the intent router offers a hiring path and no investor lane', () => {
   assert.ok(INTENT_ROUTES.some((r) => r.href === '/about'), 'expected a route for people evaluating Dan for a role');
   assert.ok(!INTENT_ROUTES.some((r) => /investor/i.test(r.audience)), 'the investor lane is not an active priority');
 });
+
+/**
+ * Headings lead. A heading set as a small capitals label with wide tracking
+ * reads as a tag, not a title, so no h1 to h4 may carry both `uppercase` and a
+ * `tracking-` class. Nav, buttons, chips and badges are not headings and are
+ * not checked here.
+ *
+ * Scope: this reads class strings as written in the source. It reports a tag
+ * that names both classes anywhere, even in exclusive branches (it errs toward
+ * a failure a person then reads), and it cannot see a class that arrives
+ * through a variable. The built-output twin in builtPageRender.test.ts checks
+ * the classes each rendered heading actually carries.
+ */
+function capsLabelHeadings(src: string): string[] {
+  const hits: string[] = [];
+  for (const m of src.matchAll(/<h[1-4]\b[^>]*>/g)) {
+    const tag = m[0];
+    if (/\buppercase\b/.test(tag) && /\btracking-/.test(tag)) {
+      hits.push(`line ${src.slice(0, m.index).split('\n').length}: ${tag.slice(0, 90)}`);
+    }
+  }
+  return hits;
+}
+
+test('the capitals-label heading check sees the pattern and ignores other elements (positive control)', () => {
+  assert.equal(capsLabelHeadings('<h2 className="font-mono uppercase tracking-widest">A</h2>').length, 1);
+  assert.equal(capsLabelHeadings('<h3\n  className={`tracking-[0.2em] uppercase ${x}`}>A</h3>').length, 1);
+  assert.equal(capsLabelHeadings('<h2 className="text-2xl font-bold tracking-tight">A</h2>').length, 0);
+  assert.equal(capsLabelHeadings('<span className="uppercase tracking-widest">chip</span>').length, 0);
+});
+
+test('no heading is styled as a small capitals label', () => {
+  const sources = ['App.tsx', ...fs.readdirSync(path.join(root, 'components')).filter((f) => f.endsWith('.tsx')).map((f) => `components/${f}`)];
+  const hits = sources.flatMap((rel) =>
+    capsLabelHeadings(fs.readFileSync(path.join(root, rel), 'utf8')).map((h) => `${rel} ${h}`),
+  );
+  assert.deepEqual(hits, [], `headings styled as capitals labels:\n${hits.join('\n')}`);
+});
