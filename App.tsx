@@ -279,7 +279,7 @@ const HomePage = () => {
         <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12">
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
-            <span className="text-slate-300 font-mono text-xs uppercase tracking-[0.16em] md:whitespace-nowrap">
+            <span className="text-slate-300 font-mono text-xs md:whitespace-nowrap">
               The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px grow bg-white/5"></div>
@@ -1902,7 +1902,7 @@ const GuidesPage = () => {
       </Section>
 
       <Section id="guide-library" className="pt-8 md:pt-12">
-        <div className="mb-9 grid gap-7 md:grid-cols-[1fr_minmax(20rem,32rem)] md:items-end">
+        <div className="mb-9 grid gap-7 md:grid-cols-[max-content_minmax(0,32rem)] md:items-end md:justify-between">
           <div>
             <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Follow the question.</h2>
           </div>
