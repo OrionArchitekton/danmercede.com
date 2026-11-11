@@ -279,7 +279,7 @@ const HomePage = () => {
         <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12">
           <div className="flex items-center gap-6 opacity-80">
             <div className="h-px w-16 bg-copper-500/40"></div>
-            <span className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.2em] md:whitespace-nowrap">
+            <span className="text-slate-300 font-mono text-xs uppercase tracking-[0.16em] md:whitespace-nowrap">
               The teams that win with AI own the workflow, not just the model.
             </span>
             <div className="h-px grow bg-white/5"></div>
@@ -433,8 +433,8 @@ const AboutPage = () => {
             <div className="space-y-6">
               {BELIEFS.map((belief, idx) => (
                 <div key={idx} className="group">
-                  <h4 className="text-copper-400 font-mono text-sm tracking-widest uppercase mb-2 group-hover:text-copper-300 transition-colors">
-                    0{idx + 1} // {belief.statement}
+                  <h4 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-300 transition-colors">
+                    {belief.statement}
                   </h4>
                   <p className="text-slate-400 pl-4 border-l border-slate-700 group-hover:border-copper-500 transition-colors">
                     {belief.detail}
@@ -515,15 +515,15 @@ const EcosystemPage = () => {
           </h3>
           <div className="space-y-6">
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Role in the Ecosystem</h4>
+              <h4 className="text-sm font-semibold text-slate-200 mb-2">Role in the Ecosystem</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.ecosystemRole}</p>
             </div>
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Relationship to the System</h4>
+              <h4 className="text-sm font-semibold text-slate-200 mb-2">Relationship to the System</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.systemRelationship}</p>
             </div>
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-2">Operating Constraints</h4>
+              <h4 className="text-sm font-semibold text-slate-200 mb-2">Operating Constraints</h4>
               <p className="text-slate-300 leading-relaxed max-w-2xl">{venture.operatingConstraints}</p>
             </div>
           </div>
@@ -616,8 +616,8 @@ const EcosystemPage = () => {
                     </p>
                   </div>
                   <div className="mt-8 flex justify-between items-center border-t border-white/5 pt-4">
-                    <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-copper-500'}`}>
-                      {isExpanded ? 'Close Details' : 'View Details'}
+                    <span className={`text-sm font-medium transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-copper-500'}`}>
+                      {isExpanded ? 'Close details' : 'View details'}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-copper-500" />
@@ -637,7 +637,7 @@ const EcosystemPage = () => {
       {/* Readiness Scan CTA Band */}
       <div className="border-y border-copper-500/10 bg-slate-900/40 py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-4">One Workflow Entry</p>
+          <p className="text-slate-300 text-sm mb-4">One workflow entry</p>
           <a
             href={READINESS_SCAN.href}
             target="_blank"
@@ -664,7 +664,7 @@ const EcosystemPage = () => {
         >
           <div className="border-l-2 border-slate-700 pl-6">
             <h2 className="text-2xl font-bold text-slate-400 group-hover:text-slate-300 transition-colors tracking-tight">Extended Ecosystem</h2>
-            <p className="text-slate-400 font-mono text-sm tracking-widest uppercase">Supporting Ventures & Vehicles</p>
+            <p className="text-slate-400 font-mono text-sm">Supporting ventures and vehicles</p>
           </div>
           {showSecondary ? (
             <ChevronUp className="w-5 h-5 text-slate-400" />
@@ -713,7 +713,7 @@ const EcosystemPage = () => {
                       <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">{venture.description}</p>
                     </div>
                     <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-3">
-                      <span className={`text-xs font-mono uppercase tracking-widest transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
+                      <span className={`text-sm font-medium transition-colors ${isExpanded ? 'text-copper-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
                         {isExpanded ? 'Close' : 'Details'}
                       </span>
                       {isExpanded ? (
@@ -733,7 +733,7 @@ const EcosystemPage = () => {
       </Section>
 
       <div className="border-t border-white/5 bg-slate-900/30 py-16 text-center">
-        <p className="text-slate-400 font-mono text-xs uppercase tracking-widest max-w-2xl mx-auto px-6">
+        <p className="text-slate-400 text-sm leading-relaxed max-w-2xl mx-auto px-6">
           Each entity operates independently under shared ownership architecture. Cosmocrat is the platform. OIA is the SMB consulting and delivery arm for one-workflow ownership.
         </p>
       </div>
@@ -784,10 +784,6 @@ const RunnableProofCallout = () => (
           <Layers className="w-3 h-3" />
           L1: Authority Gate
         </span>
-        <span className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-emerald-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          Public · Runnable
-        </span>
       </div>
 
       <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
@@ -796,7 +792,8 @@ const RunnableProofCallout = () => (
       <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
         failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
       </p>
-      <p className="text-slate-400 text-sm font-mono mb-6">
+      <p className="flex items-center gap-2 text-slate-400 text-sm font-mono mb-6">
+        <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
         Public. Runnable in two minutes. Receipt-backed.
       </p>
 
@@ -1372,7 +1369,7 @@ const CaseStudyPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6">
-            <h2 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Enforcement Layers</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Enforcement Layers</h2>
             <div className="space-y-3">
               {study.layerNames.map((name, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -1386,7 +1383,7 @@ const CaseStudyPage = () => {
           </div>
 
           <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6">
-            <h2 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Enforcement Points</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Enforcement Points</h2>
             <div className="space-y-2">
               {study.enforcementPoints.map((point, i) => (
                 <div key={i} className="flex items-start gap-2">
@@ -1399,7 +1396,7 @@ const CaseStudyPage = () => {
         </div>
 
         <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 mb-12">
-          <h2 className="text-sm font-mono uppercase tracking-widest text-copper-500 mb-4">Commercial Mapping</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Commercial Mapping</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {study.commercialMapping.map((item, i) => (
               <div key={i} className="flex items-start gap-2">
@@ -1446,7 +1443,7 @@ const WorksPage = () => {
         </p>
 
         {/* Curated pointers to existing project pages and the knowledge-graph essay. */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Start here</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">Start here</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {WORKS_START_HERE.map((item) => (
             <a key={item.href} href={item.href} {...linkTargetProps(item.href)} className="group border border-white/5 bg-slate-900/20 p-6 hover:bg-slate-900/40 hover:border-copper-500/30 transition-colors">
@@ -1457,7 +1454,7 @@ const WorksPage = () => {
         </div>
 
         {/* Build, open source & tooling */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6">Build: Open Source &amp; Tooling</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">Build: Open Source &amp; Tooling</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Most important first (WORKS_PRIORITY in constants.ts), never by date. */}
           {worksByPriority('Open Source').map((work: Work) => (
@@ -1467,7 +1464,7 @@ const WorksPage = () => {
 
         {/* Build, applied agent projects (hackathon-built agent systems;
             competition context lives in each card's description, not the heading). */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mb-6 mt-16">Build: Applied Agent Projects</h2>
+        <h2 className="text-xl font-semibold text-white mb-6 mt-16">Build: Applied Agent Projects</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {worksByPriority('Agent Project').map((work: Work) => (
             <WorkCard key={work.slug} work={work} />
@@ -1475,7 +1472,7 @@ const WorksPage = () => {
         </div>
 
         {/* Selected essays, a CAPPED pointer into /thoughts (no bodies, no filter) */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Selected Essays</h2>
+        <h2 className="text-xl font-semibold text-white mt-20 mb-6">Selected Essays</h2>
         <ul className="space-y-3 max-w-3xl">
           {featured.map((essay) => (
             <li key={essay.slug}>
@@ -1496,7 +1493,7 @@ const WorksPage = () => {
         </div>
 
         {/* Signal, outbound rail */}
-        <h2 className="text-copper-500 font-mono text-xs uppercase tracking-widest mt-20 mb-6">Signal</h2>
+        <h2 className="text-xl font-semibold text-white mt-20 mb-6">Signal</h2>
         <div className="flex flex-wrap gap-6 max-w-3xl">
           <a href={WORKS_HUB.signalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
             Live signal log <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
@@ -1855,8 +1852,8 @@ const GuidesPage = () => {
           />
           <div className="relative z-10 max-w-5xl">
             <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none lg:text-7xl/none">
-              Build agents that can act
-              <span className="block">and prove what happened.</span>
+              Build agents that can act{' '}
+              <span className="sm:block">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
@@ -1864,10 +1861,10 @@ const GuidesPage = () => {
                 Long-form technical guides for AI systems that remain legible under pressure:
                 authority, evidence, observability, and fail-closed execution.
               </p>
-              <dl className="grid grid-cols-3 gap-4 text-right">
+              <dl className="grid grid-cols-[1fr_1fr_auto] gap-4 text-right">
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
                 <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
+                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 whitespace-nowrap text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
           </div>
@@ -1886,11 +1883,11 @@ const GuidesPage = () => {
             <Link
               key={guide.slug}
               to={`/guides/${guide.slug}`}
-              className="group flex min-h-[22rem] flex-col border border-white/10 bg-slate-900/25 transition-all duration-300 hover:-translate-y-1 hover:border-copper-500/40"
+              className="group flex min-h-[19rem] flex-col border border-white/10 bg-slate-900/25 transition-all duration-300 hover:-translate-y-1 hover:border-copper-500/40"
             >
-              <div className={'relative h-32 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
+              <div className={'relative h-20 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
                 <span className="absolute left-6 top-5 font-mono text-xs text-slate-300">{String(index + 1).padStart(2, '0')}</span>
-                <Layers size={48} className="absolute bottom-5 right-6 text-white/15" aria-hidden="true" />
+                <Layers size={32} className="absolute bottom-4 right-6 text-white/15" aria-hidden="true" />
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
@@ -1946,11 +1943,14 @@ const GuidesPage = () => {
             <Link
               key={guide.slug}
               to={`/guides/${guide.slug}`}
-              className="group grid min-h-28 grid-cols-[3rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
+              className="group grid min-h-28 grid-cols-[2.25rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
             >
               <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
               <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-400 md:block">{guide.category}</span>
-              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">{guide.title}</span>
+              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">
+                {guide.title}
+                <span className={`${META} mt-1 block md:hidden`}>{guide.category} · {guide.date}</span>
+              </span>
               <span className="hidden text-right font-mono text-[10px] text-slate-400 md:block">{guide.date}</span>
               <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
@@ -2265,22 +2265,22 @@ const ImprintPage = () => {
       <div className="bg-slate-900/40 p-10 border border-white/5 max-w-2xl">
         <div className="space-y-6 text-slate-400">
           <div>
-            <h2 className="text-white text-sm uppercase tracking-widest mb-1">Operating Entity</h2>
+            <h2 className="text-white text-sm font-semibold mb-1">Operating Entity</h2>
             <p>Orion Apex Capital</p>
           </div>
 
           <div>
-            <h2 className="text-white text-sm uppercase tracking-widest mb-1">Responsible Person</h2>
+            <h2 className="text-white text-sm font-semibold mb-1">Responsible Person</h2>
             <p>Dan Mercede</p>
           </div>
 
           <div>
-            <h2 className="text-white text-sm uppercase tracking-widest mb-1">Contact</h2>
+            <h2 className="text-white text-sm font-semibold mb-1">Contact</h2>
             <p>contact@danmercede.com</p>
           </div>
 
           <div>
-            <h2 className="text-white text-sm uppercase tracking-widest mb-1">Jurisdiction</h2>
+            <h2 className="text-white text-sm font-semibold mb-1">Jurisdiction</h2>
             <p>United States</p>
           </div>
         </div>
