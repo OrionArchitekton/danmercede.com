@@ -222,7 +222,7 @@ const HomePage = () => {
         <div className="grow flex items-center my-12 md:my-0">
           <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tighter">
+              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tight">
                 {HERO_CONTENT.name}
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 mb-4 font-light">
@@ -1854,9 +1854,9 @@ const GuidesPage = () => {
             }}
           />
           <div className="relative z-10 max-w-5xl">
-            <h1 className="max-w-5xl text-4xl font-light leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none lg:text-7xl/none">
-              Build agents that can act
-              <span className="block">and prove what happened.</span>
+            <h1 className="max-w-5xl text-4xl font-normal leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none md:font-light lg:text-7xl/none">
+              Build agents that can act{' '}
+              <span className="sm:block">and prove what happened.</span>
             </h1>
             <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
@@ -1877,7 +1877,7 @@ const GuidesPage = () => {
       <Section className="pt-6 md:pt-8">
         <div className="mb-10 grid gap-5 md:grid-cols-[1fr_22rem] md:items-end">
           <div>
-            <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Start with the signal.</h2>
+            <h2 className="text-3xl font-normal tracking-tight text-white md:text-5xl md:font-light">Start with the signal.</h2>
           </div>
           <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
         </div>
@@ -1908,7 +1908,7 @@ const GuidesPage = () => {
       <Section id="guide-library" className="pt-8 md:pt-12">
         <div className="mb-9 grid gap-7 md:grid-cols-[1fr_minmax(20rem,32rem)] md:items-end">
           <div>
-            <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">Follow the question.</h2>
+            <h2 className="text-3xl font-normal tracking-tight text-white md:text-5xl md:font-light">Follow the question.</h2>
           </div>
           <label className="flex h-14 items-center gap-3 border border-white/15 bg-slate-900/30 px-4 focus-within:border-copper-500">
             <span className="sr-only">Search guides</span>
@@ -1969,7 +1969,7 @@ const GuidesPage = () => {
       <Section className="pt-8 md:pt-12">
         <div className="grid gap-10 border-t border-white/10 pt-12 lg:grid-cols-[22rem_1fr]">
           <div>
-            <h2 className="text-3xl font-light tracking-tight text-white md:text-4xl">The same hard questions, from different angles.</h2>
+            <h2 className="text-3xl font-normal tracking-tight text-white md:text-4xl md:font-light">The same hard questions, from different angles.</h2>
             <p className="mt-5 text-sm leading-relaxed text-slate-400">The formats change. The doctrine does not. Use a theme as a lens into the corpus.</p>
           </div>
           <div className="grid gap-px bg-white/10 md:grid-cols-3">
@@ -1986,7 +1986,7 @@ const GuidesPage = () => {
                 className="group bg-slate-950 p-6 text-left hover:bg-slate-900"
               >
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
-                <span className="mt-8 block text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
+                <span className="mt-8 block font-serif text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
                 <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
                 <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
@@ -2037,7 +2037,7 @@ const GuideDetailPage = () => {
           </div>
 
           <article>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-4 leading-tight tracking-tight">{guide.title}</h1>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-4 leading-tight">{guide.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
               <span className={META_ACCENT}>{guide.category}</span>
               <span className={META}>{guide.date}</span>
@@ -2128,7 +2128,7 @@ const DiagramDetailPage = () => {
           </div>
 
           <article>
-            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-3 leading-tight tracking-tight">{diagram.title}</h1>
+            <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-3 leading-tight">{diagram.title}</h1>
             <div className="flex items-center gap-4 mb-6">
               <span className={META_ACCENT}>Diagram</span>
               <span className={META}>{diagram.date}</span>
