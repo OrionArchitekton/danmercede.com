@@ -1891,11 +1891,10 @@ const GuidesPage = () => {
               <div className={'relative h-32 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-slate-800' : 'bg-slate-900')}>
                 <span className="absolute left-6 top-5 font-mono text-xs text-slate-300">{String(index + 1).padStart(2, '0')}</span>
                 <Layers size={48} className="absolute bottom-5 right-6 text-white/15" aria-hidden="true" />
-                <span className="absolute bottom-5 left-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-200">{guide.category}</span>
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
-                <p className={`${META} mt-2`}>Guide · {guide.date}</p>
+                <p className={`${META} mt-2`}>{guide.category} · {guide.date}</p>
                 <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
                 <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
                   Read field note <ArrowRight size={14} aria-hidden="true" />
