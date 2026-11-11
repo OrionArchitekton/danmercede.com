@@ -112,7 +112,7 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 ## Typography
 
 - Newsreader is the serif for display and headings (300 to 700, with its optical-size axis, from Google Fonts). One
-  base rule in `index.css` sets `h1` to `h4` in it; a heading that carries `font-mono` or `font-sans` keeps that face.
+  base rule in `index.css` sets `h1` to `h6` in it; a heading that carries `font-mono` or `font-sans` keeps that face.
 - IBM Plex Sans is the sans for body and interface text (300 to 700 from Google Fonts).
 - JetBrains Mono carries labels and metadata. Metadata lines under titles are sentence case; nav, buttons, chips and
   badges keep uppercase with wide tracking.

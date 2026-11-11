@@ -254,18 +254,49 @@ test('typefaces: Newsreader headings, IBM Plex Sans body, JetBrains Mono labels'
   assert.equal(fonts.serif?.[0], 'Newsreader');
   assert.equal(fonts.sans?.[0], 'IBM Plex Sans');
   assert.equal(fonts.mono?.[0], 'JetBrains Mono');
-  for (const [name, stack] of Object.entries(fonts)) {
-    assert.ok(stack.length >= 2, `${name} needs a local fallback after the web font`);
+  // Everything after the web font must be a local or generic family: a second
+  // web font there would never load and the stack would have no real fallback.
+  assert.deepEqual(fonts.serif, ['Newsreader', 'Georgia', 'serif']);
+  assert.deepEqual(fonts.sans, ['IBM Plex Sans', 'system-ui', 'sans-serif']);
+  assert.deepEqual(fonts.mono, ['JetBrains Mono', 'monospace']);
+});
+
+// The [start, end) span of every `@layer <name> { ... }` block, by brace matching.
+function layerSpans(css: string, name: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const m of css.matchAll(new RegExp(`@layer ${name}\\s*\\{`, 'g'))) {
+    let depth = 1;
+    let i = m.index! + m[0].length;
+    while (i < css.length && depth > 0) {
+      if (css[i] === '{') depth += 1;
+      else if (css[i] === '}') depth -= 1;
+      i += 1;
+    }
+    spans.push([m.index!, i]);
   }
+  return spans;
+}
+
+test('the layer span reader ends a block at its own closing brace (positive control)', () => {
+  const css = '@layer base { a { b: c } } h1 { d: e }';
+  const [[start, end]] = layerSpans(css, 'base');
+  assert.equal(css.slice(start, end), '@layer base { a { b: c } }');
+  assert.ok(css.indexOf('h1') >= end, 'a rule after the block is outside it');
 });
 
 test('headings take the serif family from one base rule that utilities can override', () => {
   const css = stripCssComments(read('index.css'));
-  const rules = [...css.matchAll(/(^|[\s{};])h1,\s*h2,\s*h3,\s*h4\s*\{([^}]*)\}/g)];
-  assert.equal(rules.length, 1, `expected exactly one h1 to h4 rule, found ${rules.length}`);
+  // All six levels: the Markdown renderer can emit h5 and h6 for deep headings.
+  const rules = [...css.matchAll(/(^|[\s{};])h1,\s*h2,\s*h3,\s*h4,\s*h5,\s*h6\s*\{([^}]*)\}/g)];
+  assert.equal(rules.length, 1, `expected exactly one h1 to h6 rule, found ${rules.length}`);
   assert.match(rules[0][2], /@apply\s+font-serif\s*;/);
-  // The rule sits in the base layer, so a heading that carries font-mono keeps the label face.
-  const base = /@layer base\s*\{/.exec(css);
-  assert.ok(base && base.index < rules[0].index!, 'the heading rule follows the @layer base opener');
+  // The rule sits inside the base layer, so a heading that carries font-mono keeps
+  // the label face. A rule after the layer's closing brace would be unlayered and
+  // would outrank every utility.
+  const at = rules[0].index!;
+  assert.ok(
+    layerSpans(css, 'base').some(([start, end]) => start < at && at < end),
+    'the heading rule sits inside an @layer base block',
+  );
   assert.doesNotMatch(rules[0][2], /!important/);
 });

@@ -45,7 +45,7 @@
 
   /* Headings are set in the serif face. A heading that carries font-mono or
      font-sans keeps that face, because utilities outrank the base layer. */
-  h1, h2, h3, h4 {
+  h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
   }
 
