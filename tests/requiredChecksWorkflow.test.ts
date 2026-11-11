@@ -69,3 +69,18 @@ describe('extractability linter is a fail-closed REQUIRED check (3-mirror lockst
     assert.match(CI, /npm run test:extractability/, 'the job must run the linter');
   });
 });
+
+// The design lint is REPORT-ONLY (specs/design-lint-spec.md). It must not drift
+// into the required set by accident: a promotion adds it here AND to branch
+// protection together, on purpose, and removes this assertion in that change.
+describe('design-lint stays report-only', () => {
+  it('BASE_REQUIRED_CHECKS does not list design-lint', () => {
+    const base = WORKFLOW.match(/BASE_REQUIRED_CHECKS:\s*"([^"]+)"/);
+    const requiredChecks = (base?.[1] ?? '').split(',').map((s) => s.trim());
+    assert.ok(base, 'BASE_REQUIRED_CHECKS must be declared in the gate workflow');
+    assert.ok(
+      !requiredChecks.includes('design-lint'),
+      `design-lint is report-only and must not be required; got [${requiredChecks.join(', ')}]`,
+    );
+  });
+});

@@ -1,0 +1,172 @@
+---
+verified: 2026-11-10
+review_after: 2027-02-08
+topics: [design-lint, impeccable, ci, report-only, ui-quality, anti-patterns, accessibility, contrast, danmercede.com]
+references:
+  - .github/workflows/design-lint.yml
+  - scripts/designLint.mjs
+  - scripts/designLintCanary.html
+  - tests/designLint.test.mjs
+  - tests/requiredChecksWorkflow.test.ts
+  - .github/workflows/required-checks-fail-closed.yml
+  - specs/design-lint-spec.md
+  - package.json
+  - package-lock.json
+---
+
+# Runbook: report-only design lint (danmercede.com)
+
+## What it is
+
+The `design-lint` job builds the site, serves it with `vite preview` on
+127.0.0.1:4173, and scans every page the build emits (each `index.html` under
+`build/`) with the Impeccable detector. It reports findings per rule and per
+page in the job summary and uploads the full JSON as the `design-lint`
+artifact. It is **report-only**: not in `BASE_REQUIRED_CHECKS`, not in branch
+protection, never blocks a merge.
+
+## Operational surface added
+
+- Workflow `.github/workflows/design-lint.yml`, job `design-lint`, on every
+  pull request to `main` and on manual dispatch. GitHub-hosted
+  `ubuntu-latest` (Chrome preinstalled). Public repo, so no billed minutes.
+- Dev dependency `impeccable`, exact version, locked with its integrity hash.
+  The platform engine comes in as an exact-pinned optional dependency
+  (`@impeccable/cli-linux-x64` on the runner).
+- Env on every detector run: `DO_NOT_TRACK=1`, `IMPECCABLE_NO_TELEMETRY=1`,
+  `IMPECCABLE_PRO=off`, `CI` set, `IMPECCABLE_HOME` in the runner temp dir.
+- `--no-config`: repo ignore files and inline ignores are not honored while
+  the check is report-only.
+- One scan clock: the first step writes `DESIGN_LINT_DEADLINE` (job start plus
+  20 minutes) and the scan step passes it as `--deadline`. Route checks run
+  concurrently and stop at that deadline, and the detector gets only the time
+  left, so the NOT RUN report and the artifact upload always fit inside the
+  25 minute job. The detector runs as its own process group and the watchdog
+  kills the whole group.
+- Degraded paths still report: install and build carry step time limits
+  (8 and 6 minutes, inside the 20 minute clock), the readiness probe accepts
+  any HTTP answer, and the scan step runs after an earlier failure (only a
+  cancelled job skips it), so the artifact upload always finds a report.
+
+## Reading a run
+
+The first lines of the job summary decide everything:
+
+| Status | Meaning | Job result |
+|---|---|---|
+| `RAN` | Detector exited 0 or 2, every page served HTTP 200, the canary page was flagged. Pages scanned is greater than 0. | success, even with findings |
+| `NOT RUN` | Anything else. The reason line says which. | failure (red, non-blocking) |
+
+A green job is not proof by itself. Open the artifact and read
+`report.json`: `status`, `detector.exitCode`, `pagesScanned`,
+`canary.primaryFindings`, `totals`, `byRule`, `byPage`. `findings.json` is the
+detector's raw output; `detector.stderr.txt` holds its diagnostics.
+
+Command line:
+
+```bash
+gh run list --workflow design-lint.yml --limit 5
+gh run download <run-id> --name design-lint --dir /tmp/design-lint
+jq '{status, reason, exit: .detector.exitCode, pagesScanned, totals}' /tmp/design-lint/report.json
+gh run view <run-id> --log | grep 'design-lint: status='
+```
+
+## Why the canary exists
+
+The detector prints `[]` when it cannot reach a page or cannot start a
+browser, and only its exit code (1) says so. The lint therefore serves a small
+known-bad page (`scripts/designLintCanary.html`, never deployed) from memory
+and scans it in the same run. If the canary has no primary finding, the scan
+did not really render pages and the status is NOT RUN. Canary findings are
+never counted as site findings.
+
+## NOT RUN triage
+
+| Reason line | Likely cause | Action |
+|---|---|---|
+| `detector exit 1` | A page timed out, or no browser found | Check `detector.stderr.txt`; check the "browser:" log line; re-run once |
+| `pages did not serve HTTP 200` | Build or preview server problem | Check the Build and Serve steps; the `build` check in `ci.yml` usually fails too |
+| `canary page has no primary finding` | Detector rule change or rendering broken | Compare the detector version; run locally (below) |
+| `detector output is not a JSON array of findings` | Detector crash or CLI change | Read `findings.json` and stderr; check the detector changelog |
+| `no pages to scan` | Build emitted no `index.html` | Check the Build step |
+| `scan deadline reached before the detector could start` | Install, build or the route checks used up the scan clock (20 of the job's 25 minutes, set by the first step) | Check the step timings; a slow `npm ci` or a preview server that accepts connections but never answers are the usual causes |
+| `detector timed out` | The detector ran past the scan clock (or `--timeout-ms`, 15 minutes by default, whichever comes first); its whole process tree was killed | Check `detector.stderr.txt`; a page that never settles is the usual cause |
+| the preview server did not start | Port or build output problem; the scan still runs and reports the pages that did not answer | Read the printed preview log |
+| `no pages to scan` after a red Install or Build step | Install (8 minute step limit) or build (6 minute step limit) failed or hung; the scan step still runs (`if: !cancelled()`) so a report and artifact exist | Fix the failing step first; the lint result is not meaningful until the build is green |
+
+## Run locally (container only, no network)
+
+Never run the detector directly on a workstation. Locally it runs only inside a
+container started with `--network none`, from a throwaway copy, never from a
+checkout you commit from (the build step runs the content compile). Step 1
+installs and builds with network access; the detector does not run there.
+Step 2 serves the build and scans it with no network at all.
+
+```bash
+COPY="$(mktemp -d)" && git archive HEAD | tar -x -C "$COPY"
+IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+
+# 1. Install and build (network on, no detector run).
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$COPY":/work -w /work "$IMAGE" \
+  sh -c 'npm ci --no-audit --no-fund && npm run build'
+
+# 2. Serve and scan (no network).
+docker run --rm --network none --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -e DO_NOT_TRACK=1 -e IMPECCABLE_NO_TELEMETRY=1 -e IMPECCABLE_PRO=off \
+  -v "$COPY":/work -w /work "$IMAGE" sh -c '
+    ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/preview.log 2>&1 &
+    sleep 5
+    export IMPECCABLE_BROWSER="$(ls -d /ms-playwright/chromium-*/chrome-linux64/chrome | head -1)"
+    node scripts/designLint.mjs --build-dir build --out design-lint-local'
+
+jq '{status, reason, exit: .detector.exitCode, pagesScanned, totals}' "$COPY/design-lint-local/report.json"
+```
+
+The container has no GPU device and no network, so the browser renders in
+software and nothing a page loads can leave the machine. Expect about 5
+minutes for the full page set.
+
+## Detector safety rules
+
+- Official packages only: `impeccable` (npm maintainer `paulbakaus`,
+  repository `pbakaus/impeccable`) and its `@impeccable/cli-*` platform
+  engines (engine 0.1.21 for `impeccable` 4.8.2). These similarly named
+  packages are not the official detector; never install them:
+  `@mp3wizard/impeccable`, `impeccable-reviews`, `pi-impeccable*`,
+  `dsh-impeccable`, `@ai-ecoverse/wasi-impeccable`, `impeccable-pencil`.
+- Never run `impeccable install`, `impeccable link` or its hooks on a
+  maintainer machine: they write agent skills and hooks. Never run
+  `concept-seed` or any other command that sends telemetry.
+- Never use live mode on a machine that holds secrets unless
+  `IMPECCABLE_LIVE_COPY_AGENT=off`.
+- `DO_NOT_TRACK=1` and `IMPECCABLE_NO_TELEMETRY=1` on every run (the
+  workflow and the container command above set both).
+
+## Updating the detector
+
+1. Read the release notes in the maintainer's repository (pbakaus/impeccable).
+2. Confirm the npm surface: `npm view impeccable maintainers repository.url version`.
+3. `npm install --save-dev --save-exact impeccable@<version>` and commit
+   `package.json` plus `package-lock.json`.
+4. Re-run the job and compare totals with the previous run; rule changes move
+   the counts.
+
+Never use `npx impeccable@latest` or any floating install. The safety rules
+above apply to every update.
+
+## Promotion (decision, not routine)
+
+Making the lint required is a separate, deliberate change: add `design-lint`
+to `BASE_REQUIRED_CHECKS` and to branch protection together, keep the job free
+of any job-level `if:` (a skipped required check reports success), decide
+which rules fail the job, decide whether repo ignore files become the waiver
+path (drop `--no-config`), and update the report-only assertions in
+`tests/requiredChecksWorkflow.test.ts` and `tests/designLint.test.mjs`.
+
+## Rollback
+
+Delete `.github/workflows/design-lint.yml` (nothing depends on it). Optionally
+remove the `impeccable` dev dependency, `scripts/designLint.mjs`,
+`scripts/designLintCanary.html` and `tests/designLint.test.mjs` (and its entry
+in the `test` script). No branch protection or required-check change is needed
+because the job was never required.

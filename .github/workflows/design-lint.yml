@@ -1,0 +1,109 @@
+name: design-lint
+
+# Report-only design lint (specs/design-lint-spec.md, runbook
+# docs/runbooks/design-lint.md). Builds the site, serves it locally, scans
+# every built page with the exact-pinned Impeccable detector, uploads the JSON
+# and writes a per-rule and per-page job summary.
+#
+# REPORT-ONLY: this job is deliberately NOT in BASE_REQUIRED_CHECKS
+# (required-checks-fail-closed.yml) or branch protection, and carries no
+# job-level `if:`, so a later promotion cannot inherit a silent skip.
+# tests/requiredChecksWorkflow.test.ts and tests/designLint.test.mjs hold that.
+#
+# Status: RAN (findings or not) concludes success. NOT RUN (the detector could
+# not scan, its output is unusable, a page did not serve 200, or the canary
+# page was not flagged) raises an error and concludes failure, which is loud
+# but cannot block a merge because the check is not required.
+#
+# Untrusted lane, like ci.yml: PR-controlled code runs here, so the token is
+# read-only, credentials are not persisted, and no secret is referenced.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  design-lint:
+    name: design-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TZ: America/Los_Angeles
+      # Detector telemetry, design-health upload and paid-rule dispatch off.
+      DO_NOT_TRACK: "1"
+      IMPECCABLE_NO_TELEMETRY: "1"
+      IMPECCABLE_PRO: "off"
+    steps:
+      # One deadline for the route checks and the scan, counted from the job
+      # start so install and build time are included. 20 of the 25 minutes:
+      # a hung scan still writes its NOT RUN report and the artifact uploads.
+      - name: Start the scan clock
+        run: echo "DESIGN_LINT_DEADLINE=$(( $(date +%s) + 20 * 60 ))" >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+
+      # Step timeouts keep a hung install or build inside the scan clock, so
+      # the scan step below still runs and writes its NOT RUN report.
+      - name: Install dependencies (detector pinned by the lockfile)
+        timeout-minutes: 8
+        run: npm ci
+
+      - name: Build
+        timeout-minutes: 6
+        run: npm run build
+
+      - name: Serve the built site locally
+        run: |
+          nohup ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for i in $(seq 1 60); do
+            # Any HTTP answer means the server is up; the scan judges each page.
+            if curl -sS -o /dev/null http://127.0.0.1:4173/; then
+              echo "preview server up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/preview.log"
+          echo "::error title=design-lint NOT RUN::the preview server did not start"
+          exit 1
+
+      - name: Scan served pages (report-only)
+        # Runs after an earlier failure too, so a broken install, build or
+        # server still produces a NOT RUN report and an artifact.
+        if: ${{ !cancelled() }}
+        env:
+          IMPECCABLE_HOME: ${{ runner.temp }}/impeccable-home
+        run: |
+          browser="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -n "$browser" ]; then
+            export IMPECCABLE_BROWSER="$browser"
+          fi
+          echo "browser: ${browser:-none found}"
+          node scripts/designLint.mjs --build-dir build --origin http://127.0.0.1:4173 --out design-lint --deadline "$DESIGN_LINT_DEADLINE"
+
+      - name: Upload design-lint report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: design-lint
+          path: design-lint/
+          if-no-files-found: error
+          retention-days: 30
