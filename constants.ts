@@ -70,8 +70,25 @@ export const WORKS_START_HERE: { title: string; href: string; description?: stri
   },
 ];
 
-export const SPEAKING = {
+export const UPCOMING_SPEAKING = {
   label: "Upcoming Speaking",
+  event: "OpsWorld 2027",
+  date: "February 9, 2027",
+  // Organizer's slot (DevNetwork, 2026-11-09): Tue 2027-02-09, 1:00-1:50 PM PST, Santa Clara
+  // Convention Center. The organizer set the format to a hands-on workshop on 2026-11-10.
+  time: "1:00 PM PST",
+  format: "50-minute hands-on workshop",
+  location: "Santa Clara, CA",
+  title: "Close Incidents With Solution Docs and Check Runbook Freshness",
+  detail: "A hands-on workshop, co-located with DeveloperWeek 2027: close each incident with a committed solution doc, and keep runbooks current with freshness fields and weekly mechanical checks.",
+  // Proof: Dan's public Sessionize profile lists OpsWorld 2027 as an upcoming event
+  // (checked 2026-11-12). Swap in the public session page once the organizer publishes it.
+  href: "https://sessionize.com/dan-mercede/",
+  cta: "Sessionize profile",
+};
+
+export const SPEAKING = {
+  label: "Past Speaking",
   event: "NODES 2026 by Neo4j",
   date: "November 12, 2026",
   // Published slot, verified against the live agenda 2026-09-01:
@@ -79,24 +96,14 @@ export const SPEAKING = {
   time: "11:30 AM PST",
   track: "Data Intelligence",
   title: "Don't Flatten the Tree: Ingesting Branched Conversations into a Knowledge Graph",
-  detail: "Selected speaker at Neo4j's global developer conference: ingesting branched LLM conversation history into a production knowledge graph, with the patterns that keep it idempotent and re-runnable.",
+  detail: "Spoke at Neo4j's global developer conference on ingesting branched LLM conversation history into a production knowledge graph, with the patterns that keep it idempotent and re-runnable.",
   // The canonical Neo4j speaker page (self-canonical, robots index,follow). This is
   // the credential-proof target: neo4j.com/nodes/ itself carries zero mentions of Dan.
   // Mirrored into Person.sameAs in index.html per docs/identity-contract.md.
   href: "https://neo4j.com/nodes/speakers/dan-mercede/",
   cta: "Speaker profile",
-  // NODES 2026 speaker contest: Dan's personalized registration URL, exactly as Neo4j's
-  // generator emits it (dev.assets.neo4j.com/nodes-sc-2026.html, rechecked 2026-10-20).
-  // Known generator quirk: it joins first and last name with a raw "&", so a parser reads
-  // utm_campaign=Dan plus a stray "Mercede" key. This does not prove referral credit.
-  // Preserve the organizer's generated URL until they confirm a replacement; the hub
-  // offers registration without promising that contest attribution has been verified.
-  // It lands on the general NODES page, so it sits beside the proof link above and
-  // never replaces it.
-  registerHref: "https://www.neo4j.com/nodes?utm_source=SpeakerContest&utm_campaign=Dan&Mercede",
-  registerCta: "Register free",
-  // Time-bound promotion: on November 13 remove registration and change the block
-  // to past tense through the reviewed release in docs/runbooks/nodes-speaking-promotion.md.
+  // Delivered live on November 12, 2026; the speaker-contest registration link was removed
+  // the same day through docs/runbooks/nodes-speaking-promotion.md.
 };
 
 export const BELIEFS: Belief[] = [
@@ -530,7 +537,7 @@ export const RESOURCES: Resource[] = [
   // L4: Gated Substrate
   {
     title: "Speaking One-Sheet",
-    description: "One page for event organizers: bio, the NODES 2026 talk, the UiPath AgentHack finalist result, four talk topics, and a direct speaking contact.",
+    description: "One page for event organizers: bio, the upcoming OpsWorld 2027 workshop, the NODES 2026 talk, the UiPath AgentHack finalist result, four talk topics, and a direct speaking contact.",
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
     downloadLabel: "Speaker one-sheet",
