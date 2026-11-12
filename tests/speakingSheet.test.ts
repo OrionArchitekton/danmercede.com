@@ -76,15 +76,15 @@ test('the past NODES talk keeps the speaker page as proof and drops registration
 
 /**
  * OpsWorld 2027 (accepted 2026-11-09, confirmed 2026-11-10; the organizer set the
- * 50-minute slot as a hands-on workshop on 2026-11-10). Proof is the organizer's
- * public workshops schedule, which lists the workshop by title with Dan as speaker.
+ * 50-minute slot as a hands-on workshop on 2026-11-10). Proof is OpsWorld's own
+ * sessions page, which lists the session with Dan as speaker.
  */
 test('the upcoming OpsWorld workshop leads the speaking block with the organizer schedule as proof', () => {
   assert.equal(UPCOMING_SPEAKING.label, 'Upcoming Speaking');
   assert.equal(UPCOMING_SPEAKING.event, 'OpsWorld 2027');
   assert.equal(UPCOMING_SPEAKING.date, 'February 9, 2027');
   assert.equal(UPCOMING_SPEAKING.title, 'Close Incidents With Solution Docs and Check Runbook Freshness');
-  assert.equal(UPCOMING_SPEAKING.href, 'https://www.developerweek.com/workshops/');
+  assert.equal(UPCOMING_SPEAKING.href, 'https://www.developerweek.com/opsworld/#sessions');
   const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
   const start = app.indexOf('{/* Speaking');
   const block = app.slice(start, app.indexOf('</Section>', start));
