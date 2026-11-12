@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
-import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, UPCOMING_SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -170,16 +170,27 @@ test('no published route renders a heading as a small capitals label', async () 
 // works hub, front door, content boundary, proof, privacy, case studies,
 // diagrams) bind the render the build ships. Review of #184, 2026-09-29;
 // the crawl block itself was retired in S5.
-test('the homepage speaking block renders the speaker page and the tracked NODES registration link', async () => {
+test('the homepage speaking block renders the past NODES talk with its speaker page and no registration link', async () => {
   const home = (await loadRender())('/');
   const document = new JSDOM(home).window.document;
   const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === SPEAKING.event);
-  assert.ok(heading, 'homepage: expected the speaking block heading');
+  assert.ok(heading, 'homepage: expected the NODES speaking heading');
   const block = heading.closest('section');
   assert.ok(block, 'the speaking heading belongs to a section');
-  const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+  const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
   assert.ok(hrefs.includes(SPEAKING.href), 'speaking block: the credential-proof link to the speaker page');
-  assert.ok(hrefs.includes(SPEAKING.registerHref), 'speaking block: the generated registration link');
+  assert.ok(!hrefs.some((h) => h.includes('SpeakerContest')), 'speaking block: no registration link after the event');
+});
+
+test('the homepage speaking block renders the upcoming OpsWorld workshop with its schedule proof', async () => {
+  const home = (await loadRender())('/');
+  const document = new JSDOM(home).window.document;
+  const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === UPCOMING_SPEAKING.event);
+  assert.ok(heading, 'homepage: expected the OpsWorld speaking heading');
+  const block = heading.closest('section');
+  assert.ok(block, 'the OpsWorld heading belongs to a section');
+  const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
+  assert.ok(hrefs.includes(UPCOMING_SPEAKING.href), 'speaking block: the organizer schedule proof link');
 });
 
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {

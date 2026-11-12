@@ -46,9 +46,9 @@ const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string; rende
     review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
   },
   'Speaking_One_Sheet.pdf': {
-    sha256: '8cd4fcdbcb180a82d154ebf7037132a977bf3e5b9af7753353a2efec2958cb51',
-    review: '2026-09-29: rebuilt from docs/one-sheets/speaking-one-sheet.html after the re-audit. Bio says Dan represented Apple as a field sales rep with Mosaic Sales Solutions (Mosaic was the employer); NODES 2026 talk, UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
-    renderedFrom: { path: 'docs/one-sheets/speaking-one-sheet.html', sha256: '4b4da06314591923799388e00e713c687f03b516720de388642907dd8f99c42b' },
+    sha256: '278cf57814e461ca47a3aa2da741d76ffe72dce8c032af5233551c4f79cc705b',
+    review: '2026-11-12: re-rendered after NODES 2026 was delivered. Upcoming is OpsWorld 2027 (February 9, 2027, 50-minute hands-on workshop in Santa Clara, co-located with DeveloperWeek 2027); NODES 2026 moved to Past speaking with its speaker page. Bio unchanged (Apple via Mosaic Sales Solutions), UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
+    renderedFrom: { path: 'docs/one-sheets/speaking-one-sheet.html', sha256: 'eda3ff636cf27b1af28b581e1363a8371cc0e27a3dcab84b4a91edebdbe32de5' },
   },
 };
 

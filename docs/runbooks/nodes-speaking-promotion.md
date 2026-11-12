@@ -1,6 +1,6 @@
 ---
-verified: 2026-10-20
-review_after: 2026-11-12
+verified: 2026-11-12
+review_after: 2027-02-10
 topics: [nodes, speaking, registration]
 references:
   - ../../constants.ts
@@ -39,6 +39,16 @@ November 13, 2026, after the November 12 event:
 This is a manual editorial release. No timer, recurring task or automatic send
 is created. A render-time clock check would violate the site's deterministic
 initial-render contract; this PR keeps the dated source and rendered copy aligned.
+
+## Done on November 12, 2026
+
+NODES 2026 was delivered live on November 12. The source update above shipped the
+same day in the PR that also added OpsWorld 2027 (February 9, 2027) as the upcoming
+talk: `UPCOMING_SPEAKING` leads the homepage speaking block, `SPEAKING` (NODES) follows
+as Past Speaking with its speaker page, registration and its constants are gone, and
+the speaking one-sheet was re-rendered and re-pinned. After merge, verify the public
+homepage section and the one-sheet download, and recheck that the organizer's workshops schedule
+(`UPCOMING_SPEAKING.href`) still lists the workshop.
 
 ## Abandon or roll back only if Dan chooses to withdraw the promotion
 
