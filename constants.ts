@@ -81,10 +81,11 @@ export const UPCOMING_SPEAKING = {
   location: "Santa Clara, CA",
   title: "Close Incidents With Solution Docs and Check Runbook Freshness",
   detail: "A hands-on workshop, co-located with DeveloperWeek 2027: close each incident with a committed solution doc, and keep runbooks current with freshness fields and weekly mechanical checks.",
-  // Proof: Dan's public Sessionize profile lists OpsWorld 2027 as an upcoming event
-  // (checked 2026-11-12). Swap in the public session page once the organizer publishes it.
-  href: "https://sessionize.com/dan-mercede/",
-  cta: "Sessionize profile",
+  // Proof: the organizer's public workshops schedule lists this workshop by title with Dan
+  // as the speaker (1:00 PM, 50 min, OpsWorld Stage; checked 2026-11-12). It still shows his
+  // former company name, which the organizer agreed to update on 2026-11-10.
+  href: "https://www.developerweek.com/workshops/",
+  cta: "Workshop schedule",
 };
 
 export const SPEAKING = {

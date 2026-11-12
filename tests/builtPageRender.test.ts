@@ -182,7 +182,7 @@ test('the homepage speaking block renders the past NODES talk with its speaker p
   assert.ok(!hrefs.some((h) => h.includes('SpeakerContest')), 'speaking block: no registration link after the event');
 });
 
-test('the homepage speaking block renders the upcoming OpsWorld workshop with its Sessionize proof', async () => {
+test('the homepage speaking block renders the upcoming OpsWorld workshop with its schedule proof', async () => {
   const home = (await loadRender())('/');
   const document = new JSDOM(home).window.document;
   const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === UPCOMING_SPEAKING.event);
@@ -190,7 +190,7 @@ test('the homepage speaking block renders the upcoming OpsWorld workshop with it
   const block = heading.closest('section');
   assert.ok(block, 'the OpsWorld heading belongs to a section');
   const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
-  assert.ok(hrefs.includes(UPCOMING_SPEAKING.href), 'speaking block: the Sessionize proof link');
+  assert.ok(hrefs.includes(UPCOMING_SPEAKING.href), 'speaking block: the organizer schedule proof link');
 });
 
 test('a selected-work card that opens an essay stays in-site and reads "Read the case"', async () => {
