@@ -47,8 +47,9 @@ same day in the PR that also added OpsWorld 2027 (February 9, 2027) as the upcom
 talk: `UPCOMING_SPEAKING` leads the homepage speaking block, `SPEAKING` (NODES) follows
 as Past Speaking with its speaker page, registration and its constants are gone, and
 the speaking one-sheet was re-rendered and re-pinned. After merge, verify the public
-homepage section and the one-sheet download, and recheck that the organizer's workshops schedule
-(`UPCOMING_SPEAKING.href`) still lists the workshop.
+homepage section and the one-sheet download, and recheck in a rendered browser that OpsWorld's sessions
+page (`UPCOMING_SPEAKING.href`) still lists the session; the schedule loads client-side,
+so a plain fetch of the HTML will not show it.
 
 ## Abandon or roll back only if Dan chooses to withdraw the promotion
 
