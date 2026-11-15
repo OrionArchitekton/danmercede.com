@@ -1,0 +1,17 @@
+{
+  "observed_at_utc": "2026-11-15T00:17:35.602Z",
+  "scope": "Read-only admission and actual Markdown renderer comparison; no generated bundle written",
+  "canonical_sha256": "8bbb8c6b11960d3b61017a2e040f12a19ec257f4308298ae33b65e6cc582faba",
+  "prior_entries_unchanged": 48,
+  "added_slug": "2026-11-02-before-your-ai-tries-again",
+  "proposed_entries": 49,
+  "committed_thoughts": 48,
+  "committed_diagrams": 23,
+  "approved_blocks": 32,
+  "h2": 5,
+  "anchors": 0,
+  "inline_images": 0,
+  "literal_unknown": true,
+  "exact_closing_question": true,
+  "all_blocks_styles_exact": true
+}
