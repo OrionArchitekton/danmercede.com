@@ -1,0 +1,22 @@
+{
+  "observed_at_utc": "2026-11-15T00:26:42.996Z",
+  "scope": "Read-only admission and actual Markdown renderer comparison; no generated bundle written",
+  "canonical_sha256": "338c0c1a579c02158f5a2447658c0942a804cb1d9d06889bc8f36f36ab60f777",
+  "prior_entries_unchanged": 49,
+  "added_slug": "2026-11-09-what-does-your-ai-mean-by-ready",
+  "proposed_entries": 50,
+  "committed_thoughts": 48,
+  "committed_diagrams": 23,
+  "approved_blocks": 26,
+  "h2": 4,
+  "anchors": 0,
+  "inline_images": 0,
+  "literal_identifiers": [
+    "draft_ready",
+    "approved_to_send",
+    "published_verified"
+  ],
+  "closing_question_fully_bold": true,
+  "exact_closing_question": true,
+  "all_blocks_styles_exact": true
+}
