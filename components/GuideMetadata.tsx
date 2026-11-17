@@ -1,21 +1,11 @@
 import React from 'react';
 import type { Guide } from '../types';
 import { estimateReadingMinutes } from './ArticleEngagement';
+import { parseMarkdown } from './Markdown';
 
 export function guideFormatLabels(guide: Pick<Guide, 'body' | 'youtube'>): string[] {
   const labels = guide.youtube ? ['Video'] : [];
-  let insideFence = false;
-  let hasCode = false;
-  let hasDiagrams = false;
-  for (const line of guide.body.split('\n')) {
-    if (/^\s*```/.test(line)) {
-      insideFence = !insideFence;
-      hasCode = true;
-    } else if (!insideFence && /^!\[[^\]]*\]\(\S+/.test(line)) {
-      hasDiagrams = true;
-    }
-    if (hasCode && hasDiagrams) break;
-  }
+  const { hasCode, hasDiagrams } = parseMarkdown(guide.body);
   if (hasCode && hasDiagrams) labels.push('Code + Diagrams');
   else if (hasCode) labels.push('Code');
   else if (hasDiagrams) labels.push('Diagrams');

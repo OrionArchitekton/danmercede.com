@@ -5,6 +5,7 @@ import type { Diagram } from '../types';
 
 export function DiagramPreview({ diagram, onDismiss }: { diagram: Diagram; onDismiss: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const pressedBackdrop = useRef(false);
 
   useEffect(() => {
     const dialog = ref.current!;
@@ -24,7 +25,13 @@ export function DiagramPreview({ diagram, onDismiss }: { diagram: Diagram; onDis
       ref={ref}
       aria-labelledby="diagram-preview-title"
       onCancel={(event) => { event.preventDefault(); onDismiss(); }}
-      onClick={(event) => { if (event.target === event.currentTarget) onDismiss(); }}
+      onPointerDown={(event) => {
+        pressedBackdrop.current = event.button === 0 && event.target === event.currentTarget;
+      }}
+      onClick={(event) => {
+        if (pressedBackdrop.current && event.target === event.currentTarget) onDismiss();
+        pressedBackdrop.current = false;
+      }}
       className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-5xl max-h-[90dvh] overflow-auto overscroll-contain rounded-lg border border-white/15 bg-navy-deep p-0 text-slate-200 shadow-2xl backdrop:bg-slate-950/90 backdrop:backdrop-blur-sm"
     >
       <div>

@@ -31,9 +31,11 @@ export interface ArticleHeading {
   level: number;
 }
 
-interface Outline {
+interface ArticleParseState {
   ids: Set<string>;
   headings: ArticleHeading[];
+  hasCode: boolean;
+  hasDiagrams: boolean;
 }
 
 function inlineText(nodes: React.ReactNode): string {
@@ -245,7 +247,7 @@ const CodeBlock: React.FC<{ lang: string; code: string }> = ({ lang, code }) => 
   );
 };
 
-function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): React.ReactNode[] {
+function parseBlocks(lines: string[], state: ArticleParseState, keyPrefix: Key = 'b'): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let i = 0;
   let k = 0;
@@ -262,6 +264,7 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
     // Fenced code (``` … ```)
     const fence = line.match(FENCE);
     if (fence) {
+      state.hasCode = true;
       const indent = fence[1].length;
       const lang = fence[2].trim();
       const body: string[] = [];
@@ -282,10 +285,10 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
       const text = h[2].trim();
       const base = slugify(text) || 'section';
       let id = base;
-      for (let suffix = 2; outline.ids.has(id); suffix++) id = `${base}-${suffix}`;
-      outline.ids.add(id);
+      for (let suffix = 2; state.ids.has(id); suffix++) id = `${base}-${suffix}`;
+      state.ids.add(id);
       const title = parseInline(text, nextKey());
-      if (level === 2 || level === 3) outline.headings.push({ id, level, label: inlineText(title) });
+      if (level === 2 || level === 3) state.headings.push({ id, level, label: inlineText(title) });
       const cls =
         level <= 2
           ? 'mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white'
@@ -308,6 +311,7 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
     // Standalone image → figure
     const img = line.match(IMAGE);
     if (img) {
+      state.hasDiagrams = true;
       out.push(figure(img[1], img[2], img[3], nextKey()));
       i += 1;
       continue;
@@ -338,7 +342,7 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
       }
       out.push(
         <blockquote key={nextKey()} className="my-5 border-l-2 border-copper-500/50 pl-5 text-slate-300">
-          {parseBlocks(q, outline, nextKey())}
+          {parseBlocks(q, state, nextKey())}
         </blockquote>,
       );
       continue;
@@ -404,7 +408,7 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
         >
           {items.map((it, idx) => (
             <li key={idx} className="leading-relaxed">
-              {parseBlocks(it, outline, `${keyPrefix}-li-${idx}`)}
+              {parseBlocks(it, state, `${keyPrefix}-li-${idx}`)}
             </li>
           ))}
         </ListTag>,
@@ -433,10 +437,11 @@ function parseBlocks(lines: string[], outline: Outline, keyPrefix: Key = 'b'): R
 }
 
 export function parseMarkdown(source: string) {
-  const outline: Outline = { ids: new Set(), headings: [] };
+  const state: ArticleParseState = { ids: new Set(), headings: [], hasCode: false, hasDiagrams: false };
   const lines = source.replace(/\r\n/g, '\n').split('\n');
-  const blocks = parseBlocks(lines, outline);
-  return { blocks, headings: outline.headings };
+  const blocks = parseBlocks(lines, state);
+  const { headings, hasCode, hasDiagrams } = state;
+  return { blocks, headings, hasCode, hasDiagrams };
 }
 
 export const Markdown: React.FC<{ source: string }> = ({ source }) => <>{parseMarkdown(source).blocks}</>;

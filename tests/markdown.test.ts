@@ -127,3 +127,16 @@ test('a stray pipe line that is not a table does not hang the renderer', () => {
   assert.match(html, /Intro paragraph\./);
   assert.match(html, /Closing paragraph\./);
 });
+
+test('guide format labels follow diagrams rendered inside lists and blockquotes', () => {
+  for (const body of ['- ![Diagram](/planes.webp)', '> ![Diagram](/planes.webp)', '12. > ![Diagram](/planes.webp)']) {
+    assert.match(renderToStaticMarkup(React.createElement(Markdown, { source: body })), /<figure\b/);
+    assert.deepEqual(guideFormatLabels({ body }), ['Diagrams']);
+  }
+});
+
+test('guide format labels exclude diagram examples inside nested fences', () => {
+  const body = '> ' + ['\x60\x60\x60md', '![Example](/planes.webp)', '\x60\x60\x60'].join('\n> ');
+  assert.doesNotMatch(renderToStaticMarkup(React.createElement(Markdown, { source: body })), /<figure\b/);
+  assert.deepEqual(guideFormatLabels({ body }), ['Code']);
+});
