@@ -21,6 +21,7 @@ export default defineConfig(({ isSsrBuild }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        allowedHosts: true,
       },
       // Fails the client build if any chunk imports a module from outside it.
       // The SSR bundle runs in Node at build time and may import Node built-ins.

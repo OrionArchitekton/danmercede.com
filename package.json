@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsx scripts/compileContent.ts",
     "prebuild": "npm run compile && npm run compile:guides",
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build && vite build --ssr entry-server.tsx && tsx scripts/injectRouteMeta.ts && tsx scripts/renderFeed.ts",
     "preview": "vite preview",
     "optimize:images": "node scripts/optimizeImages.mjs public",
@@ -17,8 +17,6 @@
     "test:built": "tsx --test tests/builtOutput.test.ts tests/builtPageRender.test.ts"
   },
   "dependencies": {
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "d3": "^7.9.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",

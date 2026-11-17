@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 import { resolveGaConfig, createGtag, redactUrlForAnalytics, redactEventUrl, type GaRuntimeConfig } from '../analytics/gaConfig';
+
+const VercelAnalytics = (_props: { beforeSend?: typeof redactEventUrl }) => null;
+const SpeedInsights = (_props: { beforeSend?: typeof redactEventUrl }) => null;
 
 // Resolved once from the build-time env. Null => GA is a no-op everywhere (dev,
 // preview, or any deploy without VITE_GA_MEASUREMENT_ID). See analytics/gaConfig.
