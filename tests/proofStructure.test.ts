@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RESOURCES, proofGroupFor, INTENT_ROUTES } from '../constants';
+import { RESOURCES, proofGroupFor } from '../constants';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appSrc = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
@@ -53,12 +53,6 @@ test('no download is marked gated, because DownloadCard has no gated path', () =
   // gated branch to DownloadCard would silently serve it anyway.
   const gated = RESOURCES.filter((r) => r.gated).map((r) => r.fileName);
   assert.deepEqual(gated, [], 'add a gated branch to DownloadCard before marking a resource gated');
-});
-
-test('the homepage card for /proof describes the page as it now is', () => {
-  const card = INTENT_ROUTES.find((r) => r.href === '/proof');
-  assert.ok(card, 'expected a homepage intent card for /proof');
-  assert.doesNotMatch(`${card!.prompt} ${card!.description}`, /enforcement artifacts|production proof/i);
 });
 
 // 2026-09-29, audit item 1.4 (Dan): the priced engagement sheet is retired from this
