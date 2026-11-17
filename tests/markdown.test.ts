@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import Markdown from '../components/Markdown';
+import Markdown, { parseMarkdown } from '../components/Markdown';
+import { guideFormatLabels } from '../components/GuideMetadata';
 
 const render = (src: string) => renderToStaticMarkup(React.createElement(Markdown, { source: src }));
 
@@ -64,6 +65,28 @@ test('headings get slug ids (anchorable) and bold renders inside paragraphs', ()
   const html = render('## Two Planes\n\nThe **two-plane** rule.');
   assert.match(html, /<h2[^>]*id="two-planes"/);
   assert.match(html, /<strong[^>]*>two-plane<\/strong>/);
+});
+
+test('the article outline uses the rendered headings, ignores code, and disambiguates repeated titles', () => {
+  const source = [
+    '## **Two** planes', '', '```md', '## Example', '```', '',
+    '### `Receipt` details', '', '## Two planes',
+  ].join('\n');
+  const { headings } = parseMarkdown(source);
+  assert.deepEqual(headings, [
+    { id: 'two-planes', label: 'Two planes', level: 2 },
+    { id: 'receipt-details', label: 'Receipt details', level: 3 },
+    { id: 'two-planes-2', label: 'Two planes', level: 2 },
+  ]);
+  const html = render(source);
+  for (const { id } of headings) assert.equal(html.split(`id="${id}"`).length, 2);
+});
+
+test('guide format badges describe the media outside example code', () => {
+  const example = '```md\n![example](/example.svg)\n```';
+  assert.deepEqual(guideFormatLabels({ body: example }), ['Code']);
+  assert.deepEqual(guideFormatLabels({ body: `${example}\n![Diagram](/planes.webp)`, youtube: 'Ab3_dF9hJkQ' }), ['Video', 'Code + Diagrams']);
+  assert.deepEqual(guideFormatLabels({ body: 'A prose guide.' }), []);
 });
 
 // Security (Gemini HIGH): link hrefs must neutralize javascript:/data: schemes,

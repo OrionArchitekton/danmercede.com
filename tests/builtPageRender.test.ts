@@ -43,6 +43,21 @@ async function loadRender(): Promise<(url: string) => string> {
   return ((await import(pathToFileURL(ssrEntry).href)) as { render: (url: string) => string }).render;
 }
 
+test('Works links each reference architecture to its published diagram and companion repository', () => {
+  const worksPage = rootOf(fs.readFileSync(fileFor('/works'), 'utf8')).inner;
+  for (const study of CASE_STUDIES) {
+    const route = `/case-studies/${study.slug}`;
+    assert.ok(worksPage.includes(`href="${route}"`), `/works must link ${route}`);
+    const work = WORKS.find(item => item.slug === study.relatedWorkSlug);
+    const diagram = DIAGRAMS.find(item => item.slug === study.relatedDiagramSlug);
+    assert.ok(work && diagram, `${study.slug}: both companions must exist in the published catalogs`);
+    const studyPage = rootOf(fs.readFileSync(fileFor(route), 'utf8')).inner;
+    for (const href of [work.repo, `/diagrams/${diagram.slug}`, study.filePath]) {
+      assert.ok(studyPage.includes(`href="${href}"`), `${route} must link ${href}`);
+    }
+  }
+});
+
 test('/thoughts puts the three latest admitted essays ahead of the curated entry points and lanes', () => {
   const html = decode(rootOf(fs.readFileSync(fileFor('/thoughts'), 'utf8')).inner);
   const latest = /<section\b[^>]*aria-labelledby="latest-releases-heading"[^>]*>([\s\S]*?)<\/section>/.exec(html);
@@ -379,3 +394,55 @@ function* walkFiles(dir: string): Generator<string> {
     else yield full;
   }
 }
+
+test('the homepage spotlight resolves all three previews to their published diagram notes', async () => {
+  const document = new JSDOM((await loadRender())('/')).window.document;
+  const spotlight = document.querySelector('#visual-architecture');
+  assert.ok(spotlight);
+  const titles = ['Monitor After vs Constrain Before', 'The Two-Plane Architecture', 'Authority Decay Over a Session'];
+  const cards = [...spotlight.querySelectorAll('article')];
+  assert.equal(cards.length, titles.length);
+  titles.forEach((title, index) => {
+    const diagram = DIAGRAMS.find((candidate) => candidate.title === title);
+    assert.ok(diagram);
+    const card = cards[index];
+    assert.equal(card.querySelector('button[aria-haspopup="dialog"]')?.getAttribute('aria-label'), `Preview ${diagram.title}`);
+    assert.equal(card.querySelector('img')?.getAttribute('src'), diagram.src);
+    assert.equal(card.querySelector('a')?.getAttribute('href'), `/diagrams/${diagram.slug}`);
+  });
+  assert.ok(spotlight.querySelector('a[href="/diagrams"]'));
+  const thesis = document.querySelector('#operator-thesis')?.closest('section');
+  assert.equal(thesis?.querySelectorAll('li').length, 3);
+  assert.equal(thesis?.nextElementSibling?.id, 'selected-work');
+});
+
+test('organizers can choose a talk, download the one-sheet and email Dan from either front door', async () => {
+  const render = await loadRender();
+  const source = fs.readFileSync(path.join(root, 'docs/one-sheets/speaking-one-sheet.html'), 'utf8');
+  const speaking = CONTACT_INTENTS.find((intent) => intent.id === 'speaking')!;
+  for (const route of ['/', '/connect']) {
+    const document = new JSDOM(render(route)).window.document;
+    const sheet = document.querySelector('main a[download][href="/assets/Speaking_One_Sheet.pdf"]');
+    assert.ok(sheet, route);
+    const card = sheet.parentElement!.parentElement!;
+    assert.ok(card.querySelector(`a[href="${contactHref(speaking)}"]`), route);
+    const topics = [...card.querySelectorAll('dt')];
+    assert.equal(topics.length, 3, route);
+    topics.forEach((topic) => assert.ok(source.includes(topic.textContent!), topic.textContent!));
+  }
+});
+
+test('the rendered navigation marks the current page or its parent section', async () => {
+  const render = await loadRender();
+  for (const [url, href, current] of [
+    ['/about', '/about', 'page'],
+    ['/about/', '/about', 'page'],
+    ['/guides/self-hosting-websites-and-apps', '/guides', 'location'],
+  ]) {
+    const nav = JSDOM.fragment(render(url)).querySelector('nav');
+    const links = nav?.querySelectorAll('a[aria-current]');
+    assert.equal(links?.length, 1, url);
+    assert.equal(links[0].getAttribute('href'), href);
+    assert.equal(links[0].getAttribute('aria-current'), current);
+  }
+});

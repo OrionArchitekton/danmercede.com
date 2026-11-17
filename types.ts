@@ -112,6 +112,9 @@ export interface CaseStudy {
   filePath: string;
   enforcementPoints: string[];
   commercialMapping: string[];
+  relatedWorkSlug: string;
+  relatedWorkNote: string;
+  relatedDiagramSlug: string;
 }
 export interface EvidenceClaim {
   /**

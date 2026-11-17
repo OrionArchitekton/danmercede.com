@@ -11,6 +11,7 @@ interface GateScenario {
   href: string;
   tagline: string;
   boundary: string;
+  advisoryOutcome: Record<OutcomeMode, string>;
   modes: Record<
     OutcomeMode,
     {
@@ -33,6 +34,7 @@ const SCENARIOS: readonly GateScenario[] = [
     href: '/works/failclosed/',
     tagline: 'Merge admission control for AI-written code',
     boundary: 'L1 · Authority Gate before merge',
+    advisoryOutcome: { clean: 'Merge proceeds', drift: 'Merge can proceed with open findings' },
     modes: {
       clean: {
         label: 'Valid schema + consistent verdict',
@@ -96,6 +98,7 @@ const SCENARIOS: readonly GateScenario[] = [
     href: '/works/proctor/',
     tagline: 'Behavioral regression testing for AI agents',
     boundary: 'L3 · Contract & Drift Guard across releases',
+    advisoryOutcome: { clean: 'Rollout proceeds', drift: 'Refund regression can reach rollout' },
     modes: {
       clean: {
         label: 'Prompt update within learned contract',
@@ -153,6 +156,7 @@ const SCENARIOS: readonly GateScenario[] = [
     href: '/works/fork-around-find-out/',
     tagline: 'Speculative execution gateway for agent tool calls',
     boundary: 'L4 · Blast-radius measurement before execution',
+    advisoryOutcome: { clean: 'Tool call runs', drift: 'Silent tool call can send credentials' },
     modes: {
       clean: {
         label: 'Scoped read-only workspace task',
@@ -209,16 +213,19 @@ const SCENARIOS: readonly GateScenario[] = [
 const VERDICT_META = {
   allow: {
     icon: ShieldCheck,
+    outcome: 'Allowed with receipt',
     badgeClass: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-500',
     panelClass: 'border-emerald-500/25',
   },
   pause: {
     icon: PauseCircle,
+    outcome: 'Held for approval with receipt',
     badgeClass: 'border-amber-500/40 bg-amber-500/10 text-amber-500',
     panelClass: 'border-amber-500/25',
   },
   block: {
     icon: ShieldAlert,
+    outcome: 'Halted with receipt',
     badgeClass: 'border-copper-500/50 bg-copper-500/15 text-copper-300',
     panelClass: 'border-copper-500/35',
   },
@@ -237,15 +244,14 @@ export const GateSimulator: React.FC = () => {
     <div className="rounded-lg border border-white/10 bg-navy-deep/80 overflow-hidden">
       {/* Top interactive bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 px-6 py-4 bg-slate-950/50">
-        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Choose a governed AI tool">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Choose a governed AI tool">
           {SCENARIOS.map((item) => {
             const selected = item.id === scenarioId;
             return (
               <button
                 key={item.id}
                 type="button"
-                role="tab"
-                aria-selected={selected}
+                aria-pressed={selected}
                 onClick={() => setScenarioId(item.id)}
                 className={`px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
                   selected
@@ -259,7 +265,7 @@ export const GateSimulator: React.FC = () => {
           })}
         </div>
 
-        <div className="flex items-center gap-2" role="group" aria-label="Select run condition">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Select run condition">
           <button
             type="button"
             onClick={() => setMode('clean')}
@@ -296,10 +302,32 @@ export const GateSimulator: React.FC = () => {
         </div>
       </div>
 
+      <figure className="border-b border-white/10 px-6 py-5 md:px-8">
+        <figcaption className="mb-4 text-lg font-semibold text-white">Advisory vs. fail-closed</figcaption>
+        <div aria-live="polite" aria-atomic="true" className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-sm border border-white/15 bg-slate-950/50 p-4">
+            <p className="mb-3 font-mono text-xs text-slate-400">Advisory only</p>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="flex-1 text-slate-300">{mode === 'drift' ? 'Unconstrained drift' : 'Clean input'}</span>
+              <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+              <strong className="flex-1 font-medium text-white">{scenario.advisoryOutcome[mode]}</strong>
+            </div>
+          </div>
+          <div className="rounded-sm border border-copper-500/40 bg-slate-950/50 p-4">
+            <p className="mb-3 font-mono text-xs text-copper-400">Fail-closed</p>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="flex-1 text-slate-300">Authority gate</span>
+              <ArrowRight className="size-4 shrink-0 text-copper-400" aria-hidden="true" />
+              <strong className="flex-1 font-medium text-white">{verdictStyle.outcome}</strong>
+            </div>
+          </div>
+        </div>
+      </figure>
+
       {/* Main split body */}
       <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
         {/* Left: Input & Checks */}
-        <div className="lg:col-span-7 p-6 md:p-8 space-y-6">
+        <div className="min-w-0 lg:col-span-7 p-6 md:p-8 space-y-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
               <h3 className="text-xl font-bold text-white">{scenario.tagline}</h3>
@@ -342,7 +370,7 @@ export const GateSimulator: React.FC = () => {
         </div>
 
         {/* Right: Deterministic Verdict & Receipt */}
-        <div className={`lg:col-span-5 p-6 md:p-8 flex flex-col justify-between bg-slate-950/35 border-t lg:border-t-0 ${verdictStyle.panelClass}`}>
+        <div className={`min-w-0 lg:col-span-5 p-6 md:p-8 flex flex-col justify-between bg-slate-950/35 border-t lg:border-t-0 ${verdictStyle.panelClass}`}>
           <div>
             <div className="flex items-center justify-between gap-3 mb-4">
               <span className="font-mono text-xs text-slate-400">Gate verdict</span>
