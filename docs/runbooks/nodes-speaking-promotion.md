@@ -5,6 +5,7 @@ topics: [nodes, speaking, registration]
 references:
   - ../../constants.ts
   - ../../App.tsx
+  - ../../components/SpeakingResources.tsx
   - ../../tests/speakingSheet.test.ts
   - ../../tests/builtPageRender.test.ts
   - ../../specs/nodes-registration-link-spec.md
@@ -50,6 +51,13 @@ the speaking one-sheet was re-rendered and re-pinned. After merge, verify the pu
 homepage section and the one-sheet download, and recheck in a rendered browser that OpsWorld's sessions
 page (`UPCOMING_SPEAKING.href`) still lists the session; the schedule loads client-side,
 so a plain fetch of the HTML will not show it.
+
+## Current speaking placement
+
+Home shows the upcoming workshop and links to `/connect#speaking`. The Connect page
+carries the upcoming and past event details, direct invitation email and one-sheet
+download. After changing an event record, verify both pages and check the organizer’s
+schedule in a browser. Keep the Nov 12 registration change as historical context.
 
 ## Abandon or roll back only if Dan chooses to withdraw the promotion
 

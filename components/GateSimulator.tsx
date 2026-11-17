@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ShieldCheck, ShieldAlert, PauseCircle, ArrowRight, RotateCcw } from 'lucide-react';
 
 type ScenarioId = 'failclosed' | 'proctor' | 'sandbox';
@@ -398,12 +397,12 @@ export const GateSimulator: React.FC = () => {
               Inspect {scenario.tool}
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </a>
-            <Link
-              to="/proof"
+            <a
+              href="#evidence"
               className="text-xs font-mono text-slate-400 hover:text-white transition-colors"
             >
               Checkable proof &amp; CI
-            </Link>
+            </a>
           </div>
         </div>
       </div>

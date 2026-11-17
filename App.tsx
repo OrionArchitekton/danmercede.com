@@ -13,12 +13,11 @@ import Analytics from './components/Analytics';
 import GateSimulator from './components/GateSimulator';
 import CommandPalette from './components/CommandPalette';
 import EcosystemMap from './components/EcosystemMap';
-import { ArchitectureSpotlight } from './components/ArchitectureSpotlight';
 import { DiagramPreview } from './components/DiagramPreview';
 import { SpeakingResources } from './components/SpeakingResources';
 import { estimateReadingMinutes, ReadingProgressBar, ShareStrip, RelatedContentShelf } from './components/ArticleEngagement';
 import { trackEvent } from './analytics/gaConfig';
-import { NAV_ITEMS, HERO_CONTENT, SPEAKING, UPCOMING_SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, INTENT_ROUTES, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, GUIDE_LENSES, guideMatchesLens, GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, VALIDATION, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
+import { NAV_ITEMS, IDENTITY_LINE, UPCOMING_SPEAKING, BELIEFS, VENTURES, PRIMARY_VENTURES, READINESS_SCAN, THOUGHT_LANES, FOOTER_DATA, getImageMeta, RESOURCES, CASE_STUDIES, THOUGHTS, WORKS, worksByPriority, GUIDES, DIAGRAMS, featuredEssays, WORKS_HUB, WORKS_START_HERE, GUIDE_LENSES, guideMatchesLens, GuideLensId, PROOF_EVIDENCE, PRIVACY_SECTIONS, REFERENCE_ARCHITECTURE_NOTICE, ABOUT_BIO, CONTACT_INTENTS, CONTACT_EMAIL, SELECTED_WORK, PROCTOR_FINALIST, FOOTER_LINKS, START_HERE, proofGroupFor, contactHref, NEWSLETTER } from './constants';
 import { selectThoughts, selectLatestThoughts, isLaneGroupedThoughtsView } from './thoughtsIndex';
 
 import { Venture, Resource, CaseStudy, Thought, Work, Guide, Diagram } from './types';
@@ -233,351 +232,131 @@ const Footer = () => (
 
 // --- Pages ---
 
-const IntentRouter = () => (
-  <Section className="pt-10 md:pt-16">
-    <SectionHeader title="Where do you want to go?" subtitle="Find your path" />
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {INTENT_ROUTES.map((route, idx) => {
-        const cardClass = "flex flex-col items-start p-6 rounded-lg border border-white/10 bg-navy-deep/60 hover:bg-navy-deep hover:border-copper-500/40 transition-all group h-full";
-        const inner = (
-          <>
-            <div className="flex items-center justify-between w-full mb-4">
-              <span className="font-mono text-xs text-copper-400">{String(idx + 1).padStart(2, '0')}</span>
-              <span className="font-mono text-xs text-slate-400">{route.audience}</span>
-            </div>
-            <h3 className="text-lg text-white font-semibold mb-3 group-hover:text-copper-300 transition-colors">{route.prompt}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-5 grow">{route.description}</p>
-            <span className="inline-flex items-center text-sm font-medium text-copper-400 group-hover:text-copper-300 transition-colors">
-              {route.cta}
-              {route.external
-                ? <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-                : <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" />}
-            </span>
-          </>
-        );
-        return route.external ? (
-          <a key={idx} href={route.href} target="_blank" rel="noopener noreferrer" className={cardClass}>{inner}</a>
-        ) : (
-          <Link key={idx} to={route.href} className={cardClass}>{inner}</Link>
-        );
-      })}
-    </div>
-  </Section>
-);
+const HOME_DESTINATIONS = {
+  '#gate-simulator': '/proof#gate-simulator',
+  '#visual-architecture': '/diagrams',
+} as const;
+
+const HOME_LINK = "inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-copper-400 hover:text-copper-300";
 
 const HomePage = () => {
   usePageMeta();
-  const deskGuides = GUIDES.slice(0, 2);
-  const deskEssay = selectLatestThoughts(THOUGHTS)[0];
+  const { hash } = useLocation();
+  const [proctor, ...otherWork] = SELECTED_WORK;
+  const [deskGuide] = GUIDES;
+  const [deskEssay] = selectLatestThoughts(THOUGHTS);
+
+  useEffect(() => {
+    if (hash === '#gate-simulator' || hash === '#visual-architecture') {
+      window.location.replace(HOME_DESTINATIONS[hash]);
+    }
+  }, [hash]);
 
   return (
-    <>
-      {/* Hero */}
-      <section className="min-h-[88vh] flex flex-col pt-20 relative">
-        <div className="pointer-events-none absolute inset-0 bg-architectural-grid opacity-30" aria-hidden="true" />
-        <div className="grow flex items-center my-10 md:my-6 relative z-10">
-          <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            <div className="lg:col-span-7">
-              <p className="font-mono text-xs uppercase tracking-widest text-copper-400 mb-4">
-                AI Systems Architect · Production Governance · Phoenix, AZ
-              </p>
-              <h1 className="text-5xl md:text-7xl/none font-bold text-white mb-6 leading-tight tracking-tight">
-                {HERO_CONTENT.name}
-              </h1>
-              <p className="text-xl md:text-2xl text-slate-200 mb-4 font-light max-w-2xl leading-relaxed">
-                {HERO_CONTENT.positioning}
-              </p>
-              <p className="text-slate-400 mb-8 max-w-xl leading-relaxed">
-                {HERO_CONTENT.philosophy}
-              </p>
-              {/* Hero actions: the work first, then direct contact; OIA stays one line below */}
-              <div className="flex flex-wrap gap-4">
-                <a
-                  href="#selected-work"
-                  className="inline-flex items-center justify-center px-8 py-3.5 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400 rounded-sm"
-                >
-                  See selected work
-                </a>
-                <Link
-                  to="/connect"
-                  className="inline-flex items-center justify-center px-8 py-3.5 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-white/20 bg-navy-deep/60 text-white hover:border-copper-500 rounded-sm"
-                >
-                  Contact Dan
-                </Link>
-                <a
-                  href="#gate-simulator"
-                  className="inline-flex items-center justify-center px-5 py-3.5 text-sm font-mono text-copper-400 hover:text-copper-300 transition-colors"
-                >
-                  Try the live gate demo <ArrowRight className="w-4 h-4 ml-1.5" aria-hidden="true" />
-                </a>
-              </div>
-              <p className="text-slate-400 text-sm mt-6 max-w-md">
-                Business implementation work runs through{' '}
-                <a href={READINESS_SCAN.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">
-                  Orion Intelligence Agency
-                </a>.
-              </p>
-
-              {/* Proof strip: scannable authority numbers */}
-              <dl className="mt-10 pt-6 border-t border-white/10 grid grid-cols-3 gap-6 max-w-lg">
-                <div>
-                  <dt className="font-mono text-xs text-slate-400">Open Builds</dt>
-                  <dd className="text-2xl font-bold text-white mt-1 tabular-nums">{WORKS.length}</dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-xs text-slate-400">Field Guides</dt>
-                  <dd className="text-2xl font-bold text-white mt-1 tabular-nums">{GUIDES.length}</dd>
-                </div>
-                <div>
-                  <dt className="font-mono text-xs text-slate-400">Essays</dt>
-                  <dd className="text-2xl font-bold text-white mt-1 tabular-nums">{THOUGHTS.length}</dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Portrait with architectural frame & credentials */}
-            <div className="lg:col-span-5">
-              <div className="relative rounded-lg border border-white/10 bg-navy-deep/70 p-2.5 shadow-2xl">
-                <div className="relative aspect-[4/5] bg-slate-900 rounded-sm overflow-hidden group">
-                  <img
-                    src="/dan-mercede-founder-headshot-hero.webp"
-                    alt={getImageMeta("/dan-mercede-founder-headshot-hero.webp").alt}
-                    title="Dan Mercede"
-                    width="1200"
-                    height="1500"
-                    fetchPriority="high"
-                    decoding="async"
-                    className="w-full h-full object-cover opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60 pointer-events-none" />
-                </div>
-                <div className="pt-3 px-2 pb-1 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-400">
-                  <span className="text-copper-400">UiPath AgentHack Finalist</span>
-                  <span>NODES 2026 · OpsWorld 2027</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Transition Band - Anchor */}
-        <div className="w-full max-w-7xl mx-auto px-6 pb-8 md:pb-12 relative z-10">
-          <div className="flex items-center gap-6 opacity-90">
-            <div className="h-px w-16 bg-copper-500/50" />
-            <span className="text-slate-300 font-mono text-xs md:whitespace-nowrap">
-              The teams that win with AI own the workflow, not just the model.
-            </span>
-            <div className="h-px grow bg-white/10" />
-            <a href="#visual-architecture" className="inline-flex items-center gap-1.5 text-sm font-semibold text-copper-400 hover:text-copper-300">
-              Visual architecture <ChevronDown size={16} aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <ArchitectureSpotlight />
-
-      <section aria-labelledby="operator-thesis" className="mx-auto max-w-7xl px-6 py-10">
-        <h2 id="operator-thesis" className="mb-6 text-3xl font-bold tracking-tight text-white md:text-4xl">Operator to architect</h2>
-        <ol className="grid gap-5 border-y border-white/10 py-6 md:grid-cols-3 md:gap-8">
-          <li className="border-l-2 border-copper-500/60 pl-4">
-            <h3 className="text-xl font-semibold text-white">$6M P&amp;L &amp; field ops</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">Running a club meant owning staffing, retention and the numbers. Every workflow needed someone who could answer for it.</p>
-          </li>
-          <li className="border-l-2 border-copper-500/60 pl-4">
-            <h3 className="text-xl font-semibold text-white">Fail-closed governance</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">I give an agent the same boundary. Before it can change anything, a gate checks who authorized the action and stops it if approval is missing.</p>
-          </li>
-          <li className="border-l-2 border-copper-500/60 pl-4">
-            <h3 className="text-xl font-semibold text-white">Runnable proof</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">With failclosed, you can run the check yourself. Submit a review with missing evidence and see why the merge is refused.</p>
-          </li>
-        </ol>
-      </section>
-
-      {/* Selected Work */}
-      <Section id="selected-work" className="pt-10 md:pt-16">
-        <SectionHeader title="Selected work" subtitle="Built, running, and checked" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {SELECTED_WORK.map((work, idx) => {
-            const external = Boolean(linkTargetProps(work.href).target);
-            return (
-              <a
-                key={work.title}
-                href={work.href}
-                {...linkTargetProps(work.href)}
-                className="flex flex-col p-6 rounded-lg border border-white/10 bg-navy-deep/70 hover:border-copper-500/50 hover:bg-navy-deep transition-all group h-full"
-              >
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="font-mono text-xs text-slate-400">{String(idx + 1).padStart(2, '0')}</span>
-                  <span className="font-mono text-xs px-2.5 py-0.5 rounded-sm bg-copper-500/10 text-copper-400 border border-copper-500/20">
-                    {work.status}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-copper-300 transition-colors">{work.title}</h3>
-                <p className="text-slate-300 leading-relaxed mb-4 grow">{work.summary}</p>
-                <p className="text-slate-400 text-sm mb-5 border-t border-white/5 pt-3">{work.evidence}</p>
-                <span className="inline-flex items-center text-sm font-medium text-copper-400 group-hover:text-copper-300">
-                  {external ? 'Source' : work.href.startsWith('/thoughts/') ? 'Read the case' : 'Project page'}
-                  {external ? <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" /> : <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" />}
-                </span>
-              </a>
-            );
-          })}
-        </div>
-        {/* Validation strip: external confirmation only */}
-        <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-6">
-          {VALIDATION.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-sm text-slate-300 hover:text-copper-400 transition-colors"
-            >
-              <CheckCircle2 className="w-4 h-4 text-copper-500 mr-2 shrink-0" aria-hidden="true" />
-              {item.label}
-            </a>
-          ))}
-        </div>
-        <div className="mt-8 flex flex-wrap gap-6">
-          <Link to="/works" className="text-copper-400 hover:text-copper-300 text-sm font-semibold inline-flex items-center">
-            All projects <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-          </Link>
-          <Link to="/proof" className="text-slate-300 hover:text-copper-400 text-sm font-mono inline-flex items-center">
-            Checkable proof &amp; claims <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-          </Link>
-        </div>
-      </Section>
-
-      {/* Interactive Gate Simulator */}
-      <Section id="gate-simulator" className="pt-8 md:pt-12">
-        <SectionHeader title="See fail-closed execution in action" subtitle="Interactive sandbox · deterministic boundaries before state mutation" />
-        <GateSimulator />
-      </Section>
-
-      {/* Fresh from the Desk */}
-      <Section className="pt-8 md:pt-12">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
-          <div className="border-l-2 border-copper-500 pl-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">Fresh from the desk</h2>
-            <p className="text-copper-400 font-mono text-sm">Latest technical guides and operating notes</p>
-          </div>
-          <div className="flex flex-wrap gap-5 font-mono text-xs">
-            <Link to="/guides" className="text-copper-400 hover:text-copper-300 inline-flex items-center gap-1">
-              All {GUIDES.length} guides <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-            <Link to="/thoughts" className="text-slate-300 hover:text-copper-400 inline-flex items-center gap-1">
-              All {THOUGHTS.length} essays <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {deskGuides.map((g) => (
-            <Link
-              key={g.slug}
-              to={`/guides/${g.slug}`}
-              className="group flex flex-col p-6 rounded-lg border border-white/10 bg-navy-deep/55 hover:border-copper-500/40 transition-all"
-            >
-              <div className="flex items-center justify-between gap-2 font-mono text-xs mb-3">
-                <span className="text-copper-400">Guide · {g.category}</span>
-                <span className="text-slate-400">{estimateReadingMinutes(g.body)} min read</span>
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-copper-300 transition-colors mb-2">{g.title}</h3>
-              <p className="text-sm text-slate-400 line-clamp-3 leading-relaxed grow mb-4">{g.lead}</p>
-              <span className="inline-flex items-center gap-1.5 text-xs font-mono text-copper-400 group-hover:text-copper-300">
-                Read field guide <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </span>
-            </Link>
-          ))}
-          {deskEssay && (
-            <Link
-              to={`/thoughts/${deskEssay.slug}`}
-              className="group flex flex-col p-6 rounded-lg border border-white/10 bg-navy-deep/55 hover:border-copper-500/40 transition-all"
-            >
-              <div className="flex items-center justify-between gap-2 font-mono text-xs mb-3">
-                <span className="text-copper-400">Essay · {deskEssay.category}</span>
-                <span className="text-slate-400">{estimateReadingMinutes(deskEssay.body)} min read</span>
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-copper-300 transition-colors mb-2">{deskEssay.title}</h3>
-              <p className="text-sm text-slate-400 line-clamp-3 leading-relaxed grow mb-4">{deskEssay.preview}</p>
-              <span className="inline-flex items-center gap-1.5 text-xs font-mono text-copper-400 group-hover:text-copper-300">
-                Read essay <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </span>
-            </Link>
-          )}
-        </div>
-      </Section>
-
-      {/* Intent Router */}
-      <IntentRouter />
-
-      {/* Speaking & Workshops */}
-      <Section className="py-16">
-        <SectionHeader title="Speaking &amp; Workshops" subtitle="Conference sessions and technical briefings" />
-        <SpeakingResources placement="home" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col p-8 rounded-lg border border-copper-500/30 bg-navy-deep/80">
-            <p className="text-copper-400 font-mono text-xs uppercase tracking-widest mb-3">{UPCOMING_SPEAKING.label}</p>
-            <h3 className="text-2xl font-bold text-white mb-2">{UPCOMING_SPEAKING.event}</h3>
-            <p className="text-slate-300 font-mono text-xs mb-4">
-              {UPCOMING_SPEAKING.date} · {UPCOMING_SPEAKING.time} · {UPCOMING_SPEAKING.format} · {UPCOMING_SPEAKING.location}
-            </p>
-            <p className="text-slate-200 italic mb-3">"{UPCOMING_SPEAKING.title}"</p>
-            <p className="text-slate-400 text-sm leading-relaxed grow mb-6">{UPCOMING_SPEAKING.detail}</p>
-            <a
-              href={UPCOMING_SPEAKING.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-copper-400 text-sm font-semibold tracking-wider uppercase hover:text-copper-300 transition-colors inline-flex items-center"
-            >
-              {UPCOMING_SPEAKING.cta} <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-            </a>
-          </div>
-
-          <div className="flex flex-col p-8 rounded-lg border border-white/10 bg-navy-deep/60">
-            <p className="text-slate-400 font-mono text-xs uppercase tracking-widest mb-3">{SPEAKING.label}</p>
-            <h3 className="text-2xl font-bold text-white mb-2">{SPEAKING.event}</h3>
-            <p className="text-copper-400 font-mono text-xs mb-4">{SPEAKING.date}</p>
-            <p className="text-slate-200 italic mb-3">"{SPEAKING.title}"</p>
-            <p className="text-slate-400 text-sm leading-relaxed grow mb-6">{SPEAKING.detail}</p>
-            <a
-              href={SPEAKING.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-copper-400 text-sm font-semibold tracking-wider uppercase hover:text-copper-300 transition-colors inline-flex items-center"
-            >
-              {SPEAKING.cta} <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-      </Section>
-
-      {/* Final CTA Strip */}
-      <Section className="py-16">
-        <div className="rounded-lg border border-copper-500/25 bg-navy-deep/80 p-8 md:p-12 text-center max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Work with OIA on one workflow
-          </h2>
-          <p className="text-slate-300 mb-8 max-w-xl mx-auto leading-relaxed">
-            A focused engagement with Orion Intelligence Agency that scopes one workflow, maps its failure modes, and delivers a 30/60/90 plan to a system your team owns.
+    <div className="mx-auto max-w-[70rem] px-5 pt-20 sm:px-8">
+      <section aria-labelledby="home-heading" className="grid grid-cols-[minmax(0,1fr)_5.25rem] items-center gap-x-3 pb-7 pt-7 sm:grid-cols-[minmax(0,1fr)_clamp(11rem,26vw,16rem)] sm:gap-x-10 sm:py-14 lg:gap-x-20 lg:py-16">
+        <h1 id="home-heading" className="text-[clamp(2.2rem,10.5vw,3.75rem)] font-semibold leading-none tracking-tight text-white sm:text-[clamp(3rem,7vw,6rem)]">Dan Mercede</h1>
+        <img
+          src="/dan-mercede-founder-headshot-hero.webp"
+          alt={getImageMeta('/dan-mercede-founder-headshot-hero.webp').alt}
+          width="1200"
+          height="1500"
+          decoding="async"
+          fetchPriority="high"
+          className="col-start-2 row-start-1 h-[5.75rem] w-full rounded-sm object-cover object-[50%_24%] sm:row-span-2 sm:h-auto sm:object-center"
+        />
+        <div className="col-span-2 mt-4 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:mt-5">
+          <p className="max-w-[31ch] font-serif text-[1.65rem] leading-[1.16] text-slate-100 sm:text-3xl lg:text-[2.5rem]">{IDENTITY_LINE}</p>
+          <p id="operator-thesis" className="mt-3 max-w-[55ch] scroll-mt-24 text-[0.9375rem] leading-relaxed text-slate-300 sm:mt-5 sm:text-base">
+            I ran a club with a <Link to="/about" className="underline decoration-white/40 underline-offset-4 hover:text-copper-300">$6M P&amp;L</Link>. Today I build checks that tell a team when an AI workflow needs a human decision.
           </p>
-          <a
-            href={READINESS_SCAN.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-10 py-4 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400 rounded-sm"
-          >
-            {READINESS_SCAN.cta}
-          </a>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {READINESS_SCAN.deliverables.map((d, i) => (
-              <span key={i} className="text-slate-300 text-xs font-mono border border-white/10 bg-slate-950/50 px-3 py-1.5 rounded-sm">{d}</span>
-            ))}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 sm:mt-6">
+            <a href="#selected-work" className="inline-flex min-h-11 items-center gap-2 rounded-sm bg-copper-500 px-4 text-sm font-semibold text-slate-950 hover:bg-copper-400">
+              See selected work <ChevronDown className="size-4" aria-hidden="true" />
+            </a>
+            <Link to="/connect" className="inline-flex min-h-11 items-center text-sm font-medium text-slate-200 underline decoration-white/30 underline-offset-4 hover:text-copper-300">
+              Contact Dan
+            </Link>
           </div>
         </div>
-      </Section>
-    </>
+      </section>
+
+      <section id="selected-work" aria-labelledby="selected-work-heading" className="scroll-mt-24 border-y border-white/10 py-6 sm:py-9">
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 sm:mb-6">
+          <h2 id="selected-work-heading" className="text-4xl font-semibold tracking-tight text-white lg:text-5xl">Selected work</h2>
+          <Link to="/works" className={HOME_LINK}>All projects <ArrowRight className="size-4" aria-hidden="true" /></Link>
+        </div>
+        <article className="grid items-center gap-8 border-l-2 border-copper-400 bg-navy-deep px-[1.125rem] py-4 sm:px-7 sm:py-6 md:grid-cols-[3fr_2fr] lg:px-9 lg:py-8">
+          <div className="max-w-[54ch]">
+            <p className={META}>{proctor.status}</p>
+            <h3 className="mb-1 mt-1 text-4xl font-semibold leading-tight tracking-tight text-white lg:text-5xl">{proctor.title}</h3>
+            <p className="text-slate-200">{proctor.summary}</p>
+            <a href={proctor.href} className={HOME_LINK}>
+              {proctor.action} <ArrowRight className="size-4" aria-hidden="true" />
+            </a>
+            <p className={META}>
+              <a href={PROCTOR_FINALIST.href} {...linkTargetProps(PROCTOR_FINALIST.href)} className="underline decoration-white/25 underline-offset-4 hover:text-copper-300">
+                {PROCTOR_FINALIST.label}
+              </a>
+            </p>
+          </div>
+          <div className="hidden border-l border-white/10 pl-6 md:block">
+            <p className={META}>From the project quickstart</p>
+            <p className="mt-2 font-mono text-lg text-white">pnpm demo</p>
+            <p className="mt-2 max-w-[32ch] text-sm leading-relaxed text-slate-300">After setup, run the invoice example locally. It catches a regression and opens an approval step. No API key required.</p>
+          </div>
+        </article>
+        {otherWork.map((work) => (
+          <article key={work.href} className="border-b border-white/10 pb-2 pt-4 md:grid md:grid-cols-[minmax(10rem,1fr)_minmax(0,1.35fr)_auto] md:items-center md:gap-6 md:py-4">
+            <div>
+              <p className={META}>{work.status}</p>
+              <h3 className="text-2xl font-semibold leading-tight tracking-tight text-white lg:text-[1.75rem]">{work.title}</h3>
+            </div>
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-300 md:mt-0 sm:text-base">{work.summary}</p>
+            <a href={work.href} className={HOME_LINK}>{work.action} <ArrowRight className="size-4" aria-hidden="true" /></a>
+          </article>
+        ))}
+        <div className="mt-2 flex flex-wrap gap-x-5 sm:mt-4">
+          <a id="gate-simulator" href={HOME_DESTINATIONS['#gate-simulator']} className={`scroll-mt-24 ${HOME_LINK}`}>Try the gate demo</a>
+          <a id="visual-architecture" href={HOME_DESTINATIONS['#visual-architecture']} className={`scroll-mt-24 ${HOME_LINK}`}>Architecture diagrams</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="desk-heading" className="border-b border-white/10 py-7 sm:py-10">
+        <h2 id="desk-heading" className="mb-4 text-4xl font-semibold tracking-tight text-white lg:text-5xl">From the desk</h2>
+        {[
+          deskGuide && { kind: 'Field guide', href: `/guides/${deskGuide.slug}`, article: deskGuide },
+          deskEssay && { kind: 'Essay', href: `/thoughts/${deskEssay.slug}`, article: deskEssay },
+        ].map((entry) => entry && (
+          <div key={entry.href} className="border-t border-white/10 py-3 sm:grid sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-4">
+            <p className={META}>{entry.kind}</p>
+            <Link to={entry.href} className="inline-flex min-h-11 items-center font-serif text-2xl font-medium leading-tight text-white hover:text-copper-300">
+              {entry.article.title}
+            </Link>
+            <p className={`hidden whitespace-nowrap sm:block ${META}`}>{estimateReadingMinutes(entry.article.body)} min</p>
+          </div>
+        ))}
+        <div className="flex flex-wrap gap-x-5">
+          <Link to="/guides" className={HOME_LINK}>All guides</Link>
+          <Link to="/thoughts" className={HOME_LINK}>All essays</Link>
+        </div>
+      </section>
+
+      <div className="grid sm:grid-cols-2 sm:gap-x-8 sm:py-8">
+        <section className="py-6 sm:py-1">
+          <h2 className="text-3xl font-semibold tracking-tight text-white">Speaking</h2>
+          {UPCOMING_SPEAKING && <p className="mt-2 text-sm text-slate-300">Next workshop · {UPCOMING_SPEAKING.event} · {UPCOMING_SPEAKING.date}</p>}
+          <a href="/connect#speaking" className={HOME_LINK}>Talk topics &amp; speaker kit <ArrowRight className="size-4" aria-hidden="true" /></a>
+        </section>
+        <section className="border-t border-white/10 py-6 sm:border-l sm:border-t-0 sm:py-1 sm:pl-8">
+          <h2 className="text-3xl font-semibold tracking-tight text-white">Implementation</h2>
+          <p className="mt-2 max-w-[44ch] text-sm text-slate-300">I work through Orion Intelligence Agency to put one workflow into practice.</p>
+          <a href={READINESS_SCAN.href} {...linkTargetProps(READINESS_SCAN.href)} className={HOME_LINK}>
+            Work with OIA <ExternalLink className="size-3.5" aria-hidden="true" />
+          </a>
+        </section>
+      </div>
+    </div>
   );
 };
 
@@ -1030,6 +809,9 @@ const RunnableProofCallout = () => (
           View on GitHub
           <ExternalLink className="w-4 h-4" />
         </a>
+        <a href="#gate-simulator" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-copper-400 hover:text-copper-300">
+          Try the gate demo <ArrowRight className="size-4" aria-hidden="true" />
+        </a>
         <Link
           to="/thoughts"
           className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
@@ -1068,7 +850,7 @@ const EvidenceSection = () => {
   };
 
   return (
-    <div id="evidence" className="mb-16">
+    <div id="evidence" className="mb-16 scroll-mt-32">
       <div className="border-l-2 border-copper-500 pl-6 mb-8">
         <h2 className="text-2xl font-bold text-white mb-1">Checkable Claims</h2>
         <p className="text-sm text-slate-400">
@@ -1447,6 +1229,11 @@ const ResourcesPage = () => {
               <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">Cosmocrat OS: Platform</a>.
             </p>
           </div>
+          <section id="gate-simulator" aria-labelledby="gate-simulator-heading" className="mb-14 scroll-mt-32">
+            <h3 id="gate-simulator-heading" className="mb-2 text-2xl font-bold text-white">See fail-closed execution in action</h3>
+            <p className="mb-5 text-sm text-slate-300">Interactive example. Compare advisory and gated decisions and inspect the simulated receipt.</p>
+            <GateSimulator />
+          </section>
         </div>
 
         {/* Signature Diagram, Runtime Execution Control Plane Architecture */}
@@ -2760,7 +2547,7 @@ const ConnectPage = () => {
           </div>
         </div>
         <div className="lg:col-span-7">
-          <SpeakingResources placement="connect" />
+          <SpeakingResources />
         </div>
       </div>
     </Section>

@@ -65,13 +65,6 @@ test('the past NODES talk keeps the speaker page as proof and drops registration
   assert.equal(SPEAKING.href, 'https://neo4j.com/nodes/speakers/dan-mercede/', 'the credential-proof link stays the speaker page');
   assert.equal(SPEAKING.label, 'Past Speaking');
   assert.ok(!Object.keys(SPEAKING).includes('registerHref'), 'registration ended with the event');
-  const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
-  const start = app.indexOf('{/* Speaking');
-  assert.ok(start >= 0, 'expected the homepage speaking block');
-  const block = app.slice(start, app.indexOf('</Section>', start));
-  assert.ok(block.includes('href={SPEAKING.href}'), 'the speaking block links the NODES speaker page');
-  assert.doesNotMatch(block, /registerHref|registerCta/, 'no registration link after the event');
-  assert.doesNotMatch(app, /SpeakerContest/, 'the contest URL is gone from the homepage');
 });
 
 /**
@@ -79,17 +72,12 @@ test('the past NODES talk keeps the speaker page as proof and drops registration
  * 50-minute slot as a hands-on workshop on 2026-11-10). Proof is OpsWorld's own
  * sessions page, which lists the session with Dan as speaker.
  */
-test('the upcoming OpsWorld workshop leads the speaking block with the organizer schedule as proof', () => {
+test('the upcoming OpsWorld workshop has verified facts and an organizer schedule', () => {
   assert.equal(UPCOMING_SPEAKING.label, 'Upcoming Speaking');
   assert.equal(UPCOMING_SPEAKING.event, 'OpsWorld 2027');
   assert.equal(UPCOMING_SPEAKING.date, 'February 9, 2027');
   assert.equal(UPCOMING_SPEAKING.title, 'Close Incidents With Solution Docs and Check Runbook Freshness');
   assert.equal(UPCOMING_SPEAKING.href, 'https://www.developerweek.com/opsworld/#sessions');
-  const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
-  const start = app.indexOf('{/* Speaking');
-  const block = app.slice(start, app.indexOf('</Section>', start));
-  assert.ok(block.includes('href={UPCOMING_SPEAKING.href}'), 'the speaking block links the OpsWorld proof');
-  assert.ok(block.indexOf('UPCOMING_SPEAKING.event') < block.indexOf('SPEAKING.event}', block.indexOf('UPCOMING_SPEAKING.event') + 30), 'upcoming comes before past');
 });
 
 test('the one-sheet source names the upcoming workshop', () => {

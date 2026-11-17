@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
-import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, UPCOMING_SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
+import { ABOUT_BIO, CASE_STUDIES, CONTACT_EMAIL, CONTACT_INTENTS, DIAGRAMS, GUIDES, NEWSLETTER, PRIVACY_SECTIONS, PROOF_EVIDENCE, READINESS_SCAN, REFERENCE_ARCHITECTURE_NOTICE, SELECTED_WORK, SPEAKING, UPCOMING_SPEAKING, THOUGHT_LANES, THOUGHTS, WORKS, WORKS_HUB, WORKS_START_HERE, contactHref, featuredEssays } from '../constants';
 import { FORBIDDEN_NEEDLES } from './contentBoundaryNeedles';
 import { lintExtractability } from '../extractability';
 import { RENDERED_ROUTES, collectRoutes } from '../scripts/injectRouteMeta';
@@ -185,24 +185,24 @@ test('no published route renders a heading as a small capitals label', async () 
 // works hub, front door, content boundary, proof, privacy, case studies,
 // diagrams) bind the render the build ships. Review of #184, 2026-09-29;
 // the crawl block itself was retired in S5.
-test('the homepage speaking block renders the past NODES talk with its speaker page and no registration link', async () => {
-  const home = (await loadRender())('/');
+test('the Connect speaking section renders the past NODES talk with its speaker page and no registration link', async () => {
+  const home = (await loadRender())('/connect');
   const document = new JSDOM(home).window.document;
   const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === SPEAKING.event);
-  assert.ok(heading, 'homepage: expected the NODES speaking heading');
-  const block = heading.closest('section');
+  assert.ok(heading, 'Connect: expected the NODES speaking heading');
+  const block = heading.closest('#speaking');
   assert.ok(block, 'the speaking heading belongs to a section');
   const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
   assert.ok(hrefs.includes(SPEAKING.href), 'speaking block: the credential-proof link to the speaker page');
   assert.ok(!hrefs.some((h) => h.includes('SpeakerContest')), 'speaking block: no registration link after the event');
 });
 
-test('the homepage speaking block renders the upcoming OpsWorld workshop with its schedule proof', async () => {
-  const home = (await loadRender())('/');
+test('the Connect speaking section renders the upcoming OpsWorld workshop with its schedule proof', async () => {
+  const home = (await loadRender())('/connect');
   const document = new JSDOM(home).window.document;
   const heading = [...document.querySelectorAll('h3')].find((h) => h.textContent === UPCOMING_SPEAKING.event);
-  assert.ok(heading, 'homepage: expected the OpsWorld speaking heading');
-  const block = heading.closest('section');
+  assert.ok(heading, 'Connect: expected the OpsWorld speaking heading');
+  const block = heading.closest('#speaking');
   assert.ok(block, 'the OpsWorld heading belongs to a section');
   const hrefs = [...block.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
   assert.ok(hrefs.includes(UPCOMING_SPEAKING.href), 'speaking block: the organizer schedule proof link');
@@ -395,41 +395,85 @@ function* walkFiles(dir: string): Generator<string> {
   }
 }
 
-test('the homepage spotlight resolves all three previews to their published diagram notes', async () => {
-  const document = new JSDOM((await loadRender())('/')).window.document;
-  const spotlight = document.querySelector('#visual-architecture');
-  assert.ok(spotlight);
-  const titles = ['Monitor After vs Constrain Before', 'The Two-Plane Architecture', 'Authority Decay Over a Session'];
-  const cards = [...spotlight.querySelectorAll('article')];
-  assert.equal(cards.length, titles.length);
-  titles.forEach((title, index) => {
+test('the diagram gallery offers the three former homepage previews and their notes', async () => {
+  const document = new JSDOM((await loadRender())('/diagrams')).window.document;
+  for (const title of ['Monitor After vs Constrain Before', 'The Two-Plane Architecture', 'Authority Decay Over a Session']) {
     const diagram = DIAGRAMS.find((candidate) => candidate.title === title);
     assert.ok(diagram);
-    const card = cards[index];
-    assert.equal(card.querySelector('button[aria-haspopup="dialog"]')?.getAttribute('aria-label'), `Preview ${diagram.title}`);
-    assert.equal(card.querySelector('img')?.getAttribute('src'), diagram.src);
-    assert.equal(card.querySelector('a')?.getAttribute('href'), `/diagrams/${diagram.slug}`);
-  });
-  assert.ok(spotlight.querySelector('a[href="/diagrams"]'));
-  const thesis = document.querySelector('#operator-thesis')?.closest('section');
-  assert.equal(thesis?.querySelectorAll('li').length, 3);
-  assert.equal(thesis?.nextElementSibling?.id, 'selected-work');
+    assert.ok(document.querySelector(`button[aria-haspopup="dialog"][aria-label="Inspect ${title} fullscreen"]`), title);
+    assert.ok(document.querySelector(`a[href="/diagrams/${diagram.slug}"] img[src="${diagram.src}"]`), title);
+  }
 });
 
-test('organizers can choose a talk, download the one-sheet and email Dan from either front door', async () => {
+test('the homepage introduces Dan and immediately leads with Proctor', async () => {
+  const document = new JSDOM((await loadRender())('/')).window.document;
+  const hero = document.querySelector('main section');
+  const work = document.getElementById('selected-work');
+  assert.ok(hero && work);
+  assert.equal(hero.nextElementSibling, work);
+  assert.equal(hero.querySelector('h1')?.textContent, 'Dan Mercede');
+  assert.match(hero.textContent ?? '', /Operator and systems builder\. I turn AI experiments into workflows teams can actually run\./);
+  assert.ok(hero.querySelector('#operator-thesis a[href="/about"]'));
+  assert.ok(hero.querySelector('a[href="#selected-work"]'));
+  assert.ok(hero.querySelector('a[href="/connect"]'));
+  assert.deepEqual([...work.querySelectorAll('h3')].map((h) => h.textContent),
+    ['Proctor', 'failclosed', 'Production knowledge graph']);
+  const projectLinks = [...work.querySelectorAll<HTMLAnchorElement>('article a')];
+  for (const project of SELECTED_WORK) {
+    const link = projectLinks.find((link) => link.getAttribute('href') === project.href);
+    assert.ok(link, project.title);
+    assert.ok(link.closest('article')?.textContent?.includes(project.status), project.status);
+    assert.ok(!link.target, `${project.title} opens in the same tab`);
+    if (project.href.startsWith('/works/')) assert.ok(!link.hasAttribute('data-discover'), project.href);
+  }
+  const finalist = work.querySelector('a[href*="forum.uipath.com"]');
+  assert.ok(finalist?.closest('article')?.textContent?.includes('Proctor'));
+});
+
+test('the homepage links to reading, speaking, implementation and moved proof in the initial HTML', async () => {
+  const document = new JSDOM((await loadRender())('/')).window.document;
+  const main = document.querySelector('main');
+  assert.ok(main);
+  for (const [id, href] of [['gate-simulator', '/proof#gate-simulator'], ['visual-architecture', '/diagrams']]) {
+    assert.ok(main.querySelector(`a[id="${id}"][href="${href}"]`), href);
+  }
+  const desk = main.querySelector('section[aria-labelledby="desk-heading"]');
+  assert.ok(desk);
+  const guide = GUIDES[0];
+  const essay = [...THOUGHTS].sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug))[0];
+  assert.deepEqual([...desk.querySelectorAll('a')].map((link) => link.getAttribute('href')),
+    [`/guides/${guide.slug}`, `/thoughts/${essay.slug}`, '/guides', '/thoughts']);
+  assert.equal(main.querySelectorAll(`a[href="${READINESS_SCAN.href}"]`).length, 1);
+  assert.ok(main.querySelector('a[href="/connect#speaking"]')?.closest('section')?.textContent?.includes(UPCOMING_SPEAKING.event));
+  assert.equal(main.querySelectorAll('button[aria-pressed], button[aria-haspopup="dialog"], a[download]').length, 0);
+});
+
+test('organizers reach the full speaking kit from the homepage', async () => {
   const render = await loadRender();
   const source = fs.readFileSync(path.join(root, 'docs/one-sheets/speaking-one-sheet.html'), 'utf8');
   const speaking = CONTACT_INTENTS.find((intent) => intent.id === 'speaking')!;
-  for (const route of ['/', '/connect']) {
-    const document = new JSDOM(render(route)).window.document;
-    const sheet = document.querySelector('main a[download][href="/assets/Speaking_One_Sheet.pdf"]');
-    assert.ok(sheet, route);
-    const card = sheet.parentElement!.parentElement!;
-    assert.ok(card.querySelector(`a[href="${contactHref(speaking)}"]`), route);
-    const topics = [...card.querySelectorAll('dt')];
-    assert.equal(topics.length, 3, route);
-    topics.forEach((topic) => assert.ok(source.includes(topic.textContent!), topic.textContent!));
-  }
+  const home = new JSDOM(render('/')).window.document;
+  assert.ok(home.querySelector('main a[href="/connect#speaking"]'));
+  const kit = new JSDOM(render('/connect')).window.document.querySelector('#speaking');
+  assert.ok(kit);
+  assert.ok(kit.querySelector('a[download][href="/assets/Speaking_One_Sheet.pdf"]'));
+  assert.ok(kit.querySelector(`a[href="${contactHref(speaking)}"]`));
+  const topics = [...kit.querySelectorAll('dt')];
+  assert.equal(topics.length, 3);
+  topics.forEach((topic) => assert.ok(source.includes(topic.textContent!), topic.textContent!));
+});
+
+test('Proof hosts the simulator after checkable evidence with a receipt in the initial HTML', async () => {
+  const document = new JSDOM((await loadRender())('/proof')).window.document;
+  const demo = document.getElementById('gate-simulator');
+  const evidence = document.getElementById('evidence');
+  assert.ok(demo && evidence);
+  assert.ok(evidence.compareDocumentPosition(demo) & document.defaultView!.Node.DOCUMENT_POSITION_FOLLOWING);
+  assert.match(demo.textContent ?? '', /Interactive example/);
+  assert.equal(demo.querySelectorAll('button[aria-pressed]').length, 5);
+  assert.ok([...demo.querySelectorAll('pre')].some((pre) => pre.textContent?.includes('"decision"')));
+  assert.ok(demo.querySelector('a[href="#evidence"]'));
+  assert.ok(document.querySelector('#runnable-proof a[href="#gate-simulator"]'));
 });
 
 test('the rendered navigation marks the current page or its parent section', async () => {

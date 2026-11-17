@@ -1,7 +1,7 @@
 # Spec: Homepage intent-router
 
 **Feature:** danmercede.com homepage routes visitors by intent (the authority-router role).
-**Status:** shipped 2026-07-08 (top-funnel reposition, STEP-2 PR-B).
+**Status:** historical. The [Proctor-first homepage spec](./proctor-first-homepage-spec.md) governs how these visitor paths appear today.
 **Domain terms:** *intent-router* (the homepage card grid that sends a visitor to the surface fitting their intent); *authority router* (danmercede.com's role, distinct from OIA the commercial lane).
 
 ## Why

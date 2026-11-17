@@ -44,8 +44,7 @@ test('same-site project links open in place; off-site links open a new tab', () 
   }
   const card = fs.readFileSync(path.join(root, 'components/WorkCard.tsx'), 'utf8');
   assert.doesNotMatch(card, /target="_blank"/, 'WorkCard must derive targets from linkTargetProps, not hard-code them');
-  const home = appSrc.slice(appSrc.indexOf('const HomePage = '), appSrc.indexOf('const AboutPage = '));
-  assert.match(home, /linkTargetProps\(work\.href\)/, 'homepage selected-work cards must use the same classifier');
+
 });
 
 test('Writing has a curated Start here list that resolves to real guides and essays', () => {

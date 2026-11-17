@@ -44,13 +44,6 @@ export const FOOTER_LINKS: { label: string; href: string }[] = [
   { label: 'Newsletter', href: NEWSLETTER.href },
 ];
 
-export const HERO_CONTENT = {
-  name: "DAN MERCEDE",
-  positioning: "AI systems fail when nobody owns the workflow.",
-  philosophy: IDENTITY_LINE,
-  wedge: "The teams that win with AI own the workflow, not just the model.",
-};
-
 // Curated entry points; these link to existing content without changing the lists.
 const START_HERE_ESSAY = featuredEssays(['2026-09-30-the-knowledge-graph-my-agents-stopped-asking'])[0];
 export const WORKS_START_HERE: { title: string; href: string; description?: string }[] = [
@@ -273,84 +266,35 @@ export const WORK_STATUSES = [
 ] as const;
 export type WorkStatus = (typeof WORK_STATUSES)[number];
 
-// Homepage selected work: three complementary pieces (external recognition, a
-// clear mechanism, sustained operation). Copy mirrors the WORKS entries and the
-// verified SPEAKING entry; tests/homepage.test.ts checks links and statuses.
-export const SELECTED_WORK: {
-  title: string;
-  status: WorkStatus;
-  summary: string;
-  evidence: string;
-  href: string;
-}[] = [
+// Homepage order puts the featured project first.
+export const SELECTED_WORK = [
   {
     title: "Proctor",
     status: "Working prototype",
-    summary: "Behavioral regression testing for AI agents. It learns a per-agent contract from sample runs, re-checks it on every model or prompt change, and pauses consequential drift for human approval.",
-    evidence: "Verified live against a real UiPath tenant. Finalist, UiPath AgentHack 2026.",
+    summary: "Proctor checks new runs against an agent’s learned contract after a model or prompt change. It pauses consequential changes for human review.",
     href: "/works/proctor/",
+    action: "Explore Proctor",
   },
   {
     title: "failclosed",
     status: "Maintained open source",
-    summary: "Merge admission control for AI-written code. It runs an LLM reviewer, then refuses to report MERGE_READY when the output is unparseable, schema-invalid, or self-contradictory.",
-    evidence: "MIT licensed, Python 3.9+, runs from a fresh clone.",
+    summary: "A merge gate that catches a code reviewer contradicting its own findings.",
     href: "/works/failclosed/",
+    action: "Inspect failclosed",
   },
   {
     title: "Production knowledge graph",
     status: "Personal production",
-    summary: "Ingests branched LLM conversation history into a Neo4j knowledge graph with each branch's identity intact, kept advisory by design. The case covers what six months of measured use changed.",
-    evidence: `Selected talk at ${SPEAKING.event}, ${SPEAKING.date}.`,
+    summary: "What six months of keeping the branches of my agent conversations in Neo4j changed.",
     href: "/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+    action: "Read the case",
   },
-];
+] as const satisfies readonly { title: string; status: WorkStatus; summary: string; href: string; action: string }[];
 
-// Homepage validation strip: external confirmation only, each linked to its source.
-export const VALIDATION: { label: string; href: string }[] = [
-  {
-    label: "Finalist, UiPath AgentHack 2026",
-    href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
-  },
-  { label: `Speaker, ${SPEAKING.event}`, href: SPEAKING.href },
-  { label: "schemafit on PyPI", href: "https://pypi.org/project/schemafit/" },
-  { label: "mcp-context-budget on PyPI", href: "https://pypi.org/project/mcp-context-budget/" },
-];
-
-export const INTENT_ROUTES = [
-  {
-    audience: 'SMB buyer',
-    prompt: 'Need AI strategy or a workflow built?',
-    description: 'Work with Orion Intelligence Agency on one workflow, from strategy to a system your team owns.',
-    href: READINESS_SCAN.href,
-    cta: 'Go to OIA',
-    external: true,
-  },
-  {
-    audience: 'Technical reader',
-    prompt: 'Here for the engineering?',
-    description: 'Guides, essays, and open-source tools for human-directed AI work.',
-    href: '/guides',
-    cta: 'Read the guides',
-    external: false,
-  },
-  {
-    audience: 'Reliability and governance',
-    prompt: 'Want evidence you can check?',
-    description: 'Checkable claims first, then how the systems are built, labeled for what each piece is.',
-    href: '/proof',
-    cta: 'See the proof',
-    external: false,
-  },
-  {
-    audience: 'Hiring manager or recruiter',
-    prompt: 'Evaluating Dan for a role?',
-    description: 'Operating background, current work, and credentials you can check.',
-    href: '/about',
-    cta: 'Read the background',
-    external: false,
-  },
-];
+export const PROCTOR_FINALIST = {
+  label: "Finalist, UiPath AgentHack 2026",
+  href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
+};
 
 export const PRIMARY_VENTURES = ['Cosmocrat', 'Orion Intelligence Agency'];
 
@@ -391,7 +335,7 @@ export const ABOUT_BIO = {
     },
     {
       label: "Finalist, UiPath AgentHack 2026 (Track 3, UiPath Test Cloud), for Proctor",
-      href: "https://forum.uipath.com/t/this-years-uipath-agenthack-finalist-teams-are-here/5762660",
+      href: PROCTOR_FINALIST.href,
     },
   ],
 };
