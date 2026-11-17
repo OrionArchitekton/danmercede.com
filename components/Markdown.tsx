@@ -25,6 +25,26 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+export interface ArticleHeading {
+  id: string;
+  label: string;
+  level: number;
+}
+
+interface ArticleParseState {
+  ids: Set<string>;
+  headings: ArticleHeading[];
+  hasCode: boolean;
+  hasDiagrams: boolean;
+}
+
+function inlineText(nodes: React.ReactNode): string {
+  return React.Children.toArray(nodes).map((node) => {
+    if (React.isValidElement<{ children?: React.ReactNode }>(node)) return inlineText(node.props.children);
+    return String(node);
+  }).join('');
+}
+
 function leadingSpaces(line: string): number {
   return line.length - line.trimStart().length;
 }
@@ -227,7 +247,7 @@ const CodeBlock: React.FC<{ lang: string; code: string }> = ({ lang, code }) => 
   );
 };
 
-function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
+function parseBlocks(lines: string[], state: ArticleParseState, keyPrefix: Key = 'b'): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let i = 0;
   let k = 0;
@@ -244,6 +264,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
     // Fenced code (``` … ```)
     const fence = line.match(FENCE);
     if (fence) {
+      state.hasCode = true;
       const indent = fence[1].length;
       const lang = fence[2].trim();
       const body: string[] = [];
@@ -262,19 +283,25 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
     if (h) {
       const level = Math.min(h[1].length, 6);
       const text = h[2].trim();
+      const base = slugify(text) || 'section';
+      let id = base;
+      for (let suffix = 2; state.ids.has(id); suffix++) id = `${base}-${suffix}`;
+      state.ids.add(id);
+      const title = parseInline(text, nextKey());
+      if (level === 2 || level === 3) state.headings.push({ id, level, label: inlineText(title) });
       const cls =
         level <= 2
           ? 'mt-12 mb-4 scroll-mt-24 text-2xl md:text-3xl font-bold text-white'
           : level === 3
-            ? 'mt-8 mb-3 text-xl font-bold text-white'
+            ? 'mt-8 mb-3 scroll-mt-24 text-xl font-bold text-white'
             : 'mt-6 mb-2 text-lg font-semibold text-white';
       // React.createElement avoids a dynamic JSX tag (React 19 moved the JSX
       // namespace under React.JSX); `h${level}` renders the right heading element.
       out.push(
         React.createElement(
           `h${level}`,
-          { key: nextKey(), id: slugify(text), className: cls },
-          parseInline(text, nextKey()),
+          { key: nextKey(), id, className: cls, tabIndex: -1 },
+          title,
         ),
       );
       i += 1;
@@ -284,6 +311,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
     // Standalone image → figure
     const img = line.match(IMAGE);
     if (img) {
+      state.hasDiagrams = true;
       out.push(figure(img[1], img[2], img[3], nextKey()));
       i += 1;
       continue;
@@ -314,7 +342,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
       }
       out.push(
         <blockquote key={nextKey()} className="my-5 border-l-2 border-copper-500/50 pl-5 text-slate-300">
-          {parseBlocks(q, nextKey())}
+          {parseBlocks(q, state, nextKey())}
         </blockquote>,
       );
       continue;
@@ -380,7 +408,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
         >
           {items.map((it, idx) => (
             <li key={idx} className="leading-relaxed">
-              {parseBlocks(it, `${keyPrefix}-li-${idx}`)}
+              {parseBlocks(it, state, `${keyPrefix}-li-${idx}`)}
             </li>
           ))}
         </ListTag>,
@@ -408,9 +436,14 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
   return out;
 }
 
-export const Markdown: React.FC<{ source: string }> = ({ source }) => {
+export function parseMarkdown(source: string) {
+  const state: ArticleParseState = { ids: new Set(), headings: [], hasCode: false, hasDiagrams: false };
   const lines = source.replace(/\r\n/g, '\n').split('\n');
-  return <>{parseBlocks(lines)}</>;
-};
+  const blocks = parseBlocks(lines, state);
+  const { headings, hasCode, hasDiagrams } = state;
+  return { blocks, headings, hasCode, hasDiagrams };
+}
+
+export const Markdown: React.FC<{ source: string }> = ({ source }) => <>{parseMarkdown(source).blocks}</>;
 
 export default Markdown;

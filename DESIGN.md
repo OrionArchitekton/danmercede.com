@@ -82,7 +82,7 @@ Logo pack colors:
 | Name | Hex | Use on the site |
 |---|---|---|
 | Midnight Navy | `#020B29` | Page background (`bg-slate-950`, `void`, `navy-midnight`); dark labels on copper buttons, the skip link and the text selection (`text-slate-950`) |
-| Deep Navy | `#07143A` | Defined as `navy-deep` for raised surfaces; not yet used (see open questions) |
+| Deep Navy | `#07143A` | `navy-deep` for raised surfaces, including architecture panels, guide cards and the ecosystem CTA |
 | Copper Light | `#FFC08B` | `copper-300`: highlighted text |
 | Copper Mid | `#E68249` | `copper-500`: the primary accent, buttons, borders, focus rings, links |
 | Copper Dark | `#B95122` | `copper-600`: the deepest accent, currently one decorative guide card header |
@@ -131,7 +131,7 @@ Tailwind v4 shifted these names: its `rounded-xs` is v3's `rounded-sm`, and its 
 
 1. Resolved 2026-11-10: Newsreader for headings and IBM Plex Sans for body replace Inter (see Typography).
 2. `copper-400` `#F0975A` has no logo pack value but carries most accent text. Keep it as a site-only step, or map it?
-3. Deep Navy is defined but unused. Should raised surfaces (now `slate-900` and `slate-800`) move to it?
+3. Resolved: use Deep Navy for raised surfaces over the Midnight Navy ground.
 4. The legacy slate, amber and emerald values have no logo pack counterparts. Keep, or fold into a navy-based scale?
 5. The 10px mono labels sit under the 11px floor that the Impeccable detector uses for functional text.
 6. `docs/one-sheets/speaking-one-sheet.html` (the printable one-sheet, outside the site build) still uses the old

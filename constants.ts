@@ -399,6 +399,14 @@ export const ABOUT_BIO = {
 // /connect: the reasons to get in touch (2026-09-29 site audit). Email intents
 // prefill a subject line; implementation work routes to OIA, the commercial path.
 export const CONTACT_EMAIL = "contact@danmercede.com";
+export const SPEAKING_CONTACT = {
+  id: "speaking",
+  label: "Speaking",
+  detail: "Conference talks, meetups, and podcasts on running AI systems in production.",
+  subject: "Speaking inquiry",
+} as const;
+export const SPEAKING_ONE_SHEET_PATH = "/assets/Speaking_One_Sheet.pdf";
+
 export const CONTACT_INTENTS: {
   id: "employment" | "speaking" | "collaboration" | "implementation";
   label: string;
@@ -412,12 +420,7 @@ export const CONTACT_INTENTS: {
     detail: "Full-time or contract roles in AI systems, platform, or forward-deployed engineering.",
     subject: "Role inquiry",
   },
-  {
-    id: "speaking",
-    label: "Speaking",
-    detail: "Conference talks, meetups, and podcasts on running AI systems in production.",
-    subject: "Speaking inquiry",
-  },
+  SPEAKING_CONTACT,
   {
     id: "collaboration",
     label: "Open source and collaboration",
@@ -542,7 +545,7 @@ export const RESOURCES: Resource[] = [
     category: "sales-collateral",
     fileName: "Speaking_One_Sheet.pdf",
     downloadLabel: "Speaker one-sheet",
-    filePath: "/assets/Speaking_One_Sheet.pdf",
+    filePath: SPEAKING_ONE_SHEET_PATH,
     enforcementLayers: [1, 2, 3, 4],
     enforcementLayer: 4,
     riskDomain: "Escalation rate, EU AI Act Article 14 / NIST AI RMF intelligence routing itself without substrate containment",
@@ -574,6 +577,9 @@ export const CASE_STUDIES: CaseStudy[] = [
     enforcementLayers: [1, 2],
     layerNames: ["Authority Gate", "Immutable Receipts"],
     description: "Pre-execution authority verification for trading operations and cryptographic attestation for state mutations. The pattern produces evidence relevant to SOC 2 and SOX controls; it does not by itself make a system compliant.",
+    relatedWorkSlug: "algorithm-reviews",
+    relatedWorkNote: "Inspect how a review agent signs a receipt and lets a reader verify the evidence behind its decision.",
+    relatedDiagramSlug: "2026-02-17-audit-logs-vs-immutable-receipts",
     fileName: "Reference_Architecture_Financial_Services.docx",
     filePath: "/assets/Reference_Architecture_Financial_Services.docx",
     enforcementPoints: [
@@ -594,6 +600,9 @@ export const CASE_STUDIES: CaseStudy[] = [
     enforcementLayers: [3, 4],
     layerNames: ["Drift Guard", "Gated Substrate"],
     description: "Behavioral containment for clinical decision support and workload isolation for PHI-handling agents. The pattern supports safeguards relevant to HIPAA and FDA SaMD reviews; it does not by itself make a system compliant.",
+    relatedWorkSlug: "proctor",
+    relatedWorkNote: "See how Proctor detects changes in agent behavior and pauses a workflow for human review.",
+    relatedDiagramSlug: "2026-03-31-the-physics-of-ai-isolation",
     fileName: "Reference_Architecture_Healthcare.docx",
     filePath: "/assets/Reference_Architecture_Healthcare.docx",
     enforcementPoints: [
