@@ -47,7 +47,9 @@ test('the app shell carries no router of its own, so the build can use StaticRou
 });
 
 test('the nav highlights /about/ like /about', () => {
-  assert.match(read('App.tsx'), /normalizePath\(location\.pathname\) === item\.path/);
+  const navigation = read('App.tsx').split('const Navigation')[1].split('const Footer')[0];
+  assert.match(navigation, /const currentPath = normalizePath\(location\.pathname\)/);
+  assert.match(navigation, /const active = currentPath === item\.path\b/);
 });
 
 test('ScrollToTop does not scroll on first mount', () => {
