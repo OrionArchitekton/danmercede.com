@@ -1,0 +1,11 @@
+{
+  "id": "branch-demo",
+  "selected_leaf": "u3",
+  "messages": [
+    { "id": "u1", "parent_id": null, "role": "user", "content": "Can we ship?" },
+    { "id": "a1", "parent_id": "u1", "role": "assistant", "content": "Check tests" },
+    { "id": "u2", "parent_id": "a1", "role": "user", "content": "Tests passed" },
+    { "id": "a2", "parent_id": "u1", "role": "assistant", "content": "Check rollback" },
+    { "id": "u3", "parent_id": "a2", "role": "user", "content": "Rollback ready" }
+  ]
+}

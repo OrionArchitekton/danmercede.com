@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { resolveGaConfig, createGtag, redactUrlForAnalytics, redactEventUrl, type GaRuntimeConfig } from '../analytics/gaConfig';
+import { resolveGaConfig, createGtag, redactUrlForAnalytics, redactEventUrl, trackEvent, type GaRuntimeConfig } from '../analytics/gaConfig';
+import { guideNextStep } from '../analytics/guideJourney';
 
 const VercelAnalytics = (_props: { beforeSend?: typeof redactEventUrl }) => null;
 const SpeedInsights = (_props: { beforeSend?: typeof redactEventUrl }) => null;
@@ -46,6 +47,7 @@ function ensureGtagLoaded(cfg: GaRuntimeConfig): void {
 // react-router navigation is counted exactly once (no auto+manual double-count).
 const GoogleAnalytics = () => {
   const { pathname, search } = useLocation();
+  const analyticsPath = redactUrlForAnalytics(`${pathname}${search}`);
 
   useEffect(() => {
     if (!gaConfig) return;
@@ -57,13 +59,31 @@ const GoogleAnalytics = () => {
     // once usePageMeta has set the new title — so page_path and page_title agree.
     const raf = requestAnimationFrame(() => {
       window.gtag?.('event', 'page_view', {
-        page_path: redactUrlForAnalytics(`${pathname}${search}`),
+        page_path: analyticsPath,
         page_location: redactUrlForAnalytics(window.location.href),
         page_title: document.title,
       });
     });
     return () => cancelAnimationFrame(raf);
-  }, [pathname, search]);
+  }, [analyticsPath]);
+
+  useEffect(() => {
+    if (!gaConfig || !pathname.startsWith('/guides/')) return;
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (!anchor) return;
+      const step = guideNextStep(pathname, anchor.getAttribute('href') ?? '');
+      if (step) trackEvent(window, 'guide_next_step', {
+        ...step,
+        page_location: redactUrlForAnalytics(window.location.href),
+      });
+    };
+    // Capture before a client-side Link consumes the click. One listener per
+    // current route, removed on navigation; native and keyboard clicks both work.
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [pathname]);
 
   return null;
 };

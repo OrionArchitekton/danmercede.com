@@ -7,6 +7,8 @@ import ConstellationBackground from './components/ConstellationBackground';
 import { parseMarkdown } from './components/Markdown';
 import ArticleLayout from './components/ArticleLayout';
 import FollowFieldNotes from './components/FollowFieldNotes';
+import { KnowledgeGraphContext, KNOWLEDGE_GRAPH_SLUG } from './components/KnowledgeGraphContext';
+import { PRIORITY_GUIDE_SLUGS } from './contentDiscovery';
 import { GuideMetadata } from './components/GuideMetadata';
 import GuideVideo from './components/GuideVideo';
 import Analytics from './components/Analytics';
@@ -29,6 +31,7 @@ import {
   guideMeta,
   diagramMeta,
   typeScopedMetaTags,
+  resolveMeta,
   routeMetaFor,
   routeJsonLdText,
   type RouteMeta,
@@ -1083,7 +1086,7 @@ const upsertCanonical = (href: string) => {
 // are kept consistent with seoMeta.renderSeoBlock so the runtime head and the
 // crawler-facing static head agree.
 type PageMetaOverride = Partial<
-  Pick<RouteMeta, 'title' | 'description' | 'ogImage' | 'ogType' | 'datePublished'>
+  Pick<RouteMeta, 'title' | 'description' | 'ogImage' | 'ogImageAlt' | 'ogType' | 'datePublished' | 'dateModified'>
 >;
 
 const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) => {
@@ -1092,8 +1095,10 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
   const overrideTitle = override?.title;
   const overrideDescription = override?.description;
   const overrideOgImage = override?.ogImage;
+  const overrideOgImageAlt = override?.ogImageAlt;
   const overrideOgType = override?.ogType;
   const overrideDatePublished = override?.datePublished;
+  const overrideDateModified = override?.dateModified;
 
   useEffect(() => {
     // Normalize trailing slashes (except root) so /about and /about/ resolve the
@@ -1108,6 +1113,8 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     // hydrated head does not drift from the crawler-facing static head.
     const ogType = overrideOgType ?? base.ogType ?? "profile";
     const datePublished = overrideDatePublished ?? base.datePublished;
+    const dateModified = overrideDateModified ?? base.dateModified;
+    const imageMeta = resolveMeta({ title, description, ogImage: ogImagePath, ogImageAlt: overrideOgImageAlt ?? base.ogImageAlt });
     const canonicalUrl = new URL(normalizedPath || "/", SITE_ORIGIN).toString();
     const ogImageUrl = new URL(ogImagePath, SITE_ORIGIN).toString();
 
@@ -1128,6 +1135,15 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     upsertMetaByProperty("og:title", title);
     upsertMetaByProperty("og:description", description);
     upsertMetaByProperty("og:image", ogImageUrl);
+    upsertMetaByProperty("og:image:alt", imageMeta.ogImageAlt);
+    upsertMetaByProperty("og:image:type", imageMeta.ogImageType);
+    if (imageMeta.ogImageWidth && imageMeta.ogImageHeight) {
+      upsertMetaByProperty("og:image:width", String(imageMeta.ogImageWidth));
+      upsertMetaByProperty("og:image:height", String(imageMeta.ogImageHeight));
+    } else {
+      removeMetaByProperty("og:image:width");
+      removeMetaByProperty("og:image:height");
+    }
 
     // Type-scoped properties, from the SAME helper the static renderer uses, so
     // the hydrated head and the served head cannot disagree. Remove before add:
@@ -1135,6 +1151,7 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     const { add: typeScopedAdd, remove: typeScopedRemove } = typeScopedMetaTags({
       ogType,
       datePublished,
+      dateModified,
     });
     typeScopedRemove.forEach(removeMetaByProperty);
     typeScopedAdd.forEach(([prop, content]) => upsertMetaByProperty(prop, content));
@@ -1145,6 +1162,7 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     upsertMetaByName("twitter:title", title);
     upsertMetaByName("twitter:description", description);
     upsertMetaByName("twitter:image", ogImageUrl);
+    upsertMetaByName("twitter:image:alt", imageMeta.ogImageAlt);
 
     // Robots: indexable by default; the catch-all 404 opts into noindex so
     // unknown paths are not indexed as thin homepage duplicates (soft-404).
@@ -1164,8 +1182,10 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
     overrideTitle,
     overrideDescription,
     overrideOgImage,
+    overrideOgImageAlt,
     overrideOgType,
     overrideDatePublished,
+    overrideDateModified,
     noindex,
   ]);
 };
@@ -1233,6 +1253,7 @@ const ResourcesPage = () => {
             <h3 id="gate-simulator-heading" className="mb-2 text-2xl font-bold text-white">See fail-closed execution in action</h3>
             <p className="mb-5 text-sm text-slate-300">Interactive example. Compare advisory and gated decisions and inspect the simulated receipt.</p>
             <GateSimulator />
+            <p className="mt-5 text-sm text-slate-300">Run the real engine locally: <Link to="/guides/regression-test-ai-agent-prompt-model-change" className="text-copper-400 underline underline-offset-4">Regression-test an agent after a prompt or model change</Link>.</p>
           </section>
         </div>
 
@@ -2001,7 +2022,7 @@ const ThoughtDetailPage = () => {
     <div className="pt-20">
       <ReadingProgressBar />
       <Section>
-        <ArticleLayout key={thought.slug} headings={headings} back={
+        <ArticleLayout key={thought.slug} headings={thought.slug === KNOWLEDGE_GRAPH_SLUG ? [{ id: 'measurement-context', label: 'What the measurements cover', level: 2 }, ...headings] : headings} back={
           <div className="mb-6">
             <Link to="/thoughts" className="text-copper-400 hover:text-copper-300 font-mono text-sm inline-flex items-center gap-1">
               ← Thoughts
@@ -2012,6 +2033,7 @@ const ThoughtDetailPage = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{thought.title}</h1>
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <span className={META_ACCENT}>{thought.category}</span>
+              <Link to="/about" rel="author" className={`${META} hover:text-copper-300`}>By Dan Mercede</Link>
               <span className={META}>{thought.date}</span>
               <span className={`${META} inline-flex items-center gap-1`}>
                 <Clock className="w-3.5 h-3.5 text-copper-400" aria-hidden="true" />
@@ -2019,6 +2041,7 @@ const ThoughtDetailPage = () => {
               </span>
             </div>
             <p className="text-slate-200 text-lg leading-relaxed mb-8 italic">{thought.preview}</p>
+            {thought.slug === KNOWLEDGE_GRAPH_SLUG && <KnowledgeGraphContext />}
             {blocks}
             <ShareStrip title={thought.title} path={`/thoughts/${thought.slug}`} />
             <RelatedContentShelf kind="essay" currentSlug={thought.slug} />
@@ -2032,7 +2055,11 @@ const ThoughtDetailPage = () => {
 const guideSearchText = (guide: Guide) =>
   [guide.title, guide.category, guide.description, guide.lead].join(' ').toLowerCase();
 
-const FEATURED_GUIDES = GUIDES.slice(0, 3);
+const FEATURED_GUIDES = PRIORITY_GUIDE_SLUGS.map((slug) => {
+  const guide = GUIDES.find((entry) => entry.slug === slug);
+  if (!guide) throw new Error(`Priority guide missing: ${slug}`);
+  return guide;
+});
 // Hero stat rail: the "Themes" tile counts the CURATED lenses (GUIDE_LENSES minus the
 // 'all' escape hatch), which is the axis the index actually navigates by (the filter
 // pills at "02 / Guide library" and the tiles at "03 / Recurring themes").
@@ -2104,7 +2131,7 @@ const GuidesPage = () => {
           <div>
             <h2 className="text-3xl font-normal tracking-tight text-white md:text-5xl md:font-light">Start with the signal.</h2>
           </div>
-          <p className="text-sm leading-relaxed text-slate-400">The newest field notes: the fastest route into the current body of work.</p>
+          <p className="text-sm leading-relaxed text-slate-400">Start with agent regression testing, Claude Code cache usage, or a webhook bridge you can inspect.</p>
         </div>
         <div className="grid gap-5 lg:grid-cols-3">
           {FEATURED_GUIDES.map((guide: Guide, index: number) => (
@@ -2272,7 +2299,9 @@ const GuideDetailPage = () => {
             <h1 className="text-3xl md:text-5xl/none font-bold text-white mb-4 leading-tight">{guide.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
               <span className={META_ACCENT}>{guide.category}</span>
+              <Link to="/about" rel="author" className={`${META} hover:text-copper-300`}>By Dan Mercede</Link>
               <span className={META}>{guide.date}</span>
+              {guide.modified && <span className={META}>Updated {guide.modified}</span>}
               {guide.reviewed && (
                 <span className={META}>Reviewed {guide.reviewed}</span>
               )}

@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ShieldAlert, PauseCircle, ArrowRight, RotateCcw } from 'lucide-react';
 
 type ScenarioId = 'failclosed' | 'proctor' | 'sandbox';
 type OutcomeMode = 'clean' | 'drift';
+
+export function simulatorSelection(search: string): { scenarioId: ScenarioId; mode: OutcomeMode } {
+  const value = new URLSearchParams(search).get('scenario') ?? '';
+  const match = /^(failclosed|proctor|sandbox)-(clean|drift)$/.exec(value);
+  return match
+    ? { scenarioId: match[1] as ScenarioId, mode: match[2] as OutcomeMode }
+    : { scenarioId: 'failclosed', mode: 'drift' };
+}
 
 interface GateScenario {
   id: ScenarioId;
@@ -97,55 +106,57 @@ const SCENARIOS: readonly GateScenario[] = [
     href: '/works/proctor/',
     tagline: 'Behavioral regression testing for AI agents',
     boundary: 'L3 · Contract & Drift Guard across releases',
-    advisoryOutcome: { clean: 'Rollout proceeds', drift: 'Refund regression can reach rollout' },
+    advisoryOutcome: { clean: 'Invoice passes the check', drift: 'Incorrect total can reach rollout' },
     modes: {
       clean: {
-        label: 'Prompt update within learned contract',
+        label: 'Invoice total agrees with line items',
         verdict: 'ALLOW',
         statusTone: 'allow',
-        inputLabel: 'Observed agent run vs. v4 contract',
+        inputLabel: 'Illustrative invoice contract check',
         inputLines: [
-          'candidate_model: "gpt-4.1-mini"',
-          'tool_sequence: ["lookup_account", "verify_policy"]',
-          'pii_egress_fields: 0',
-          'latency_p95_ms: 840',
+          'fixture: "inv-001"',
+          'line_item_totals: [100, 50]',
+          'reported_total: 150',
+          'invariant: "sum_line_items_eq_total"',
         ],
         checks: [
-          { rule: 'Tool-call invariant', result: 'PASS', detail: 'Matches required sequence before write' },
-          { rule: 'Boundary policy', result: 'PASS', detail: 'Zero unauthorized egress fields' },
-          { rule: 'Behavioral delta', result: 'PASS', detail: 'Within tolerance across 25 baseline runs' },
+          { rule: 'Required structure', result: 'PASS', detail: 'Invoice fields are present' },
+          { rule: 'Hard invariant', result: 'PASS', detail: '100 + 50 equals the reported 150' },
+          { rule: 'Result scope', result: 'PASS', detail: 'This illustration covers one fixture and invariant' },
         ],
         receipt: {
-          contract: 'agent-support-v4',
+          simulation: true,
+          fixture: 'inv-001',
           decision: 'ALLOW',
           drift_class: 'none',
           human_signoff_required: false,
         },
-        summary: 'No behavioral regression detected against the learned contract; rollout proceeds automatically.',
+        summary: 'The illustrated check passes. A production release still depends on the other required checks and its configured release gate.',
       },
       drift: {
-        label: 'Consequential tool order drift',
+        label: 'Candidate loses part of the invoice total',
         verdict: 'PAUSE_FOR_APPROVAL',
         statusTone: 'pause',
-        inputLabel: 'Observed agent run vs. v4 contract',
+        inputLabel: 'Illustrative invoice contract check',
         inputLines: [
-          'candidate_model: "model-upgrade-rc2"',
-          'tool_sequence: ["issue_refund", "lookup_account"]',
-          'contract_rule: "lookup_account MUST precede issue_refund"',
-          'severity: "consequential_mutation"',
+          'fixture: "inv-001"',
+          'line_item_totals: [100, 50]',
+          'reported_total: 100',
+          'invariant: "sum_line_items_eq_total"',
         ],
         checks: [
-          { rule: 'Tool-call invariant', result: 'FAIL', detail: 'Refund called before account verification' },
-          { rule: 'Flakiness filter', result: 'FLAG', detail: 'Reproduced in 4/5 replays (real drift)' },
-          { rule: 'Approval workflow', result: 'FLAG', detail: 'Suspended pending operator signoff' },
+          { rule: 'Required structure', result: 'PASS', detail: 'Valid shape does not establish a correct total' },
+          { rule: 'Hard invariant', result: 'FAIL', detail: 'Expected 150, received 100' },
+          { rule: 'Approval boundary', result: 'FLAG', detail: 'Illustrated hold for human review' },
         ],
         receipt: {
-          contract: 'agent-support-v4',
+          simulation: true,
+          fixture: 'inv-001',
           decision: 'PAUSE_FOR_APPROVAL',
-          drift_class: 'consequential_regression',
+          drift_class: 'real-regression',
           human_signoff_required: true,
         },
-        summary: 'Proctor separates real regressions from noise and freezes the rollout until a human approves or rejects.',
+        summary: 'The invariant catches the incorrect total and the illustrated workflow holds for review. Approval does not make a failing report pass; production blocking requires a release integration.',
       },
     },
   },
@@ -231,8 +242,28 @@ const VERDICT_META = {
 } as const;
 
 export const GateSimulator: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [scenarioId, setScenarioId] = useState<ScenarioId>('failclosed');
   const [mode, setMode] = useState<OutcomeMode>('drift');
+
+  // Keep the initial render identical to build-time HTML. Apply deep links after
+  // hydration, and also honor browser back/forward and in-app query changes.
+  useEffect(() => {
+    const selection = simulatorSelection(location.search);
+    setScenarioId(selection.scenarioId);
+    setMode(selection.mode);
+  }, [location.search]);
+
+  const choose = (nextScenario: ScenarioId, nextMode: OutcomeMode) => {
+    setScenarioId(nextScenario);
+    setMode(nextMode);
+    const search = new URLSearchParams(location.search);
+    search.set('scenario', `${nextScenario}-${nextMode}`);
+    const nextSearch = `?${search}`;
+    if (nextSearch === location.search && location.hash === '#gate-simulator') return;
+    navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
+  };
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
   const active = scenario.modes[mode];
@@ -251,7 +282,7 @@ export const GateSimulator: React.FC = () => {
                 key={item.id}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setScenarioId(item.id)}
+                onClick={() => choose(item.id, mode)}
                 className={`px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
                   selected
                     ? 'border-copper-500 bg-copper-500 text-slate-950 font-semibold'
@@ -267,7 +298,7 @@ export const GateSimulator: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Select run condition">
           <button
             type="button"
-            onClick={() => setMode('clean')}
+            onClick={() => choose(scenarioId, 'clean')}
             aria-pressed={mode === 'clean'}
             className={`px-3 py-1.5 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
               mode === 'clean'
@@ -279,7 +310,7 @@ export const GateSimulator: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setMode('drift')}
+            onClick={() => choose(scenarioId, 'drift')}
             aria-pressed={mode === 'drift'}
             className={`px-3 py-1.5 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
               mode === 'drift'
@@ -291,7 +322,7 @@ export const GateSimulator: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setMode(mode === 'drift' ? 'clean' : 'drift')}
+            onClick={() => choose(scenarioId, mode === 'drift' ? 'clean' : 'drift')}
             aria-label="Flip between clean run and failure mode"
             className="p-1.5 rounded-sm border border-white/10 text-slate-400 hover:text-copper-400 hover:border-copper-500/40 transition-colors"
             title="Toggle scenario"

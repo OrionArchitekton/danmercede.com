@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync, statSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GUIDES } from '../constants.guides.generated';
@@ -45,5 +46,57 @@ test('shipped GUIDES is ordered newest-first (non-increasing publish date)', () 
       `GUIDES out of order at index ${i}: "${dates[i - 1]}" precedes "${dates[i]}". ` +
         'Regenerate with `node scripts/compileGuides.mjs` and commit.',
     );
+  }
+});
+
+async function compileMetadata(extra: string) {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'guide-metadata-'));
+  try {
+    writeFileSync(path.join(dir, 'fixture.md'), [
+      '---', 'title: Fixture', 'slug: fixture', 'date: 2026-10-01', 'reviewed: 2026-11-17',
+      'category: Testing', 'description: Fixture.', 'lead: Fixture.', extra, '---', 'Body.',
+    ].join('\n'));
+    return (await compileGuides(dir))[0];
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('guide compiler keeps modified and reviewed distinct and requires real modification dates', async () => {
+  const guide = await compileMetadata('modified: 2026-11-10');
+  assert.equal(guide.date, '2026-10-01');
+  assert.equal(guide.modified, '2026-11-10');
+  assert.equal(guide.reviewed, '2026-11-17');
+  for (const value of ['', '2026-02-30', '2026-09-30', '2026-11-10T00:00:00Z', 'November 10, 2026']) {
+    await assert.rejects(compileMetadata(`modified: ${value}`), /fixture\.md:.*modified/);
+  }
+  await assert.rejects(compileMetadata('modified: 2026-11-10\nmodified: 2026-11-11'), /modified.*appears 2 times/);
+});
+
+test('guide compiler rejects missing alt text, unsafe or remote image URLs and ambiguous optional fields', async () => {
+  const guide = await compileMetadata('image: /assets/guides/testing/contract.webp\nimage_alt: A changed invoice fails its contract.');
+  assert.equal(guide.image, '/assets/guides/testing/contract.webp');
+  assert.equal(guide.imageAlt, 'A changed invoice fails its contract.');
+  for (const fields of [
+    'image: /assets/guides/testing/contract.webp',
+    'image_alt: Missing the asset.',
+    'image: https://example.com/figure.png\nimage_alt: External.',
+    'image: //example.com/figure.png\nimage_alt: External.',
+    'image: /assets/guides/../private.png\nimage_alt: Traversal.',
+    'image: /assets/guides/%2e%2e/private.png\nimage_alt: Encoded traversal.',
+    'image: /assets/guides/testing/contract.svg\nimage_alt: Unsupported social raster.',
+    'image: /assets/guides/testing/contract.webp\nimage_alt: ""',
+    'image : /assets/guides/testing/contract.webp\nimage_alt: Misspelled field.',
+    'image: /assets/guides/testing/contract.webp\nimage_alt: One\nimage_alt: Two',
+  ]) {
+    await assert.rejects(compileMetadata(fields), /fixture\.md:.*image/);
+  }
+});
+
+test('every declared guide article image exists in public and carries meaningful alt text', () => {
+  for (const guide of GUIDES.filter((g) => g.image)) {
+    const file = path.join(root, 'public', guide.image!);
+    assert.ok(statSync(file).size > 0, `${guide.slug}: image asset must be non-empty`);
+    assert.ok(guide.imageAlt && guide.imageAlt.trim().length > 10, `${guide.slug}: describe the article figure`);
   }
 });

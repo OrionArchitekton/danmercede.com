@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Copy, Share2, ArrowRight } from 'lucide-react';
-import { GUIDES, THOUGHTS, WORKS } from '../constants';
+import { GUIDES, THOUGHTS, WORKS, NEWSLETTER } from '../constants';
 import { SITE_ORIGIN } from '../seoMeta';
+import { guideJourney } from '../contentDiscovery';
+import { taggedShareUrl } from '../analytics/guideJourney';
 
 export function estimateReadingMinutes(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -44,8 +46,8 @@ export const ReadingProgressBar: React.FC = () => {
 export const ShareStrip: React.FC<{ title: string; path: string }> = ({ title, path }) => {
   const [copied, setCopied] = useState(false);
   const canonicalUrl = `${SITE_ORIGIN}${path}`;
-  const linkedInHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`;
-  const xHref = `https://x.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(canonicalUrl)}&via=danmercede`;
+  const linkedInHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(taggedShareUrl(path, 'linkedin'))}`;
+  const xHref = `https://x.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(taggedShareUrl(path, 'x'))}&via=danmercede`;
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(canonicalUrl).then(() => {
@@ -92,6 +94,39 @@ export const RelatedContentShelf: React.FC<{
   kind: 'guide' | 'essay' | 'diagram';
   currentSlug: string;
 }> = ({ kind, currentSlug }) => {
+  const journey = kind === 'guide' ? guideJourney(currentSlug) : null;
+  if (journey) {
+    return (
+      <aside aria-label="Continue reading" className="mt-14 border-t border-white/10 pt-10">
+        <h2 className="mb-5 text-xl font-bold text-white">Put this guide to work</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Link to={`/guides/${journey.read.slug}`} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+            <span className="mb-2 block font-mono text-xs text-copper-400">Related read</span>
+            <span className="block font-semibold text-white group-hover:text-copper-300">{journey.read.title}</span>
+            <span className="mt-3 inline-flex items-center gap-1 font-mono text-xs text-slate-400">Read guide <ArrowRight className="size-3.5" aria-hidden="true" /></span>
+          </Link>
+          {journey.example ? (
+            <a href={journey.example.href} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+              <span className="mb-2 block font-mono text-xs text-copper-400">Try the example</span>
+              <span className="block font-semibold text-white group-hover:text-copper-300">{journey.example.title}</span>
+              <span className="mt-2 block text-sm leading-relaxed text-slate-300">{journey.example.description}</span>
+            </a>
+          ) : journey.work ? (
+            <a href={journey.work.link || journey.work.repo} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+              <span className="mb-2 block font-mono text-xs text-copper-400">Related project</span>
+              <span className="block font-semibold text-white group-hover:text-copper-300">{journey.work.title}</span>
+              <span className="mt-2 block text-sm text-slate-300">Read the setup, inspect the source and check its limits.</span>
+            </a>
+          ) : null}
+        </div>
+        {journey.example && journey.work && <p className="mt-4 text-sm text-slate-300">Source and setup: <a href={journey.work.link || journey.work.repo} className="text-copper-400 underline underline-offset-4">{journey.work.title}</a>.</p>}
+        <p className="mt-6 text-sm leading-relaxed text-slate-400">
+          More field notes in <a href={NEWSLETTER.href} className="text-copper-400 underline underline-offset-4">Fail-Closed Notes</a> on LinkedIn.
+          {' '}For a question about applying this work, <Link to="/connect" className="text-slate-300 underline underline-offset-4 hover:text-copper-300">contact Dan</Link>.
+        </p>
+      </aside>
+    );
+  }
   const nextGuides = GUIDES.filter((g) => !(kind === 'guide' && g.slug === currentSlug)).slice(0, 2);
   const nextEssay = THOUGHTS.find((t) => !(kind === 'essay' && t.slug === currentSlug));
   const featuredWork = WORKS.find((w) => w.slug === (kind === 'guide' ? 'failclosed' : 'proctor')) ?? WORKS[0];
