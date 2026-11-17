@@ -71,7 +71,7 @@ const GoogleAnalytics = () => {
     if (!gaConfig || !pathname.startsWith('/guides/')) return;
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
-      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      const anchor = event.target instanceof Element ? event.target.closest('a[data-guide-next-step][href]') : null;
       if (!anchor) return;
       const step = guideNextStep(pathname, anchor.getAttribute('href') ?? '');
       if (step) trackEvent(window, 'guide_next_step', {

@@ -263,7 +263,7 @@ Interpretation rules:
 - `contact` means a contact-path click, not an inquiry sent.
 - `example` means an example-link click, not a successful local execution.
 - `proof` means an illustrative-demo link click, not a completed test or live enforcement.
-- The event covers instrumented next-step links; it is not a count of every inline article link.
+- The event covers the marked links in “Put this guide to work.” Global navigation, footer and inline article links are outside that measurement.
 
 Show event counts and distinct sessions separately. If reporting a continuation rate, use distinct eligible landing sessions with at least one qualifying next-step event divided by eligible landing sessions. Do not divide repeated click events by sessions and label the result a conversion rate. Confirm subscriptions, inquiries, installs, or paid work from their own systems before reporting them as outcomes.
 

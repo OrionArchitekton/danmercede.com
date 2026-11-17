@@ -100,29 +100,29 @@ export const RelatedContentShelf: React.FC<{
       <aside aria-label="Continue reading" className="mt-14 border-t border-white/10 pt-10">
         <h2 className="mb-5 text-xl font-bold text-white">Put this guide to work</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Link to={`/guides/${journey.read.slug}`} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+          <Link data-guide-next-step to={`/guides/${journey.read.slug}`} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
             <span className="mb-2 block font-mono text-xs text-copper-400">Related read</span>
             <span className="block font-semibold text-white group-hover:text-copper-300">{journey.read.title}</span>
             <span className="mt-3 inline-flex items-center gap-1 font-mono text-xs text-slate-400">Read guide <ArrowRight className="size-3.5" aria-hidden="true" /></span>
           </Link>
           {journey.example ? (
-            <a href={journey.example.href} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+            <a data-guide-next-step href={journey.example.href} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
               <span className="mb-2 block font-mono text-xs text-copper-400">Try the example</span>
               <span className="block font-semibold text-white group-hover:text-copper-300">{journey.example.title}</span>
               <span className="mt-2 block text-sm leading-relaxed text-slate-300">{journey.example.description}</span>
             </a>
           ) : journey.work ? (
-            <a href={journey.work.link || journey.work.repo} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
+            <a data-guide-next-step href={journey.work.link || journey.work.repo} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-5 hover:border-copper-500/40">
               <span className="mb-2 block font-mono text-xs text-copper-400">Related project</span>
               <span className="block font-semibold text-white group-hover:text-copper-300">{journey.work.title}</span>
               <span className="mt-2 block text-sm text-slate-300">Read the setup, inspect the source and check its limits.</span>
             </a>
           ) : null}
         </div>
-        {journey.example && journey.work && <p className="mt-4 text-sm text-slate-300">Source and setup: <a href={journey.work.link || journey.work.repo} className="text-copper-400 underline underline-offset-4">{journey.work.title}</a>.</p>}
+        {journey.example && journey.work && <p className="mt-4 text-sm text-slate-300">Source and setup: <a data-guide-next-step href={journey.work.link || journey.work.repo} className="text-copper-400 underline underline-offset-4">{journey.work.title}</a>.</p>}
         <p className="mt-6 text-sm leading-relaxed text-slate-400">
-          More field notes in <a href={NEWSLETTER.href} className="text-copper-400 underline underline-offset-4">Fail-Closed Notes</a> on LinkedIn.
-          {' '}For a question about applying this work, <Link to="/connect" className="text-slate-300 underline underline-offset-4 hover:text-copper-300">contact Dan</Link>.
+          More field notes in <a data-guide-next-step href={NEWSLETTER.href} className="text-copper-400 underline underline-offset-4">Fail-Closed Notes</a> on LinkedIn.
+          {' '}For a question about applying this work, <Link data-guide-next-step to="/connect" className="text-slate-300 underline underline-offset-4 hover:text-copper-300">contact Dan</Link>.
         </p>
       </aside>
     );

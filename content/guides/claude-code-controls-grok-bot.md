@@ -113,8 +113,8 @@ Ensure `~/.local/bin` is on your PATH. `GROKBOT_WEBHOOK_URL` and `GROKBOT_WEBHOO
 From then on, handing off work is one command:
 
 ```bash
-grokbot-send "check whether https://example.com returns 200"        # fire and forget
-grokbot-send --wait "list the 3 newest posts on <forum> with links"  # block for the result
+doppler run -- grokbot-send "check whether https://example.com returns 200"
+doppler run -- grokbot-send --wait "list the 3 newest posts on <forum> with links"
 grokbot-send --collect gb-20260927-231500-ab12cd34                   # pick up a late result
 ```
 

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { GUIDES, NEWSLETTER } from '../constants';
 import { GUIDE_JOURNEYS, GROKBOT_EXAMPLE_URL, KNOWLEDGE_GRAPH_CONTEXT, PRIORITY_GUIDE_SLUGS, guideJourney } from '../contentDiscovery';
 import { guideNextStep, taggedShareUrl } from '../analytics/guideJourney';
@@ -77,7 +78,7 @@ test('the downloadable invoice example accepts harmless wording and blocks a sam
   assert.equal(checkInvoice({ ...fixtures.baseline, totalCents: NaN }).passed, false);
   const script = new URL('../public/examples/agent-regression/invoice-contract.mjs', import.meta.url);
   for (const [fixture, code] of [['baseline', 0], ['regressed', 1], ['unknown', 2]] as const) {
-    const run = spawnSync(process.execPath, [script.pathname, '--check', fixture], { encoding: 'utf8' });
+    const run = spawnSync(process.execPath, [fileURLToPath(script), '--check', fixture], { encoding: 'utf8' });
     assert.equal(run.status, code, `${fixture}: ${run.stdout} ${run.stderr}`);
   }
 });

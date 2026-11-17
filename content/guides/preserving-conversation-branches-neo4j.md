@@ -75,7 +75,7 @@ The generated example uses isolated labels:
 
 Message IDs are scoped to their conversation. The selected leaf is a property, so changing the selection does not accumulate competing “current” relationships. The parent edges point backward toward the root; reading order is obtained by reversing the resulting ancestry path.
 
-Generate the example without contacting a database:
+Restore `selected_leaf` to `u3` in `fixture.json` to reproduce the selected transcript shown below. Then generate the Cypher locally.
 
 ```sh
 node branches.mjs --cypher > branch-demo.cypher
