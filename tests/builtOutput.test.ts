@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { imageSizeFromFile } from 'image-size/fromFile';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const buildDir = path.join(root, 'build');
@@ -121,4 +122,20 @@ test('the built revision marker is public JSON with no-store caching and no secr
   const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
   const headers = config.headers.find((rule) => rule.source === '/deployment-revision.json')?.headers;
   assert.ok(headers?.some((h) => h.key === 'Cache-Control' && h.value === 'no-store'));
+});
+
+test('built styles reserve the intrinsic space of guide and essay figures before scroll restoration', async () => {
+  const assets = path.join(buildDir, 'assets');
+  const css = fs.readdirSync(assets).filter((file) => file.endsWith('.css'))
+    .map((file) => fs.readFileSync(path.join(assets, file), 'utf8')).join('\n');
+  for (const src of [
+    '/assets/guides/self-hosting/two-plane-architecture.webp',
+    '/assets/thoughts/2026-10-05-the-assistant-was-only-supposed-to-read/reach.png',
+  ]) {
+    const { width, height } = await imageSizeFromFile(path.join(buildDir, src));
+    const start = css.indexOf(`img[src="${src}"]`);
+    assert.ok(start >= 0, `the built stylesheet must size ${src}`);
+    const rule = css.slice(start, css.indexOf('}', start)).replace(/\s/g, '');
+    assert.ok(rule.includes(`aspect-ratio:auto${width}/${height}`), `preserve the asset's actual ratio for ${src}`);
+  }
 });
