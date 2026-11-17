@@ -197,7 +197,35 @@ function renderTable(rows: string[], key: string): React.ReactNode {
   );
 }
 
-// ---- block parser ----
+const CodeBlock: React.FC<{ lang: string; code: string }> = ({ lang, code }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(code).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    }).catch(() => {});
+  };
+
+  return (
+    <div className="my-6 overflow-hidden rounded-lg border border-white/10 bg-slate-950/90">
+      <div className="flex items-center justify-between border-b border-white/10 bg-navy-deep/60 px-4 py-2">
+        <span className="font-mono text-xs text-slate-400">{lang || 'text'}</span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="font-mono text-xs text-slate-400 hover:text-copper-400 transition-colors"
+          aria-label="Copy code block"
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+        <code className={`font-mono text-slate-300${lang ? ` language-${lang}` : ''}`}>{code}</code>
+      </pre>
+    </div>
+  );
+};
 
 function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
   const out: React.ReactNode[] = [];
@@ -225,14 +253,7 @@ function parseBlocks(lines: string[], keyPrefix: Key = 'b'): React.ReactNode[] {
         i += 1;
       }
       i += 1; // closing fence
-      out.push(
-        <pre
-          key={nextKey()}
-          className="my-5 overflow-x-auto rounded-lg border border-white/10 bg-slate-950/80 p-4 text-sm leading-relaxed"
-        >
-          <code className={`font-mono text-slate-300${lang ? ` language-${lang}` : ''}`}>{body.join('\n')}</code>
-        </pre>,
-      );
+      out.push(<CodeBlock key={nextKey()} lang={lang} code={body.join('\n')} />);
       continue;
     }
 

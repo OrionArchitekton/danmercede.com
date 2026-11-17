@@ -12,6 +12,8 @@ import {
   type Link,
 } from './constellationModel';
 
+const POINTER_RADIUS = 190;
+
 const ConstellationBackground: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -23,6 +25,7 @@ const ConstellationBackground: React.FC = () => {
     const svg = d3.select(svgRef.current);
     // Mutable: the resize handler updates it and every frame reads it.
     const bounds: Bounds = { width: window.innerWidth, height: window.innerHeight };
+    let pointer: { x: number; y: number } | null = null;
 
     svg.attr('width', bounds.width).attr('height', bounds.height);
 
@@ -46,14 +49,38 @@ const ConstellationBackground: React.FC = () => {
       linkLayer
         .selectAll<SVGLineElement, Link>('line')
         .data(computeLinks(nodes, CONNECTION_DISTANCE))
-        .join(enter => enter.append('line').attr('stroke', '#B87333').attr('stroke-width', 0.5)) // Copper
+        .join(enter => enter.append('line').attr('stroke', '#E68249').attr('stroke-width', 0.65))
         .attr('x1', d => d.x1)
         .attr('y1', d => d.y1)
         .attr('x2', d => d.x2)
         .attr('y2', d => d.y2)
-        .attr('opacity', d => d.strength * 0.3); // Subtle
+        .attr('stroke', d => {
+          if (!pointer) return '#E68249';
+          const mx = (d.x1 + d.x2) * 0.5;
+          const my = (d.y1 + d.y2) * 0.5;
+          const dist = Math.hypot(mx - pointer.x, my - pointer.y);
+          return dist < POINTER_RADIUS ? '#FFC08B' : '#E68249';
+        })
+        .attr('opacity', d => {
+          if (!pointer) return d.strength * 0.34;
+          const mx = (d.x1 + d.x2) * 0.5;
+          const my = (d.y1 + d.y2) * 0.5;
+          const dist = Math.hypot(mx - pointer.x, my - pointer.y);
+          const boost = dist < POINTER_RADIUS ? (1 - dist / POINTER_RADIUS) * 0.35 : 0;
+          return Math.min(0.68, d.strength * 0.34 + boost);
+        });
 
-      circles.attr('cx', d => d.x).attr('cy', d => d.y);
+      circles
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y)
+        .attr('fill', d => {
+          if (!pointer) return '#94a3b8';
+          return Math.hypot(d.x - pointer.x, d.y - pointer.y) < POINTER_RADIUS ? '#F0975A' : '#94a3b8';
+        })
+        .attr('opacity', d => {
+          if (!pointer) return 0.6;
+          return Math.hypot(d.x - pointer.x, d.y - pointer.y) < POINTER_RADIUS ? 0.92 : 0.55;
+        });
     };
 
     // Honor reduced-motion: draw a single static frame, do not loop.
@@ -69,10 +96,24 @@ const ConstellationBackground: React.FC = () => {
       svg.attr('width', bounds.width).attr('height', bounds.height);
     };
 
+    const handlePointerMove = (e: PointerEvent) => {
+      pointer = { x: e.clientX, y: e.clientY };
+    };
+
+    const handlePointerLeave = () => {
+      pointer = null;
+    };
+
     window.addEventListener('resize', handleResize);
+    if (!prefersReducedMotion) {
+      window.addEventListener('pointermove', handlePointerMove, { passive: true });
+      window.addEventListener('pointerleave', handlePointerLeave);
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerleave', handlePointerLeave);
       stopLoop();
       linkLayer.remove();
       nodeLayer.remove();
@@ -83,7 +124,7 @@ const ConstellationBackground: React.FC = () => {
     <svg
       ref={svgRef}
       aria-hidden="true"
-      className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-40"
+      className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-55"
       style={{ background: 'transparent' }} // Let body background show through
     />
   );

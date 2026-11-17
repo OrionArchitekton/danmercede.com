@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight, ExternalLink, Play, FileCode2 } from 'lucide-react';
 import { Work } from '../types';
 
 // One /works card, shared by the "Open Source & Tooling" and "Applied Agent Projects"
@@ -28,45 +28,67 @@ const LinkIcon = ({ href }: { href: string }) =>
     <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
   );
 
-export const WorkCard = ({ work }: { work: Work }) => (
-  <div className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group flex flex-col">
-    <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-copper-400 transition-colors">
-      {work.title}
-    </h3>
-    <p className="font-mono text-xs text-copper-400 mb-3">{work.category}</p>
-    <p className="text-slate-400 text-sm leading-relaxed grow">{work.description}</p>
-    <div className="mt-5 flex flex-wrap items-center gap-4">
-      <a
-        href={work.link || work.repo}
-        {...linkTargetProps(work.link || work.repo)}
-        aria-label={`${work.link && work.link !== work.repo ? 'View project' : 'Repository'}: ${work.title}`}
-        className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300"
-      >
-        {work.link && work.link !== work.repo ? 'View project' : 'Repository'} <LinkIcon href={work.link || work.repo} />
-      </a>
-      {work.gist && (
+export const WorkCard = ({ work }: { work: Work }) => {
+  const primaryHref = work.link || work.repo;
+  const hasProjectPage = Boolean(work.link && work.link !== work.repo);
+
+  return (
+    <div className="relative rounded-lg border border-white/10 bg-navy-deep/65 p-6 hover:border-copper-500/45 hover:bg-navy-deep/90 transition-all duration-200 group flex flex-col">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h3 className="text-lg font-semibold text-white group-hover:text-copper-300 transition-colors leading-snug">
+          {work.title}
+        </h3>
+        {work.license && (
+          <span className="text-xs font-mono text-slate-400 shrink-0">{work.license}</span>
+        )}
+      </div>
+
+      <p className="font-mono text-xs text-copper-400 mb-3">{work.category}</p>
+      <p className="text-slate-300 text-sm leading-relaxed grow">{work.description}</p>
+
+      <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center gap-4">
         <a
-          href={work.gist}
-          {...linkTargetProps(work.gist)}
-          aria-label={`Code sample for ${work.title}`}
-          className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
+          href={primaryHref}
+          {...linkTargetProps(primaryHref)}
+          aria-label={`${hasProjectPage ? 'View project' : 'Repository'}: ${work.title}`}
+          className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300 transition-colors"
         >
-          Sample <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+          {hasProjectPage ? 'View project' : 'Repository'}
+          <LinkIcon href={primaryHref} />
         </a>
-      )}
-      {work.video && (
-        <a
-          href={work.video}
-          {...linkTargetProps(work.video)}
-          aria-label={`Demo video for ${work.title}`}
-          className="inline-flex items-center text-sm font-medium text-slate-400 hover:text-copper-400"
-        >
-          Watch demo <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
-        </a>
-      )}
-      {work.license && (
-        <span className="text-xs font-mono text-slate-400 uppercase tracking-wider ml-auto">{work.license}</span>
-      )}
+        {hasProjectPage && work.repo && (
+          <a
+            href={work.repo}
+            {...linkTargetProps(work.repo)}
+            aria-label={`Source repository for ${work.title}`}
+            className="inline-flex items-center text-xs font-mono text-slate-400 hover:text-white transition-colors"
+          >
+            Repo <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
+          </a>
+        )}
+        {work.gist && (
+          <a
+            href={work.gist}
+            {...linkTargetProps(work.gist)}
+            aria-label={`Code sample for ${work.title}`}
+            className="inline-flex items-center text-xs font-mono text-slate-400 hover:text-copper-400 transition-colors"
+          >
+            <FileCode2 className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+            Sample
+          </a>
+        )}
+        {work.video && (
+          <a
+            href={work.video}
+            {...linkTargetProps(work.video)}
+            aria-label={`Demo video for ${work.title}`}
+            className="inline-flex items-center text-xs font-mono text-slate-400 hover:text-copper-400 transition-colors"
+          >
+            <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+            Watch demo
+          </a>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
