@@ -50,21 +50,16 @@ test('when GA4 runs with analytics storage granted, the policy discloses it and 
   }
 });
 
-test('every mounted analytics package is named in the policy', () => {
+test('the policy names the Vercel analytics packages the site imports', () => {
   const component = read('components/Analytics.tsx');
   const text = policyText();
-  const packages: [RegExp, RegExp, string][] = [
-    [/from '@vercel\/analytics\/react'/, /Vercel Web Analytics/, 'Vercel Web Analytics'],
-    [/from '@vercel\/speed-insights\/react'/, /Vercel Speed Insights/, 'Vercel Speed Insights'],
+  const packages: [RegExp, string][] = [
+    [/from\s+['"]@vercel\/analytics\/react['"]/, 'Vercel Web Analytics'],
+    [/from\s+['"]@vercel\/speed-insights\/react['"]/, 'Vercel Speed Insights'],
   ];
-  let mounted = 0;
-  for (const [importRe, nameRe, name] of packages) {
-    if (importRe.test(component)) {
-      mounted++;
-      assert.match(text, nameRe, `${name} is mounted in components/Analytics.tsx but not disclosed`);
-    }
+  for (const [importRe, name] of packages) {
+    assert.equal(text.includes(name), importRe.test(component), `${name} disclosure must match the integration`);
   }
-  assert.ok(mounted > 0, 'expected to find at least one mounted analytics package (positive control)');
 });
 
 test('the /privacy page renders the tested policy, not a separate copy', () => {

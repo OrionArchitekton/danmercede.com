@@ -146,12 +146,12 @@ test('proof checks preserve command whitespace and name repeated source links', 
   const sectionEnd = appSource.indexOf('const DownloadCard');
   assert.ok(sectionStart >= 0 && sectionEnd > sectionStart, 'EvidenceSection source boundary must exist');
   const evidenceSource = appSource.slice(sectionStart, sectionEnd);
-  assert.ok(
-    evidenceSource.includes(
-      'className="text-[11px] font-mono text-slate-400 min-w-0 max-w-full whitespace-pre-wrap break-words"'
-    ),
-    'proof verifier code must preserve newlines and wrap long tokens without overflowing'
-  );
+  const verifierCode = evidenceSource.match(/<code className="([^"]+)">\s*\{c\.verify\}\s*<\/code>/);
+  assert.ok(verifierCode, 'expected a code element for the verifier command');
+  const codeClasses = verifierCode[1].split(/\s+/);
+  for (const utility of ['min-w-0', 'max-w-full', 'whitespace-pre-wrap', 'break-words']) {
+    assert.ok(codeClasses.includes(utility), `proof verifier code requires ${utility}`);
+  }
   assert.ok(
     !evidenceSource.includes('break-all'),
     'proof verifier code must not split every token with break-all'

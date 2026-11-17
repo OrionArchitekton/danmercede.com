@@ -1463,11 +1463,11 @@ export const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   },
   {
     heading: '3. Analytics and Cookies',
-    body: 'This site uses Google Analytics 4 to count page views and these interactions: clicking the email link and clicking the LinkedIn link. If a page fails to start cleanly in your browser, it also sends a technical error report that carries only the page address. Google Analytics sets first-party cookies to tell visits apart. IP anonymization is on, and advertising storage, ad personalization, and ad user data are turned off. Page views record the page address and campaign tags only; any other part of the query string of a link is removed before it is sent. The site also uses Vercel Web Analytics (page views, referrers, and coarse location and device type) and Vercel Speed Insights (page-load performance). We do not use advertising cookies and do not sell or share analytics data for advertising.',
+    body: 'This site uses Google Analytics 4 to count page views and these interactions: clicking the email link and clicking the LinkedIn link. If a page fails to start cleanly in your browser, it also sends a technical error report that carries only the page address. Google Analytics sets first-party cookies to tell visits apart. IP anonymization is on, and advertising storage, ad personalization, and ad user data are turned off. Page views record the page address and campaign tags only; any other part of the query string of a link is removed before it is sent. We do not use advertising cookies and do not sell or share analytics data for advertising.',
   },
   {
     heading: '4. Your Choices',
-    body: 'Installing the Google Analytics opt-out add-on (tools.google.com/dlpage/gaoptout) stops Google Analytics. Blocking or deleting cookies in your browser only keeps Google Analytics from recognizing repeat visits; page views are still counted. These choices do not stop Vercel Web Analytics or Vercel Speed Insights, which do not rely on those cookies; a browser extension that blocks analytics scripts stops all three. Blocking analytics does not change how the site works. Questions: contact@danmercede.com.',
+    body: 'Installing the Google Analytics opt-out add-on (tools.google.com/dlpage/gaoptout) stops Google Analytics. Blocking or deleting cookies in your browser only keeps Google Analytics from recognizing repeat visits; page views are still counted. Blocking analytics does not change how the site works. Questions: contact@danmercede.com.',
   },
   {
     heading: '5. Embedded Videos',
