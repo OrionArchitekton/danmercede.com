@@ -1,0 +1,93 @@
+{
+  "reviewed": "2026-11-17",
+  "scope": "Synthetic keyless fixtures. No paid-model requests, live UiPath tenant calls, production deployments, or merge enforcement verified.",
+  "source": {
+    "repository": "https://github.com/OrionArchitekton/proctor",
+    "commit": "ed7b11a156cacfc23b646eeb370fab376cbe6d66",
+    "application_source_modified": false
+  },
+  "environment": {
+    "node": "24.22.1",
+    "platform": "linux",
+    "upstream_pnpm_pin": "9.12.0",
+    "available_pnpm": "11.25.0"
+  },
+  "installation_note": "Frozen dependencies were downloaded. The environment pnpm wrapper returned ERR_PNPM_IGNORED_BUILDS for disabled lifecycle scripts. No script approvals were granted. The installed binaries below ran successfully; the wrapper pnpm commands are not recorded as successful.",
+  "proctor_runs": [
+    {
+      "command": "PROCTOR_FAKE_LLM=1 PROCTOR_GATEWAY=local node --import tsx scripts/seed-demo.ts",
+      "exit_code": 0,
+      "fixtures": 5,
+      "contract_fields": 5,
+      "contract_field_kind": "structural",
+      "invariants": 4,
+      "good": {
+        "passed": 45,
+        "total": 45,
+        "allPassed": true
+      },
+      "degraded": {
+        "passed": 40,
+        "total": 45,
+        "allPassed": false
+      },
+      "failed_invariant": "sum_line_items_eq_total",
+      "verdict": "real-regression",
+      "limitations": [
+        "Narrated script, not durable runtime.",
+        "Local approval task record, not a remote UiPath task.",
+        "Expected regression does not make demo exit nonzero."
+      ]
+    },
+    {
+      "command": "node_modules/.bin/vitest run -c vitest.config.ts",
+      "exit_code": 0,
+      "test_files_passed": 11,
+      "tests_passed": 77
+    },
+    {
+      "command": "node_modules/.bin/vitest run -c vitest.integration.config.ts",
+      "exit_code": 0,
+      "test_files_passed": 1,
+      "tests_passed": 1,
+      "verified": "Real Workflow DevKit hook reached and resumed with a decision.",
+      "not_verified": [
+        "Process crash or restart recovery.",
+        "Multi-day review duration.",
+        "Authenticated reviewer identity."
+      ]
+    }
+  ],
+  "standalone_fixture": {
+    "file": "invoice-contract.mjs",
+    "sha256": "2e2f1d685c16ce461d85b511da5111085e2bc80a8e964489c4299e379cebf73b",
+    "implementation": "Independent educational fixture; not the Proctor engine.",
+    "runs": [
+      {
+        "command": "node invoice-contract.mjs",
+        "exit_code": 0,
+        "output": "PASS baseline\nPASS formatting\nBLOCK regressed: sum_line_items_eq_total: expected 15000, received 10000\n3 expected decisions reproduced. No model or production tool was called."
+      },
+      {
+        "command": "node invoice-contract.mjs --check baseline",
+        "exit_code": 0,
+        "output": "{\n  \"fixture\": \"baseline\",\n  \"passed\": true,\n  \"errors\": []\n}"
+      },
+      {
+        "command": "node invoice-contract.mjs --check formatting",
+        "exit_code": 0,
+        "output": "{\n  \"fixture\": \"formatting\",\n  \"passed\": true,\n  \"errors\": []\n}"
+      },
+      {
+        "command": "node invoice-contract.mjs --check regressed",
+        "exit_code": 1,
+        "output": "{\n  \"fixture\": \"regressed\",\n  \"passed\": false,\n  \"errors\": [\n    \"sum_line_items_eq_total: expected 15000, received 10000\"\n  ]\n}"
+      },
+      {
+        "command": "node invoice-contract.mjs --check missing",
+        "exit_code": 2,
+        "output": "Usage: node invoice-contract.mjs [--check baseline|formatting|regressed]"
+      }
+    ]
+  }
+}

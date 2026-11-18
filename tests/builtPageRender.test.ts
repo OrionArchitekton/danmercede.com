@@ -476,6 +476,20 @@ test('Proof hosts the simulator after checkable evidence with a receipt in the i
   assert.ok(document.querySelector('#runnable-proof a[href="#gate-simulator"]'));
 });
 
+test('guide continuation markers cover the guide shelf and exclude global navigation', async () => {
+  const render = await loadRender();
+  const guide = new JSDOM(render('/guides/regression-test-ai-agent-prompt-model-change')).window.document;
+  const shelf = guide.querySelector('aside[aria-label="Continue reading"]');
+  assert.ok(shelf);
+  const nextSteps = [...guide.querySelectorAll('a[data-guide-next-step]')];
+  assert.ok(nextSteps.length > 0);
+  assert.deepEqual(nextSteps, [...shelf.querySelectorAll('a[href]')]);
+  assert.ok(guide.querySelector('nav a[href="/connect"]:not([data-guide-next-step])'));
+  assert.ok(guide.querySelector('footer a[href*="/newsletters/"]:not([data-guide-next-step])'));
+  const essay = new JSDOM(render('/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking')).window.document;
+  assert.equal(essay.querySelectorAll('[data-guide-next-step]').length, 0);
+});
+
 test('the rendered navigation marks the current page or its parent section', async () => {
   const render = await loadRender();
   for (const [url, href, current] of [

@@ -1,0 +1,193 @@
+{
+  "tested": "built local assets via Playwright request routing; no live deployment",
+  "viewports": [
+    1440,
+    390
+  ],
+  "records": [
+    {
+      "width": 1440,
+      "route": "/guides/regression-test-ai-agent-prompt-model-change",
+      "title": "How to regression-test an AI agent after a prompt or model change | Dan Mercede",
+      "h1": "How to regression-test an AI agent after a prompt or model change",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/regression-test-ai-agent-prompt-model-change",
+      "image": "https://www.danmercede.com/assets/guides/agent-regression/contract-regression.webp",
+      "imageAlt": "Illustrated invoice regression: line items 100 and 50 require a total of 150; a candidate reporting 100 fails the contract and is held for review.",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/guides/where-claude-code-usage-goes",
+      "title": "Claude Code Cache Usage: What 471 Sessions Reveal About Token Cost | Dan Mercede",
+      "h1": "Claude Code Cache Usage: What 471 Sessions Reveal About Token Cost",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/where-claude-code-usage-goes",
+      "image": "https://www.danmercede.com/assets/guides/claude-code-usage/token-vs-cost-share.webp",
+      "imageAlt": "One week of Claude Code usage: cache reads are 97 percent of tokens but 46 percent of API list-price cost, while cache writes are about 3 percent of tokens and 38 percent of cost.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/guides/claude-code-controls-grok-bot",
+      "title": "How to Connect Claude Code to Grok Bot with a Webhook | Dan Mercede",
+      "h1": "How to Connect Claude Code to Grok Bot with a Webhook",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/claude-code-controls-grok-bot",
+      "image": "https://www.danmercede.com/assets/guides/claude-code-grok-bot/four-lanes.webp",
+      "imageAlt": "Claude Code sends a request ID through a Grok Bot webhook, collects an outbox result, and keeps configuration and cached-chat reading separate.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/guides/preserving-conversation-branches-neo4j",
+      "title": "Preserving Conversation Branches in Neo4j: A Runnable Example | Dan Mercede",
+      "h1": "Preserving Conversation Branches in Neo4j: A Runnable Example",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/preserving-conversation-branches-neo4j",
+      "image": "https://www.danmercede.com/assets/guides/conversation-branches/preserve-branches.webp",
+      "imageAlt": "Five synthetic messages fork after u1: one branch is u1, a1, u2; the selected branch is u1, a2, u3. Four parent links preserve both histories.",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/guides/the-fail-closed-harness",
+      "title": "The Fail-Closed Harness: Gate Agent Actions and Code Merges | Dan Mercede",
+      "h1": "The Fail-Closed Harness: Gate Agent Actions and Code Merges",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/the-fail-closed-harness",
+      "image": "https://www.danmercede.com/assets/guides/fail-closed-harness/three-leg-refusal.webp",
+      "imageAlt": "Untrusted input, sensitive access and consequential action converge on supervision or reliable validation in an agent harness.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+      "title": "The Knowledge Graph My Agents Stopped Asking | Dan Mercede",
+      "h1": "The Knowledge Graph My Agents Stopped Asking",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+      "image": "https://www.danmercede.com/assets/guides/conversation-branches/preserve-branches.webp",
+      "imageAlt": "Synthetic conversation graph retaining two branches and highlighting the selected ancestry path u1, a2, u3.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 1440,
+      "route": "/guides",
+      "title": "Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede",
+      "h1": "Build agents that can act and prove what happened.",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides",
+      "image": "https://www.danmercede.com/dan-mercede-og-card.jpg",
+      "imageAlt": "Dan Mercede. Operator and systems builder. I turn AI experiments into workflows teams can actually run.",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides/regression-test-ai-agent-prompt-model-change",
+      "title": "How to regression-test an AI agent after a prompt or model change | Dan Mercede",
+      "h1": "How to regression-test an AI agent after a prompt or model change",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/regression-test-ai-agent-prompt-model-change",
+      "image": "https://www.danmercede.com/assets/guides/agent-regression/contract-regression.webp",
+      "imageAlt": "Illustrated invoice regression: line items 100 and 50 require a total of 150; a candidate reporting 100 fails the contract and is held for review.",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides/where-claude-code-usage-goes",
+      "title": "Claude Code Cache Usage: What 471 Sessions Reveal About Token Cost | Dan Mercede",
+      "h1": "Claude Code Cache Usage: What 471 Sessions Reveal About Token Cost",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/where-claude-code-usage-goes",
+      "image": "https://www.danmercede.com/assets/guides/claude-code-usage/token-vs-cost-share.webp",
+      "imageAlt": "One week of Claude Code usage: cache reads are 97 percent of tokens but 46 percent of API list-price cost, while cache writes are about 3 percent of tokens and 38 percent of cost.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides/claude-code-controls-grok-bot",
+      "title": "How to Connect Claude Code to Grok Bot with a Webhook | Dan Mercede",
+      "h1": "How to Connect Claude Code to Grok Bot with a Webhook",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/claude-code-controls-grok-bot",
+      "image": "https://www.danmercede.com/assets/guides/claude-code-grok-bot/four-lanes.webp",
+      "imageAlt": "Claude Code sends a request ID through a Grok Bot webhook, collects an outbox result, and keeps configuration and cached-chat reading separate.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides/preserving-conversation-branches-neo4j",
+      "title": "Preserving Conversation Branches in Neo4j: A Runnable Example | Dan Mercede",
+      "h1": "Preserving Conversation Branches in Neo4j: A Runnable Example",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/preserving-conversation-branches-neo4j",
+      "image": "https://www.danmercede.com/assets/guides/conversation-branches/preserve-branches.webp",
+      "imageAlt": "Five synthetic messages fork after u1: one branch is u1, a1, u2; the selected branch is u1, a2, u3. Four parent links preserve both histories.",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides/the-fail-closed-harness",
+      "title": "The Fail-Closed Harness: Gate Agent Actions and Code Merges | Dan Mercede",
+      "h1": "The Fail-Closed Harness: Gate Agent Actions and Code Merges",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides/the-fail-closed-harness",
+      "image": "https://www.danmercede.com/assets/guides/fail-closed-harness/three-leg-refusal.webp",
+      "imageAlt": "Untrusted input, sensitive access and consequential action converge on supervision or reliable validation in an agent harness.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+      "title": "The Knowledge Graph My Agents Stopped Asking | Dan Mercede",
+      "h1": "The Knowledge Graph My Agents Stopped Asking",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking",
+      "image": "https://www.danmercede.com/assets/guides/conversation-branches/preserve-branches.webp",
+      "imageAlt": "Synthetic conversation graph retaining two branches and highlighting the selected ancestry path u1, a2, u3.",
+      "modified": "2026-11-17",
+      "brokenImages": []
+    },
+    {
+      "width": 390,
+      "route": "/guides",
+      "title": "Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede",
+      "h1": "Build agents that can act and prove what happened.",
+      "h1s": 1,
+      "overflow": false,
+      "canonical": "https://www.danmercede.com/guides",
+      "image": "https://www.danmercede.com/dan-mercede-og-card.jpg",
+      "imageAlt": "Dan Mercede. Operator and systems builder. I turn AI experiments into workflows teams can actually run.",
+      "brokenImages": []
+    }
+  ],
+  "errors": [],
+  "checks": [
+    "article metadata",
+    "responsive no overflow",
+    "curated CTAs",
+    "SPA metadata cleanup",
+    "simulator deep link/reload/history/UTM"
+  ]
+}

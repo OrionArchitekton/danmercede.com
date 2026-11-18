@@ -1,5 +1,6 @@
 import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
-import type { Diagram } from './types';
+import type { Diagram, Guide } from './types';
+import { KNOWLEDGE_GRAPH_CONTEXT } from './contentDiscovery';
 
 // Single source of truth for per-route <head> SEO meta. Consumed by BOTH the
 // runtime `usePageMeta` hook (App.tsx) and the build-time prerender injector
@@ -40,6 +41,7 @@ export interface RouteMeta {
   title: string;
   description?: string;
   ogImage?: string;
+  ogImageAlt?: string;
   // JSON-LD primary @type for the route's content node (W4). One of
   // 'Article' | 'ProfilePage' | 'CollectionPage'. Omitted routes get no
   // per-route content node (only the homepage entity graph + a BreadcrumbList).
@@ -59,8 +61,11 @@ export interface RouteMeta {
   // /thoughts and /guides, which are collections and must stay 'profile'.
   ogType?: 'article' | 'profile';
   // ISO publish date (YYYY-MM-DD) for article-shaped routes. Feeds both
-  // article:published_time and the Article JSON-LD datePublished/dateModified.
+  // article:published_time and the Article JSON-LD datePublished.
   datePublished?: string;
+  // Last substantive content change; separate from publication and accuracy
+  // review. An absent value keeps Article.dateModified at the publish date.
+  dateModified?: string;
   // Clean content headline for JSON-LD, without the SEO title's brand suffix.
   // Falls back to title when absent.
   headline?: string;
@@ -219,6 +224,11 @@ export function thoughtMeta(slug: string | undefined): RouteMeta {
     headline: thought.title,
     ogType: 'article',
     datePublished: thought.date,
+    ...(thought.slug === KNOWLEDGE_GRAPH_CONTEXT.slug ? {
+      dateModified: KNOWLEDGE_GRAPH_CONTEXT.modified,
+      ogImage: KNOWLEDGE_GRAPH_CONTEXT.image,
+      ogImageAlt: KNOWLEDGE_GRAPH_CONTEXT.imageAlt,
+    } : {}),
     schemaType: 'Article',
   };
 }
@@ -237,13 +247,14 @@ export function thoughtPaths(): string[] {
 // THOUGHTS corpus here so a substrate-sync that adds/removes a thought stays in
 // lockstep with ZERO hand-maintenance (substrate-sync only commits
 // constants.generated.ts, it must not need to also edit the sitemap). lastmod =
-// each essay's own publish date (never a build-time bump, W9 lastmod policy).
+// each essay's publish date, or a dated substantive hub context addition.
+// No build-time freshness bump; substrate publication dates remain untouched.
 export function renderThoughtSitemapEntries(): string {
   const blocks = THOUGHTS.filter((t) => t.slug).map((t) =>
     [
       '  <url>',
       `    <loc>${SITE_ORIGIN}/thoughts/${t.slug}</loc>`,
-      `    <lastmod>${t.date}</lastmod>`,
+      `    <lastmod>${t.slug === KNOWLEDGE_GRAPH_CONTEXT.slug ? KNOWLEDGE_GRAPH_CONTEXT.modified : t.date}</lastmod>`,
       '    <changefreq>monthly</changefreq>',
       '    <priority>0.7</priority>',
       '  </url>',
@@ -251,14 +262,14 @@ export function renderThoughtSitemapEntries(): string {
   );
   if (blocks.length === 0) return '';
   return (
-    '  <!-- Thought corpus (per-thought routes; lastmod = each essay publish date, R2; generated at build from THOUGHTS) -->\n' +
+    '  <!-- Thought corpus (publication or explicit context update; generated at build from THOUGHTS) -->\n' +
     blocks.join('\n')
   );
 }
 
 // Dynamic per-guide meta (mirrors thoughtMeta). JSON-LD is an Article authored/published by the canonical #person.
-export function guideMeta(slug: string | undefined): RouteMeta {
-  const guide = GUIDES.find((g) => g.slug === slug);
+export function guideMeta(slug: string | undefined, corpus: Guide[] = GUIDES): RouteMeta {
+  const guide = corpus.find((g) => g.slug === slug);
   if (!guide) {
     return { title: 'Guide Not Found | Dan Mercede' };
   }
@@ -271,6 +282,8 @@ export function guideMeta(slug: string | undefined): RouteMeta {
     headline: guide.title,
     ogType: 'article',
     datePublished: guide.date,
+    ...(guide.modified ? { dateModified: guide.modified } : {}),
+    ...(guide.image ? { ogImage: guide.image, ogImageAlt: guide.imageAlt } : {}),
     schemaType: 'Article',
   };
 }
@@ -283,13 +296,14 @@ export function guidePaths(): string[] {
 }
 
 // Per-guide <url> sitemap blocks, generated at build time (mirrors
-// renderThoughtSitemapEntries). lastmod = each guide's own publish date.
-export function renderGuideSitemapEntries(): string {
-  const blocks = GUIDES.filter((g) => g.slug).map((g) =>
+// renderThoughtSitemapEntries). A real content change may advance lastmod;
+// merely rereading a guide (`reviewed`) or rebuilding the site cannot.
+export function renderGuideSitemapEntries(corpus: Guide[] = GUIDES): string {
+  const blocks = corpus.filter((g) => g.slug).map((g) =>
     [
       '  <url>',
       `    <loc>${SITE_ORIGIN}/guides/${g.slug}</loc>`,
-      `    <lastmod>${g.date}</lastmod>`,
+      `    <lastmod>${g.modified ?? g.date}</lastmod>`,
       '    <changefreq>monthly</changefreq>',
       '    <priority>0.7</priority>',
       '  </url>',
@@ -352,10 +366,18 @@ export function renderDiagramSitemapEntries(corpus: Diagram[] = DIAGRAMS): strin
 }
 
 export function resolveMeta(m: RouteMeta) {
+  const ogImagePath = m.ogImage ?? DEFAULT_OG_IMAGE_PATH;
+  const isDefaultImage = ogImagePath === DEFAULT_OG_IMAGE_PATH;
   return {
     title: m.title || DEFAULT_TITLE,
     description: m.description ?? DEFAULT_META_DESCRIPTION,
-    ogImagePath: m.ogImage ?? DEFAULT_OG_IMAGE_PATH,
+    ogImagePath,
+    ogImageAlt: m.ogImageAlt ?? (isDefaultImage ? OG_IMAGE_ALT : m.headline ?? m.title),
+    ogImageType: /\.webp$/i.test(ogImagePath) ? 'image/webp' : /\.png$/i.test(ogImagePath) ? 'image/png' : 'image/jpeg',
+    // Only the site-wide card has fixed dimensions. Do not label a custom
+    // article figure as 1200x630 unless its intrinsic dimensions are known.
+    ogImageWidth: isDefaultImage ? 1200 : undefined,
+    ogImageHeight: isDefaultImage ? 630 : undefined,
   };
 }
 
@@ -401,6 +423,7 @@ export const ARTICLE_AUTHOR_URL = new URL('/about', SITE_ORIGIN).toString();
 // emitted or explicitly removed, never left stranded.
 export const TYPE_SCOPED_META_PROPS = [
   'article:published_time',
+  'article:modified_time',
   'article:author',
   'profile:first_name',
   'profile:last_name',
@@ -414,13 +437,16 @@ export const TYPE_SCOPED_META_PROPS = [
 // ADD set and the REMOVE set means a property added here is automatically
 // stripped on the branch that does not emit it.
 export function typeScopedMetaTags(
-  m: Pick<RouteMeta, 'ogType' | 'datePublished'>,
+  m: Pick<RouteMeta, 'ogType' | 'datePublished' | 'dateModified'>,
 ): { add: [string, string][]; remove: string[] } {
   const add: [string, string][] =
     m.ogType === 'article'
       ? [
           ...(m.datePublished
             ? ([['article:published_time', m.datePublished]] as [string, string][])
+            : []),
+          ...(m.dateModified
+            ? ([['article:modified_time', m.dateModified]] as [string, string][])
             : []),
           ['article:author', ARTICLE_AUTHOR_URL],
         ]
@@ -440,7 +466,7 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
   const ogImageUrl = new URL(r.ogImagePath, SITE_ORIGIN).toString();
   const t = escapeAttr(r.title);
   const d = escapeAttr(r.description);
-  const alt = escapeAttr(OG_IMAGE_ALT);
+  const alt = escapeAttr(r.ogImageAlt);
   return [
     // Preload the LCP hero, HOMEPAGE ONLY. The hero <img> renders only on
     // HomePage, so preloading it on other routes downloads the hero asset they never use.
@@ -457,9 +483,9 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     `  <meta property="og:description" content="${d}" />`,
     `  <meta property="og:url" content="${canonical}" />`,
     `  <meta property="og:image" content="${ogImageUrl}" />`,
-    `  <meta property="og:image:type" content="image/jpeg" />`,
-    `  <meta property="og:image:width" content="1200" />`,
-    `  <meta property="og:image:height" content="630" />`,
+    `  <meta property="og:image:type" content="${r.ogImageType}" />`,
+    ...(r.ogImageWidth ? [`  <meta property="og:image:width" content="${r.ogImageWidth}" />`] : []),
+    ...(r.ogImageHeight ? [`  <meta property="og:image:height" content="${r.ogImageHeight}" />`] : []),
     `  <meta property="og:image:alt" content="${alt}" />`,
     // Type-scoped properties come from typeScopedMetaTags, the single source
     // shared with the runtime head hook. Routes with no ogType keep the profile
@@ -577,7 +603,7 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
       url: canonical,
       image: new URL(r.ogImagePath, SITE_ORIGIN).toString(),
       ...(m.datePublished
-        ? { datePublished: m.datePublished, dateModified: m.datePublished }
+        ? { datePublished: m.datePublished, dateModified: m.dateModified ?? m.datePublished }
         : {}),
       author: { '@id': PERSON_ID },
       publisher: { '@id': PERSON_ID },

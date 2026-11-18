@@ -21,6 +21,14 @@ const CONTENT_DIR = path.join(ROOT, 'content', 'guides');
 const OUT_FILE = path.join(ROOT, 'constants.guides.generated.ts');
 
 const FRONTMATTER_KEYS = ['title', 'slug', 'date', 'category', 'description', 'lead'];
+const STRICT_OPTIONAL_KEYS = ['youtube', 'modified', 'image', 'image_alt'];
+const GUIDE_IMAGE_PATH = /^\/assets\/guides\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:webp|png|jpe?g)$/;
+
+function isCalendarDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 // Optional guide video (specs/guide-video-embed-spec.md): `youtube: <id>`, the
 // 11-character YouTube video id. Kept in step with YOUTUBE_ID_PATTERN in
@@ -36,12 +44,14 @@ function parse(raw, file) {
   if (!m) throw new Error(`${file}: missing or malformed frontmatter`);
   const [, fm, body] = m;
   const meta = {};
-  let youtubeLines = 0;
+  const optionalCounts = new Map();
   for (const line of fm.split(/\r?\n/)) {
     // `youtube :`, an indented `youtube:` or `YouTube:` would otherwise be skipped
     // or stored under another key, shipping the guide with no player. Fail loud.
-    if (/^\s*youtube\s*:/i.test(line) && !/^youtube:/.test(line)) {
-      throw new Error(`${file}: frontmatter line ${JSON.stringify(line)} must be written exactly as "youtube: <id>"`);
+    for (const key of STRICT_OPTIONAL_KEYS) {
+      if (new RegExp(`^\\s*${key}\\s*:`, 'i').test(line) && !line.startsWith(`${key}:`)) {
+        throw new Error(`${file}: frontmatter line ${JSON.stringify(line)} must be written exactly as "${key}: <value>"`);
+      }
     }
     const mm = line.match(/^([A-Za-z_]+):\s*(.*)$/);
     if (!mm) continue;
@@ -54,13 +64,13 @@ function parse(raw, file) {
     ) {
       value = value.slice(1, -1);
     }
-    if (key === 'youtube') youtubeLines += 1;
+    if (STRICT_OPTIONAL_KEYS.includes(key)) optionalCounts.set(key, (optionalCounts.get(key) ?? 0) + 1);
     meta[key] = value;
   }
   // A later line overwrites an earlier one, so a repeated `youtube:` would hide a
   // malformed first value behind a valid second one. Refuse any repeat.
-  if (youtubeLines > 1) {
-    throw new Error(`${file}: frontmatter "youtube" appears ${youtubeLines} times; keep exactly one line`);
+  for (const [key, count] of optionalCounts) {
+    if (count > 1) throw new Error(`${file}: frontmatter "${key}" appears ${count} times; keep exactly one line`);
   }
   for (const k of FRONTMATTER_KEYS) {
     if (!meta[k]) throw new Error(`${file}: frontmatter missing required key "${k}"`);
@@ -73,10 +83,21 @@ function parse(raw, file) {
         `(the v= value of the watch URL: letters, digits, - and _), got ${JSON.stringify(meta.youtube)}`,
     );
   }
+  // A review means a reread, not a content change. Only an explicit, real
+  // modified date may advance sitemap lastmod and Article.dateModified.
+  if ('modified' in meta && (!isCalendarDate(meta.modified) || !isCalendarDate(meta.date) || meta.modified < meta.date)) {
+    throw new Error(`${file}: frontmatter "modified" must be a real YYYY-MM-DD on or after the publish date`);
+  }
+  if ('image' in meta || 'image_alt' in meta) {
+    if (!GUIDE_IMAGE_PATH.test(meta.image ?? '') || !meta.image_alt?.trim()) {
+      throw new Error(`${file}: frontmatter "image" must be a local raster path under /assets/guides/ with a non-empty "image_alt"; both fields are required together`);
+    }
+  }
   return {
     title: meta.title,
     slug: meta.slug,
     date: meta.date,
+    ...(meta.modified ? { modified: meta.modified } : {}),
     // Optional review stamp (last full reread). Emitted only when present, so the
     // bundle carries no empty key; tests/guidesPrecision.test.ts requires it on every
     // published guide and checks it is a real day on or after `date`.
@@ -84,6 +105,7 @@ function parse(raw, file) {
     // Optional guide video id. Emitted only when present, so a guide without a
     // video keeps a byte-identical bundle entry.
     ...(meta.youtube ? { youtube: meta.youtube } : {}),
+    ...(meta.image ? { image: meta.image, imageAlt: meta.image_alt } : {}),
     category: meta.category,
     description: meta.description,
     lead: meta.lead,

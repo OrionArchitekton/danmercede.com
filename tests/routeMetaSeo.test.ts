@@ -27,7 +27,9 @@ import {
   TYPE_SCOPED_META_PROPS,
   META_DESCRIPTION_MAX,
   ROUTE_META,
+  resolveMeta,
 } from '../seoMeta';
+import type { Guide } from '../types';
 
 const PERSON_ID = 'https://www.danmercede.com/#person';
 
@@ -106,7 +108,7 @@ test('typeScopedMetaTags: an article route adds article:* and removes profile:*'
     ['article:published_time', '2026-01-01'],
     ['article:author', ARTICLE_AUTHOR_URL],
   ]);
-  assert.deepEqual(remove.sort(), ['profile:first_name', 'profile:last_name']);
+  assert.deepEqual(remove.sort(), ['article:modified_time', 'profile:first_name', 'profile:last_name']);
 });
 
 test('typeScopedMetaTags: add and remove together cover every type-scoped property', () => {
@@ -137,7 +139,55 @@ test('typeScopedMetaTags: a profile route removes both article:* properties', ()
     ['profile:first_name', 'Dan'],
     ['profile:last_name', 'Mercede'],
   ]);
-  assert.deepEqual(remove.sort(), ['article:author', 'article:published_time']);
+  assert.deepEqual(remove.sort(), ['article:author', 'article:modified_time', 'article:published_time']);
+});
+
+const sampleGuide: Guide = {
+  title: 'Preserve behavior after a model change',
+  slug: 'test-model-change',
+  date: '2026-10-01',
+  reviewed: '2026-11-17',
+  category: 'Agent Engineering',
+  description: 'A synthetic metadata fixture.',
+  lead: 'A synthetic metadata fixture.',
+  body: 'Body.',
+};
+
+test('an accuracy reread does not manufacture an Article modification date', () => {
+  const meta = guideMeta(sampleGuide.slug, [sampleGuide]);
+  assert.equal(meta.datePublished, '2026-10-01');
+  assert.equal(meta.dateModified, undefined);
+  assert.equal(articleNode(`/guides/${sampleGuide.slug}`, meta)!.dateModified, '2026-10-01');
+  assert.doesNotMatch(renderSeoBlock(`/guides/${sampleGuide.slug}`, meta), /article:modified_time/);
+});
+
+test('a substantive guide update preserves publication while advancing Article and Open Graph modification', () => {
+  const meta = guideMeta(sampleGuide.slug, [{ ...sampleGuide, modified: '2026-11-10' }]);
+  const article = articleNode(`/guides/${sampleGuide.slug}`, meta)!;
+  assert.equal(article.datePublished, '2026-10-01');
+  assert.equal(article.dateModified, '2026-11-10');
+  assert.match(renderSeoBlock(`/guides/${sampleGuide.slug}`, meta), /property="article:modified_time" content="2026-11-10"/);
+  assert.ok(typeScopedMetaTags({}).remove.includes('article:modified_time'), 'client navigation must remove stale article dates');
+});
+
+test('custom article figures drive OG, Twitter and Article images without inherited JPEG labels or dimensions', () => {
+  const figure = '/assets/guides/testing/contract-check.webp';
+  const alt = 'A contract rejects an invoice with a changed currency & total.';
+  const meta = guideMeta(sampleGuide.slug, [{ ...sampleGuide, image: figure, imageAlt: alt }]);
+  const block = renderSeoBlock(`/guides/${sampleGuide.slug}`, meta);
+  assert.match(block, /property="og:image:type" content="image\/webp"/);
+  assert.ok(block.includes(`property="og:image" content="https://www.danmercede.com${figure}"`));
+  assert.ok(block.includes(`name="twitter:image" content="https://www.danmercede.com${figure}"`));
+  assert.ok(block.includes('property="og:image:alt" content="A contract rejects an invoice with a changed currency &amp; total."'));
+  assert.ok(block.includes('name="twitter:image:alt" content="A contract rejects an invoice with a changed currency &amp; total."'));
+  assert.doesNotMatch(block, /og:image:(?:width|height)/, 'unknown custom dimensions must not inherit the default card dimensions');
+  assert.equal(articleNode(`/guides/${sampleGuide.slug}`, meta)!.image, `https://www.danmercede.com${figure}`);
+  const resolved = resolveMeta(meta);
+  assert.equal(resolved.ogImageAlt, alt);
+  assert.equal(resolved.ogImageWidth, undefined);
+  assert.equal(resolveMeta({ title: 'Default' }).ogImageWidth, 1200);
+  assert.equal(resolveMeta({ title: 'Default' }).ogImageHeight, 630);
+  assert.equal(resolveMeta({ title: 'PNG', ogImage: '/assets/guides/test/figure.png' }).ogImageType, 'image/png');
 });
 
 test('the runtime head hook consumes the shared helper rather than duplicating the branch', () => {

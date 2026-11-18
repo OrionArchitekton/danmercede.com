@@ -1,25 +1,53 @@
 ---
-title: "How I Have Claude Code Control Grok Bot (There Is No API)"
+title: "How to Connect Claude Code to Grok Bot with a Webhook"
 slug: claude-code-controls-grok-bot
 date: 2026-10-07
-reviewed: 2026-10-07
+reviewed: 2026-11-17
+modified: 2026-11-17
+image: /assets/guides/claude-code-grok-bot/four-lanes.webp
+image_alt: "Claude Code sends a request ID through a Grok Bot webhook, collects an outbox result, and keeps configuration and cached-chat reading separate."
 category: Agent Engineering
-description: "Grok Bot, xAI's desktop app for always-on cloud bots, has no public API. I wired Claude Code to it anyway: tasks go in through a routine's webhook, results come back as files the bot writes through the app's local execution, and the UI is driven over a localhost debug port only to configure bots. The first round trip took about 30 seconds. Here is the setup, the failure modes, and the one security trade-off you have to decide on yourself."
-lead: "Grok Bot gives you bots that keep a logged-in browser running in the cloud after you close your laptop. Claude Code is where my engineering happens. I wanted one to hand work to the other, and there is no API. This is the bridge I built, and the one setting in it you should choose deliberately."
+description: "Connect Claude Code to Grok Bot through a routine webhook. Collect results with an outbox, handle uncertain sends, and run the public Python protocol tests."
+lead: "Claude Code can hand a task to Grok Bot through a routine's webhook. Send a request ID, collect the bot's result through a separate outbox, and keep an ambiguous send unresolved instead of retrying it. HTTP 200 confirms acceptance; it does not confirm completion."
 ---
 
 
-Grok Bot is xAI's desktop app for AI "bots": named teammates that share one persistent Linux computer in the cloud, with a browser, a terminal, and your logins, and that keep working after you close the lid. Claude Code is where my real engineering happens: repos, tests, git. The two are good at different things, so I wanted Claude Code to hand a task to a bot and get the answer back.
+## Can Claude Code hand work to Grok Bot?
 
-The obstacle: there is no public API for driving bots. On 2026-09-27 I read the full set of xAI and Cursor documentation pages for Grok Bot, 37 pages, and found one documented way for my own code to start a bot run: a routine with a Webhook trigger. Everything in this guide is built around that one door. It needs a return channel the docs don't provide, a sender that never sends the same request twice, and a UI lane for the configuration a webhook can't do.
+Yes. This bridge uses the [documented routine webhook](https://docs.x.ai/grok-bot/skills-routines-and-automations#webhooks) to start work. The webhook supplies no completion callback, so the bot writes a result file through the desktop app's local execution. Claude Code then collects that file. The desktop UI is needed for setup and configuration, not for each handoff.
 
-The code is public: the skill and its two scripts (670 lines of dependency-free Python, 56 unit tests) are linked at the end.
+The important limit is the return path: unattended file writes require a local-execution permission that applies across your bots. A returned file is evidence of a response, not proof that its contents or any claimed external action are correct. Review the result before using it as authority.
+
+## Scope and evidence
+
+| What this guide covers | Evidence and limit |
+|---|---|
+| Original integration observations | September 27 to October 7, 2026, on a Windows desktop with a WSL caller. The first trivial outbox response took about 30 seconds; a later task took about three and a half minutes. These are individual observations, not a latency benchmark. |
+| Public implementation | [`grokbot-send`, `grokbot-read`, and the skill](https://github.com/OrionArchitekton/orion-skills/tree/e8474511988d3103f226619d5765961537cb9c21/skills/grokbot), pinned to the source reviewed here. |
+| Reproduced on November 17 | All 56 public protocol tests passed locally at that commit. The tests use temporary files, mocks, and loopback HTTP, without a Grok Bot account. They do not validate the live service. |
+| Current documentation | Routine-webhook and approval docs were reread on November 17. The current docs add routine rate limits and say background approval cards expire after 30 minutes. |
+| Not rerun in this review | The signed-in desktop integration, undocumented cache format, UI debug port, and original latency observations. Check these against your installed app before relying on them. |
+
+**Start here:** [run the local protocol checks](#run-the-local-protocol-checks), then [set up the webhook](#how-do-you-set-up-the-webhook-side). If your concern is the usage cost of keeping a coordinator and subagents alive, read [where Claude Code usage goes](/guides/where-claude-code-usage-goes). Delegating to another product moves work; it does not by itself demonstrate lower total cost.
 
 **Who this is for:** anyone who wants a coding agent (Claude Code, Codex, a headless pipeline) to delegate work to Grok Bot, and anyone wiring one agent product to another that only offers a webhook.
 
+## Run the local protocol checks
+
+These commands require Git and Python 3. They exercise the bridge locally before you connect an account:
+
+```bash
+git clone https://github.com/OrionArchitekton/orion-skills
+cd orion-skills
+git checkout e8474511988d3103f226619d5765961537cb9c21
+python3 -m unittest discover -s tests -p 'test_grokbot_scripts.py' -v
+```
+
+Expected summary: `Ran 56 tests` and `OK`. The suite checks accepted, refused, and unknown sends; duplicate request IDs; redirect refusal; result-file handling; and the cache reader. In particular, the lost-response test expects exit `6` instead of a retry. Keep that behavior when adapting the sender. The [test source](https://github.com/OrionArchitekton/orion-skills/blob/e8474511988d3103f226619d5765961537cb9c21/tests/test_grokbot_scripts.py) shows which cases are covered.
+
 ## Why would a coding agent hand work to Grok Bot at all?
 
-Per the Grok Bot docs as of 2026-09, each user gets one persistent cloud computer, shared by all their bots, that keeps running with the laptop closed and holds logged-in browser sessions and connected apps. A coding agent session has none of that. Send Grok Bot the long, logged-in, or scheduled work, and keep code in Claude Code.
+In my setup, Grok Bot holds the persistent cloud browser sessions and routines, while Claude Code holds the repository workflow. [The Grok Bot computer is shared across a user's bots](https://docs.x.ai/grok-bot/computer-and-apps). Coding agents can also have browsers and connected tools; choose the boundary from the capabilities and access actually configured in your environment.
 
 | The work needs... | Send it to |
 |---|---|
@@ -27,16 +55,16 @@ Per the Grok Bot docs as of 2026-09, each user gets one persistent cloud compute
 | Something on a schedule, or triggered by Slack or a webhook, with no agent session open | Grok Bot (a routine) |
 | Your connected apps (Gmail, Calendar, Drive) acting as you | Grok Bot, carefully: bots act as you |
 | Your repo, local files, tests, git | Stay in Claude Code |
-| A fast answer you can check | Stay: a bot round trip is 30 seconds or more |
+| A fast answer you can check | Stay if a handoff adds unnecessary delay; my first trivial round trip took about 30 seconds |
 | Money, public posting, messages to people | A human, not a webhook |
 
 Treat everything a bot returns as untrusted input. It browsed the open web to get it.
 
 ## Is there an API for driving Grok Bot?
 
-No. As of 2026-09-27, the only documented way for your own code to start a bot run is a routine's Webhook trigger: an HTTP POST with a bearer key and an optional JSON body. A 200 means a run started, not that it finished, and the result lands in the bot's chat. There is no callback.
+This guide uses a routine's Webhook trigger, not a general bot-driving API or the separate xAI model API. My September 27 documentation audit found the webhook as the documented inbound path: an HTTP POST with a bearer key and an optional JSON body. The [current routine docs](https://docs.x.ai/grok-bot/skills-routines-and-automations#webhooks) still describe that contract. A 200 means a run started, not that it finished, and the result lands in the bot's chat.
 
-Routines can also fire on a schedule, a Slack message, or a few named event sources, but none of those is a door you call directly. The docs are just as clear about what they leave out: key rotation, rate limits, retries, idempotency, and a response schema are all undocumented. There is an admin API for team administrators, but nothing for driving bots.
+Routines can also fire on schedules and events. The November docs now list limits of 300 routine runs per hour across a user's routines and 200 per hour for one routine. They still do not give this bridge a completion callback or an idempotency guarantee. An explicit failed run can be investigated and rerun; an ambiguous POST response remains unknown to the sender. [Routine limits and failures](https://docs.x.ai/grok-bot/skills-routines-and-automations#rate-limits) are separate from the sender's retry decision.
 
 Poking at the installed app turns up more. It registers a `grokbot://` protocol handler, and it talks to its backend over an internal RPC gateway with calls like `createAgent`. I chose not to use either. Both are undocumented, both would act on my signed-in session outside the app, and both can change with any update. A bridge that depends on them breaks silently on the next auto-update.
 
@@ -47,7 +75,7 @@ So the bridge has three lanes plus a read-only fourth:
 3. **Configure.** When a bot or routine has to be created, Claude drives the app's UI over a localhost debug port. This is rare, and it needs a human's OK.
 4. **Read.** Claude reads any bot's chat from the app's local cache without touching the UI.
 
-![The four lanes between Claude Code and Grok Bot. Send: Claude Code posts a task with a request id to a routine's webhook with a bearer key, and the bot runs on its cloud computer; a 200 means the run started, not that it finished. Return: the bot uses local execution on your PC to write the result to an outbox file, then renames it, and Claude Code polls until the file is stable; the file, or the bot's live chat reply, is what proves the run finished. Configure: Claude Code drives the desktop app's UI through a debug port bound to 127.0.0.1, which is gone after every app restart and needs a human's approval to relaunch. Read: Claude Code reads bot chats from the app's local cache, read-only; it is a cache, not the source of truth.](/assets/guides/claude-code-grok-bot/four-lanes.webp "Grok Bot has no public API. Tasks go in through one documented door, results come back as files, and the UI is driven only to configure.")
+![The four lanes between Claude Code and Grok Bot. Send posts a task and request ID to a routine webhook. Return collects an outbox result. Configure uses the desktop UI. Read inspects cached chat for diagnosis; neither acceptance nor cached chat validates the task outcome.](/assets/guides/claude-code-grok-bot/four-lanes.webp "Tasks enter through a routine webhook. Results use a separate return channel, while configuration and cached-chat reading stay separate.")
 
 ## How do you set up the webhook side?
 
@@ -67,12 +95,12 @@ agent-browser --session grokbot get value @e12 | tr -d '\r\n' \
   | doppler secrets set GROKBOT_WEBHOOK_KEY --silent >/dev/null
 ```
 
-The two scripts are dependency-free Python. Put them on your PATH, create the outbox on the machine that runs the desktop app, and tell them where it is:
+The two scripts are dependency-free Python. After running the local checks above, put them on your PATH, create the outbox on the machine that runs the desktop app, and tell them where it is. From the checked-out `orion-skills` directory:
 
 ```bash
-git clone https://github.com/OrionArchitekton/orion-skills
-ln -s "$PWD/orion-skills/skills/grokbot/scripts/grokbot-send" ~/.local/bin/
-ln -s "$PWD/orion-skills/skills/grokbot/scripts/grokbot-read" ~/.local/bin/
+mkdir -p ~/.local/bin
+ln -s "$PWD/skills/grokbot/scripts/grokbot-send" ~/.local/bin/
+ln -s "$PWD/skills/grokbot/scripts/grokbot-read" ~/.local/bin/
 
 mkdir -p /mnt/c/Users/<you>/grokbot-outbox                        # from WSL; any folder the app can reach
 export GROKBOT_OUTBOX_DIR=/mnt/c/Users/<you>/grokbot-outbox       # where the agent reads
@@ -80,13 +108,13 @@ export GROKBOT_OUTBOX_BOT_DIR='C:\Users\<you>\grokbot-outbox'    # the same fold
 export GROKBOT_STORE="/mnt/c/Users/<you>/AppData/Roaming/Grok Bot/sand-client-persistence"  # for grokbot-read under WSL
 ```
 
-`GROKBOT_WEBHOOK_URL` and `GROKBOT_WEBHOOK_KEY` come from the secret manager at call time, never from a shell profile: `doppler run -- grokbot-send ...`, or your manager's equivalent.
+Ensure `~/.local/bin` is on your PATH. `GROKBOT_WEBHOOK_URL` and `GROKBOT_WEBHOOK_KEY` are the public scripts' configuration variable names; their values come from your secret manager at call time, never from a shell profile: `doppler run -- grokbot-send ...`, or your manager's equivalent. The UI reference `@e12` above is illustrative: obtain the current field reference before reading it.
 
 From then on, handing off work is one command:
 
 ```bash
-grokbot-send "check whether https://example.com returns 200"        # fire and forget
-grokbot-send --wait "list the 3 newest posts on <forum> with links"  # block for the result
+doppler run -- grokbot-send "check whether https://example.com returns 200"
+doppler run -- grokbot-send --wait "list the 3 newest posts on <forum> with links"
 grokbot-send --collect gb-20260927-231500-ab12cd34                   # pick up a late result
 ```
 
@@ -114,16 +142,16 @@ body["task"] = (
 The details that make it reliable:
 
 - **Write, then rename.** The bot writes `<request_id>.md.tmp` and renames it when complete, so a bot that follows the instruction never exposes a half-written result. A leftover `.tmp` file means the write stalled.
-- **Wait for it to settle.** The poller checks every 5 seconds and reads only after the file's size and modification time match across three polls, about 10 seconds of stillness. That is the real guard against a bot that skips the rename.
+- **Wait for it to settle.** The default waiter polls every 5 seconds and requires repeated matching size and modification-time observations. This catches many incomplete writes, but a paused writer can look stable. The rename convention and validation of the returned content still matter.
 - **Normalize the encoding.** A file written from Windows may carry a UTF-8 byte-order mark, be UTF-16 (PowerShell's `>` redirect), or use CRLF line endings. The reader handles all three, so Claude sees plain text. In practice it varies: of the six result files in my outbox, one had a byte-order mark and none had CRLF. A file in a legacy ANSI code page is not detected, and its non-ASCII characters come out as replacement marks.
 - **One folder, two names.** Claude runs in WSL and reads `/mnt/c/Users/<you>/grokbot-outbox`. The bot writes `C:\Users\<you>\grokbot-outbox`. Both paths are configured.
 - **Treat the file as hostile.** It is capped at 1 MB, must be a regular file (not a symlink or a FIFO), and has terminal control characters and bidi overrides stripped before it is printed.
 
-The outbox file, or the bot's live chat reply, is what proves a run finished. The webhook's 200 doesn't, and neither does the chat cache (more on that below).
+The outbox file or live chat reply provides the bot's result. Validate the requested outcome against its evidence, especially if the result claims an external action succeeded. The webhook's 200 proves only acceptance, and cached chat is a diagnostic aid (more on that below).
 
 ## What happens when you can't tell whether a task was sent?
 
-The webhook documents no idempotency as of 2026-09, so sending the same task twice can start two runs. My sender is therefore at most once: it never retries a request that might have reached the server. Every send ends in one of three states, and only one of them is safe to resend.
+The webhook contract does not provide an idempotency guarantee, so sending the same task twice can start two runs. My sender makes one POST attempt and retains an accepted or ambiguous request ID in its local ledger. It never automatically retries a request that might have reached the server. Every send ends in one of three states, and only one of them is safe to resend under the documented contract.
 
 ![Every send ends in one of three states. The request id is recorded in a local ledger before the POST. An HTTP 200 means accepted: the run started, and with --wait the sender polls the outbox, returning the result as exit 0 or exit 5 if it is not in yet, to collect later. A refusal before any bytes left, or an HTTP 4xx, means no run started: exit 4, the id is released, and it is safe to resend. A timeout, dropped connection, redirect, 5xx, or a 2xx other than 200 means the outcome is unknown: exit 6, never resend, collect by request id or read the bot's chat.](/assets/guides/claude-code-grok-bot/send-outcomes.webp "Resend only when the run provably never started. Everything ambiguous becomes an explicit 'outcome unknown' with a request id to collect.")
 
@@ -147,11 +175,11 @@ def _not_sent(reason):
 
 A local ledger backs that up. Before sending, the sender records the request id with an atomic create-if-absent (`O_EXCL`). A second send of the same id (rerunning with `--request-id` after a timeout, or two concurrent calls) is refused with a pointer to `--collect`. The id is released only when no run can have started: a config error, a provable non-send, or a 4xx refusal. The ledger is per machine, and a plain rerun of the command mints a fresh id, so it won't stop you from deliberately sending a task again. What it stops is one request quietly becoming two runs.
 
-That is at-most-once delivery, with a later `--collect` (or a human reading the chat) to resolve the ambiguous case. I would rather lose a task than duplicate one, because a duplicated task can mean a bot doing something twice as me.
+That is a client-side at-most-once attempt for an accepted or ambiguous ID while its ledger is retained. It does not guarantee at-most-once execution inside the service, and a new ID or another machine bypasses the local guard. Use a later `--collect` or a human review of the live chat to resolve ambiguity. A duplicated task can mean a bot doing something twice as me.
 
 ## What is the real security cost of the return channel?
 
-As of 2026-09, local execution has three settings, and the outbox needs the dangerous one. "Always allow" lets bots run commands on your PC with no approval, and it applies to every bot you have, not one. "Ask every time" is safer, but an approval raised by a webhook run expires in about 10 minutes, and the write never happens.
+Local execution has three settings: Ask every time, Always allow, and Never allow. An unattended outbox depends on permitting the local write without a person responding each time. The permission applies across your bots on the selected desktop. With Ask every time, a person can approve a write, but an unattended request can expire. The [current approval docs](https://docs.x.ai/grok-bot/approvals-security-and-privacy#if-you-dont-answer) say background cards expire after 30 minutes, replacing the roughly 10-minute window documented during the original setup.
 
 With "Always allow" on, follow the chain:
 
@@ -207,7 +235,7 @@ The UI rules:
 Two traps are specific to driving a Windows app from WSL:
 
 - If your WSL PATH leaves out Windows (I strip it from mine), call `cmd.exe` and `powershell.exe` by their full `/mnt/c/Windows/System32/...` path. Either way, don't launch the app with `cmd.exe /c start`: the app inherits the interop pipe and the calling shell hangs. Use PowerShell `Start-Process` with no shared stdio. If a launch has already hung, leave that shell alone while the app runs, because a broken stdout pipe can crash an Electron app.
-- Windows `127.0.0.1` is reachable from WSL only with mirrored networking (`networkingMode=mirrored` in `.wslconfig`).
+- In WSL2, [mirrored networking](https://learn.microsoft.com/en-us/windows/wsl/networking#mirrored-mode-networking) lets Linux reach Windows services through `127.0.0.1`. Default NAT networking uses the Windows host's address instead. For this loopback-only debug-port setup, use a supported local connection method rather than exposing the port to the network.
 
 ## How do you read what a bot did without touching its UI?
 
@@ -229,8 +257,14 @@ Hence the rule: results come from the outbox, and the cache answers "what did th
 
 ## What should you take from this?
 
-The pattern outlives this one app. When an agent product has no API, use its one documented inbound door, build a return channel you control, turn the ambiguous send into an explicit state instead of a retry, and keep UI driving as the rare, human-approved lane. The public version is 670 lines of Python and one deliberate security setting.
+The reusable pattern is a documented inbound path, a return channel you control, and an explicit unknown state for ambiguous sends. Keep UI driving as the rare, human-approved configuration lane. The public implementation is small enough to inspect before it receives account access.
 
 The public version is in my orion-skills repo: [skills/grokbot](https://github.com/OrionArchitekton/orion-skills/tree/main/skills/grokbot). It carries the when-to-use table, the setup steps, the security posture, a troubleshooting table for every exit code, `grokbot-send` and `grokbot-read`, with the tests in the repo's `tests/` folder. The UI relaunch helper isn't in it, because it is tied to one machine's paths; the skill documents the steps instead.
 
-Everything else is plumbing. If you use the outbox, the decision that is actually yours is the local execution setting. Make it on purpose.
+## What should you do after the first handoff?
+
+Send one low-impact task with a known result. Record its request ID, acceptance, returned artifact, elapsed time, and whether the artifact meets the brief. If the send becomes unknown, collect or inspect that same request; do not use a new ID merely to make the status look successful.
+
+Before expanding the workflow, [measure the coordinator's Claude Code cache and subagent usage](/guides/where-claude-code-usage-goes). Count the bot's usage separately and compare completed work and rework as well as tokens. This bridge supplies a handoff protocol, not evidence of savings.
+
+For the next failure-oriented exercise, [regression-test an agent after a prompt or model change](/guides/regression-test-ai-agent-prompt-model-change). The test should describe the behavior you need to retain, such as refusing an ambiguous retry, rather than requiring the agent to produce identical prose.

@@ -12,7 +12,17 @@
 - [Thoughts](https://www.danmercede.com/thoughts): Essays on governed AI, workflow ownership, operator-led automation, and the failure modes that show up when systems meet reality. Each essay has its own indexable URL at /thoughts/<slug>.
 
 ## Guides
-- [Technical guides](https://www.danmercede.com/guides): Hands-on, reproducible engineering guides. Each guide lives at /guides/<slug> and is the canonical source for any syndicated copy.
+- [Technical guides](https://www.danmercede.com/guides): Engineering guides, worked examples and measured field reports. Each guide lives at /guides/<slug> and is the canonical source for any syndicated copy.
+
+## Priority technical references
+- [How to regression-test an AI agent after a prompt or model change](https://www.danmercede.com/guides/regression-test-ai-agent-prompt-model-change): Behavioral contracts, a reproducible failure, and the Proctor workflow. Distinguishes a regression verdict from a production execution gate.
+- [Where Claude Code usage goes](https://www.danmercede.com/guides/where-claude-code-usage-goes): A dated analysis of 471 local sessions. Separates recorded token categories and API list-price estimates from subscription usage limits.
+- [Claude Code controlling Grok Bot](https://www.danmercede.com/guides/claude-code-controls-grok-bot): A worked CLI orchestration setup, its trust boundary, and the measurements needed to evaluate its cost.
+- [Preserving conversation branches in Neo4j](https://www.danmercede.com/guides/preserving-conversation-branches-neo4j): A small synthetic conversation graph example. Keeps the runnable example separate from the measured personal case report.
+- [The knowledge graph my agents stopped asking for](https://www.danmercede.com/thoughts/2026-09-30-the-knowledge-graph-my-agents-stopped-asking): The original personal knowledge-graph field report. Consult its measurement scope and limitations before reusing a numerical claim.
+- [The fail-closed harness](https://www.danmercede.com/guides/the-fail-closed-harness): Required checks, evidence and enforcement at the merge boundary.
+- [Proctor](https://www.danmercede.com/works/proctor/): Open-source behavioral regression testing for AI agents, with a keyless demonstration and source code.
+- [Governed tool simulator](https://www.danmercede.com/proof?scenario=proctor-drift#gate-simulator): An illustrative browser scenario, not a live production agent run.
 
 ## Works
 - [Open-source works](https://www.danmercede.com/works): Public, runnable tools that make the doctrine concrete (e.g. failclosed — the Authority Gate at the merge boundary).

@@ -1,36 +1,54 @@
 ---
-title: "I Read All 471 of My Claude Code Sessions: Where 6 Billion Tokens Actually Went"
+title: "Claude Code Cache Usage: What 471 Sessions Reveal About Token Cost"
 slug: where-claude-code-usage-goes
 date: 2026-10-23
-reviewed: 2026-10-23
+reviewed: 2026-11-17
+modified: 2026-11-17
+image: /assets/guides/claude-code-usage/token-vs-cost-share.webp
+image_alt: "One week of Claude Code usage: cache reads are 97 percent of tokens but 46 percent of API list-price cost, while cache writes are about 3 percent of tokens and 38 percent of cost."
 category: Agent Engineering
-description: "Claude Code users are reporting usage that drains faster than it used to. I can't see how the plan meter counts, but I can read my own transcripts. Over one week (471 sessions, 6.15 billion tokens), cache reads were 97% of my tokens and under half of the list-price cost, while cache writes were 3% of tokens and 38% of the cost. The biggest rewrites came from going back to a session, or to a finished subagent, after its cache had expired."
-lead: "97% of my tokens were cache reads, so my cache looked healthy. Weighed by price, the 3% that were cache writes cost almost as much as all the reads, and 94% of the big rewrites came after a cache had expired from idle time, mostly when I went back to a session or a finished subagent."
+description: "Measure Claude Code cache reads, cache writes, and subagent usage. A 471-session case study, a local Python counter, and the limits of API-price estimates."
+lead: "A high cache hit rate does not mean a low token cost. In my seven-day Claude Code sample, cache reads were 97% of tokens and 46% of API list-price cost; cache writes were about 3% of tokens and 38% of that cost. Measure the token mix and price each bucket before changing how you use agents."
 ---
 
 
-On October 21, 2026, [a post on X](https://x.com/CampbellKaleb23/status/2112957708219433095) asking what was going on with Claude Code usage took off. The author said they had never run out of usage like this on any model, and that it was "draining 5x faster." Anthropic's Boris Cherny replied "No changes on our end," and later [that the team was digging into it](https://x.com/bcherny/status/2113417302402322910). As I write this on October 23, there is no published cause.
+## What should you measure first?
 
-I can't see how the plan meter weighs my traffic. I can see every request Claude Code made on my machine, though, because the transcripts sit on disk. So I measured one week of my own usage: **471 sessions, 21,449 API calls, 6.15 billion tokens.** The headline number everyone quotes, the cache hit rate, turned out to be the wrong one to watch.
+Separate uncached input, cache writes by lifetime, cache reads, and output. Deduplicate streamed and replayed requests before adding them up. Then compare token share with API list-price share. Use Claude Code's `/usage` view for your plan's limits; a local token-price estimate does not reconstruct subscription billing.
+
+For example, at the Opus 5.5 rates used here, reading 500,000 cached tokens costs $0.10; writing the same prefix into a one-hour cache costs $4.00. That is a price calculation, not a measurement of how many subscription credits either action consumes. [Anthropic's pricing](https://platform.claude.com/docs/en/about-claude/pricing) and [Claude Code's usage documentation](https://code.claude.com/docs/en/costs#using-the-usage-command) describe the two views.
+
+## Scope and evidence
+
+| What this analysis covers | Evidence and limit |
+|---|---|
+| Measurement window | Seven-day lookback run on October 23, 2026. The exact cutoff timestamp and timezone were not published. |
+| What was counted | Local transcript analysis reported 471 sessions, 21,449 API calls, and 6.15 billion tokens, including subagents. These are the original author's measurements, not a new November sample. |
+| Software observed | Claude Code 2.1.301 through 2.1.305. Cache lifetimes below describe those logs, not a promise about every version or provider. |
+| Price basis | Each supported model's token buckets, using the dated rate table below. Approximately $2,500 is API list-price value, not an invoice or subscription charge. |
+| What a reader can reproduce | The local counting method and price arithmetic. Raw work transcripts are not published, so the aggregate sample cannot be independently reconstructed from this page. |
+| November 17 review | The whole guide and the current official pricing, caching, usage, and plugin references were reread. The original private transcript analysis was not rerun. |
 
 **Who this is for:** heavy Claude Code users who want to know where their usage goes, and anyone running subagents or long sessions who has never looked at the token mix underneath.
 
-**One caveat up front, and I'll repeat it:** everything below counts tokens and prices them at Anthropic's published API rates. A subscription plan meters usage its own way, and Anthropic hasn't published how plan limits weigh cache reads, cache writes and output. This guide can't tell you why anyone's limit drained. It shows you how to see your own mix.
+**Start here:** [run the local measurement](#how-do-you-measure-your-own-claude-code-usage), then [compare the next week](#how-do-you-compare-a-change-without-losing-quality). If the costly work is an external handoff, the companion [Claude Code to Grok Bot guide](/guides/claude-code-controls-grok-bot) covers request IDs, explicit completion, and ambiguous sends. It does not establish that moving the work saves money.
 
 ---
 
 ## How do you measure your own Claude Code usage?
 
-On October 23, 2026, I ran Anthropic's `session-report` plugin over seven days of local transcripts and got 471 sessions, 21,449 API calls and 6.15 billion tokens. Claude Code already writes every request's token usage to `~/.claude/projects`, including subagent transcripts, so the data is on your disk right now.
+On October 23, 2026, I ran Anthropic's `session-report` plugin over seven days of local transcripts and got 471 sessions, 21,449 API calls and 6.15 billion tokens. The plugin reads saved transcripts under `~/.claude/projects`, including subagent transcripts. Your available history depends on what remains on that machine.
 
-The plugin lives in the official marketplace:
+The plugin is listed in [Anthropic's official marketplace](https://claude.com/marketplace/plugins/session-report). In Claude Code:
 
 ```
 /plugin install session-report@claude-plugins-official
 /session-report
 ```
 
-It writes an HTML report you can sort and expand. Under the hood it runs a Node script, `analyze-sessions.mjs --json --since 7d`, that does the fiddly part: a streamed response is logged as several entries that share one request ID, and a resumed session can replay old history into a new file. If you write your own counter, keep exactly one usage record per request ID, or you'll double count.
+It writes an HTML report you can sort and expand. The [published analyzer source](https://github.com/anthropics/claude-plugins-official/blob/fd30cee3ecd5a8ee772733c5d20c0f2bae2da2f0/plugins/session-report/skills/session-report/analyze-sessions.mjs) supports `--json --since 7d`. A streamed response can have several records for one request, and a resumed session can replay history into a new file. The analyzer deduplicates usage and retains the largest output-token count for a request within a file. If you write your own counter, account for both cases before trusting the totals.
+
+Keep the report private until you inspect it: prompts and project names can appear in the output. For comparisons, save the report, the analysis time, the selected window, the Claude Code version, and the price table you used.
 
 My week, from the plugin's JSON:
 
@@ -49,7 +67,7 @@ That table reads like a well-tuned setup. 97% cached sounds like the cache is do
 
 In my week, cache reads were 96.9% of all tokens but about 46% of the cost at API list prices. Cache writes were 2.8% of tokens and about 38% of the cost. Output was 0.4% of tokens and about 16%. Token share and cost share draw two different maps of the same week.
 
-The reason is the price ladder. These are Anthropic's published rates for Claude Opus 5.5, per million tokens, as of October 23, 2026:
+The reason is the price ladder. These are the Claude Opus 5.5 rates used in the October 23, 2026 analysis, per million tokens. They still matched [Anthropic's published pricing](https://platform.claude.com/docs/en/about-claude/pricing) at the November 17 review:
 
 | Token type | Price | vs. base input |
 |---|---|---|
@@ -61,7 +79,9 @@ The reason is the price ladder. These are Anthropic's published rates for Claude
 
 A 1-hour cache write costs 40 times what a cache read costs. So a session holding 500,000 tokens of context pays about $0.10 to re-read it on the next turn, and about $4.00 to write it again from scratch. One rewrite costs the same as forty reads of that same context.
 
-So I priced every request in the week by its own model and token types. The session-report plugin counts tokens, not money, so I wrote a small script to weigh them. It keeps one usage record per request ID and splits cache writes by their time-to-live, because transcripts record that split:
+So I priced every request in the week by its own model and token types. The session-report plugin counts tokens, not money, so I wrote a small script to weigh them. It keeps one usage record per request ID and splits cache writes by their time-to-live, using the [API's cache-creation fields](https://platform.claude.com/docs/en/build-with-claude/prompt-caching#1-hour-cache-duration).
+
+Save the following as `weigh.py`. Its price rows are the historical analysis inputs, not an automatically maintained price catalog. It skips unknown models and warns about their excluded tokens. Records without a request ID are excluded, and missing usage fields count as zero. Treat the result as a partial estimate if your transcripts do not have the expected fields. This script estimates token charges only; tool fees, provider-specific prices, discounts, and subscription metering are outside it.
 
 ```python
 #!/usr/bin/env python3
@@ -150,9 +170,9 @@ for kind in tokens:
     print(f"{kind:9} {100 * tokens[kind] / t:5.1f}% of tokens  {100 * cost[kind] / c:5.1f}% of cost")
 ```
 
-Run it with `python3 weigh.py 7` for the last seven days. On my week it matched the plugin to within 0.1% on request count and total tokens, and it put the week at roughly $2,500 at API list price.
+Run it with `python3 weigh.py 7` for the last seven days. In the original analysis it matched the plugin to within 0.1% on request count and total tokens, and put the week at roughly $2,500 at API list price. That agreement is a reported result from October, not a new verification of the private dataset.
 
-Claude Opus 5.5 and Sonnet 5.5 bill the full 1M-token context at standard rates, so a long session pays no surcharge for its size. The script handles the three cases that do change the price: Haiku 5.5 prompts over 100,000 tokens, fast mode (every rate doubles) and US-only routing (10% more). None of them showed up in my week: every request ran at standard speed on global routing.
+The dated table uses standard long-context rates for Opus 5.5 and Sonnet 5.5, the higher Haiku 5.5 tier above 100,000 prompt tokens, and modifiers for supported fast-mode and US-only requests. None of those modifiers showed up in my week: every request ran at standard speed on global routing. Check the current provider and model prices before applying this script to different traffic; do not assume its modifier rules cover a new model.
 
 ![Two stacked bars comparing one week of Claude Code usage. By tokens, cache reads fill 97% of the bar. By list price, cache reads are 46%, cache writes 38% and output 16%.](/assets/guides/claude-code-usage/token-vs-cost-share.webp "Same week, two maps: cache writes are 3% of the tokens and 38% of the list-price cost.")
 
@@ -160,9 +180,9 @@ The practical change is what you watch. A hit rate of 97% says little about cost
 
 ## What is a cache break, and where did mine come from?
 
-The plugin flags any call that writes more than 100,000 tokens it couldn't read from cache. My week had 223 of them, holding 42% of all cache-write tokens. When I lined each one up against the previous call in the same transcript, 209 of the 223 (94%) came after the cache had expired from idle time.
+The plugin flags any call that writes more than 100,000 tokens it couldn't read from cache. My week had 223 of them, holding 42% of all cache-write tokens. When I lined each one up against the previous call in the same transcript, 209 of the 223 (94%) followed idle gaps longer than the observed cache lifetime. I classified those as consistent with expiry. Timing alone cannot exclude a simultaneous prompt change or another invalidation.
 
-A cache entry has a time-to-live. Every read refreshes it, and once it lapses, the next request has to write the whole prefix again. In my transcripts the two kinds of context use different windows: 98% of main-session cache writes were 1-hour writes, and 100% of subagent cache writes were 5-minute writes. That is what my logs show on Claude Code 2.1.301 through 2.1.305, not a documented guarantee, so check the `cache_creation` fields in your own transcripts before you rely on it.
+A cache entry has a time-to-live. A cache hit refreshes the entry; after expiry, a request may have to write its prefix again. Anthropic documents [five-minute and one-hour cache lifetimes](https://platform.claude.com/docs/en/build-with-claude/prompt-caching#1-hour-cache-duration). In my transcripts the two kinds of context used different windows: 98% of main-session cache writes were 1-hour writes, and 100% of subagent cache writes were 5-minute writes. That is what my logs show on Claude Code 2.1.301 through 2.1.305, not a documented guarantee, so check the `cache_creation` fields in your own transcripts before you rely on it.
 
 So I sorted the 223 big writes by what happened just before each one:
 
@@ -175,7 +195,7 @@ So I sorted the 223 big writes by what happened just before each one:
 | The prefix changed while the cache was still live | 13 | 2.3M | about $14 |
 | The first call of a transcript | 1 | 0.3M | about $2 |
 
-The first four rows are all cache expiry: 72 + 92 + 42 + 3 = 209. The prefix-change row is the one people usually blame: an edited system prompt, a changed tool list, a model switch. It was 13 breaks out of 223.
+The first four rows are the expiry-consistent cases: 72 + 92 + 42 + 3 = 209. The prefix-change row covers an edited system prompt, a changed tool list, or a model switch while the observed lifetime had not elapsed. It was 13 breaks out of 223.
 
 At list price, those 223 rewrites cost about $446, or 18% of my week. That is 223 calls out of 21,449.
 
@@ -201,9 +221,9 @@ You have two simple options before you step away from a big session. End it with
 
 ## What does this tell you about the "usage draining 5x" reports?
 
-Nothing conclusive, and I want to be plain about that. As of October 23, 2026, Anthropic's first reply was "No changes on our end," and its latest says the team is investigating. My numbers count tokens and price them at API rates, and Anthropic hasn't published how plan limits weigh cache reads, cache writes and output. A token mix can't prove why a plan meter moved.
+Nothing conclusive. The original motivation was [an October 21 report of faster usage drain](https://x.com/CampbellKaleb23/status/2112957708219433095) and [Anthropic's subsequent response](https://x.com/bcherny/status/2113417302402322910). That was the context when I wrote the October analysis, not a claim about the investigation's status today. A token mix priced at API rates cannot establish why a subscription limit changed.
 
-What the transcripts do give you is a baseline. If your usage suddenly feels heavier, run the report and the script on this week and on a week that felt normal, and compare the cache write share, the number of big breaks, and the subagent count. If those jumped, your habits moved. If they didn't, the change is somewhere you can't see from your own machine, and that's useful to know too. Claude Code's `/usage` command shows the plan side of the picture; the transcripts show the mix underneath it.
+What the transcripts do give you is a local baseline. Compare cache-write share, large rewrites, subagent activity, model mix, and completed work across equivalent windows. A difference can come from workload or software behavior as well as habits. No difference does not prove that the cause is external: local logs can be incomplete. Claude Code's current `/usage` view adds plan bars and approximate attribution from that machine's history, while its session dollar estimate remains separate from subscriber billing.
 
 ## What I'm changing
 
@@ -214,4 +234,33 @@ The first three changes come straight from rows in the tables above:
 3. **Long waits run in the main session, not inside a subagent.** The main session keeps a 1-hour cache in my logs; a subagent keeps five minutes. That was 42 breaks and about $44.
 4. **I watch the cost share, not the hit rate.** The weekly check is the script above, and the line I read first is cache writes.
 
-The whole measurement takes a minute: install the plugin, run `/session-report`, then run `python3 weigh.py 7`. Your mix won't look like mine. I run long sessions and a lot of parallel subagents, so expiry dominates my week. Yours may not, but you'll know which row to fix first.
+These are workflow changes I chose from the measured rows, not a controlled before-and-after savings result. Reusing an agent can preserve context you would otherwise have to rebuild. A shorter brief is useful only if it retains the requirements and evidence needed to finish correctly.
+
+## How do you compare a change without losing quality?
+
+Start with one seven-day baseline. Choose one change, such as a written handoff before leaving a large session, then collect another seven-day report. Hold the price table constant when comparing token efficiency; use actual invoices or plan readings for billing questions.
+
+| Record for both windows | Why it matters |
+|---|---|
+| Start and end timestamps, timezone, software versions | Makes the periods and tool behavior comparable. |
+| Requests, token buckets, unknown models, missing records | Exposes changes in mix and holes in the counter. |
+| Cache-write share, rewrites above 100K, subagent runs | Connects the change to a specific source of usage. |
+| Completed tasks, regression results, rework | Prevents lower usage from being mistaken for better performance when less work was completed. |
+| API estimate and plan readings in separate columns | Keeps a modeled price from becoming a billing claim. |
+
+For a quick check of the article's price arithmetic, this dependency-free example makes no API calls:
+
+```bash
+python3 - <<'PY'
+tokens = 500_000
+read_usd = tokens * 0.20 / 1_000_000
+write_usd = tokens * 8.00 / 1_000_000
+print(f"Cache read: ${read_usd:.2f}")
+print(f"One-hour write: ${write_usd:.2f}")
+print(f"Price ratio: {write_usd / read_usd:.0f}x")
+PY
+```
+
+Expected output is `$0.10`, `$4.00`, and `40x`. Those values validate only the arithmetic under the stated rates, not the private 471-session sample.
+
+If you change a prompt or model to reduce usage, [regression-test the agent's behavior](/guides/regression-test-ai-agent-prompt-model-change) before accepting the result. If you delegate external work to another product, use the companion [Claude Code to Grok Bot webhook guide](/guides/claude-code-controls-grok-bot) to keep acceptance, completion, and retry decisions explicit.

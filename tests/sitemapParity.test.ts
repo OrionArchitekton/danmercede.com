@@ -13,6 +13,7 @@ import {
   guidePaths,
   renderGuideSitemapEntries,
 } from '../seoMeta';
+import type { Guide } from '../types';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -79,4 +80,14 @@ test('renderGuideSitemapEntries covers exactly the published GUIDES corpus (self
     { missing: [], extra: [] },
     'generated guide sitemap entries drifted from guidePaths()',
   );
+});
+
+test('guide sitemap freshness uses substantive change, never the reread date', () => {
+  const guide: Guide = {
+    title: 'Fixture', slug: 'fixture', date: '2026-09-01', reviewed: '2026-11-17',
+    category: 'Testing', description: 'Fixture.', lead: 'Fixture.', body: 'Fixture.',
+  };
+  assert.match(renderGuideSitemapEntries([guide]), /<lastmod>2026-09-01<\/lastmod>/);
+  assert.match(renderGuideSitemapEntries([{ ...guide, modified: '2026-10-15' }]), /<lastmod>2026-10-15<\/lastmod>/);
+  assert.doesNotMatch(renderGuideSitemapEntries([guide]), /2026-11-17/);
 });

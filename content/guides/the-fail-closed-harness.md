@@ -1,14 +1,27 @@
 ---
-title: "The Fail-Closed Harness: Why a Safe Agent's Default Is Refusal"
+title: "The Fail-Closed Harness: Gate Agent Actions and Code Merges"
 slug: the-fail-closed-harness
 date: 2026-07-23
-reviewed: 2026-09-29
+modified: 2026-11-17
+reviewed: 2026-11-17
+image: /assets/guides/fail-closed-harness/three-leg-refusal.webp
+image_alt: "Untrusted input, sensitive access and consequential action converge on supervision or reliable validation in an agent harness."
 category: Agent Engineering
-description: "The safety of an agent harness is not the list of things it can do. It is what the harness does by default when a required check cannot be satisfied. This guide builds the guardrails half of harness engineering that most write-ups name and skip: a fail-closed default, a trajectory model for when to refuse, and an honest account of what a command matcher can and cannot enforce."
-lead: "While I was writing this guide, my own harness refused me over and over. Not once because a command was dangerous, but because a required check had not been satisfied yet. None of those gates was a wall, and understanding why is the whole discipline."
+description: "Build fail-closed gates for AI agent actions and code merges. Handle missing evidence, hook errors and reviewer failures without treating a matcher as a sandbox."
+lead: "A consequential action needs affirmative evidence that its required checks passed. Missing evidence, a failed reviewer or an unevaluable policy must leave it blocked at the boundary that can actually execute it."
 ---
 
-While I was writing this guide, my own harness kept refusing me.
+## How do you gate an agent action or code merge?
+
+Define the required checks before the action, evaluate them outside the model, and let the execution or merge boundary proceed only after those checks succeed for the intended action and current revision. A missing result is not a passing result. Record the decision and test a known refusal alongside a legitimate action.
+
+**Scope:** this guide separates declaration gates, command-text tripwires, tool-call controls and repository merge controls. A local hook does not establish that a remote merge is protected. The personal observations below are dated July 23 and August 2, 2026; they are not a claim about the current configuration of every agent session.
+
+**Evidence:** inspect [failclosed's admission rules at revision `fda838c`](https://github.com/OrionArchitekton/failclosed/blob/fda838cd0102babd68ea1fce32230fc40911fe1b/README.md#what-failclosed-does) and its [pipeline regression cases](https://github.com/OrionArchitekton/failclosed/blob/fda838cd0102babd68ea1fce32230fc40911fe1b/test_run_review_pipeline.py). The latter stub GitHub interactions and replay reviewer output in a subprocess; they demonstrate the gate's decision logic, not a live repository's protection settings. Claude Code's [hook failure behavior](https://code.claude.com/docs/en/hooks#block-the-action-when-a-hook-fails) and GitHub's [required-check rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging) define separate enforcement boundaries.
+
+## What happened in the original session?
+
+While I was writing the original guide on July 23, 2026, my own harness kept refusing me.
 
 The first refusal came when I tried to create a file. A gate intercepted the write and would not pass it until I had stated, on the record, what imported the file, what the blast radius was, what data it touched, and what the operator had actually asked for. I wrote those four facts. The retry went through. That happened on every new file the session touched, including the ones holding this guide's own research.
 
@@ -70,13 +83,25 @@ That distinction is not pedantry, it is the whole honest account. A matcher that
 
 Be concrete about what slips past. It matches command text before execution, which makes it a pre-command filter and not a sandbox. Shell expansion, an alias, `eval`, a sourced wrapper script, a `git` alias, or the same binary reached by another path can all carry a destructive action past a string match. Treat that list as the canary set and fire each one at the gate on a schedule. Where an action must actually be prevented rather than discouraged, enforcement belongs at the execution boundary, in the layer that runs the command, or better, in removing the capability from the session at all.
 
-The failure mode is the other half. A gate is fail-closed only if the gate breaking is itself a block. In [Claude Code](https://code.claude.com/docs/en/hooks), a `PreToolUse` hook can stop a call two ways: exit code 2, which blocks and feeds its stderr back to the model, or a clean exit carrying a structured `permissionDecision` of `deny`. A `PermissionRequest` hook can deny as well. A `PostToolUse` hook cannot stop anything, because the tool has already run.
+The failure mode is the other half. In [Claude Code's current hook reference](https://code.claude.com/docs/en/hooks#exit-code-output), a synchronous `PreToolUse` command hook can deny with exit 2 or valid decision JSON. An ordinary crash or timeout can be non-blocking, leaving the call to normal permissions. Valid JSON can also control the outcome despite another exit code, so inspect output as well as status. A `PostToolUse` hook runs after the action.
 
-Every other non-zero exit, including an unhandled crash, is treated as a non-blocking error and the action proceeds. That failure is not silent; the transcript carries a hook-error notice. But a notice after the fact is not a block, and it arrives when the command has already run. So a gate that throws on an input it did not anticipate fails open on exactly the weird input most likely to be an attack. Write the gate so its own error path exits blocking, and test that path, not just the happy one.
+**November 17 update:** command and HTTP hooks support [`onFailure: "block"`](https://code.claude.com/docs/en/hooks#block-the-action-when-a-hook-fails), requiring Claude Code v2.1.295 or later. On `PreToolUse`, it blocks failures such as a missing script, timeout or invalid JSON. It has no effect on background command hooks or the documented stop/task-completion events; platform and Code Mode behavior also differ. Check the installed version and event. The July observation below describes that earlier setup, not an unavoidable limitation of current Claude Code.
 
-![A destructive-command tripwire checks a command for a known bad shape. A non-match continues to normal controls, while a match stops for a human decision. A separate error panel contrasts the current non-blocking failure path, which continues with a visible hook error, against a target blocking path that stops the command.](/assets/guides/fail-closed-harness/gate-decision-flow.webp "A tripwire is not a wall: current fail-open behavior contrasted with the target blocking path.")
+Test the missing-script and timeout paths, a policy denial and a valid action in a disposable environment. Confirm protected state stayed unchanged; a hook-error notice alone proves no enforcement.
 
-Then there is the override, and here I will be exact rather than flattering. What clears the block in my own setup today is an environment variable the operator sets. That is a weaker thing than it sounds: an environment variable is not authentication, it is not bound to the specific command, it is not single-use, and it leaves no audit trail. Those four properties are what an override should have, and naming the gap is more useful than implying it is closed. An override the model can set for itself is the permission prompt again in a different hat.
+![Historical configuration: a command tripwire stops a known match for review, while an internal error continues. The original diagram labels blocking errors as the target.](/assets/guides/fail-closed-harness/gate-decision-flow.webp "Historical setup documented in this guide. Current versions can configure onFailure: block; the original diagram predates that option.")
+
+Then there is the override, and here I will be exact rather than flattering. What cleared the block in the July setup was an environment variable the operator set. That is a weaker thing than it sounds: an environment variable is not authentication, it is not bound to the specific command, it is not single-use, and it leaves no audit trail by itself. Those four properties are what an override should have, and naming the gap is more useful than implying it is closed. An override the model can set for itself is the permission prompt again in a different hat.
+
+## What changes at the code-merge boundary?
+
+Make the repository enforce the decision. A local review command can produce a result; branch protection or a ruleset must require the appropriate check before the target branch changes. Review the bypass permissions too. GitHub's [required-status-check documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging) accepts `successful`, `skipped` and `neutral` conclusions, so a required check alone does not prove the underlying evaluator ran. Your policy gate must distinguish a completed evaluation from a skipped or missing one.
+
+The [failclosed project](/works/failclosed/) makes that distinction explicit. At the [pinned source revision](https://github.com/OrionArchitekton/failclosed/blob/fda838cd0102babd68ea1fce32230fc40911fe1b/README.md#status-codes), `MERGE_READY` requires successful required phases and approving reviews. A reviewer crash, skipped required phase or unparseable result refuses that status. Wiring that result into an enforced repository check remains an integration responsibility; printing `MERGE_READY` does not itself lock a branch.
+
+For review, keep one clean case, one known finding and one evaluator failure. Bind the evidence to the revision being merged. After a new commit, obtain fresh evidence. The [missing-review scenario on Proof](/proof?scenario=failclosed-drift#gate-simulator) illustrates the decision in the browser. It does not query or change GitHub protection.
+
+If the question is whether a prompt or model change preserved agent behavior, start with the [Proctor regression-testing guide](/guides/regression-test-ai-agent-prompt-model-change). Its contract checks supply evidence; the merge or action gate decides whether the consequential step may proceed.
 
 ## What happens when the gate itself dies?
 

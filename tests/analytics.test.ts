@@ -157,6 +157,7 @@ test('the Vercel tools send only redacted URLs', async () => {
 
 test('the page_view hit sends only redacted URLs', () => {
   const src = readFileSync(new URL('../components/Analytics.tsx', import.meta.url), 'utf8');
-  assert.match(src, /page_path: redactUrlForAnalytics\(`\$\{pathname\}\$\{search\}`\)/);
+  assert.match(src, /const analyticsPath = redactUrlForAnalytics\(`\$\{pathname\}\$\{search\}`\)/);
+  assert.match(src, /page_path: analyticsPath/);
   assert.match(src, /page_location: redactUrlForAnalytics\(window\.location\.href\)/);
 });

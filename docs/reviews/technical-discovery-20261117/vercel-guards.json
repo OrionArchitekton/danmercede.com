@@ -1,0 +1,21 @@
+{
+  "runner": "node --import tsx; existing tsx CLI uses an IPC socket unavailable in this environment",
+  "checks": [
+    {
+      "flags": [],
+      "exit": 0,
+      "sentinel": true,
+      "bundle_unchanged": true
+    },
+    {
+      "flags": [
+        "--strict",
+        "--require-matches"
+      ],
+      "exit": 0,
+      "sentinel": true,
+      "bundle_unchanged": true
+    }
+  ],
+  "generated_bundle_sha256": "b01e5006d0d363fed5eed5b0d8adf8aa03b8aa53ef980abdf37716c1fc0d0940"
+}
