@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-11-23T15:21:49.073Z",
+  "scope": "Read-only admission and actual Markdown renderer comparison; no generated bundle written",
+  "canonical_sha256": "b678b2edd603f78ebcf6713d3b10ed15f276cff70b5830d0f79a278c34eacbdb",
+  "prior_entries_unchanged": 50,
+  "added_slug": "2026-11-16-is-your-ai-memory-still-earning-its-keep",
+  "proposed_entries": 51,
+  "committed_thoughts": 50,
+  "committed_diagrams": 23,
+  "approved_blocks": 29,
+  "h2": 5,
+  "anchors": 0,
+  "inline_images": 0,
+  "literal_identifiers": [],
+  "closing_question_fully_bold": true,
+  "exact_closing_question": true,
+  "all_blocks_styles_exact": true
+}
