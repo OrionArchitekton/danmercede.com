@@ -70,17 +70,35 @@ test('guide scenario links hydrate, preserve campaign tags, and follow back/forw
     assert.equal(receipt().decision, 'PAUSE_FOR_APPROVAL');
     assert.equal(receipt().simulation, true);
 
+    const gtagCalls: unknown[][] = [];
+    (dom.window as unknown as { gtag?: (...args: unknown[]) => void }).gtag = (...args: unknown[]) => {
+      gtagCalls.push(args);
+    };
+
     await press('Clean run');
     assert.equal(receipt().decision, 'ALLOW');
     assert.equal(new URLSearchParams(location.search).get('utm_source'), 'linkedin');
     assert.equal(new URLSearchParams(location.search).get('scenario'), 'proctor-clean');
     assert.equal(location.hash, '#gate-simulator');
+    assert.deepEqual(gtagCalls, [
+      ['event', 'gate_simulator_run', { scenario: 'proctor', outcome_mode: 'clean' }],
+    ]);
 
     const cleanKey = location.key;
     await press('Clean run');
     assert.equal(location.key, cleanKey, 'an already-selected mode must not add an identical history entry');
     await press('Proctor');
     assert.equal(location.key, cleanKey, 'an already-selected tool must not add an identical history entry');
+    assert.equal(gtagCalls.length, 1, 'duplicate selection must not emit duplicate gate_simulator_run events');
+
+    await press('failclosed');
+    assert.deepEqual(gtagCalls[1], [
+      'event',
+      'gate_simulator_run',
+      { scenario: 'failclosed', outcome_mode: 'clean' },
+    ]);
+    await React.act(async () => { navigate(-1); });
+    delete (dom.window as unknown as { gtag?: unknown }).gtag;
 
     await React.act(async () => { navigate(-1); });
     assert.equal(receipt().decision, 'PAUSE_FOR_APPROVAL', 'back restores the linked failure scenario');

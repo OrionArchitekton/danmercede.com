@@ -86,6 +86,7 @@ const EVENT_DISCLOSURES: Record<string, RegExp> = {
   page_view: /page views/,
   generate_lead: /clicking the email link/,
   connect_click: /clicking the LinkedIn link/,
+  gate_simulator_run: /running the gate simulator/,
   hydration_error: /technical error report/,
   guide_next_step: /following links from a guide/,
 };

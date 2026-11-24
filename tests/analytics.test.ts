@@ -161,3 +161,27 @@ test('the page_view hit sends only redacted URLs', () => {
   assert.match(src, /page_path: analyticsPath/);
   assert.match(src, /page_location: redactUrlForAnalytics\(window\.location\.href\)/);
 });
+
+// DISTRIBUTION-001: test/preview/webdriver traffic must carry debug_mode: true so
+// GA4 excludes automated checks and preview clicks from production conversion KPIs.
+test('resolveGaDebugMode detects test/preview/webdriver traffic and leaves prod clean', async () => {
+  const { resolveGaDebugMode } = await import('../analytics/gaConfig');
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '' }, navigator: { webdriver: false } }), false);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'localhost', search: '' } }), true);
+  assert.equal(resolveGaDebugMode({ location: { hostname: '127.0.0.1', search: '' } }), true);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'danmercede-preview.vercel.app', search: '' } }), true);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '?ga_debug=1' } }), true);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '' }, navigator: { webdriver: true } }), true);
+
+  const calls: unknown[][] = [];
+  trackEvent(
+    {
+      gtag: (...args: unknown[]) => { calls.push(args); },
+      location: { hostname: 'preview.vercel.app', search: '' },
+      navigator: { webdriver: true },
+    } as unknown as { gtag?: (...args: unknown[]) => void },
+    'gate_simulator_run',
+    { scenario: 'proctor', outcome_mode: 'clean' },
+  );
+  assert.deepEqual(calls, [['event', 'gate_simulator_run', { scenario: 'proctor', outcome_mode: 'clean', debug_mode: true }]]);
+});

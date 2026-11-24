@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ShieldAlert, PauseCircle, ArrowRight, RotateCcw } from 'lucide-react';
+import { trackEvent } from '../analytics/gaConfig';
 
 type ScenarioId = 'failclosed' | 'proctor' | 'sandbox';
 type OutcomeMode = 'clean' | 'drift';
@@ -262,6 +263,10 @@ export const GateSimulator: React.FC = () => {
     search.set('scenario', `${nextScenario}-${nextMode}`);
     const nextSearch = `?${search}`;
     if (nextSearch === location.search && location.hash === '#gate-simulator') return;
+    trackEvent(typeof window !== 'undefined' ? window : undefined, 'gate_simulator_run', {
+      scenario: nextScenario,
+      outcome_mode: nextMode,
+    });
     navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
   };
 
