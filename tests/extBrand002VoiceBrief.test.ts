@@ -44,7 +44,9 @@ test('all shipped GUIDES, THOUGHTS, and WORKS pass Dan Mercede voice + CreativeB
       true,
       `guide ${guide.slug} failed CreativeBrief.v1 check: ${briefCheck.errors.join('; ')}`,
     );
-    const bodyScan = scanDanMercedeCopy(guide.body);
+    const bodyScan = scanDanMercedeCopy(
+      `${guide.title}\n${guide.description}\n${guide.lead}\n${guide.body}`,
+    );
     assert.equal(
       bodyScan.ok,
       true,
@@ -60,11 +62,13 @@ test('all shipped GUIDES, THOUGHTS, and WORKS pass Dan Mercede voice + CreativeB
       true,
       `thought ${thought.slug} failed CreativeBrief.v1 check: ${briefCheck.errors.join('; ')}`,
     );
-    const bodyScan = scanDanMercedeCopy(thought.body);
+    const previewAndBodyScan = scanDanMercedeCopy(
+      `${thought.title}\n${thought.preview}\n${thought.body}`,
+    );
     assert.equal(
-      bodyScan.ok,
+      previewAndBodyScan.ok,
       true,
-      `thought ${thought.slug} body failed Dan Mercede voice scan: ${JSON.stringify(bodyScan.hardHits)}`,
+      `thought ${thought.slug} preview/body failed Dan Mercede voice scan: ${JSON.stringify(previewAndBodyScan.hardHits)}`,
     );
   }
 
@@ -155,5 +159,28 @@ test('NON-VACUITY: banned long dashes, AI-slop, Dan Mercede taboos, plea CTAs, a
     unsupportedFormatBrief.errors.some((e) => e.includes('unsupported content_format')),
     `expected unsupported content_format error, got: ${JSON.stringify(unsupportedFormatBrief.errors)}`,
   );
+
+  const invalidOptionalBrief = validateCreativeBrief({
+    schema_version: CREATIVE_BRIEF_SCHEMA,
+    brief_id: 'bad-optional-fields',
+    brand_id: VOICE_PROFILE_ID,
+    content_format: 'guide',
+    title: 'CI failure from leaked GIT_WORK_TREE',
+    claim: 'CI exited 0 on the wrong directory because GIT_WORK_TREE stayed exported.',
+    implication: 'Unset GIT_WORK_TREE before invoking git inside worktree hooks.',
+    target_audience: 'Staff+ engineers',
+    source_urls: 'https://www.danmercede.com/guides/x' as unknown as string[],
+    required_open_loops: [123 as unknown as string],
+    constraints: [''],
+    created_at: 20261123 as unknown as string,
+  });
+  assert.equal(invalidOptionalBrief.ok, false);
+  assert.ok(invalidOptionalBrief.errors.some((e) => e.includes('source_urls')));
+  assert.ok(invalidOptionalBrief.errors.some((e) => e.includes('required_open_loops')));
+  assert.ok(invalidOptionalBrief.errors.some((e) => e.includes('constraints')));
+  assert.ok(invalidOptionalBrief.errors.some((e) => e.includes('created_at')));
+
+  const badPreviewScan = scanDanMercedeCopy('Short delve.\nClean body paragraph explaining GIT_WORK_TREE hooks.');
+  assert.equal(badPreviewScan.ok, false);
   assert.equal(CREATIVE_KIT_VERSION, '0.2.0');
 });

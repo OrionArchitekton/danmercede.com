@@ -271,8 +271,30 @@ export function validateCreativeBrief(brief: Partial<CreativeBriefV1>): BriefVal
   if (typeof brief.implication === 'string' && brief.implication.trim().length < 24) {
     errors.push('implication is too short to specify concrete engineering stakes (>= 24 chars required)');
   }
+  const extraProse: string[] = [];
+  for (const arrayField of ['source_urls', 'required_open_loops', 'constraints'] as const) {
+    const val = brief[arrayField];
+    if (val !== undefined) {
+      if (!Array.isArray(val) || val.some((item) => typeof item !== 'string' || !item.trim())) {
+        errors.push(`optional CreativeBrief.v1 field ${arrayField} must be an array of non-empty strings`);
+      } else if (arrayField !== 'source_urls') {
+        extraProse.push(...val);
+      }
+    }
+  }
+  if (
+    brief.created_at !== undefined &&
+    (typeof brief.created_at !== 'string' || !brief.created_at.trim())
+  ) {
+    errors.push('optional CreativeBrief.v1 field created_at must be a non-empty string');
+  }
 
-  const combined = [brief.title ?? '', brief.claim ?? '', brief.implication ?? ''].join('\n');
+  const combined = [
+    brief.title ?? '',
+    brief.claim ?? '',
+    brief.implication ?? '',
+    ...extraProse,
+  ].join('\n');
   const scan = scanDanMercedeCopy(combined);
   for (const hit of scan.hardHits) {
     errors.push(`voice violation [${hit.rule}]: ${hit.match}`);
