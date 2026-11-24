@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 // Exercise the public deep-link promise: static /proof markup must hydrate at a
 // scenario URL, and changing a selection must survive browser history. No network
 // or subresources are loaded by jsdom. Compare scalar values, never DOM objects.
-const entry = '/proof?scenario=proctor-drift&utm_source=linkedin#gate-simulator';
+const entry = '/proof?scenario=proctor-drift&utm_source=linkedin&token=secret#gate-simulator';
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
   url: `https://www.danmercede.com${entry}`,
 });
@@ -70,18 +70,66 @@ test('guide scenario links hydrate, preserve campaign tags, and follow back/forw
     assert.equal(receipt().decision, 'PAUSE_FOR_APPROVAL');
     assert.equal(receipt().simulation, true);
 
+    const gtagCalls: unknown[][] = [];
+    (dom.window as unknown as { gtag?: (...args: unknown[]) => void }).gtag = (...args: unknown[]) => {
+      gtagCalls.push(args);
+    };
+
     await press('Clean run');
     assert.equal(receipt().decision, 'ALLOW');
     assert.equal(new URLSearchParams(location.search).get('utm_source'), 'linkedin');
     assert.equal(new URLSearchParams(location.search).get('scenario'), 'proctor-clean');
     assert.equal(location.hash, '#gate-simulator');
+    assert.deepEqual(gtagCalls, [
+      [
+        'event',
+        'gate_simulator_run',
+        {
+          scenario: 'proctor',
+          outcome_mode: 'clean',
+          page_location: 'https://www.danmercede.com/proof?utm_source=linkedin',
+        },
+      ],
+    ]);
 
     const cleanKey = location.key;
     await press('Clean run');
     assert.equal(location.key, cleanKey, 'an already-selected mode must not add an identical history entry');
     await press('Proctor');
     assert.equal(location.key, cleanKey, 'an already-selected tool must not add an identical history entry');
+    assert.equal(gtagCalls.length, 1, 'duplicate selection must not emit duplicate gate_simulator_run events');
 
+    await press('failclosed');
+    assert.deepEqual(gtagCalls[1], [
+      'event',
+      'gate_simulator_run',
+      {
+        scenario: 'failclosed',
+        outcome_mode: 'clean',
+        page_location: 'https://www.danmercede.com/proof?utm_source=linkedin',
+      },
+    ]);
+
+    // Rapid synchronous repeat selection before router location state settles must emit once.
+    const countBeforeRapid = gtagCalls.length;
+    const rapidButton = [...container.querySelectorAll('button')].find((item) => item.textContent === 'Proctor');
+    assert.equal(Boolean(rapidButton), true);
+    await React.act(async () => {
+      rapidButton!.click();
+      rapidButton!.click();
+    });
+    assert.equal(gtagCalls.length, countBeforeRapid + 1, 'rapid double-click must emit only one gate_simulator_run');
+
+    // Non-canonical scenario URL matching the default failclosed-drift must not emit when re-selecting failclosed.
+    await React.act(async () => { navigate('/proof?scenario=unknown'); });
+    const countBeforeUnchanged = gtagCalls.length;
+    await press('failclosed');
+    assert.equal(gtagCalls.length, countBeforeUnchanged, 'unchanged selection on non-canonical URL must not count as a run');
+    delete (dom.window as unknown as { gtag?: unknown }).gtag;
+
+    // Reset back to proctor-clean -> navigate back to verify proctor-drift -> forward to proctor-clean.
+    await React.act(async () => { navigate(entry); });
+    await press('Clean run');
     await React.act(async () => { navigate(-1); });
     assert.equal(receipt().decision, 'PAUSE_FOR_APPROVAL', 'back restores the linked failure scenario');
     await React.act(async () => { navigate(1); });

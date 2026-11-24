@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ShieldAlert, PauseCircle, ArrowRight, RotateCcw } from 'lucide-react';
+import { redactUrlForAnalytics, trackEvent } from '../analytics/gaConfig';
 
 type ScenarioId = 'failclosed' | 'proctor' | 'sandbox';
 type OutcomeMode = 'clean' | 'drift';
@@ -246,23 +247,43 @@ export const GateSimulator: React.FC = () => {
   const navigate = useNavigate();
   const [scenarioId, setScenarioId] = useState<ScenarioId>('failclosed');
   const [mode, setMode] = useState<OutcomeMode>('drift');
+  const activeSelectionRef = useRef<{ scenarioId: ScenarioId; mode: OutcomeMode }>(
+    simulatorSelection(location.search),
+  );
 
   // Keep the initial render identical to build-time HTML. Apply deep links after
   // hydration, and also honor browser back/forward and in-app query changes.
   useEffect(() => {
     const selection = simulatorSelection(location.search);
+    activeSelectionRef.current = selection;
     setScenarioId(selection.scenarioId);
     setMode(selection.mode);
   }, [location.search]);
 
   const choose = (nextScenario: ScenarioId, nextMode: OutcomeMode) => {
-    setScenarioId(nextScenario);
-    setMode(nextMode);
     const search = new URLSearchParams(location.search);
     search.set('scenario', `${nextScenario}-${nextMode}`);
     const nextSearch = `?${search}`;
-    if (nextSearch === location.search && location.hash === '#gate-simulator') return;
-    navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
+    const current = activeSelectionRef.current;
+    if (current.scenarioId === nextScenario && current.mode === nextMode) {
+      if (location.hash !== '#gate-simulator') {
+        navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
+      }
+      return;
+    }
+    activeSelectionRef.current = { scenarioId: nextScenario, mode: nextMode };
+    setScenarioId(nextScenario);
+    setMode(nextMode);
+    trackEvent(typeof window !== 'undefined' ? window : undefined, 'gate_simulator_run', {
+      scenario: nextScenario,
+      outcome_mode: nextMode,
+      ...(typeof window !== 'undefined'
+        ? { page_location: redactUrlForAnalytics(window.location.href) }
+        : {}),
+    });
+    if (nextSearch !== location.search || location.hash !== '#gate-simulator') {
+      navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
+    }
   };
 
   const scenario = SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0];

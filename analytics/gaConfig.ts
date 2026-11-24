@@ -20,6 +20,14 @@ export interface GaConfigParams {
   // SPA: suppress the automatic load-time page_view; route changes fire it
   // manually off useLocation so navigations are not double-counted.
   send_page_view: false;
+  // Marks non-production / preview / headless-browser sessions as debug traffic
+  // so GA4 filters automated checks out of production conversion metrics.
+  debug_mode?: true;
+}
+
+export interface GaDebugTarget {
+  location?: { hostname?: string | null; search?: string | null } | null;
+  navigator?: { webdriver?: boolean | null } | null;
 }
 
 export interface GaRuntimeConfig {
@@ -30,12 +38,74 @@ export interface GaRuntimeConfig {
 
 // GA4 measurement ids are `G-` followed by an uppercase-alphanumeric stream id.
 const GA4_ID = /^G-[A-Z0-9]+$/;
+const DEBUG_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
+const PRODUCTION_HOSTS = new Set([
+  'www.danmercede.com',
+  'danmercede.com',
+  'www.danmercede.online',
+  'danmercede.online',
+  'danmercede-com.vercel.app',
+]);
+const DEBUG_QUERY_KEYS = ['ga_debug', 'debug_mode', 'test_traffic'] as const;
+
+function isPreviewVercelHost(host: string): boolean {
+  return (
+    host.endsWith('.vercel.app') &&
+    !PRODUCTION_HOSTS.has(host) &&
+    (host.includes('-git-') || host.includes('-dan-mercedes-projects.vercel.app') || host.includes('preview'))
+  );
+}
+
+function isProductionHost(host: string): boolean {
+  if (!host) return false;
+  if (PRODUCTION_HOSTS.has(host)) return true;
+  if (host.endsWith('.danmercede.com') || host.endsWith('.danmercede.online')) return true;
+  if (host.endsWith('.vercel.app') && !isPreviewVercelHost(host)) return true;
+  return false;
+}
+
+export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
+  if (!target) return false;
+  if (target.navigator?.webdriver === true) return true;
+  const host = (target.location?.hostname ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '');
+  if (
+    host &&
+    (DEBUG_HOSTS.has(host) || host.endsWith('.local') || isPreviewVercelHost(host))
+  ) {
+    return true;
+  }
+  if (!host || isProductionHost(host)) {
+    return false;
+  }
+  const rawSearch = (target.location?.search ?? '').trim();
+  if (rawSearch) {
+    const query = rawSearch.startsWith('?') ? rawSearch.slice(1) : rawSearch;
+    const params = new URLSearchParams(query);
+    for (const key of DEBUG_QUERY_KEYS) {
+      const val = (params.get(key) ?? '').trim().toLowerCase();
+      if (val === '1' || val === 'true') return true;
+    }
+  }
+  return false;
+}
 
 export function resolveGaConfig(
   measurementId: string | undefined | null,
+  debugTarget?: GaDebugTarget | null,
 ): GaRuntimeConfig | null {
   const id = (measurementId ?? '').trim();
   if (!GA4_ID.test(id)) return null;
+  const configParams: GaConfigParams = {
+    anonymize_ip: true,
+    send_page_view: false,
+  };
+  if (resolveGaDebugMode(debugTarget)) {
+    configParams.debug_mode = true;
+  }
   return {
     measurementId: id,
     consentDefaults: {
@@ -44,10 +114,7 @@ export function resolveGaConfig(
       ad_personalization: 'denied',
       analytics_storage: 'granted',
     },
-    configParams: {
-      anonymize_ip: true,
-      send_page_view: false,
-    },
+    configParams,
   };
 }
 
@@ -70,11 +137,16 @@ export function createGtag(target: { dataLayer?: unknown[] }): (...args: unknown
 // call sites can wire it unconditionally. Pass the global (window) as target so
 // the call is unit-testable without a real browser.
 export function trackEvent(
-  target: { gtag?: (...args: unknown[]) => void } | null | undefined,
+  target: ({ gtag?: (...args: unknown[]) => void } & GaDebugTarget) | null | undefined,
   event: string,
   params?: Record<string, unknown>,
 ): void {
-  target?.gtag?.('event', event, params ?? {});
+  if (!target?.gtag) return;
+  const payload = params ? { ...params } : {};
+  if (resolveGaDebugMode(target) && payload.debug_mode === undefined) {
+    payload.debug_mode = true;
+  }
+  target.gtag('event', event, payload);
 }
 
 // Page views carry only the path and campaign tags. Any other query value (an email

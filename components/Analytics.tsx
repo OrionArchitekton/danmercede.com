@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { resolveGaConfig, createGtag, redactUrlForAnalytics, redactEventUrl, trackEvent, type GaRuntimeConfig } from '../analytics/gaConfig';
+import {
+  resolveGaConfig,
+  resolveGaDebugMode,
+  createGtag,
+  redactUrlForAnalytics,
+  redactEventUrl,
+  trackEvent,
+  type GaRuntimeConfig,
+} from '../analytics/gaConfig';
 import { guideNextStep } from '../analytics/guideJourney';
 
 const VercelAnalytics = (_props: { beforeSend?: typeof redactEventUrl }) => null;
@@ -32,9 +40,10 @@ function ensureGtagLoaded(cfg: GaRuntimeConfig): void {
   const gtag = createGtag(window);
   window.gtag = gtag;
 
+  const debugMode = resolveGaDebugMode(window);
   gtag('consent', 'default', cfg.consentDefaults);
   gtag('js', new Date());
-  gtag('config', cfg.measurementId, cfg.configParams);
+  gtag('config', cfg.measurementId, debugMode ? { ...cfg.configParams, debug_mode: true } : cfg.configParams);
 
   const script = document.createElement('script');
   script.async = true;
@@ -62,6 +71,7 @@ const GoogleAnalytics = () => {
         page_path: analyticsPath,
         page_location: redactUrlForAnalytics(window.location.href),
         page_title: document.title,
+        ...(resolveGaDebugMode(window) ? { debug_mode: true } : {}),
       });
     });
     return () => cancelAnimationFrame(raf);
