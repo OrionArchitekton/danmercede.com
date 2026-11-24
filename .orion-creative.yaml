@@ -1,0 +1,9 @@
+schema_version: 1
+kit_version: "0.2.0"
+brand_id: dan_mercede
+policy_pack: technical_founder
+voice_profile_sha256: "c7740e52bea9c9469b3eba9337e486d28211c7dd83b3b56f72eb6d96068fc235"
+brief_schema: CreativeBrief.v1
+adapter_path: scripts/_orion_creative_adapter.py
+adapter_schema: orion-creative-adapter/v1
+content_checks: scripts/creativeBrandCheck.ts
