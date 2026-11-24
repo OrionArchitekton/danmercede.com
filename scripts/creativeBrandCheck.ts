@@ -211,11 +211,14 @@ export function scanDanMercedeCopy(text: string): CopyScanResult {
   };
 }
 
+export const SUPPORTED_CONTENT_FORMATS = ['guide', 'thought', 'work', 'essay'] as const;
+export type SupportedContentFormat = (typeof SUPPORTED_CONTENT_FORMATS)[number];
+
 export interface CreativeBriefV1 {
   schema_version: typeof CREATIVE_BRIEF_SCHEMA;
   brief_id: string;
   brand_id: typeof VOICE_PROFILE_ID;
-  content_format: 'guide' | 'thought' | 'work' | 'essay';
+  content_format: SupportedContentFormat;
   title: string;
   claim: string;
   implication: string;
@@ -252,6 +255,15 @@ export function validateCreativeBrief(brief: Partial<CreativeBriefV1>): BriefVal
     if (typeof val !== 'string' || !val.trim()) {
       errors.push(`missing required CreativeBrief.v1 field: ${field}`);
     }
+  }
+  if (
+    typeof brief.content_format === 'string' &&
+    brief.content_format.trim() &&
+    !(SUPPORTED_CONTENT_FORMATS as readonly string[]).includes(brief.content_format)
+  ) {
+    errors.push(
+      `unsupported content_format "${brief.content_format}"; expected one of ${SUPPORTED_CONTENT_FORMATS.join(', ')}`,
+    );
   }
   if (typeof brief.claim === 'string' && brief.claim.trim().length < 24) {
     errors.push('claim is too short to state a falsifiable assertion (>= 24 chars required)');

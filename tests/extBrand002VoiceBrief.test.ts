@@ -139,5 +139,21 @@ test('NON-VACUITY: banned long dashes, AI-slop, Dan Mercede taboos, plea CTAs, a
   assert.equal(invalidBrief.ok, false);
   assert.ok(invalidBrief.errors.some((e) => e.includes('implication')));
   assert.ok(invalidBrief.errors.some((e) => e.includes('claim is too short')));
+
+  const unsupportedFormatBrief = validateCreativeBrief({
+    schema_version: CREATIVE_BRIEF_SCHEMA,
+    brief_id: 'bad-format-brief',
+    brand_id: VOICE_PROFILE_ID,
+    content_format: 'video' as unknown as 'guide',
+    title: 'CI failure from leaked GIT_WORK_TREE',
+    claim: 'CI exited 0 on the wrong directory because GIT_WORK_TREE stayed exported.',
+    implication: 'Unset GIT_WORK_TREE before invoking git inside worktree hooks.',
+    target_audience: 'Staff+ engineers',
+  });
+  assert.equal(unsupportedFormatBrief.ok, false);
+  assert.ok(
+    unsupportedFormatBrief.errors.some((e) => e.includes('unsupported content_format')),
+    `expected unsupported content_format error, got: ${JSON.stringify(unsupportedFormatBrief.errors)}`,
+  );
   assert.equal(CREATIVE_KIT_VERSION, '0.2.0');
 });
