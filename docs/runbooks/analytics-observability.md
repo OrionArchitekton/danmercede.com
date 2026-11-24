@@ -89,11 +89,14 @@ the site's GA connection is read-only):
    register **`scenario`** (parameter `scenario`) and **`outcome_mode`** (parameter
    `outcome_mode`) so `gate_simulator_run` reports and Explorations can segment by tool
    and decision mode.
-4. GA4 -> Admin -> **Data settings** -> **Data filters** -> open **Developer traffic**
-   and switch Filter state from Testing to **Active**. Localhost, `.local`, Vercel preview
-   deployments, and WebDriver checks emit `debug_mode: true` (`resolveGaDebugMode`), and
-   activating the Developer traffic filter excludes those hits from standard production
-   reports while keeping them visible in DebugView.
+4. GA4 -> Admin -> **Data settings** -> **Data filters** -> if **Developer traffic** does
+   not exist yet (for example on a newly created property), click **Create filter** ->
+   **Developer Traffic** -> **Exclude**, enter a filter name, and set Filter state to
+   **Active**; otherwise open the existing **Developer traffic** filter and switch Filter
+   state from Testing to **Active**. Localhost, `.local`, Vercel preview deployments, and
+   WebDriver checks emit `debug_mode: true` (`resolveGaDebugMode`), and activating this
+   filter excludes those hits from standard production reports while keeping them visible
+   in DebugView.
 
 ---
 

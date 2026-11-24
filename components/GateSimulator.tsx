@@ -261,19 +261,19 @@ export const GateSimulator: React.FC = () => {
   }, [location.search]);
 
   const choose = (nextScenario: ScenarioId, nextMode: OutcomeMode) => {
+    const search = new URLSearchParams(location.search);
+    search.set('scenario', `${nextScenario}-${nextMode}`);
+    const nextSearch = `?${search}`;
     const current = activeSelectionRef.current;
     if (current.scenarioId === nextScenario && current.mode === nextMode) {
       if (location.hash !== '#gate-simulator') {
-        navigate({ pathname: location.pathname, search: location.search, hash: '#gate-simulator' });
+        navigate({ pathname: location.pathname, search: nextSearch, hash: '#gate-simulator' });
       }
       return;
     }
     activeSelectionRef.current = { scenarioId: nextScenario, mode: nextMode };
     setScenarioId(nextScenario);
     setMode(nextMode);
-    const search = new URLSearchParams(location.search);
-    search.set('scenario', `${nextScenario}-${nextMode}`);
-    const nextSearch = `?${search}`;
     trackEvent(typeof window !== 'undefined' ? window : undefined, 'gate_simulator_run', {
       scenario: nextScenario,
       outcome_mode: nextMode,
