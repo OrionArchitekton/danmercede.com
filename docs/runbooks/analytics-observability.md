@@ -1,9 +1,10 @@
 ---
-verified: 2026-07-03
-review_after: 2026-09-28
+verified: 2026-11-23
+review_after: 2027-02-21
 topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, key-events, danmercede.com]
 references:
   - components/Analytics.tsx
+  - components/GateSimulator.tsx
   - analytics/gaConfig.ts
   - App.tsx
   - .env.example
@@ -68,19 +69,31 @@ turn it on. DNS for both danmercede domains is on **Cloudflare**.
 5. Confirm **Settings → Ownership** lists your verification and that Coverage/Pages
    shows the baked routes being read.
 
-## Step 4 — Conversion events / Key events (operator, GA4 UI)
+## Step 4 - Conversion events / Key events (operator, GA4 UI)
 
 The `/connect` page fires two conversion events via `trackEvent`
 (`analytics/gaConfig.ts`, wired in `App.tsx`): **`generate_lead`** on the email
 ("Direct Contact") click and **`connect_click`** (`method: linkedin`) on the LinkedIn
-click. They are collected automatically once GA is live, but GA4 does **not** count
-them as conversions until they are marked as **Key events**. This is a console-only
-step: the site's GA connection is read-only, so it cannot be done via API.
+click. The `/proof` page also fires **`gate_simulator_run`** (`scenario`,
+`outcome_mode`, redacted `page_location`) from `components/GateSimulator.tsx`.
+They are collected automatically once GA is live, but GA4 does **not** count
+them as conversions, break down simulator parameters, or drop automated test hits
+until the operator enables the three GA4 Admin settings below (console-only:
+the site's GA connection is read-only):
 
-1. GA4 → Admin → **Key events** → **New key event** → enter `generate_lead`
-   (optionally add `connect_click` to also count LinkedIn clicks).
+1. GA4 -> Admin -> **Key events** -> **New key event** -> register **`generate_lead`**,
+   **`gate_simulator_run`**, and **`connect_click`**.
 2. Alternatively, once an event has fired at least once, toggle **mark as key event**
-   from **Admin → Events**.
+   from **Admin -> Events**.
+3. GA4 -> Admin -> **Custom definitions** -> **Create custom dimension** (Event scope):
+   register **`scenario`** (parameter `scenario`) and **`outcome_mode`** (parameter
+   `outcome_mode`) so `gate_simulator_run` reports and Explorations can segment by tool
+   and decision mode.
+4. GA4 -> Admin -> **Data settings** -> **Data filters** -> open **Developer traffic**
+   and switch Filter state from Testing to **Active**. Localhost, `.local`, Vercel preview
+   deployments, and WebDriver checks emit `debug_mode: true` (`resolveGaDebugMode`), and
+   activating the Developer traffic filter excludes those hits from standard production
+   reports while keeping them visible in DebugView.
 
 ---
 

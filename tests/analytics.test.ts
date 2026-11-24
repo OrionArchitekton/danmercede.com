@@ -163,15 +163,23 @@ test('the page_view hit sends only redacted URLs', () => {
 });
 
 // DISTRIBUTION-001: test/preview/webdriver traffic must carry debug_mode: true so
-// GA4 excludes automated checks and preview clicks from production conversion KPIs.
+// GA4 excludes automated checks and preview clicks from production conversion KPIs,
+// while production hosts (including primary .vercel.app aliases and shared ?debug_mode links) stay clean.
 test('resolveGaDebugMode detects test/preview/webdriver traffic and leaves prod clean', async () => {
   const { resolveGaDebugMode } = await import('../analytics/gaConfig');
   assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '' }, navigator: { webdriver: false } }), false);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'danmercede-com.vercel.app', search: '' } }), false);
   assert.equal(resolveGaDebugMode({ location: { hostname: 'localhost', search: '' } }), true);
   assert.equal(resolveGaDebugMode({ location: { hostname: '127.0.0.1', search: '' } }), true);
   assert.equal(resolveGaDebugMode({ location: { hostname: 'danmercede-preview.vercel.app', search: '' } }), true);
-  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '?ga_debug=1' } }), true);
-  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '' }, navigator: { webdriver: true } }), true);
+  assert.equal(
+    resolveGaDebugMode({ location: { hostname: 'danmercede-com-git-feat-dan-mercedes-projects.vercel.app', search: '' } }),
+    true,
+  );
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '?ga_debug=1' } }), false);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'danmercede-com.vercel.app', search: '?debug_mode=1' } }), false);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'staging.example.test', search: '?ga_debug=1' } }), true);
+  assert.equal(resolveGaDebugMode({ location: { hostname: 'www.danmercede.com', search: '?debug_mode=1' }, navigator: { webdriver: true } }), true);
 
   const calls: unknown[][] = [];
   trackEvent(

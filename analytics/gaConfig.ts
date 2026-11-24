@@ -39,7 +39,30 @@ export interface GaRuntimeConfig {
 // GA4 measurement ids are `G-` followed by an uppercase-alphanumeric stream id.
 const GA4_ID = /^G-[A-Z0-9]+$/;
 const DEBUG_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
+const PRODUCTION_HOSTS = new Set([
+  'www.danmercede.com',
+  'danmercede.com',
+  'www.danmercede.online',
+  'danmercede.online',
+  'danmercede-com.vercel.app',
+]);
 const DEBUG_QUERY_KEYS = ['ga_debug', 'debug_mode', 'test_traffic'] as const;
+
+function isPreviewVercelHost(host: string): boolean {
+  return (
+    host.endsWith('.vercel.app') &&
+    !PRODUCTION_HOSTS.has(host) &&
+    (host.includes('-git-') || host.includes('-dan-mercedes-projects.vercel.app') || host.includes('preview'))
+  );
+}
+
+function isProductionHost(host: string): boolean {
+  if (!host) return false;
+  if (PRODUCTION_HOSTS.has(host)) return true;
+  if (host.endsWith('.danmercede.com') || host.endsWith('.danmercede.online')) return true;
+  if (host.endsWith('.vercel.app') && !isPreviewVercelHost(host)) return true;
+  return false;
+}
 
 export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
   if (!target) return false;
@@ -51,9 +74,12 @@ export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
     .replace(/\.$/, '');
   if (
     host &&
-    (DEBUG_HOSTS.has(host) || host.endsWith('.local') || host.endsWith('.vercel.app'))
+    (DEBUG_HOSTS.has(host) || host.endsWith('.local') || isPreviewVercelHost(host))
   ) {
     return true;
+  }
+  if (!host || isProductionHost(host)) {
+    return false;
   }
   const rawSearch = (target.location?.search ?? '').trim();
   if (rawSearch) {
