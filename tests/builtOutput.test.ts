@@ -34,6 +34,7 @@ function walk(dir: string, ext: string): string[] {
 }
 
 const JSON_LD = /^<script type="application\/ld\+json">$/;
+const SPECULATION_RULES = /^<script type="speculationrules">$/;
 const ENTRY_SCRIPT = /^<script type="module" crossorigin src="(\/assets\/[\w.-]+\.js)">$/;
 const MODULE_PRELOAD = /^<link rel="modulepreload" crossorigin href="(\/assets\/[\w.-]+\.js)">$/;
 
@@ -45,7 +46,7 @@ function scriptTagProblems(html: string, isBuiltFile: (sitePath: string) => bool
     if (!isBuiltFile(sitePath)) problems.push(`${tag} names ${sitePath}, which is not a file in build/`);
   };
   for (const [tag] of html.matchAll(/<script\b[^>]*>/gi)) {
-    if (JSON_LD.test(tag)) continue;
+    if (JSON_LD.test(tag) || SPECULATION_RULES.test(tag)) continue;
     const entry = ENTRY_SCRIPT.exec(tag);
     if (entry) checkFile(tag, entry[1]);
     else problems.push(`unexpected script tag ${tag}`);
@@ -68,7 +69,7 @@ test('the tag allowlist accepts the emitted shapes and rejects everything else (
   const exists = (p: string) => p === '/assets/index-abc.js';
   assert.deepEqual(
     scriptTagProblems(
-      '<script type="application/ld+json">{}</script><script type="module" crossorigin src="/assets/index-abc.js"></script>' +
+      '<script type="application/ld+json">{}</script><script type="speculationrules">{"prerender":[]}</script><script type="module" crossorigin src="/assets/index-abc.js"></script>' +
         '<link rel="modulepreload" crossorigin href="/assets/index-abc.js"><link rel="preload" as="image" href="/hero.webp">',
       exists,
     ),

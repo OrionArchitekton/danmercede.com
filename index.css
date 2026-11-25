@@ -27,6 +27,34 @@
   --color-slate-950: #020B29;
 }
 
+/* Metric-adjusted local fallbacks to minimize CLS while web fonts swap in. */
+@font-face {
+  font-family: "Newsreader Fallback";
+  src: local("Georgia"), local("Times New Roman");
+  size-adjust: 97%;
+  ascent-override: 98%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans Fallback";
+  src: local("Segoe UI"), local("Helvetica Neue"), local("Arial");
+  size-adjust: 100%;
+  ascent-override: 99%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Fallback";
+  src: local("SFMono-Regular"), local("Consolas"), local("Liberation Mono");
+  size-adjust: 96%;
+  ascent-override: 102%;
+  descent-override: 28%;
+  line-gap-override: 0%;
+}
+
 /* Base styles moved out of the inline index.html <style> when Tailwind was
    bundled (W2). The CDN JIT compiler is gone; these are emitted into the
    bundled stylesheet so the served page renders identically. */
@@ -41,6 +69,11 @@
   body {
     background-color: #020B29;
     color: #e2e8f0;
+    font-family: "IBM Plex Sans", "IBM Plex Sans Fallback", system-ui, sans-serif;
+  }
+
+  nav a[aria-label="Dan Mercede, home"] {
+    min-height: 44px;
   }
 
   /* Headings are set in the serif face. A heading that carries font-mono or

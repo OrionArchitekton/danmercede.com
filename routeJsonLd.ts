@@ -1,4 +1,17 @@
+import type { Graph } from 'schema-dts';
 import { JSONLD_BLOCK_START, JSONLD_BLOCK_END } from './seoMeta';
+
+export type RouteJsonLdGraph = Graph;
+
+// Validates that a serialized JSON-LD payload parses to a schema-dts Graph
+// with a schema.org @context and non-empty @graph array.
+export function parseRouteJsonLdGraph(json: string): RouteJsonLdGraph {
+  const parsed = JSON.parse(json) as Partial<RouteJsonLdGraph>;
+  if (parsed['@context'] !== 'https://schema.org' || !Array.isArray(parsed['@graph'])) {
+    throw new Error('Invalid route JSON-LD Graph payload');
+  }
+  return parsed as RouteJsonLdGraph;
+}
 
 // Keeps the route-specific JSON-LD in <head> in step with in-app navigation.
 // The build bakes each page's route graph (ProfilePage, Article, BreadcrumbList,
