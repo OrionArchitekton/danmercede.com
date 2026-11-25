@@ -143,6 +143,22 @@
 }
   </script>
   <!--/ROUTE_JSONLD-->
+  <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "and": [
+              { "href_matches": "/*" },
+              { "not": { "href_matches": "/api/*" } },
+              { "not": { "selector_matches": "[download], [target=\"_blank\"]" } }
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+  </script>
 </head>
 
 <body>

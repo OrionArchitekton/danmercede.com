@@ -13,6 +13,7 @@ import { GuideMetadata } from './components/GuideMetadata';
 import GuideVideo from './components/GuideVideo';
 import Analytics from './components/Analytics';
 import GateSimulator from './components/GateSimulator';
+import { EngineeringFigure, summarizeEvidenceTiers } from './components/EngineeringFigure';
 import CommandPalette from './components/CommandPalette';
 import EcosystemMap from './components/EcosystemMap';
 import { DiagramPreview } from './components/DiagramPreview';
@@ -109,98 +110,102 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
   };
 
   return (
-    <nav
-      className="fixed w-full z-50 bg-slate-950/85 backdrop-blur-md border-b border-white/10"
-      onKeyDown={(event) => { if (isOpen && event.key === 'Escape') closeMenu(); }}
-      onBlur={(event) => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setIsOpen(false); }}
-    >
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center" aria-label="Dan Mercede, home">
-          <img src="/dan-mercede-lockup-dark.svg" alt="" width="144" height="36" className="h-9 w-auto" />
-        </Link>
+    <header className="fixed top-0 inset-x-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-white/10">
+      <nav
+        aria-label="Primary"
+        className="w-full"
+        onKeyDown={(event) => { if (isOpen && event.key === 'Escape') closeMenu(); }}
+        onBlur={(event) => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setIsOpen(false); }}
+      >
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center" aria-label="Dan Mercede, home">
+            <img src="/dan-mercede-lockup-dark.svg" alt="" width="144" height="36" className="h-9 w-auto" />
+          </Link>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center space-x-7">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                aria-current={active ? (currentPath === item.path ? 'page' : 'location') : undefined}
-                className={`relative py-1 text-sm font-medium uppercase tracking-wider hover:text-copper-400 transition-colors ${
-                  active ? 'text-copper-400' : 'text-slate-300'
-                }`}
-              >
-                {item.label}
-                {active && (
-                  <span className="absolute left-0 right-0 -bottom-1 h-0.5 bg-copper-500 rounded-full" aria-hidden="true" />
-                )}
-              </Link>
-            );
-          })}
-          <button
-            type="button"
-            onClick={openSearch}
-            aria-label="Open global search"
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-white/15 bg-navy-deep/70 text-xs font-mono text-slate-300 hover:border-copper-500/50 hover:text-white transition-colors whitespace-nowrap"
-          >
-            <Search className="w-3.5 h-3.5 text-copper-400" aria-hidden="true" />
-            <span>Search</span>
-            <kbd className="text-[10px] text-slate-400 border border-white/10 px-1 rounded-xs">Ctrl K</kbd>
-          </button>
-        </div>
-
-        {/* Mobile Actions */}
-        <div className="md:hidden flex items-center gap-3">
-          <button
-            type="button"
-            onClick={openSearch}
-            aria-label="Search site"
-            className="p-2 rounded-sm border border-white/10 text-slate-300 hover:text-copper-400"
-          >
-            <Search className="w-4 h-4" aria-hidden="true" />
-          </button>
-          <button
-            ref={toggleRef}
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-white p-1"
-            aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isOpen}
-            aria-controls={isOpen ? 'mobile-menu' : undefined}
-          >
-            {isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden absolute top-full inset-x-0 h-[calc(100dvh-5rem)]">
-          <div aria-hidden="true" onClick={closeMenu} className="absolute inset-0 bg-slate-950/75" />
-          <div id="mobile-menu" ref={menuRef} className="relative max-h-full overflow-y-auto overscroll-contain bg-navy-deep border-b border-copper-500/30 px-6 py-4">
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center space-x-7">
             {NAV_ITEMS.map((item) => {
               const active = isActive(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={() => setIsOpen(false)}
                   aria-current={active ? (currentPath === item.path ? 'page' : 'location') : undefined}
-                  className={`block border-l-2 px-3 py-2 text-lg font-medium hover:text-copper-400 ${active ? 'border-copper-500 bg-copper-500/10 text-copper-300' : 'border-transparent text-slate-300'}`}
+                  className={`relative inline-flex min-h-[44px] items-center text-sm font-medium uppercase tracking-wider hover:text-copper-400 transition-colors ${
+                    active ? 'text-copper-400' : 'text-slate-300'
+                  }`}
                 >
                   {item.label}
+                  {active && (
+                    <span className="absolute left-0 right-0 bottom-1.5 h-0.5 bg-copper-500 rounded-full" aria-hidden="true" />
+                  )}
                 </Link>
               );
             })}
-            <button type="button" onClick={openSearch} className="mt-3 flex w-full items-center gap-3 rounded-sm border border-white/20 bg-slate-950/70 px-4 py-3 text-left text-sm text-white hover:border-copper-500">
-              <Search className="size-4 text-copper-400" aria-hidden="true" />
-              Search site
+            <button
+              type="button"
+              onClick={openSearch}
+              className="inline-flex min-h-[44px] items-center gap-2 px-3 py-1.5 rounded-sm border border-white/15 bg-navy-deep/70 text-xs font-mono text-slate-300 hover:border-copper-500/50 hover:text-white transition-colors whitespace-nowrap"
+            >
+              <Search className="w-3.5 h-3.5 text-copper-400" aria-hidden="true" />
+              <span>Search</span>
+              <span className="sr-only"> site</span>
+              <kbd aria-hidden="true" className="text-[10px] text-slate-400 border border-white/10 px-1 rounded-xs">Ctrl K</kbd>
+            </button>
+          </div>
+
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openSearch}
+              aria-label="Search site"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm border border-white/10 text-slate-300 hover:text-copper-400"
+            >
+              <Search className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button
+              ref={toggleRef}
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-white hover:text-copper-400"
+              aria-label={isOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? 'mobile-menu' : undefined}
+            >
+              {isOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
             </button>
           </div>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile Menu */}
+        {isOpen && (
+          <div className="md:hidden absolute top-full inset-x-0 h-[calc(100dvh-5rem)]">
+            <div aria-hidden="true" onClick={closeMenu} className="absolute inset-0 bg-slate-950/75" />
+            <div id="mobile-menu" ref={menuRef} className="relative max-h-full overflow-y-auto overscroll-contain bg-navy-deep border-b border-copper-500/30 px-6 py-4">
+              {NAV_ITEMS.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
+                    aria-current={active ? (currentPath === item.path ? 'page' : 'location') : undefined}
+                    className={`flex min-h-[44px] items-center border-l-2 px-3 py-2 text-lg font-medium hover:text-copper-400 ${active ? 'border-copper-500 bg-copper-500/10 text-copper-300' : 'border-transparent text-slate-300'}`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+              <button type="button" onClick={openSearch} className="mt-3 flex min-h-[44px] w-full items-center gap-3 rounded-sm border border-white/20 bg-slate-950/70 px-4 py-3 text-left text-sm text-white hover:border-copper-500">
+                <Search className="size-4 text-copper-400" aria-hidden="true" />
+                Search site
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
   );
 };
 
@@ -208,7 +213,7 @@ const Footer = () => (
   <footer className="border-t border-white/10 bg-navy-deep/40 py-14 mt-20">
     <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
       <div className="md:col-span-5">
-        <img src="/dm-mark.svg" alt="" aria-hidden="true" className="h-8 w-8 mb-3" />
+        <img src="/dm-mark.svg" alt="" aria-hidden="true" width="32" height="32" className="h-8 w-8 mb-3" />
         <p className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</p>
         <p className="text-slate-400 text-xs font-mono leading-relaxed max-w-sm">{FOOTER_DATA.role}</p>
       </div>
@@ -861,6 +866,13 @@ const EvidenceSection = () => {
         </p>
       </div>
 
+      <EngineeringFigure
+        title="Evidence Ledger Coverage"
+        subtitle="Computed directly from committed PROOF_EVIDENCE claims"
+        caption="Breakdown of checkable commands, public source URLs, and explicitly stated limitations across the proof surface."
+        data={summarizeEvidenceTiers(PROOF_EVIDENCE)}
+      />
+
       <div className="space-y-8">
         {PROOF_EVIDENCE.map((tier) => {
           const Icon = EVIDENCE_TIER_ICON[tier.id] ?? CheckCircle2;
@@ -1246,7 +1258,7 @@ const ResourcesPage = () => {
             <h2 className="text-2xl font-bold text-white mb-1">How the systems are built</h2>
             <p className="text-sm text-slate-400">
               <span className="text-copper-400">Approach.</span> These diagrams are conceptual. They explain the design and are not measured outcomes. For the platform concept, see{' '}
-              <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline-offset-4 hover:underline">Cosmocrat OS: Platform</a>.
+              <a href="https://www.cosmocrat.ai/platform" {...linkTargetProps('https://www.cosmocrat.ai/platform')} className="text-copper-400 hover:text-copper-300 underline underline-offset-4">Cosmocrat OS: Platform</a>.
             </p>
           </div>
           <section id="gate-simulator" aria-labelledby="gate-simulator-heading" className="mb-14 scroll-mt-32">
@@ -1263,6 +1275,8 @@ const ResourcesPage = () => {
             <img
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
               alt="Runtime Execution Control Plane Architecture, a conceptual diagram: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
+              width="2784"
+              height="1536"
               className="w-full h-auto"
               loading="eager"
             />
@@ -1350,6 +1364,8 @@ const ResourcesPage = () => {
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
               alt="Gated Execution Pipeline, a conceptual diagram: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
+              width="2752"
+              height="1536"
               className="w-full h-auto"
               loading="lazy"
             />
@@ -1374,6 +1390,8 @@ const ResourcesPage = () => {
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
               alt="Conceptual economics framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
+              width="2752"
+              height="1536"
               className="w-full h-auto"
               loading="lazy"
             />
@@ -1436,7 +1454,7 @@ const ResourcesPage = () => {
         <div id="commercial" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
             <h2 className="text-2xl font-bold text-white mb-1">Working together</h2>
-            <p className="text-sm text-slate-400"><span className="text-copper-400">Commercial and speaking.</span> The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 hover:text-copper-300">Contact page</Link>.</p>
+            <p className="text-sm text-slate-400"><span className="text-copper-400">Commercial and speaking.</span> The speaker one-sheet describes talks, not results. For hiring, collaboration, or implementation work, use the <Link to="/connect" className="text-copper-400 underline underline-offset-4 hover:text-copper-300">Contact page</Link>.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {RESOURCES.filter((r) => proofGroupFor(r) === 'commercial').map((resource) => (

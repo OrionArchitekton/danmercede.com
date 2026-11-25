@@ -5,9 +5,9 @@ export default {
     extend: {
       fontFamily: {
         // Web font first, local fallbacks after; index.html loads exactly these (tests/headHygiene.test.ts).
-        sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'], // body and interface text
-        serif: ['Newsreader', 'Georgia', 'serif'], // headings (the h1 to h4 base rule in index.css)
-        mono: ['JetBrains Mono', 'monospace'], // labels and metadata
+        sans: ['IBM Plex Sans', 'IBM Plex Sans Fallback', 'system-ui', 'sans-serif'], // body and interface text
+        serif: ['Newsreader', 'Newsreader Fallback', 'Georgia', 'serif'], // headings (the h1 to h4 base rule in index.css)
+        mono: ['JetBrains Mono', 'JetBrains Mono Fallback', 'monospace'], // labels and metadata
       },
       colors: {
         // Logo pack: dan-mercede-logo-pack/brand-colors.txt (guarded by tests/brandContrast.test.ts).

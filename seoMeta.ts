@@ -1,3 +1,13 @@
+import type {
+  Article,
+  BreadcrumbList,
+  CollectionPage,
+  Graph,
+  ImageObject,
+  ListItem,
+  ProfilePage,
+  SoftwareSourceCode,
+} from 'schema-dts';
 import { CASE_STUDIES, WORKS, THOUGHTS, GUIDES, DIAGRAMS, REFERENCE_ARCHITECTURE_NOTICE } from './constants';
 import type { Diagram, Guide } from './types';
 import { KNOWLEDGE_GRAPH_CONTEXT } from './contentDiscovery';
@@ -587,13 +597,15 @@ export function renderRouteJsonLd(path: string, m: RouteMeta): string {
   return `  <script type="application/ld+json">\n${routeJsonLdText(path, m)}\n  </script>`;
 }
 
-function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
+type RouteGraphNode = Article | ProfilePage | CollectionPage | ImageObject | BreadcrumbList;
+
+function routeJsonLdDoc(path: string, m: RouteMeta): Graph {
   const r = resolveMeta(m);
   const canonical = new URL(path, SITE_ORIGIN).toString();
-  const graph: Record<string, unknown>[] = [];
+  const graph: RouteGraphNode[] = [];
 
   if (m.schemaType === 'Article') {
-    graph.push({
+    const node: Article = {
       '@type': 'Article',
       '@id': `${canonical}#article`,
       // Clean content headline, not the brand-suffixed SEO title.
@@ -609,9 +621,10 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
       publisher: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },
       mainEntityOfPage: canonical,
-    });
+    };
+    graph.push(node);
   } else if (m.schemaType === 'ProfilePage') {
-    graph.push({
+    const node: ProfilePage = {
       '@type': 'ProfilePage',
       '@id': `${canonical}#profilepage`,
       name: r.title,
@@ -619,7 +632,8 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
       url: canonical,
       mainEntity: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },
-    });
+    };
+    graph.push(node);
   } else if (m.schemaType === 'CollectionPage') {
     // /works: a portfolio CollectionPage whose mainEntity is the canonical
     // #person and whose hasPart lists SoftwareSourceCode works. Every node
@@ -627,7 +641,18 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
     // the single-Person identity invariant (tests/identityCanonical.test.ts)
     // holds. NB: extending RouteMeta.schemaType WITHOUT this branch would emit
     // only a BreadcrumbList (silent no-op); both edits are required.
-    graph.push({
+    const parts: SoftwareSourceCode[] = WORKS.map((w) => ({
+      '@type': 'SoftwareSourceCode',
+      '@id': `${canonical}#${w.slug}`,
+      name: w.title,
+      description: w.description,
+      url: w.link || w.repo,
+      codeRepository: w.repo,
+      creator: { '@id': PERSON_ID },
+      ...(w.license ? { license: w.license } : {}),
+      ...(w.date ? { datePublished: w.date } : {}),
+    }));
+    const node: CollectionPage = {
       '@type': 'CollectionPage',
       '@id': `${canonical}#works-collection`,
       name: r.title,
@@ -635,24 +660,15 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
       url: canonical,
       mainEntity: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },
-      hasPart: WORKS.map((w) => ({
-        '@type': 'SoftwareSourceCode',
-        '@id': `${canonical}#${w.slug}`,
-        name: w.title,
-        description: w.description,
-        url: w.link || w.repo,
-        codeRepository: w.repo,
-        creator: { '@id': PERSON_ID },
-        ...(w.license ? { license: w.license } : {}),
-        ...(w.date ? { datePublished: w.date } : {}),
-      })),
-    });
+      hasPart: parts,
+    };
+    graph.push(node);
   } else if (m.schemaType === 'ImageObject') {
     // /diagrams/<slug>: the figure as an ImageObject; author/publisher backref the
     // canonical #person (NO second Person node, identityCanonical.test.ts). NB:
     // extending RouteMeta.schemaType WITHOUT this branch would emit only a
     // BreadcrumbList (silent no-op), both edits are required.
-    graph.push({
+    const node: ImageObject = {
       '@type': 'ImageObject',
       '@id': `${canonical}#image`,
       name: breadcrumbLabel(r.title),
@@ -663,7 +679,8 @@ function routeJsonLdDoc(path: string, m: RouteMeta): Record<string, unknown> {
       author: { '@id': PERSON_ID },
       publisher: { '@id': PERSON_ID },
       isPartOf: { '@id': WEBSITE_ID },
-    });
+    };
+    graph.push(node);
   }
 
   graph.push(renderBreadcrumb(path, breadcrumbLabel(r.title)));
@@ -679,7 +696,7 @@ function breadcrumbLabel(title: string): string {
 
 // BreadcrumbList from the homepage down to the current route. Single-segment
 // routes (/about) get Home > Title; case studies get Home > Proof > Title.
-function renderBreadcrumb(path: string, leafName: string): Record<string, unknown> {
+function renderBreadcrumb(path: string, leafName: string): BreadcrumbList {
   const items: Array<{ name: string; url: string }> = [
     { name: 'Home', url: `${SITE_ORIGIN}/` },
   ];
@@ -699,14 +716,15 @@ function renderBreadcrumb(path: string, leafName: string): Record<string, unknow
   if (path !== '/') {
     items.push({ name: leafName, url: new URL(path, SITE_ORIGIN).toString() });
   }
+  const listItems: ListItem[] = items.map((it, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: it.name,
+    item: it.url,
+  }));
   return {
     '@type': 'BreadcrumbList',
     '@id': `${new URL(path, SITE_ORIGIN).toString()}#breadcrumb`,
-    itemListElement: items.map((it, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: it.name,
-      item: it.url,
-    })),
+    itemListElement: listItems,
   };
 }

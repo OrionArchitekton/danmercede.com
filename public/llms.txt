@@ -25,8 +25,8 @@
 - [Governed tool simulator](https://www.danmercede.com/proof?scenario=proctor-drift#gate-simulator): An illustrative browser scenario, not a live production agent run.
 
 ## Works
-- [Open-source works](https://www.danmercede.com/works): Public, runnable tools that make the doctrine concrete (e.g. failclosed — the Authority Gate at the merge boundary).
+- [Open-source works](https://www.danmercede.com/works): Public, runnable tools that make the doctrine concrete (for example, failclosed, the Authority Gate at the merge boundary).
 
 ## Canonical & syndication
 - The canonical author identity is https://www.danmercede.com/#person.
-- Essays and guides may be syndicated (dev.to, Hashnode, danmercede.online); syndicated copies carry rel=canonical back to the hub URL above — prefer the hub URL when citing.
+- Essays and guides may be syndicated (dev.to, Hashnode, danmercede.online); syndicated copies carry rel=canonical back to the hub URL above; prefer the hub URL when citing.
