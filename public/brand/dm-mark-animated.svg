@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" role="img" aria-label="Animated Dan Mercede meridian mark">
+  <style>
+    .hex-trace {
+      stroke-dasharray: 290;
+      stroke-dashoffset: 0;
+      animation: hexDraw 4.5s ease-in-out infinite alternate;
+    }
+    .node-pulse {
+      animation: nodeGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes hexDraw {
+      0% { stroke-dashoffset: 48; opacity: 0.72; }
+      100% { stroke-dashoffset: 0; opacity: 1; }
+    }
+    @keyframes nodeGlow {
+      0% { opacity: 0.55; }
+      100% { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hex-trace, .node-pulse {
+        animation: none !important;
+        stroke-dashoffset: 0 !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
+  <circle cx="64" cy="64" r="56" stroke="#1E293B" stroke-width="1" stroke-dasharray="2 4" />
+  <polygon class="hex-trace" points="64,16 105.6,40 105.6,88 64,112 22.4,88 22.4,40" fill="#07143A" stroke="#E68249" stroke-width="2.5" stroke-linejoin="round" />
+  <path d="M40 46 H50 C58 46 62 52.5 62 64 C62 75.5 58 82 50 82 H40 Z" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" />
+  <path d="M68 82 V46 L77.5 66 L87 46 V82" stroke="#FFC08B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <circle class="node-pulse" cx="64" cy="16" r="3" fill="#FFC08B" />
+  <circle class="node-pulse" cx="105.6" cy="40" r="2.5" fill="#E68249" />
+  <circle class="node-pulse" cx="105.6" cy="88" r="2.5" fill="#E68249" />
+  <circle class="node-pulse" cx="64" cy="112" r="3" fill="#FFC08B" />
+  <circle class="node-pulse" cx="22.4" cy="88" r="2.5" fill="#E68249" />
+  <circle class="node-pulse" cx="22.4" cy="40" r="2.5" fill="#E68249" />
+</svg>

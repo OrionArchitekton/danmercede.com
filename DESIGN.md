@@ -24,11 +24,11 @@ typography:
   display:
     fontFamily: "Newsreader, Georgia, serif"
     fontSize: "72px"
-    fontWeight: 700
+    fontWeight: 500
   heading:
     fontFamily: "Newsreader, Georgia, serif"
     fontSize: "36px"
-    fontWeight: 700
+    fontWeight: 500
   body:
     fontFamily: "IBM Plex Sans, system-ui, sans-serif"
     fontSize: "16px"
@@ -111,15 +111,12 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 
 ## Typography
 
-- Newsreader is the serif for display and headings (300 to 700, with its optical-size axis, from Google Fonts). One
-  base rule in `index.css` sets `h1` to `h6` in it; a heading that carries `font-mono` or `font-sans` keeps that face.
-- IBM Plex Sans is the sans for body and interface text (300 to 700 from Google Fonts).
-- JetBrains Mono carries labels and metadata. Metadata lines under titles are sentence case; nav, buttons, chips and
-  badges keep uppercase with wide tracking.
+- Newsreader is the serif for display and headings (self-hosted variable WOFF2 200 to 800, optical-size axis, `font-optical-sizing: auto`, zero third-party CDN calls). One base rule in `index.css` sets `h1` to `h6` in it; a heading that carries `font-mono` or `font-sans` keeps that face.
+- IBM Plex Sans is the sans for body and interface text (self-hosted variable WOFF2 100 to 700).
+- JetBrains Mono carries labels and metadata (`tabular-nums`, minimum 11px floor for functional UI labels per `impeccable` design lint). Metadata lines under titles are sentence case; nav, buttons, chips and badges stay crisp and readable.
 - The logo pack defines no typeface. The owner chose this pairing on 2026-11-10 from three rendered options.
-- `tailwind.config.js` names each web font first with local fallbacks after it, and the one Google Fonts link in
-  `index.html` loads exactly those families (`tests/headHygiene.test.ts` fails when they drift apart).
-- The scale lists the sizes the pages use, from the 10px and 11px mono labels to the 72px hero heading.
+- `tailwind.config.js` names each web font first with metric-adjusted local fallbacks after it, and `index.css` self-hosts the variable WOFF2 files via `@fontsource-variable/*` (`tests/headHygiene.test.ts` and `tests/v2DesignSystem.test.ts` enforce exact parity and contrast via `colorjs.io`).
+- W3C DTCG tokens live in `tokens/brand.tokens.json`, synced to `@orion/tokens` (`brands/danmercede-com/`).
 
 ## Shape
 

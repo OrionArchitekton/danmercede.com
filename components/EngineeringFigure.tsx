@@ -74,9 +74,9 @@ export const EngineeringFigure: React.FC<EngineeringFigureProps> = ({
 
     container.replaceChildren();
     const chart = Plot.plot({
-      width: 680,
+      width: 720,
       height: Math.max(180, categories.length * 64 + 48),
-      marginLeft: 180,
+      marginLeft: 224,
       marginRight: 28,
       marginTop: 20,
       marginBottom: 34,
@@ -109,6 +109,8 @@ export const EngineeringFigure: React.FC<EngineeringFigureProps> = ({
             x: 'count',
             y: 'category',
             fill: 'series',
+            title: (d: EngineeringDatum) => `${d.category}::${d.series}`,
+            fillOpacity: 1,
             insetInline: 1,
             rx: 2,
           }),
@@ -122,6 +124,20 @@ export const EngineeringFigure: React.FC<EngineeringFigureProps> = ({
       chart.remove();
     };
   }, [categories, data, seriesList, valueLabel]);
+
+  useEffect(() => {
+    const container = plotRef.current;
+    if (!container || !selected) return;
+    const targetKey = `${selected.category}::${selected.series}`;
+    const rects = Array.from(container.querySelectorAll('rect'));
+    for (const rect of rects) {
+      const key = rect.querySelector('title')?.textContent ?? '';
+      if (!key) continue;
+      const active = key === targetKey;
+      rect.setAttribute('fill-opacity', active ? '1' : '0.32');
+      rect.style.transition = 'fill-opacity 180ms ease';
+    }
+  }, [data, selected]);
 
   return (
     <figure
@@ -151,33 +167,13 @@ export const EngineeringFigure: React.FC<EngineeringFigureProps> = ({
       <div
         ref={plotRef}
         aria-hidden="true"
-        className="w-full overflow-x-auto rounded-sm border border-white/10 bg-slate-950/60 p-3"
+        className="w-full overflow-x-auto border-y border-white/10 py-3"
       />
 
       {selected && (
-        <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Inspect evidence counts">
-          {data.map((d, idx) => {
-            const active = idx === selectedIdx;
-            return (
-              <button
-                key={`${d.category}-${d.series}`}
-                type="button"
-                onClick={() => setSelectedIdx(idx)}
-                aria-pressed={active}
-                className={`inline-flex min-h-[44px] items-center rounded-sm border px-3 py-1.5 text-xs font-mono transition-colors ${
-                  active
-                    ? 'border-copper-500 bg-copper-500/15 text-copper-300'
-                    : 'border-white/10 bg-slate-950/60 text-slate-300 hover:border-copper-500/40 hover:text-white'
-                }`}
-              >
-                {d.category}: {d.series} ({d.count})
-              </button>
-            );
-          })}
-          <p className="sr-only" aria-live="polite">
-            {selected.category}, {selected.series}: {selected.count} {valueLabel.toLowerCase()}.
-          </p>
-        </div>
+        <p className="sr-only" aria-live="polite">
+          {selected.category}, {selected.series}: {selected.count} {valueLabel.toLowerCase()}.
+        </p>
       )}
 
       <div className="mt-4 overflow-x-auto" tabIndex={0} aria-label={`${title} data table`}>
@@ -191,13 +187,31 @@ export const EngineeringFigure: React.FC<EngineeringFigureProps> = ({
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
-              <tr key={`${row.category}-${row.series}`} className="border-b border-white/5 text-slate-300">
-                <th scope="row" className="py-1.5 pr-4 font-normal text-white">{row.category}</th>
-                <td className="py-1.5 pr-4">{row.series}</td>
-                <td className="py-1.5 text-right tabular-nums text-copper-300">{row.count}</td>
-              </tr>
-            ))}
+            {data.map((row, idx) => {
+              const isRowSelected = selected && row.category === selected.category && row.series === selected.series;
+              return (
+                <tr
+                  key={`${row.category}-${row.series}`}
+                  onClick={() => setSelectedIdx(idx)}
+                  className={`cursor-pointer border-b border-white/5 transition-colors ${
+                    isRowSelected ? 'bg-copper-500/12 text-white' : 'text-slate-300 hover:bg-white/[0.03] opacity-85'
+                  }`}
+                >
+                  <th scope="row" className="py-1.5 pr-4 pl-2 font-normal text-white">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIdx(idx)}
+                      aria-pressed={Boolean(isRowSelected)}
+                      className="inline-flex min-h-[44px] w-full items-center text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500"
+                    >
+                      {row.category}
+                    </button>
+                  </th>
+                  <td className="py-1.5 pr-4">{row.series}</td>
+                  <td className="py-1.5 pr-2 text-right tabular-nums text-copper-300">{row.count}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

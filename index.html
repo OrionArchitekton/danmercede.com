@@ -7,16 +7,14 @@
   <!-- Theme color matches the served body background (#020B29, logo pack Midnight Navy) and the manifest
        theme_color (W13). -->
   <meta name="theme-color" content="#020B29" />
-  <!-- Resource hints: warm the Google Fonts origins for the render-blocking stylesheet below. React and every other module are bundled by Vite; the page loads no module from a CDN. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Resource policy: all fonts and scripts are self-hosted and bundled cleanly by Vite; zero third-party font CDNs. -->
   <!-- Feed autodiscovery: BEFORE the SEO_BLOCK anchor so every injected per-route page inherits it. -->
   <link rel="alternate" type="application/rss+xml" title="Dan Mercede"
     href="https://www.danmercede.com/feed.xml" />
   <link rel="alternate" type="application/atom+xml" title="Dan Mercede"
     href="https://www.danmercede.com/atom.xml" />
   <!--SEO_BLOCK-->
-  <link rel="preload" as="image" href="/dan-mercede-founder-headshot-hero.webp" fetchpriority="high" />
+  <link rel="preload" as="image" type="image/avif" href="/dan-mercede-founder-headshot-hero.webp" imagesrcset="/media/portraits/dan-mercede-founder-headshot-hero-480w.avif 480w, /media/portraits/dan-mercede-founder-headshot-hero-800w.avif 800w" imagesizes="(max-width: 1023px) 360px, 420px" fetchpriority="high" />
   <title>Dan Mercede: Operator and Systems Builder</title>
   <meta name="description" content="Dan Mercede is an operator and systems builder. He turns AI experiments into workflows teams can actually run, with builds, guides, and writing to show how." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -50,12 +48,7 @@
   <link rel="manifest" href="/site.webmanifest">
   <link rel="icon" href="/favicon.ico" sizes="any">
 
-  <!-- Tailwind is bundled at build time (W2); the in-browser CDN JIT compiler
-       was removed. Base styles + the custom theme live in index.css and
-       tailwind.config.js. -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&family=Newsreader:opsz,wght@6..72,300..700&display=swap"
-    rel="stylesheet">
+  <!-- Tailwind and self-hosted @fontsource-variable webfonts are bundled cleanly at build time. -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",

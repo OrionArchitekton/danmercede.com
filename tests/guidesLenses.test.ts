@@ -137,7 +137,7 @@ test('both index search boxes use the same icon', () => {
 });
 
 test('both index filter pill rows use one identical spec', () => {
-  const pills = [...appTsx().matchAll(/'(rounded-full border px-4 py-2 font-mono text-\[10px\][^']*)'/g)].map((m) => m[1]);
+  const pills = [...appTsx().matchAll(/'(rounded-full border px-4 py-2 font-mono text-\[11px\][^']*)'/g)].map((m) => m[1]);
   assert.equal(pills.length, 2, `expected exactly 2 index pill rows, found ${pills.length}`);
   assert.equal(pills[0], pills[1], `the /thoughts and /guides filter pills must share one spec.\n  a: ${pills[0]}\n  b: ${pills[1]}`);
 

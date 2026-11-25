@@ -43,6 +43,7 @@ const ConstellationBackground: React.FC = () => {
       .attr('opacity', 0.6);
 
     const draw = () => {
+      if (document.hidden) return;
       stepNodes(nodes, bounds);
 
       // Connections (blueprint lines): reuse existing <line> elements, add/remove only the delta.

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://tr.designtokens.org/format/",
+  "$extensions": {
+    "com.orion.brand": {
+      "id": "danmercede-com",
+      "name": "Dan Mercede",
+      "concept": "The Meridian Monograph (v2.0)",
+      "polarity": "dark",
+      "domain": "danmercede.com"
+    },
+    "com.orion.contrastPairs": [
+      { "name": "body-on-bg", "fg": "color.fg", "bg": "color.bg", "level": "normal" },
+      { "name": "body-on-surface", "fg": "color.fg", "bg": "color.surface", "level": "normal" },
+      { "name": "body-on-elevated", "fg": "color.fg", "bg": "color.surfaceElevated", "level": "normal" },
+      { "name": "muted-on-bg", "fg": "color.fgMuted", "bg": "color.bg", "level": "normal" },
+      { "name": "muted-on-surface", "fg": "color.fgMuted", "bg": "color.surface", "level": "normal" },
+      { "name": "cta-label-on-accent", "fg": "color.accentFg", "bg": "color.accent", "level": "normal" },
+      { "name": "cta-label-on-light", "fg": "color.accentFg", "bg": "color.accentLight", "level": "normal" },
+      { "name": "cta-label-on-hover", "fg": "color.accentFg", "bg": "color.accentHover", "level": "normal" },
+      { "name": "accent-link-on-bg", "fg": "color.accent", "bg": "color.bg", "level": "normal" },
+      { "name": "border-on-bg", "fg": "color.border", "bg": "color.bg", "level": "ui" },
+      { "name": "ok-badge", "fg": "color.statusOkFg", "bg": "color.statusOk", "level": "normal" },
+      { "name": "warn-badge", "fg": "color.statusWarnFg", "bg": "color.statusWarn", "level": "normal" },
+      { "name": "danger-badge", "fg": "color.statusDangerFg", "bg": "color.statusDanger", "level": "normal" }
+    ]
+  },
+  "color": {
+    "bg": { "$type": "color", "$value": "#020B29", "$description": "Midnight Navy ground" },
+    "surface": { "$type": "color", "$value": "#07143A", "$description": "Deep Navy raised monograph plate" },
+    "surfaceElevated": { "$type": "color", "$value": "#0E1F4F", "$description": "Elevated interactive surface" },
+    "border": { "$type": "color", "$value": "#64748B", "$description": "Structural hairline coordinate border (>=3:1)" },
+    "fg": { "$type": "color", "$value": "#F8FAFC", "$description": "Primary archival ink" },
+    "fgMuted": { "$type": "color", "$value": "#94A3B8", "$description": "Metadata slate (7.57:1 on Midnight Navy)" },
+    "accent": { "$type": "color", "$value": "#E68249", "$description": "Copper Mid primary accent (7.07:1)" },
+    "accentHover": { "$type": "color", "$value": "#F0975A", "$description": "Copper 400 hover/text accent (8.57:1)" },
+    "accentLight": { "$type": "color", "$value": "#FFC08B", "$description": "Copper Light highlight & primary CTA fill (12.16:1)" },
+    "accentDark": { "$type": "color", "$value": "#B95122", "$description": "Copper Dark border / large UI (3.94:1)" },
+    "accentFg": { "$type": "color", "$value": "#020B29", "$description": "Midnight Navy ink on solid copper fills" },
+    "focusRing": { "$type": "color", "$value": "#FFC08B", "$description": "Copper Light accessible focus ring" },
+    "statusOk": { "$type": "color", "$value": "#4ADE80", "$description": "Pass badge fill" },
+    "statusOkFg": { "$type": "color", "$value": "#020B29", "$description": "Pass badge label" },
+    "statusWarn": { "$type": "color", "$value": "#FBBF24", "$description": "Warn badge fill" },
+    "statusWarnFg": { "$type": "color", "$value": "#020B29", "$description": "Warn badge label" },
+    "statusDanger": { "$type": "color", "$value": "#F87171", "$description": "Fail badge fill" },
+    "statusDangerFg": { "$type": "color", "$value": "#020B29", "$description": "Fail badge label" }
+  },
+  "font": {
+    "display": { "$type": "fontFamily", "$value": "'Newsreader', 'Newsreader Fallback', Georgia, serif" },
+    "sans": { "$type": "fontFamily", "$value": "'IBM Plex Sans', 'IBM Plex Sans Fallback', system-ui, sans-serif" },
+    "mono": { "$type": "fontFamily", "$value": "'JetBrains Mono', 'JetBrains Mono Fallback', monospace" }
+  },
+  "radius": {
+    "xs": { "$type": "dimension", "$value": "2px" },
+    "sm": { "$type": "dimension", "$value": "4px" },
+    "md": { "$type": "dimension", "$value": "6px" },
+    "lg": { "$type": "dimension", "$value": "8px" }
+  }
+}

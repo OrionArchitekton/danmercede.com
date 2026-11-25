@@ -96,7 +96,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/about': {
     title: 'About: Dan Mercede',
     description:
-      'Former General Manager with full P&L ownership, now building AI workflows with clear ownership, a private AI control plane, and open-source tools.',
+      'Dan Mercede: former General Manager ($6M P&L), now systems builder architecting owned AI workflows, private control planes, and open-source tools.',
     schemaType: 'ProfilePage',
   },
   '/ecosystem': {
@@ -106,6 +106,8 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/proof': {
     title: 'Proof: Evidence, Approach, and Resources | Dan Mercede',
     description:
+      'Checkable claims with verification commands, control-plane architecture explainers, reference architectures, and commercial/speaking downloads.',
+    articleDescription:
       'Evidence first: checkable claims, each paired with the check that confirms it. Then how the systems are built, illustrative reference architectures, and commercial and speaking material, each labeled for what it is.',
     schemaType: 'Article',
   },
@@ -122,8 +124,10 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     schemaType: 'CollectionPage',
   },
   '/guides': {
-    title: 'Guides: Agent Engineering, Workflow Ownership & Operations | Dan Mercede',
+    title: 'Guides: Agent Engineering & Operations | Dan Mercede',
     description:
+      'Long-form technical guides on governed AI: multi-agent pipelines, layered review, fail-closed execution, self-hosting, and secure ingress.',
+    articleDescription:
       'Long-form technical guides on governed AI: build agents that can act and prove what happened. Multi-agent pipelines, layered review, fail-closed execution, self-hosting, and secure ingress on infrastructure you control.',
     schemaType: 'Article',
   },
@@ -481,7 +485,7 @@ export function renderSeoBlock(path: string, m: RouteMeta): string {
     // Preload the LCP hero, HOMEPAGE ONLY. The hero <img> renders only on
     // HomePage, so preloading it on other routes downloads the hero asset they never use.
     ...(path === '/'
-      ? [`  <link rel="preload" as="image" href="/dan-mercede-founder-headshot-hero.webp" fetchpriority="high" />`]
+      ? [`  <link rel="preload" as="image" type="image/avif" href="/dan-mercede-founder-headshot-hero.webp" imagesrcset="/media/portraits/dan-mercede-founder-headshot-hero-480w.avif 480w, /media/portraits/dan-mercede-founder-headshot-hero-800w.avif 800w" imagesizes="(max-width: 1023px) 360px, 420px" fetchpriority="high" />`]
       : []),
     `  <title>${t}</title>`,
     `  <meta name="description" content="${d}" />`,

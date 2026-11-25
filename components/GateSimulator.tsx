@@ -292,9 +292,9 @@ export const GateSimulator: React.FC = () => {
   const VerdictIcon = verdictStyle.icon;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-navy-deep/80 overflow-hidden">
-      {/* Top interactive bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 px-6 py-4 bg-slate-950/50">
+    <div className="meridian-plate-accent rounded-lg overflow-hidden">
+      {/* Top interactive bench bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 px-6 py-4 bg-navy-midnight/75">
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Choose a governed AI tool">
           {SCENARIOS.map((item) => {
             const selected = item.id === scenarioId;
@@ -304,10 +304,10 @@ export const GateSimulator: React.FC = () => {
                 type="button"
                 aria-pressed={selected}
                 onClick={() => choose(item.id, mode)}
-                className={`px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
+                className={`min-h-[44px] inline-flex items-center px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
                   selected
-                    ? 'border-copper-500 bg-copper-500 text-slate-950 font-semibold'
-                    : 'border-white/10 text-slate-300 hover:border-copper-500/40 hover:text-white'
+                    ? 'border-copper-300 bg-copper-300 text-slate-950 font-semibold'
+                    : 'border-white/10 bg-navy-deep/60 text-slate-300 hover:border-copper-500/40 hover:text-white'
                 }`}
               >
                 {item.tool}
@@ -321,10 +321,10 @@ export const GateSimulator: React.FC = () => {
             type="button"
             onClick={() => choose(scenarioId, 'clean')}
             aria-pressed={mode === 'clean'}
-            className={`px-3 py-1.5 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
+            className={`min-h-[44px] inline-flex items-center px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
               mode === 'clean'
                 ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-500'
-                : 'border-white/10 text-slate-400 hover:text-white'
+                : 'border-white/10 text-slate-300 hover:text-white'
             }`}
           >
             Clean run
@@ -333,10 +333,10 @@ export const GateSimulator: React.FC = () => {
             type="button"
             onClick={() => choose(scenarioId, 'drift')}
             aria-pressed={mode === 'drift'}
-            className={`px-3 py-1.5 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
+            className={`min-h-[44px] inline-flex items-center px-3.5 py-2 text-xs font-mono rounded-sm border transition-colors whitespace-nowrap ${
               mode === 'drift'
                 ? 'border-copper-500/60 bg-copper-500/15 text-copper-300'
-                : 'border-white/10 text-slate-400 hover:text-white'
+                : 'border-white/10 text-slate-300 hover:text-white'
             }`}
           >
             Trigger failure mode
@@ -345,27 +345,27 @@ export const GateSimulator: React.FC = () => {
             type="button"
             onClick={() => choose(scenarioId, mode === 'drift' ? 'clean' : 'drift')}
             aria-label="Flip between clean run and failure mode"
-            className="p-1.5 rounded-sm border border-white/10 text-slate-400 hover:text-copper-400 hover:border-copper-500/40 transition-colors"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm border border-white/10 text-slate-300 hover:text-copper-300 hover:border-copper-500/40 transition-colors"
             title="Toggle scenario"
           >
-            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
 
       <figure className="border-b border-white/10 px-6 py-5 md:px-8">
         <figcaption className="mb-4 text-lg font-semibold text-white">Advisory vs. fail-closed</figcaption>
-        <div aria-live="polite" aria-atomic="true" className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-sm border border-white/15 bg-slate-950/50 p-4">
-            <p className="mb-3 font-mono text-xs text-slate-400">Advisory only</p>
+        <div aria-live="polite" aria-atomic="true" className="grid gap-4 md:grid-cols-2">
+          <div className="border-t border-white/15 pt-3">
+            <p className="mb-2 font-mono text-xs text-slate-400">Advisory only</p>
             <div className="flex items-center gap-3 text-sm">
               <span className="flex-1 text-slate-300">{mode === 'drift' ? 'Unconstrained drift' : 'Clean input'}</span>
               <ArrowRight className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
               <strong className="flex-1 font-medium text-white">{scenario.advisoryOutcome[mode]}</strong>
             </div>
           </div>
-          <div className="rounded-sm border border-copper-500/40 bg-slate-950/50 p-4">
-            <p className="mb-3 font-mono text-xs text-copper-400">Fail-closed</p>
+          <div className="border-t border-copper-500/45 pt-3">
+            <p className="mb-2 font-mono text-xs text-copper-400">Fail-closed</p>
             <div className="flex items-center gap-3 text-sm">
               <span className="flex-1 text-slate-300">Authority gate</span>
               <ArrowRight className="size-4 shrink-0 text-copper-400" aria-hidden="true" />
@@ -389,7 +389,7 @@ export const GateSimulator: React.FC = () => {
 
           <div>
             <p className="font-mono text-xs text-slate-400 mb-2">{active.inputLabel}</p>
-            <pre tabIndex={0} role="group" aria-label={active.inputLabel} className="rounded-sm border border-white/10 bg-slate-950/90 p-4 overflow-x-auto text-xs font-mono text-slate-200 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
+            <pre tabIndex={0} role="group" aria-label={active.inputLabel} className="rounded-sm border border-white/10 bg-slate-950/90 p-4 overflow-x-auto max-w-full whitespace-pre text-[11px] sm:text-xs font-mono text-slate-200 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
               <code>{active.inputLines.join('\n')}</code>
             </pre>
           </div>
@@ -423,35 +423,37 @@ export const GateSimulator: React.FC = () => {
         {/* Right: Deterministic Verdict & Receipt */}
         <div className={`min-w-0 lg:col-span-5 p-6 md:p-8 flex flex-col justify-between bg-slate-950/35 border-t lg:border-t-0 ${verdictStyle.panelClass}`}>
           <div>
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <span className="font-mono text-xs text-slate-400">Gate verdict</span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm border font-mono text-xs font-semibold ${verdictStyle.badgeClass}`}>
-                <VerdictIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                {active.verdict}
-              </span>
+            <div key={`${scenario.id}-${mode}-receipt`} className="meridian-enter">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <span className="font-mono text-xs text-slate-400">Gate verdict</span>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm border font-mono text-xs font-semibold ${verdictStyle.badgeClass}`}>
+                  <VerdictIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                  {active.verdict}
+                </span>
+              </div>
+
+              <p className="text-sm text-slate-300 leading-relaxed mb-5">
+                {active.summary}
+              </p>
+
+              <p className="font-mono text-xs text-slate-400 mb-2">Emitted decision receipt</p>
+              <pre tabIndex={0} role="group" aria-label="Emitted decision receipt" className="rounded-sm border border-white/10 bg-slate-950 p-4 overflow-x-auto max-w-full whitespace-pre text-[11px] sm:text-xs font-mono text-copper-300 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
+                <code>{JSON.stringify(active.receipt, null, 2)}</code>
+              </pre>
             </div>
-
-            <p className="text-sm text-slate-300 leading-relaxed mb-5">
-              {active.summary}
-            </p>
-
-            <p className="font-mono text-xs text-slate-400 mb-2">Emitted decision receipt</p>
-            <pre tabIndex={0} role="group" aria-label="Emitted decision receipt" className="rounded-sm border border-white/10 bg-slate-950 p-4 overflow-x-auto text-xs font-mono text-copper-300 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
-              <code>{JSON.stringify(active.receipt, null, 2)}</code>
-            </pre>
           </div>
 
           <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
             <a
               href={scenario.href}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-copper-400 hover:text-copper-300 transition-colors"
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold text-copper-300 hover:text-copper-400 transition-colors"
             >
               Inspect {scenario.tool}
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </a>
             <a
               href="#evidence"
-              className="text-xs font-mono text-slate-400 hover:text-white transition-colors"
+              className="inline-flex min-h-[44px] items-center text-xs font-mono text-slate-300 hover:text-white transition-colors"
             >
               Checkable proof &amp; CI
             </a>

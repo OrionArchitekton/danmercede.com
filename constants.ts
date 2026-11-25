@@ -1398,7 +1398,7 @@ export const PROOF_EVIDENCE: EvidenceTier[] = [
       {
         kind: 'limitation',
         claim:
-          'No third-party editorial placement exists to date. Every article above is self-published or syndicated under my own canonical URLs, and no conference talk has been delivered to date.',
+          'No third-party editorial placement exists to date. Every article above is self-published or syndicated under my own canonical URLs. Conference speaking to date consists of the November 2026 NODES panel, with the OpsWorld 2027 workshop scheduled for February 2027.',
       },
     ],
   },

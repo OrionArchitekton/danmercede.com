@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" role="img" aria-label="Dan Mercede architectural meridian seal">
+  <circle cx="128" cy="128" r="116" stroke="#334155" stroke-width="1.25" stroke-dasharray="3 5" />
+  <circle cx="128" cy="128" r="102" stroke="#E68249" stroke-width="1.2" opacity="0.55" />
+  <!-- Vernier degree ticks -->
+  <line x1="128" y1="6" x2="128" y2="20" stroke="#FFC08B" stroke-width="1.8" />
+  <line x1="128" y1="236" x2="128" y2="250" stroke="#FFC08B" stroke-width="1.8" />
+  <line x1="6" y1="128" x2="20" y2="128" stroke="#FFC08B" stroke-width="1.8" />
+  <line x1="236" y1="128" x2="250" y2="128" stroke="#FFC08B" stroke-width="1.8" />
+  <!-- Primary hexagonal boundary (derived from dm-mark.svg geometry) -->
+  <polygon points="128,44 201,86 201,170 128,212 55,170 55,86" fill="#07143A" stroke="#E68249" stroke-width="3.5" stroke-linejoin="round" />
+  <!-- Internal copper meridian axes -->
+  <line x1="128" y1="44" x2="128" y2="212" stroke="#F0975A" stroke-width="1.1" opacity="0.4" />
+  <line x1="55" y1="128" x2="201" y2="128" stroke="#F0975A" stroke-width="1.1" opacity="0.4" />
+  <!-- D + M geometric monogram -->
+  <path d="M84 96 H104 C120 96 128 108 128 128 C128 148 120 160 104 160 H84 Z" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="round" />
+  <path d="M138 160 V96 L156 132 L174 96 V160" stroke="#FFC08B" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Hex vertex fiducial nodes -->
+  <circle cx="128" cy="44" r="4" fill="#FFC08B" />
+  <circle cx="201" cy="86" r="4" fill="#E68249" />
+  <circle cx="201" cy="170" r="4" fill="#E68249" />
+  <circle cx="128" cy="212" r="4" fill="#FFC08B" />
+  <circle cx="55" cy="170" r="4" fill="#E68249" />
+  <circle cx="55" cy="86" r="4" fill="#E68249" />
+</svg>

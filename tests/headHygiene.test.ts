@@ -222,31 +222,36 @@ async function themeFonts(): Promise<Record<string, string[]>> {
 const stripHtmlComments = (html: string) => html.replace(/<!--[\s\S]*?-->/g, '');
 const stripCssComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
-function fontStylesheetUrl(html: string): URL {
-  const links = [...stripHtmlComments(html).matchAll(/<link\b[^>]*>/g)]
-    .map((m) => m[0])
-    .filter((tag) => /rel=["']stylesheet["']/.test(tag) && /fonts\.googleapis\.com/.test(tag));
-  assert.equal(links.length, 1, `expected exactly one font stylesheet link, found ${links.length}`);
-  const href = /href=["']([^"']+)["']/.exec(links[0]);
-  assert.ok(href, 'the font stylesheet link has an href');
-  return new URL(href[1].replace(/&amp;/g, '&'));
+function fontFacesFor(css: string): Map<string, { woff2: boolean; swap: boolean }> {
+  const out = new Map<string, { woff2: boolean; swap: boolean }>();
+  for (const m of stripCssComments(css).matchAll(/@font-face\s*\{([^}]*)\}/g)) {
+    const block = m[1];
+    const fam = /font-family:\s*["']([^"']+)["']/.exec(block)?.[1];
+    if (!fam) continue;
+    const woff2 = /\.woff2/.test(block) || /@fontsource-variable\//.test(block);
+    const swap = /font-display:\s*swap/.test(block);
+    const prev = out.get(fam) ?? { woff2: false, swap: false };
+    out.set(fam, { woff2: prev.woff2 || woff2, swap: prev.swap || swap });
+  }
+  return out;
 }
 
-const loadedFamilies = (url: URL) => url.searchParams.getAll('family').map((v) => v.split(':')[0]).sort();
-
-test('the font link parser reads family names and refuses two links (positive control)', () => {
-  const one = '<link href="https://fonts.googleapis.com/css2?family=A+B:wght@400&amp;family=C&display=swap" rel="stylesheet">';
-  assert.deepEqual(loadedFamilies(fontStylesheetUrl(one)), ['A B', 'C']);
-  assert.throws(() => fontStylesheetUrl(one + one), /exactly one font stylesheet link/);
-  assert.throws(() => fontStylesheetUrl(`<!-- ${one} -->`), /exactly one font stylesheet link/);
+test('index.html loads zero external third-party font CDNs (self-hosted WOFF2)', () => {
+  const html = stripHtmlComments(read('index.html'));
+  assert.doesNotMatch(html, /fonts\.googleapis\.com/i);
+  assert.doesNotMatch(html, /fonts\.gstatic\.com/i);
 });
 
-test('the font stylesheet loads exactly the web fonts the theme names', async () => {
+test('the self-hosted stylesheet loads every web font the theme names with font-display: swap', async () => {
   const fonts = await themeFonts();
   const named = Object.values(fonts).map((stack) => stack[0]).sort();
-  const url = fontStylesheetUrl(read('index.html'));
-  assert.deepEqual(loadedFamilies(url), named, 'a theme font that is not loaded falls back silently; a loaded font nobody uses is dead weight');
-  assert.equal(url.searchParams.get('display'), 'swap');
+  const faces = fontFacesFor(read('index.css'));
+  for (const family of named) {
+    const face = faces.get(family);
+    assert.ok(face, `index.css must declare self-hosted @font-face for "${family}"`);
+    assert.ok(face!.woff2, `@font-face for "${family}" must serve bundled .woff2`);
+    assert.ok(face!.swap, `@font-face for "${family}" must set font-display: swap`);
+  }
 });
 
 test('typefaces: Newsreader headings, IBM Plex Sans body, JetBrains Mono labels', async () => {

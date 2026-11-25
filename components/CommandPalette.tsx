@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, ArrowRight, FileText, BookOpen, Wrench, Layers, Compass } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { WORKS, THOUGHTS, GUIDES, DIAGRAMS } from '../constants';
 
 interface PaletteItem {
@@ -78,9 +79,7 @@ export const CommandPalette: React.FC<{ isOpen: boolean; onClose: () => void }> 
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) {
-      return allItems.slice(0, 10);
-    }
+    if (!q) return allItems.slice(0, 10);
     return allItems.filter((item) => item.searchText.includes(q)).slice(0, 14);
   }, [allItems, query]);
 
@@ -97,11 +96,16 @@ export const CommandPalette: React.FC<{ isOpen: boolean; onClose: () => void }> 
     setActiveIndex(0);
   }, [query]);
 
-  if (!isOpen) return null;
-
   const activate = (item: PaletteItem) => {
     onClose();
-    if (item.href.startsWith('/works/') || item.external) {
+    let isMicrosite = false;
+    try {
+      const parsed = new URL(item.href, window.location.origin);
+      isMicrosite = parsed.pathname.startsWith('/works/');
+    } catch {
+      isMicrosite = item.href.startsWith('/works/');
+    }
+    if (isMicrosite || item.external) {
       window.location.assign(item.href);
     } else {
       navigate(item.href);
@@ -118,89 +122,111 @@ export const CommandPalette: React.FC<{ isOpen: boolean; onClose: () => void }> 
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((prev) => (results.length ? (prev - 1 + results.length) % results.length : 0));
-    } else if (e.key === 'Enter' && results[activeIndex]) {
+    } else if (e.key === 'Enter' && e.target instanceof HTMLInputElement && results[activeIndex]) {
       e.preventDefault();
       activate(results[activeIndex]);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/80 backdrop-blur-sm px-4 pt-16 sm:pt-24"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Search site"
-      onClick={onClose}
-      onKeyDown={handleKeyDown}
-    >
-      <div
-        className="w-full max-w-2xl rounded-lg border border-white/15 bg-navy-deep shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5 bg-slate-950/60">
-          <Search className="w-4 h-4 text-copper-400 shrink-0" aria-hidden="true" />
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Jump to a guide, essay, open-source tool, or page..."
-            aria-label="Search guides, essays, tools, and pages"
-            className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
-          />
-          <button
-            type="button"
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
+            className="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/85 backdrop-blur-sm px-4 pt-16 sm:pt-24"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search site"
             onClick={onClose}
-            aria-label="Close search"
-            className="p-1.5 rounded-sm text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+            onKeyDown={handleKeyDown}
           >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-y-auto divide-y divide-white/5">
-          {results.length > 0 ? (
-            results.map((item, idx) => {
-              const Icon = KIND_ICON[item.kind];
-              const isActive = idx === activeIndex;
-              return (
+            <motion.div
+              initial={{ y: -8, scale: 0.98 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: -6, scale: 0.98 }}
+              transition={{ duration: 0.16 }}
+              className="meridian-plate-accent w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3 bg-navy-midnight/85">
+                <img
+                  src="/brand/dm-monogram-compact.svg"
+                  alt=""
+                  aria-hidden="true"
+                  width={18}
+                  height={18}
+                  className="h-[18px] w-[18px] shrink-0 opacity-85"
+                />
+                <Search className="w-4 h-4 text-copper-300 shrink-0" aria-hidden="true" />
+                <input
+                  ref={inputRef}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Jump to a guide, essay, open-source tool, or page..."
+                  aria-label="Search guides, essays, tools, and pages"
+                  className="min-w-0 min-h-[44px] flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
+                />
                 <button
-                  key={item.id}
                   type="button"
-                  onMouseEnter={() => setActiveIndex(idx)}
-                  onClick={() => activate(item)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3.5 transition-colors ${
-                    isActive ? 'bg-copper-500/15' : 'hover:bg-white/[0.03]'
-                  }`}
+                  onClick={onClose}
+                  aria-label="Close search"
+                  className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                 >
-                  <span className="p-2 rounded-sm border border-white/10 bg-slate-950/60 text-copper-400 shrink-0">
-                    <Icon className="w-4 h-4" aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white truncate">{item.title}</span>
-                      <span className="font-mono text-xs text-copper-400 shrink-0">{item.kind}</span>
-                    </div>
-                    <p className="text-xs text-slate-400 truncate mt-0.5">{item.subtitle}</p>
-                  </div>
-                  <ArrowRight className={`w-4 h-4 shrink-0 ${isActive ? 'text-copper-400' : 'text-slate-400'}`} aria-hidden="true" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
-              );
-            })
-          ) : (
-            <div className="px-6 py-10 text-center">
-              <p className="text-sm text-slate-300">No matches for "{query.trim()}".</p>
-              <p className="text-xs text-slate-400 mt-1">Try searching for failclosed, proctor, receipts, schemas, or MCP.</p>
-            </div>
-          )}
-        </div>
+              </div>
 
-        <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5 bg-slate-950/60 text-xs font-mono text-slate-400">
-          <span>Use Up / Down and Enter to navigate</span>
-          <span>Esc to close</span>
-        </div>
-      </div>
-    </div>
+              <div className="max-h-[60vh] overflow-y-auto divide-y divide-white/5">
+                {results.length > 0 ? (
+                  results.map((item, idx) => {
+                    const Icon = KIND_ICON[item.kind];
+                    const isActive = idx === activeIndex;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onMouseEnter={() => setActiveIndex(idx)}
+                        onClick={() => activate(item)}
+                        className={`w-full min-h-[52px] text-left px-4 py-3 flex items-center gap-3.5 transition-colors ${
+                          isActive ? 'bg-copper-500/15' : 'hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <span className="p-2 rounded-sm border border-white/10 bg-navy-midnight text-copper-300 shrink-0">
+                          <Icon className="w-4 h-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white truncate">{item.title}</span>
+                            <span className="font-mono text-xs text-copper-400 shrink-0">{item.kind}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 truncate mt-0.5">{item.subtitle}</p>
+                        </div>
+                        <ArrowRight className={`w-4 h-4 shrink-0 ${isActive ? 'text-copper-300' : 'text-slate-400'}`} aria-hidden="true" />
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-6 py-10 text-center">
+                    <p className="text-sm text-slate-300">No matches for "{query.trim()}".</p>
+                    <p className="text-xs text-slate-400 mt-1">Try searching for failclosed, proctor, receipts, schemas, or MCP.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5 bg-navy-midnight/85 text-xs font-mono text-slate-400">
+                <span>INDEX // {allItems.length} RECORDS</span>
+                <span>Esc to close</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </MotionConfig>
   );
 };
 

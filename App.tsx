@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { normalizePath } from './hydration';
 import { syncRouteJsonLd } from './routeJsonLd';
 import { Menu, X, ExternalLink, Linkedin, Mail, Shield, CheckCircle2, ChevronDown, ChevronUp, ChevronRight, Download, Layers, ArrowRight, AlertTriangle, Search, Copy, Check, Terminal, BookOpen, Calendar, Maximize2, Clock } from 'lucide-react';
@@ -13,6 +14,8 @@ import { GuideMetadata } from './components/GuideMetadata';
 import GuideVideo from './components/GuideVideo';
 import Analytics from './components/Analytics';
 import GateSimulator from './components/GateSimulator';
+import MeridianStage from './components/monograph/MeridianStage';
+import MeridianArtifactStage from './components/monograph/MeridianArtifactStage';
 import { EngineeringFigure, summarizeEvidenceTiers } from './components/EngineeringFigure';
 import CommandPalette from './components/CommandPalette';
 import EcosystemMap from './components/EcosystemMap';
@@ -45,16 +48,16 @@ import {
 // --- Shared Components ---
 
 const Section: React.FC<{ children: React.ReactNode; className?: string; id?: string }> = ({ children, className = "", id }) => (
-  <section id={id} className={`max-w-7xl mx-auto px-6 py-20 md:py-32 ${className}`}>
+  <section id={id} className={`max-w-[74rem] mx-auto px-5 sm:px-8 py-16 md:py-24 ${className}`}>
     {children}
   </section>
 );
 
-const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outline'; onClick?: () => void; to?: string }> = ({ children, variant = 'primary', to }) => {
-  const baseClasses = "inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500";
+const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outline'; onClick?: () => void; to?: string }> = ({ children, variant = 'primary', onClick, to }) => {
+  const baseClasses = "inline-flex min-h-[44px] items-center justify-center px-6 py-2.5 text-sm font-semibold tracking-wider uppercase transition-colors duration-200 border border-copper-300 rounded-sm";
   const variants = {
-    primary: "bg-copper-500 text-slate-950 hover:bg-copper-400",
-    outline: "bg-transparent text-copper-500 hover:bg-copper-500/10"
+    primary: "bg-copper-300 text-slate-950 hover:bg-copper-400",
+    outline: "bg-transparent text-copper-300 hover:bg-copper-500/10"
   };
 
   if (to) {
@@ -64,16 +67,14 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'outli
       </Link>
     );
   }
-  return <button className={`${baseClasses} ${variants[variant]}`}>{children}</button>;
+  return <button type="button" onClick={onClick} className={`${baseClasses} ${variants[variant]}`}>{children}</button>;
 };
 
-// `as` lets a route's lead heading render as the page-level <h1> (identical
-// styling) so each top-level route exposes one screen-reader-perceivable h1;
-// subsequent section headers stay h2. Default h2 keeps existing call sites intact.
-const SectionHeader: React.FC<{ title: string; subtitle?: string; as?: 'h1' | 'h2' }> = ({ title, subtitle, as: Heading = 'h2' }) => (
-  <div className="mb-16 border-l-2 border-copper-500 pl-6">
-    <Heading className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">{title}</Heading>
-    {subtitle && <p className="text-copper-400 font-mono text-sm">{subtitle}</p>}
+const SectionHeader: React.FC<{ title: string; subtitle?: string; as?: 'h1' | 'h2'; folio?: string }> = ({ title, subtitle, as: Heading = 'h2', folio }) => (
+  <div className="mb-12 border-l-2 border-copper-500 pl-5 sm:pl-6">
+    <Heading className="text-3xl sm:text-4xl md:text-5xl font-medium text-white mb-2 tracking-tight leading-[1.06]">{title}</Heading>
+    {subtitle && <p className="text-slate-300 font-mono text-xs sm:text-sm">{subtitle}</p>}
+    {folio && <p className="folio-index text-copper-400 mt-1">{folio}</p>}
   </div>
 );
 
@@ -110,20 +111,24 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-white/10">
+    <header className="fixed top-0 inset-x-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10">
+      <div
+        aria-hidden="true"
+        className="meridian-scroll-progress pointer-events-none absolute top-0 left-0 right-0 h-[1.5px] bg-copper-300"
+      />
       <nav
         aria-label="Primary"
         className="w-full"
         onKeyDown={(event) => { if (isOpen && event.key === 'Escape') closeMenu(); }}
         onBlur={(event) => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setIsOpen(false); }}
       >
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-[74rem] mx-auto px-5 sm:px-8 h-20 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center" aria-label="Dan Mercede, home">
             <img src="/dan-mercede-lockup-dark.svg" alt="" width="144" height="36" className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-7">
+          <div className="hidden md:flex items-center gap-6 lg:gap-7">
             {NAV_ITEMS.map((item) => {
               const active = isActive(item.path);
               return (
@@ -131,13 +136,13 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
                   key={item.path}
                   to={item.path}
                   aria-current={active ? (currentPath === item.path ? 'page' : 'location') : undefined}
-                  className={`relative inline-flex min-h-[44px] items-center text-sm font-medium uppercase tracking-wider hover:text-copper-400 transition-colors ${
-                    active ? 'text-copper-400' : 'text-slate-300'
+                  className={`relative inline-flex min-h-[44px] items-center text-sm font-medium uppercase tracking-wider hover:text-copper-300 transition-colors ${
+                    active ? 'text-copper-300' : 'text-slate-200'
                   }`}
                 >
                   {item.label}
                   {active && (
-                    <span className="absolute left-0 right-0 bottom-1.5 h-0.5 bg-copper-500 rounded-full" aria-hidden="true" />
+                    <span className="absolute left-0 right-0 bottom-1.5 h-0.5 bg-copper-300 rounded-full" aria-hidden="true" />
                   )}
                 </Link>
               );
@@ -145,12 +150,12 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
             <button
               type="button"
               onClick={openSearch}
-              className="inline-flex min-h-[44px] items-center gap-2 px-3 py-1.5 rounded-sm border border-white/15 bg-navy-deep/70 text-xs font-mono text-slate-300 hover:border-copper-500/50 hover:text-white transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] items-center gap-2 px-3.5 py-1.5 rounded-sm border border-white/15 bg-navy-deep/80 text-xs font-mono text-slate-200 hover:border-copper-500/55 hover:text-white transition-colors whitespace-nowrap"
             >
-              <Search className="w-3.5 h-3.5 text-copper-400" aria-hidden="true" />
+              <Search className="w-3.5 h-3.5 text-copper-300" aria-hidden="true" />
               <span>Search</span>
               <span className="sr-only"> site</span>
-              <kbd aria-hidden="true" className="text-[10px] text-slate-400 border border-white/10 px-1 rounded-xs">Ctrl K</kbd>
+              <kbd aria-hidden="true" className="text-[11px] text-slate-300 border border-white/15 px-1.5 rounded-xs">Ctrl K</kbd>
             </button>
           </div>
 
@@ -160,7 +165,7 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
               type="button"
               onClick={openSearch}
               aria-label="Search site"
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm border border-white/10 text-slate-300 hover:text-copper-400"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm border border-white/15 bg-navy-deep/70 text-slate-200 hover:text-copper-300"
             >
               <Search className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -168,7 +173,7 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
               ref={toggleRef}
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-white hover:text-copper-400"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-sm border border-white/15 bg-navy-deep/70 text-white hover:text-copper-300"
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isOpen}
               aria-controls={isOpen ? 'mobile-menu' : undefined}
@@ -181,9 +186,9 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden absolute top-full inset-x-0 h-[calc(100dvh-5rem)]">
-            <div aria-hidden="true" onClick={closeMenu} className="absolute inset-0 bg-slate-950/75" />
-            <div id="mobile-menu" ref={menuRef} className="relative max-h-full overflow-y-auto overscroll-contain bg-navy-deep border-b border-copper-500/30 px-6 py-4">
-              {NAV_ITEMS.map((item) => {
+            <div aria-hidden="true" onClick={closeMenu} className="absolute inset-0 bg-slate-950/80" />
+            <div id="mobile-menu" ref={menuRef} className="relative max-h-full overflow-y-auto overscroll-contain bg-navy-deep border-b border-copper-500/35 px-6 py-5 space-y-1">
+              {NAV_ITEMS.map((item, idx) => {
                 const active = isActive(item.path);
                 return (
                   <Link
@@ -191,14 +196,15 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
                     to={item.path}
                     onClick={() => setIsOpen(false)}
                     aria-current={active ? (currentPath === item.path ? 'page' : 'location') : undefined}
-                    className={`flex min-h-[44px] items-center border-l-2 px-3 py-2 text-lg font-medium hover:text-copper-400 ${active ? 'border-copper-500 bg-copper-500/10 text-copper-300' : 'border-transparent text-slate-300'}`}
+                    className={`flex min-h-[48px] items-center justify-between border-l-2 px-3 py-2 text-lg font-medium hover:text-copper-300 ${active ? 'border-copper-300 bg-copper-500/12 text-copper-300' : 'border-transparent text-slate-200'}`}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    <span className="font-mono text-xs text-slate-400 tabular-nums">0{idx + 1}</span>
                   </Link>
                 );
               })}
-              <button type="button" onClick={openSearch} className="mt-3 flex min-h-[44px] w-full items-center gap-3 rounded-sm border border-white/20 bg-slate-950/70 px-4 py-3 text-left text-sm text-white hover:border-copper-500">
-                <Search className="size-4 text-copper-400" aria-hidden="true" />
+              <button type="button" onClick={openSearch} className="mt-4 flex min-h-[48px] w-full items-center gap-3 rounded-sm border border-white/20 bg-slate-950/80 px-4 py-3 text-left text-sm text-white hover:border-copper-300">
+                <Search className="size-4 text-copper-300" aria-hidden="true" />
                 Search site
               </button>
             </div>
@@ -210,28 +216,38 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
 };
 
 const Footer = () => (
-  <footer className="border-t border-white/10 bg-navy-deep/40 py-14 mt-20">
-    <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+  <footer className="border-t border-white/10 bg-navy-deep/50 py-14 mt-20">
+    <div className="max-w-[74rem] mx-auto px-5 sm:px-8 grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
       <div className="md:col-span-5">
-        <img src="/dm-mark.svg" alt="" aria-hidden="true" width="32" height="32" className="h-8 w-8 mb-3" />
-        <p className="text-white font-bold tracking-widest uppercase mb-1">Dan Mercede</p>
-        <p className="text-slate-400 text-xs font-mono leading-relaxed max-w-sm">{FOOTER_DATA.role}</p>
+        <div className="mb-3">
+          <img
+            src="/brand/dm-colophon-signature.svg"
+            alt="Dan Mercede Meridian Colophon"
+            width="280"
+            height="48"
+            className="h-10 w-auto"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+        <p className="text-slate-300 text-xs font-mono leading-relaxed max-w-sm">{FOOTER_DATA.role}</p>
+        <p className="mt-3 font-mono text-xs text-slate-400">Meridian Monograph // Midnight &amp; Copper Architecture</p>
       </div>
 
-      <div className="md:col-span-7 flex flex-col items-start md:items-end gap-4 text-slate-400">
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
+      <div className="md:col-span-7 flex flex-col items-start md:items-end gap-3 text-slate-300">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
           {FOOTER_LINKS.map((l) =>
             l.href.endsWith('.xml') || /^https?:\/\//.test(l.href) ? (
-              <a key={l.href} href={l.href} {...linkTargetProps(l.href)} className="text-xs font-mono hover:text-copper-400 transition-colors">{l.label}</a>
+              <a key={l.href} href={l.href} {...linkTargetProps(l.href)} className="inline-flex min-h-[44px] items-center px-2 text-xs font-mono hover:text-copper-300 transition-colors">{l.label}</a>
             ) : (
-              <Link key={l.href} to={l.href} className="text-xs font-mono hover:text-copper-400 transition-colors">{l.label}</Link>
+              <Link key={l.href} to={l.href} className="inline-flex min-h-[44px] items-center px-2 text-xs font-mono hover:text-copper-300 transition-colors">{l.label}</Link>
             ),
           )}
         </div>
-        <div className="flex flex-wrap gap-6 pt-3 border-t border-white/5 w-full md:w-auto md:justify-end">
-          <Link to="/legal" className="text-xs hover:text-copper-400 cursor-pointer transition-colors">Legal</Link>
-          <Link to="/privacy" className="text-xs hover:text-copper-400 cursor-pointer transition-colors">Privacy</Link>
-          <Link to="/imprint" className="text-xs hover:text-copper-400 cursor-pointer transition-colors">Imprint</Link>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-3 border-t border-white/10 w-full md:w-auto md:justify-end">
+          <Link to="/legal" className="inline-flex min-h-[44px] items-center px-1.5 text-xs hover:text-copper-300 cursor-pointer transition-colors">Legal</Link>
+          <Link to="/privacy" className="inline-flex min-h-[44px] items-center px-1.5 text-xs hover:text-copper-300 cursor-pointer transition-colors">Privacy</Link>
+          <Link to="/imprint" className="inline-flex min-h-[44px] items-center px-1.5 text-xs hover:text-copper-300 cursor-pointer transition-colors">Imprint</Link>
         </div>
       </div>
     </div>
@@ -261,105 +277,178 @@ const HomePage = () => {
   }, [hash]);
 
   return (
-    <div className="mx-auto max-w-[70rem] px-5 pt-20 sm:px-8">
-      <section aria-labelledby="home-heading" className="grid grid-cols-[minmax(0,1fr)_5.25rem] items-center gap-x-3 pb-7 pt-7 sm:grid-cols-[minmax(0,1fr)_clamp(11rem,26vw,16rem)] sm:gap-x-10 sm:py-14 lg:gap-x-20 lg:py-16">
-        <h1 id="home-heading" className="text-[clamp(2.2rem,10.5vw,3.75rem)] font-semibold leading-none tracking-tight text-white sm:text-[clamp(3rem,7vw,6rem)]">Dan Mercede</h1>
-        <img
-          src="/dan-mercede-founder-headshot-hero.webp"
-          alt={getImageMeta('/dan-mercede-founder-headshot-hero.webp').alt}
-          width="1200"
-          height="1500"
-          decoding="async"
-          fetchPriority="high"
-          className="col-start-2 row-start-1 h-[5.75rem] w-full rounded-sm object-cover object-[50%_24%] sm:row-span-2 sm:h-auto sm:object-center"
-        />
-        <div className="col-span-2 mt-4 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:mt-5">
-          <p className="max-w-[31ch] font-serif text-[1.65rem] leading-[1.16] text-slate-100 sm:text-3xl lg:text-[2.5rem]">{IDENTITY_LINE}</p>
-          <p id="operator-thesis" className="mt-3 max-w-[55ch] scroll-mt-24 text-[0.9375rem] leading-relaxed text-slate-300 sm:mt-5 sm:text-base">
-            I ran a club with a <Link to="/about" className="underline decoration-white/40 underline-offset-4 hover:text-copper-300">$6M P&amp;L</Link>. Today I build checks that tell a team when an AI workflow needs a human decision.
+    <div className="mx-auto max-w-[74rem] px-5 pt-20 sm:px-8">
+      {/* 00 // Flagship Asymmetric Monograph Frontispiece */}
+      <section aria-labelledby="home-heading" className="grid grid-cols-1 lg:grid-cols-12 items-start gap-6 sm:gap-8 lg:gap-12 pt-5 pb-8 sm:py-12 lg:py-16">
+        <div className="lg:col-span-7 flex flex-col">
+          <div>
+            <h1 id="home-heading" className="text-[clamp(2.6rem,8vw,4.9rem)] font-medium leading-[0.98] tracking-[-0.03em] text-white">
+              Dan Mercede
+            </h1>
+            <p className="folio-index text-copper-400 mt-3">00 // OPERATOR &amp; SYSTEMS BUILDER</p>
+          </div>
+
+          <p className="mt-5 max-w-[32ch] font-serif text-2xl sm:text-3xl lg:text-[2.35rem] leading-[1.16] text-slate-100">
+            {IDENTITY_LINE}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 sm:mt-6">
-            <a href="#selected-work" className="inline-flex min-h-11 items-center gap-2 rounded-sm bg-copper-500 px-4 text-sm font-semibold text-slate-950 hover:bg-copper-400">
+          <p id="operator-thesis" className="mt-4 max-w-[56ch] scroll-mt-24 text-base leading-relaxed text-slate-300">
+            I ran a club with a <Link to="/about" className="underline decoration-copper-500/60 underline-offset-4 text-white hover:text-copper-300">$6M P&amp;L</Link>. Today I build deterministic gates and behavioral checks that tell a team when an AI workflow needs a human decision.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <a
+              href="#selected-work"
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-sm bg-copper-300 px-6 text-sm font-semibold text-slate-950 hover:bg-copper-400 transition-colors"
+            >
               See selected work <ChevronDown className="size-4" aria-hidden="true" />
             </a>
-            <Link to="/connect" className="inline-flex min-h-11 items-center text-sm font-medium text-slate-200 underline decoration-white/30 underline-offset-4 hover:text-copper-300">
+            <Link
+              to="/connect"
+              className="inline-flex min-h-[48px] items-center rounded-sm border border-white/15 bg-navy-deep/70 px-5 text-sm font-medium text-slate-100 hover:border-copper-300/60 hover:text-copper-300 transition-colors"
+            >
               Contact Dan
             </Link>
           </div>
+
+          {/* Grounded Operating Ledger Strip */}
+          <dl className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-white/10 pt-5">
+            <div>
+              <dt className="font-mono text-xs text-slate-400">Operating P&amp;L</dt>
+              <dd className="mt-1 font-mono text-base font-semibold text-white tabular-nums">$6M / yr</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-xs text-slate-400">Commercial Ops</dt>
+              <dd className="mt-1 font-mono text-base font-semibold text-white tabular-nums">15 yrs</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-xs text-slate-400">UiPath 2026</dt>
+              <dd className="mt-1 font-mono text-sm font-semibold text-copper-300">Track 3 Finalist</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-xs text-slate-400">Conference</dt>
+              <dd className="mt-1 font-mono text-sm font-semibold text-copper-300">NODES · OpsWorld</dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Sovereign Vernier Frame with Blender Polyhedron Inset (unified responsive stage) */}
+        <div className="lg:col-span-5 max-w-md w-full mx-auto lg:max-w-none">
+          <MeridianStage>
+            <picture>
+              <source
+                type="image/avif"
+                srcSet="/media/portraits/dan-mercede-founder-headshot-hero-480w.avif 480w, /media/portraits/dan-mercede-founder-headshot-hero-800w.avif 800w"
+                sizes="(max-width: 1023px) 360px, 420px"
+              />
+              <source
+                type="image/webp"
+                srcSet="/media/portraits/dan-mercede-founder-headshot-hero-480w.webp 480w, /media/portraits/dan-mercede-founder-headshot-hero-800w.webp 800w"
+                sizes="(max-width: 1023px) 360px, 420px"
+              />
+              <img
+                src="/dan-mercede-founder-headshot-hero.webp"
+                alt={getImageMeta('/dan-mercede-founder-headshot-hero.webp').alt}
+                width={1200}
+                height={1500}
+                fetchPriority="high"
+                decoding="async"
+                className="aspect-[4/5] w-full object-cover object-[50%_18%] contrast-[1.04] saturate-[0.92] brightness-[0.96]"
+              />
+            </picture>
+          </MeridianStage>
         </div>
       </section>
 
-      <section id="selected-work" aria-labelledby="selected-work-heading" className="scroll-mt-24 border-y border-white/10 py-6 sm:py-9">
-        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 sm:mb-6">
-          <h2 id="selected-work-heading" className="text-4xl font-semibold tracking-tight text-white lg:text-5xl">Selected work</h2>
+      {/* 01 // Selected Work Dossier */}
+      <section id="selected-work" aria-labelledby="selected-work-heading" className="scroll-mt-24 border-y border-white/10 py-8 sm:py-12">
+        <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4">
+          <h2 id="selected-work-heading" className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white">Selected work</h2>
           <Link to="/works" className={HOME_LINK}>All projects <ArrowRight className="size-4" aria-hidden="true" /></Link>
         </div>
-        <article className="grid items-center gap-8 border-l-2 border-copper-400 bg-navy-deep px-[1.125rem] py-4 sm:px-7 sm:py-6 md:grid-cols-[3fr_2fr] lg:px-9 lg:py-8">
+
+        <article className="meridian-plate-accent grid items-center gap-8 rounded-lg px-5 py-6 sm:px-8 sm:py-8 md:grid-cols-[3fr_2fr]">
           <div className="max-w-[54ch]">
-            <p className={META}>{proctor.status}</p>
-            <h3 className="mb-1 mt-1 text-4xl font-semibold leading-tight tracking-tight text-white lg:text-5xl">{proctor.title}</h3>
-            <p className="text-slate-200">{proctor.summary}</p>
-            <a href={proctor.href} className={HOME_LINK}>
-              {proctor.action} <ArrowRight className="size-4" aria-hidden="true" />
-            </a>
-            <p className={META}>
-              <a href={PROCTOR_FINALIST.href} {...linkTargetProps(PROCTOR_FINALIST.href)} className="underline decoration-white/25 underline-offset-4 hover:text-copper-300">
+            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-medium leading-tight tracking-tight text-white">{proctor.title}</h3>
+            <p className={`${META} mt-1 mb-3`}>01 // {proctor.status}</p>
+            <p className="text-slate-200 leading-relaxed">{proctor.summary}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <a href={proctor.href} className={HOME_LINK}>
+                {proctor.action} <ArrowRight className="size-4" aria-hidden="true" />
+              </a>
+            </div>
+            <p className={`mt-2 ${META}`}>
+              <a href={PROCTOR_FINALIST.href} {...linkTargetProps(PROCTOR_FINALIST.href)} className="inline-flex min-h-[44px] items-center underline decoration-white/25 underline-offset-4 hover:text-copper-300">
                 {PROCTOR_FINALIST.label}
               </a>
             </p>
           </div>
-          <div className="hidden border-l border-white/10 pl-6 md:block">
-            <p className={META}>From the project quickstart</p>
-            <p className="mt-2 font-mono text-lg text-white">pnpm demo</p>
-            <p className="mt-2 max-w-[32ch] text-sm leading-relaxed text-slate-300">After setup, run the invoice example locally. It catches a regression and opens an approval step. No API key required.</p>
+
+          <div className="border-t border-white/15 pt-5 md:border-t-0 md:border-l md:pt-0 md:pl-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2 mb-3 text-xs font-mono text-slate-400">
+              <span>QUICKSTART // VERIFIABLE RUN</span>
+              <span className="text-copper-300 shrink-0">LOCAL</span>
+            </div>
+            <p className="font-mono text-lg text-white">$ pnpm demo</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">After setup, run the invoice example locally. It catches a regression and opens an approval step. No API key required.</p>
           </div>
         </article>
-        {otherWork.map((work) => (
-          <article key={work.href} className="border-b border-white/10 pb-2 pt-4 md:grid md:grid-cols-[minmax(10rem,1fr)_minmax(0,1.35fr)_auto] md:items-center md:gap-6 md:py-4">
-            <div>
-              <p className={META}>{work.status}</p>
-              <h3 className="text-2xl font-semibold leading-tight tracking-tight text-white lg:text-[1.75rem]">{work.title}</h3>
-            </div>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-300 md:mt-0 sm:text-base">{work.summary}</p>
-            <a href={work.href} className={HOME_LINK}>{work.action} <ArrowRight className="size-4" aria-hidden="true" /></a>
-          </article>
-        ))}
-        <div className="mt-2 flex flex-wrap gap-x-5 sm:mt-4">
-          <a id="gate-simulator" href={HOME_DESTINATIONS['#gate-simulator']} className={`scroll-mt-24 ${HOME_LINK}`}>Try the gate demo</a>
-          <a id="visual-architecture" href={HOME_DESTINATIONS['#visual-architecture']} className={`scroll-mt-24 ${HOME_LINK}`}>Architecture diagrams</a>
+
+        <div className="divide-y divide-white/10 mt-4">
+          {otherWork.map((work, idx) => (
+            <article key={work.href} className="py-5 md:grid md:grid-cols-[minmax(13rem,1fr)_minmax(0,1.45fr)_auto] md:items-center md:gap-6">
+              <div>
+                <h3 className="text-2xl font-medium leading-tight tracking-tight text-white lg:text-[1.75rem]">{work.title}</h3>
+                <p className={`${META} mt-0.5`}>0{idx + 2} // {work.status}</p>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300 md:mt-0 sm:text-base">{work.summary}</p>
+              <a href={work.href} className={`mt-2 md:mt-0 ${HOME_LINK}`}>{work.action} <ArrowRight className="size-4" aria-hidden="true" /></a>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-x-6 gap-y-2">
+          <a id="gate-simulator" href={HOME_DESTINATIONS['#gate-simulator']} className={`scroll-mt-24 ${HOME_LINK}`}>Try the gate demo <ArrowRight className="size-4" aria-hidden="true" /></a>
+          <a id="visual-architecture" href={HOME_DESTINATIONS['#visual-architecture']} className={`scroll-mt-24 ${HOME_LINK}`}>Architecture diagrams <ArrowRight className="size-4" aria-hidden="true" /></a>
         </div>
       </section>
 
-      <section aria-labelledby="desk-heading" className="border-b border-white/10 py-7 sm:py-10">
-        <h2 id="desk-heading" className="mb-4 text-4xl font-semibold tracking-tight text-white lg:text-5xl">From the desk</h2>
+      {/* 02 // Meridian 3D Control Plane Bench */}
+      <div className="border-b border-white/10 py-9 sm:py-12">
+        <MeridianArtifactStage sectionId="meridian-stage" />
+      </div>
+
+      {/* 03 // From the Desk Broadsheet */}
+      <section aria-labelledby="desk-heading" className="border-b border-white/10 py-8 sm:py-12">
+        <h2 id="desk-heading" className="mb-5 text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white">From the desk</h2>
         {[
           deskGuide && { kind: 'Field guide', href: `/guides/${deskGuide.slug}`, article: deskGuide },
           deskEssay && { kind: 'Essay', href: `/thoughts/${deskEssay.slug}`, article: deskEssay },
         ].map((entry) => entry && (
-          <div key={entry.href} className="border-t border-white/10 py-3 sm:grid sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-4">
-            <p className={META}>{entry.kind}</p>
-            <Link to={entry.href} className="inline-flex min-h-11 items-center font-serif text-2xl font-medium leading-tight text-white hover:text-copper-300">
+          <div key={entry.href} className="border-t border-white/10 py-4 sm:grid sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-6">
+            <p className={META_ACCENT}>{entry.kind}</p>
+            <Link to={entry.href} className="inline-flex min-h-[44px] items-center font-serif text-2xl font-medium leading-tight text-white hover:text-copper-300">
               {entry.article.title}
             </Link>
-            <p className={`hidden whitespace-nowrap sm:block ${META}`}>{estimateReadingMinutes(entry.article.body)} min</p>
+            <p className={`hidden whitespace-nowrap tabular-nums sm:block ${META}`}>{estimateReadingMinutes(entry.article.body)} min read</p>
           </div>
         ))}
-        <div className="flex flex-wrap gap-x-5">
-          <Link to="/guides" className={HOME_LINK}>All guides</Link>
-          <Link to="/thoughts" className={HOME_LINK}>All essays</Link>
+        <div className="mt-2 flex flex-wrap gap-x-6">
+          <Link to="/guides" className={HOME_LINK}>All guides <ArrowRight className="size-4" aria-hidden="true" /></Link>
+          <Link to="/thoughts" className={HOME_LINK}>All essays <ArrowRight className="size-4" aria-hidden="true" /></Link>
         </div>
       </section>
 
-      <div className="grid sm:grid-cols-2 sm:gap-x-8 sm:py-8">
-        <section className="py-6 sm:py-1">
-          <h2 className="text-3xl font-semibold tracking-tight text-white">Speaking</h2>
+      {/* 04 // Speaking & Scoped Implementation Split Ledger */}
+      <div className="grid sm:grid-cols-2 sm:gap-x-8 py-6 sm:py-10">
+        <section className="meridian-plate rounded-lg p-6">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-white">Speaking</h2>
           {UPCOMING_SPEAKING && <p className="mt-2 text-sm text-slate-300">Next workshop · {UPCOMING_SPEAKING.event} · {UPCOMING_SPEAKING.date}</p>}
-          <a href="/connect#speaking" className={HOME_LINK}>Talk topics &amp; speaker kit <ArrowRight className="size-4" aria-hidden="true" /></a>
+          <a href="/connect#speaking" className={`mt-3 ${HOME_LINK}`}>Talk topics &amp; speaker kit <ArrowRight className="size-4" aria-hidden="true" /></a>
         </section>
-        <section className="border-t border-white/10 py-6 sm:border-l sm:border-t-0 sm:py-1 sm:pl-8">
-          <h2 className="text-3xl font-semibold tracking-tight text-white">Implementation</h2>
+        <section className="meridian-plate rounded-lg p-6 mt-5 sm:mt-0">
+          <h2 className="text-2xl sm:text-3xl font-medium tracking-tight text-white">Implementation</h2>
           <p className="mt-2 max-w-[44ch] text-sm text-slate-300">I work through Orion Intelligence Agency to put one workflow into practice.</p>
-          <a href={READINESS_SCAN.href} {...linkTargetProps(READINESS_SCAN.href)} className={HOME_LINK}>
+          <a href={READINESS_SCAN.href} {...linkTargetProps(READINESS_SCAN.href)} className={`mt-3 ${HOME_LINK}`}>
             Work with OIA <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
         </section>
@@ -372,7 +461,7 @@ const OPERATING_MILESTONES = [
   {
     period: 'Operations & Field',
     role: 'General Manager, 24 Hour Fitness (Escondido) & Mosaic Sales Solutions',
-    detail: 'Ran a $6M P&L with full staffing, retention, and site accountability after frontline product representation for Apple through Mosaic.',
+    detail: 'General Manager at 24 Hour Fitness Escondido (>$3M/yr club) with $6M commercial P&L scope, staffing, KPI dashboards, and CRM automation after frontline representation for Apple through Mosaic.',
   },
   {
     period: 'Infrastructure & Systems',
@@ -396,36 +485,65 @@ const AboutPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <header className="mb-12 grid overflow-hidden rounded-lg border border-white/10 bg-navy-deep md:grid-cols-2">
-        <div className="self-center p-6 md:p-10">
-          <h1 className="mb-5 text-4xl font-bold tracking-tight text-white md:text-5xl">About Dan Mercede</h1>
-          <p className="max-w-xl text-xl leading-relaxed text-slate-200">{ABOUT_BIO.lead}</p>
+      <div className="meridian-plate-accent mb-12 grid overflow-hidden rounded-lg md:grid-cols-12">
+        <div className="md:col-span-6 self-center p-6 sm:p-8 lg:p-10">
+          <h1 className="mb-2 text-4xl font-medium tracking-tight text-white md:text-5xl">About Dan Mercede</h1>
+          <p className="folio-index text-copper-400 mb-5">BIOGRAPHY // OPERATING HISTORY</p>
+          <p className="max-w-[58ch] text-lg sm:text-xl leading-relaxed text-slate-200">{ABOUT_BIO.lead}</p>
         </div>
-        <picture>
-          <source type="image/webp" srcSet="/dan-mercede-founder-working-landscape.webp" />
-          <img src="/dan-mercede-founder-working-landscape.png" alt="Dan Mercede at a table with his laptop"
-            width="2048" height="1638" decoding="async" className="aspect-[2/1] h-full w-full object-cover object-[50%_25%] md:aspect-[3/2]" />
-        </picture>
-      </header>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8">
-          <div className="prose prose-invert prose-lg text-slate-300">
-            {ABOUT_BIO.sections.map((section) => (
-              <div key={section.heading} className="mb-10">
-                <h2 className="text-2xl font-bold text-white mb-4">{section.heading}</h2>
+        <div className="md:col-span-6 relative bg-navy-midnight">
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/media/portraits/dan-mercede-founder-working-landscape-480w.avif 480w, /media/portraits/dan-mercede-founder-working-landscape-800w.avif 800w"
+              sizes="(max-width: 768px) 100vw, 560px"
+            />
+            <source
+              type="image/webp"
+              srcSet="/media/portraits/dan-mercede-founder-working-landscape-480w.webp 480w, /media/portraits/dan-mercede-founder-working-landscape-800w.webp 800w"
+              sizes="(max-width: 768px) 100vw, 560px"
+            />
+            <img
+              src="/dan-mercede-founder-working-landscape.webp"
+              alt="Dan Mercede at a table with his laptop"
+              width={1080}
+              height={864}
+              decoding="async"
+              fetchPriority="high"
+              className="aspect-[5/4] h-full w-full object-cover object-[50%_22%] contrast-[1.04] saturate-[0.92] brightness-[0.96]"
+            />
+          </picture>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#020B29]/55 via-transparent to-[#020B29]/25"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="lg:col-span-7">
+          <div className="prose prose-invert prose-lg text-slate-300 max-w-[60ch]">
+            {ABOUT_BIO.sections.map((section, sectionIdx) => (
+              <div key={section.heading} className="mb-10 border-b border-white/10 pb-8 last:border-b-0">
+                <h2 className="text-2xl sm:text-3xl font-medium text-white mb-4 mt-0">{section.heading}</h2>
                 {section.paragraphs.map((paragraph, idx) => (
-                  <p key={idx} className="mb-4 leading-relaxed text-slate-300">{paragraph}</p>
+                  <p key={idx} className="mb-4 max-w-[65ch] leading-relaxed text-slate-300">{paragraph}</p>
                 ))}
               </div>
             ))}
 
             <div className="mb-10">
-              <h2 className="text-2xl font-bold text-white mb-4">Recognition and speaking</h2>
-              <ul className="space-y-3 list-none pl-0">
+              <h2 className="text-2xl sm:text-3xl font-medium text-white mb-4 mt-0">Recognition and speaking</h2>
+              <ul className="space-y-2 list-none pl-0 not-prose">
                 {ABOUT_BIO.recognition.map((item) => (
                   <li key={item.href} className="pl-0">
-                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-copper-400 hover:text-copper-300 inline-flex items-start gap-2">
-                      <span>{item.label}</span>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-[44px] items-start gap-2.5 py-2 text-copper-300 hover:text-copper-400 transition-colors"
+                    >
+                      <span className="leading-snug">{item.label}</span>
                       <ExternalLink className="w-4 h-4 mt-1 shrink-0" aria-hidden="true" />
                     </a>
                   </li>
@@ -434,34 +552,51 @@ const AboutPage = () => {
             </div>
           </div>
 
-          <div className="mt-14">
-            <h2 className="text-2xl font-bold text-white mb-6">What I Believe</h2>
-            <div className="grid grid-cols-1 gap-4">
+          <div className="mt-12 border-t border-white/10 pt-10">
+            <h2 className="text-2xl sm:text-3xl font-medium text-white mb-6">What I Believe</h2>
+            <div className="divide-y divide-white/10 border-y border-white/10">
               {BELIEFS.map((belief, idx) => (
-                <div key={idx} className="group rounded-lg border border-white/10 bg-navy-deep/55 p-6 hover:border-copper-500/40 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-300 transition-colors">
-                    {belief.statement}
-                  </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed pl-4 border-l border-copper-500/40">
-                    {belief.detail}
-                  </p>
+                <div key={idx} className="py-5 sm:grid sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4 items-baseline">
+                  <span className="font-mono text-xs text-copper-400 tabular-nums mb-1 block">0{idx + 1}</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-1.5">
+                      {belief.statement}
+                    </h3>
+                    <p className="text-slate-300 text-sm leading-relaxed pl-4 border-l border-copper-500/50">
+                      {belief.detail}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <aside className="lg:col-span-4">
-          {/* Visual Operating Timeline */}
-          <div className="mb-12 not-prose">
-            <h2 className="text-2xl font-bold text-white mb-6">Operating timeline</h2>
-            <ol className="space-y-4 border-l border-copper-500/30 pl-6">
+        <aside className="lg:col-span-5 lg:sticky lg:top-24">
+          <div className="meridian-plate rounded-lg p-6 not-prose">
+            <div className="flex items-start justify-between gap-3 mb-6">
+              <div>
+                <h2 className="text-2xl font-medium text-white mb-1">Operating timeline</h2>
+                <p className="folio-index text-copper-400">CALIPER // CAREER ARC</p>
+              </div>
+              <img
+                src="/brand/dm-seal-architectural.svg"
+                alt=""
+                aria-hidden="true"
+                width={32}
+                height={32}
+                loading="eager"
+                decoding="async"
+                className="h-8 w-8 shrink-0 opacity-85"
+              />
+            </div>
+            <ol className="space-y-4 border-l border-copper-500/40 pl-5">
               {OPERATING_MILESTONES.map((item) => (
-                <li key={item.period} className="relative rounded-lg border border-white/10 bg-navy-deep/55 p-5">
-                  <span className="absolute -left-[31px] top-6 h-2.5 w-2.5 rounded-full bg-copper-500 ring-4 ring-slate-950" aria-hidden="true" />
+                <li key={item.period} className="relative rounded-sm border border-white/10 bg-navy-midnight/75 p-4">
+                  <span className="absolute -left-[25px] top-5 h-2.5 w-2.5 rounded-full bg-copper-300 ring-4 ring-slate-950" aria-hidden="true" />
                   <span className="font-mono text-xs text-copper-400 block mb-1">{item.period}</span>
                   <span className="text-base font-semibold text-white block mb-1.5">{item.role}</span>
-                  <p className="text-sm text-slate-400 leading-relaxed m-0">{item.detail}</p>
+                  <p className="text-sm text-slate-300 leading-relaxed m-0">{item.detail}</p>
                 </li>
               ))}
             </ol>
@@ -513,7 +648,12 @@ const EcosystemPage = () => {
   };
 
   const renderVentureDetail = (venture: Venture) => (
-    <div className="col-span-1 md:col-span-2 bg-slate-950 border-y border-copper-500/30 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="col-span-1 md:col-span-2 bg-slate-950 border-y border-copper-500/30 relative overflow-hidden"
+    >
       <div className="absolute top-0 left-0 w-1 h-full bg-copper-500"></div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 md:p-12 items-start">
         <div className="lg:col-span-8">
@@ -563,7 +703,7 @@ const EcosystemPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
@@ -571,7 +711,7 @@ const EcosystemPage = () => {
       {/* Primary: Operator Stack */}
       <Section>
         <SectionHeader as="h1" title="Operator Stack" subtitle="Core Systems" />
-        <p className="text-slate-300 mb-10 max-w-3xl -mt-10 leading-relaxed">
+        <p className="text-slate-300 mb-10 max-w-[62ch] -mt-10 leading-relaxed">
           The platform and the consulting arm. Cosmocrat is the Governed AI Operating System. Orion Intelligence Agency is SMB AI strategy consulting that builds and deploys with operators, not just advises.
         </p>
 
@@ -605,11 +745,13 @@ const EcosystemPage = () => {
                       <img
                         src={venture.logo}
                         alt={venture.name}
+                        width="120"
+                        height="36"
                         className="h-9 w-auto object-contain opacity-100"
                       />
                     </div>
-                    <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isCosmocrat
-                      ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
+                    <span className={`text-xs font-mono px-2.5 py-1 rounded-xs uppercase tracking-widest ${isCosmocrat
+                      ? 'bg-copper-500/20 text-copper-300 font-bold border border-copper-500/30'
                       : 'bg-emerald-500/10 text-emerald-500'
                       }`}>
                       {venture.status}
@@ -646,18 +788,18 @@ const EcosystemPage = () => {
       </Section>
 
       {/* Readiness Scan CTA Band */}
-      <div className="border-y border-copper-500/10 bg-navy-deep/75 py-16">
+      <div className="border-y border-copper-500/20 bg-navy-deep/75 py-14">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-slate-300 text-sm mb-4">One workflow entry</p>
+          <p className="folio-index text-copper-400 mb-2">ONE WORKFLOW ENTRY</p>
           <a
             href={READINESS_SCAN.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-300 border border-copper-500 bg-copper-500 text-slate-950 hover:bg-copper-400"
+            className="inline-flex min-h-[48px] items-center justify-center px-8 py-3 text-sm font-semibold tracking-wider uppercase transition-colors border border-copper-300 bg-copper-300 text-slate-950 hover:bg-copper-400 rounded-sm"
           >
             {READINESS_SCAN.cta}
           </a>
-          <p className="text-slate-400 text-xs font-mono mt-4">
+          <p className="text-slate-300 text-xs font-mono mt-4">
             {READINESS_SCAN.deliverables.join(' · ')}
           </p>
         </div>
@@ -685,7 +827,7 @@ const EcosystemPage = () => {
         </div>
 
         {showSecondary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
             {secondaryVentures.map((venture) => {
               const isExpanded = expandedSlug === venture.slug;
               const isLive = venture.status.includes('PRODUCTION') || venture.status.includes('EXECUTION');
@@ -708,10 +850,12 @@ const EcosystemPage = () => {
                         <img
                           src={venture.logo}
                           alt={venture.name}
-                          className="h-7 w-auto object-contain opacity-70 group-hover:opacity-90 transition-all"
+                          width="96"
+                          height="28"
+                          className="h-7 w-auto object-contain opacity-75 group-hover:opacity-95 transition-all"
                         />
                       </div>
-                      <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isLive
+                      <span className={`text-[11px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isLive
                         ? 'bg-emerald-500/10 text-emerald-500'
                         : 'bg-amber-500/10 text-amber-500'
                         }`}>
@@ -768,37 +912,38 @@ const LAYER_INVARIANTS: Record<number, string> = {
 };
 
 const ReadinessScanCTA = () => (
-  <div className="border border-copper-500/20 bg-copper-500/5 rounded-lg p-6 mt-10">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  <div className="meridian-plate-accent rounded-lg p-6 sm:p-8 mt-10">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
       <div>
-        <p className="text-white font-semibold mb-1">Start with one workflow and clear ownership.</p>
-        <p className="text-sm text-slate-400">Workflow readiness map. Failure-mode heatmap. Ownership and handoff plan. 30/60/90 rollout roadmap.</p>
+        <p className="text-white text-lg font-semibold mb-1">Start with one workflow and clear ownership.</p>
+        <p className="text-sm text-slate-300">Workflow readiness map. Failure-mode heatmap. Ownership and handoff plan. 30/60/90 rollout roadmap.</p>
       </div>
       <a
         href={READINESS_SCAN.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-mono rounded-sm transition-colors whitespace-nowrap"
+        className="inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 bg-copper-300 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded-sm transition-colors whitespace-nowrap"
       >
         {READINESS_SCAN.cta}
-        <ArrowRight className="w-4 h-4" />
+        <ArrowRight className="w-4 h-4" aria-hidden="true" />
       </a>
     </div>
   </div>
 );
 
 const RunnableProofCallout = () => (
-  <div id="runnable-proof" className="mb-16">
-    <div className="border border-copper-500/30 bg-gradient-to-br from-copper-500/[0.07] to-slate-900/40 rounded-lg p-8">
-      <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
+  <div id="runnable-proof" className="mb-14">
+    <div className="meridian-plate-accent rounded-lg p-6 sm:p-8">
+      <h2 className="text-2xl md:text-3xl font-medium text-white mb-1.5">
         failclosed: the Authority Gate, made runnable
       </h2>
-      <p className="text-slate-300 leading-relaxed max-w-3xl mb-2">
+      <p className="folio-index text-copper-400 mb-4">RUNNABLE PROOF // L1 ADMISSION CONTROL</p>
+      <p className="text-slate-200 leading-relaxed max-w-[62ch] mb-4">
         failclosed applies the Authority Gate to the merge boundary. It runs an LLM reviewer, distrusts the verdict, and refuses to admit unparseable, schema-invalid, or self-contradictory output.
       </p>
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-400 text-sm font-mono mb-6">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-mono uppercase tracking-widest bg-copper-500/10 text-copper-400 border border-copper-500/20">
-          <Layers className="w-3 h-3" aria-hidden="true" />
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-300 text-sm font-mono mb-6">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-mono uppercase tracking-wider bg-copper-500/15 text-copper-300 border border-copper-500/30">
+          <Layers className="w-3.5 h-3.5" aria-hidden="true" />
           L1: Authority Gate
         </span>
         <span className="inline-flex items-center gap-2">
@@ -812,30 +957,21 @@ const RunnableProofCallout = () => (
           href="https://github.com/OrionArchitekton/failclosed"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-copper-500 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded-sm transition-colors"
+          className="inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 bg-copper-300 hover:bg-copper-400 text-slate-950 text-sm font-semibold rounded-sm transition-colors"
         >
           View on GitHub
-          <ExternalLink className="w-4 h-4" />
+          <ExternalLink className="w-4 h-4" aria-hidden="true" />
         </a>
-        <a href="#gate-simulator" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-copper-400 hover:text-copper-300">
+        <a href="#gate-simulator" className="inline-flex min-h-[44px] items-center gap-2 px-2 text-sm font-semibold text-copper-300 hover:text-copper-400">
           Try the gate demo <ArrowRight className="size-4" aria-hidden="true" />
         </a>
         <Link
           to="/thoughts"
-          className="inline-flex items-center gap-2 text-sm text-copper-500 hover:text-copper-400 font-mono transition-colors"
+          className="inline-flex min-h-[44px] items-center gap-2 px-2 text-sm text-slate-200 hover:text-copper-300 font-mono transition-colors"
         >
           Read the doctrine
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </Link>
-        <a
-          href={READINESS_SCAN.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-copper-400 font-mono transition-colors"
-        >
-          {READINESS_SCAN.cta}
-          <ArrowRight className="w-4 h-4" />
-        </a>
       </div>
     </div>
   </div>
@@ -880,17 +1016,17 @@ const EvidenceSection = () => {
           return (
             <div
               key={tier.id}
-              className={`border rounded-lg p-6 ${
+              className={`border-t pt-6 ${
                 isLimits
-                  ? 'border-white/10 bg-navy-deep/45'
-                  : 'border-copper-500/25 bg-navy-deep/70'
+                  ? 'border-white/15'
+                  : 'border-copper-500/40'
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`w-4 h-4 ${isLimits ? 'text-slate-400' : 'text-copper-400'}`} />
                 <h3 className="text-lg font-semibold text-white">{tier.title}</h3>
               </div>
-              <p className="text-sm text-slate-400 mb-5 max-w-3xl">{tier.note}</p>
+              <p className="text-sm text-slate-300 mb-5 max-w-[62ch]">{tier.note}</p>
 
               <ul className="space-y-4">
                 {tier.claims.map((c, i) => {
@@ -898,20 +1034,20 @@ const EvidenceSection = () => {
                   const isCopied = copiedKey === key;
                   return (
                     <li key={i} className="border-l border-white/15 pl-4">
-                      <p className="text-slate-200 text-sm leading-relaxed mb-2">{c.claim}</p>
+                      <p className="text-slate-200 text-sm leading-relaxed mb-2 max-w-[54ch]">{c.claim}</p>
                       {c.kind === 'check' ? (
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <code className="text-[11px] font-mono text-slate-300 bg-slate-950/70 border border-white/10 px-2.5 py-1 rounded-xs min-w-0 max-w-full whitespace-pre-wrap break-words">
+                          <code className="text-xs font-mono text-slate-300 bg-slate-950/75 border border-white/10 px-3 py-1.5 rounded-xs min-w-0 max-w-full whitespace-pre-wrap break-words">
                             {c.verify}
                           </code>
                           {c.verify && (
                             <button
                               type="button"
                               onClick={() => handleCopyCommand(key, c.verify)}
-                              aria-label={`Copy verification command for: ${c.claim}`}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-xs border border-white/10 bg-slate-950/60 text-[11px] font-mono text-slate-400 hover:border-copper-500/40 hover:text-white transition-colors"
+                              aria-label={`Copy command: ${c.claim.slice(0, 60)}`}
+                              className="inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-xs border border-white/15 bg-slate-950/70 text-xs font-mono text-slate-300 hover:border-copper-500/50 hover:text-white transition-colors"
                             >
-                              {isCopied ? <Check className="w-3 h-3 text-emerald-500" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
+                              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                               {isCopied ? 'Copied' : 'Copy'}
                             </button>
                           )}
@@ -924,10 +1060,10 @@ const EvidenceSection = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label={`${sourceLabel}: ${c.claim}`}
-                                className="inline-flex items-center gap-1 text-[11px] font-mono text-copper-400 hover:text-copper-300 transition-colors"
+                                className="inline-flex min-h-[44px] items-center gap-1.5 px-2 text-xs font-mono text-copper-300 hover:text-copper-400 transition-colors"
                               >
                                 {sourceLabel}
-                                <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                               </a>
                             );
                           })}
@@ -951,17 +1087,17 @@ const EvidenceSection = () => {
 
 // A plain download: says what the file is, never dresses it as an enforcement
 // artifact (2026-09-29 site audit).
-const DownloadCard = ({ resource }: { resource: Resource }) => (
-  <div className="border border-white/10 bg-navy-deep/60 rounded-lg p-6 hover:border-copper-500/40 transition-all group flex flex-col">
+const DownloadCard = ({ resource, className = '' }: { resource: Resource; className?: string }) => (
+  <div className={`meridian-plate rounded-lg p-6 hover:border-copper-500/45 transition-colors group flex flex-col ${className}`}>
     <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-copper-300 transition-colors">{resource.title}</h3>
     <span className={`${META_ACCENT} mb-3`}>
       {resource.downloadLabel ?? resource.title} · {resource.fileType.toUpperCase()}
     </span>
-    <p className="text-sm text-slate-400 mb-5 leading-relaxed grow">{resource.description}</p>
+    <p className="text-sm text-slate-300 mb-5 leading-relaxed grow">{resource.description}</p>
     <a
       href={resource.filePath}
       download={resource.fileName}
-      className="inline-flex items-center gap-2 text-sm text-copper-400 hover:text-copper-300 font-mono transition-colors"
+      className="inline-flex min-h-[44px] items-center gap-2 text-sm text-copper-300 hover:text-copper-400 font-mono transition-colors"
     >
       <Download className="w-4 h-4" aria-hidden="true" />
       Download
@@ -996,10 +1132,10 @@ const LayerJumpBar = () => {
   }, []);
 
   return (
-    <div className="sticky top-16 z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-6">
-        <nav className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide" aria-label="Layer navigation">
-          {LAYER_JUMP_LINKS.map(({ id, label }) => (
+    <div className="sticky top-20 z-40 bg-slate-950/92 backdrop-blur-md border-b border-white/10">
+      <div className="max-w-[74rem] mx-auto px-5 sm:px-8">
+        <nav className="flex flex-nowrap overflow-x-auto items-center gap-1.5 sm:gap-2 py-1.5 pr-6 [mask-image:linear-gradient(to_right,black_88%,transparent)] sm:pr-0 sm:[mask-image:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Layer navigation">
+          {LAYER_JUMP_LINKS.map(({ id, label }, idx) => (
             <a
               key={id}
               href={`#${id}`}
@@ -1008,12 +1144,13 @@ const LayerJumpBar = () => {
                 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 document.getElementById(id)?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
               }}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-sm text-xs font-mono uppercase tracking-widest transition-colors ${
+              className={`whitespace-nowrap inline-flex min-h-[44px] items-center px-3.5 py-2 rounded-sm text-xs font-mono uppercase tracking-wider transition-colors ${
                 active === id
-                  ? 'bg-copper-500/15 text-copper-400 border border-copper-500/30'
-                  : 'text-slate-400 hover:text-slate-300 border border-transparent'
+                  ? 'bg-copper-500/15 text-copper-300 border border-copper-500/40'
+                  : 'text-slate-300 hover:text-white border border-transparent'
               }`}
             >
+              <span className="text-copper-400 mr-1.5 tabular-nums">0{idx + 1}</span>
               {label}
             </a>
           ))}
@@ -1024,12 +1161,12 @@ const LayerJumpBar = () => {
 };
 
 const DiagramDownloads = ({ basePath, name }: { basePath: string; name: string }) => (
-  <div className="flex items-center gap-4 mt-4">
-    <a href={`${basePath}.svg`} download className="inline-flex items-center gap-2 text-sm font-mono text-copper-500 hover:text-copper-400 transition-colors">
-      <Download className="w-4 h-4" /> {name} (SVG)
+  <div className="flex flex-wrap items-center gap-4 mt-4">
+    <a href={`${basePath}.svg`} download className="inline-flex min-h-[44px] items-center gap-2 text-sm font-mono text-copper-300 hover:text-copper-400 transition-colors">
+      <Download className="w-4 h-4" aria-hidden="true" /> {name} (SVG)
     </a>
-    <a href={`${basePath}.png`} download className="inline-flex items-center gap-2 text-sm font-mono text-slate-400 hover:text-slate-300 transition-colors">
-      <Download className="w-4 h-4" /> {name} (PNG)
+    <a href={`${basePath}.png`} download className="inline-flex min-h-[44px] items-center gap-2 text-sm font-mono text-slate-300 hover:text-white transition-colors">
+      <Download className="w-4 h-4" aria-hidden="true" /> {name} (PNG)
     </a>
   </div>
 );
@@ -1202,45 +1339,15 @@ const usePageMeta = (override?: PageMetaOverride, opts?: { noindex?: boolean }) 
   ]);
 };
 
-const LAYER_DETAILS: Record<number, { boundary: string; artifact: string; href: string; detail: string }> = {
-  1: {
-    boundary: 'Pre-mutation authorization check',
-    artifact: 'failclosed',
-    href: '/works/failclosed/',
-    detail: 'Verifies parsed schema, structural contract, and verdict consistency before any merge or state-changing action runs.',
-  },
-  2: {
-    boundary: 'Attestation & cryptographic audit log',
-    artifact: 'Governance Receipts',
-    href: '/diagrams/2026-02-17-audit-logs-vs-immutable-receipts',
-    detail: 'Writes an append-only record binding actor, policy hash, input digest, and decision outcome so audits verify state rather than log prose.',
-  },
-  3: {
-    boundary: 'Cross-release behavioral regression guard',
-    artifact: 'Proctor',
-    href: '/works/proctor/',
-    detail: 'Replays candidate prompts and models against learned contracts, separating random variance from consequential drift and pausing risky changes.',
-  },
-  4: {
-    boundary: 'Physical capability isolation',
-    artifact: 'Fork Around & Find Out',
-    href: '/works/fork-around-find-out/',
-    detail: 'Executes risky commands in disposable sandboxes equipped with canary secrets and egress inspection before touching production hosts.',
-  },
-};
-
 const ResourcesPage = () => {
   usePageMeta();
-  const layers = [1, 2, 3, 4] as const;
-  const [selectedLayer, setSelectedLayer] = useState<number>(1);
-  const activeDetail = LAYER_DETAILS[selectedLayer];
 
   return (
     <div className="pt-20">
       <LayerJumpBar />
       <Section>
         <SectionHeader as="h1" title="Proof" subtitle="Evidence, approach, and resources" />
-        <p className="text-slate-300 text-lg max-w-3xl mb-12">
+        <p className="text-slate-300 text-lg max-w-[62ch] mb-12">
           Three kinds of material live here, each labeled for what it is: evidence you can check, explanations of how the systems are built, and reference and commercial documents.
         </p>
 
@@ -1262,26 +1369,36 @@ const ResourcesPage = () => {
             </p>
           </div>
           <section id="gate-simulator" aria-labelledby="gate-simulator-heading" className="mb-14 scroll-mt-32">
-            <h3 id="gate-simulator-heading" className="mb-2 text-2xl font-bold text-white">See fail-closed execution in action</h3>
+            <h3 id="gate-simulator-heading" className="mb-2 text-2xl font-medium text-white">See fail-closed execution in action</h3>
             <p className="mb-5 text-sm text-slate-300">Interactive example. Compare advisory and gated decisions and inspect the simulated receipt.</p>
             <GateSimulator />
-            <p className="mt-5 text-sm text-slate-300">Run the real engine locally: <Link to="/guides/regression-test-ai-agent-prompt-model-change" className="text-copper-400 underline underline-offset-4">Regression-test an agent after a prompt or model change</Link>.</p>
+            <p className="mt-5 text-sm text-slate-300">
+              Run the real engine locally:{' '}
+              <Link to="/guides/regression-test-ai-agent-prompt-model-change" className="inline py-2 text-copper-300 underline underline-offset-4 hover:text-copper-400">
+                Regression-test an agent after a prompt or model change
+              </Link>.
+            </p>
           </section>
         </div>
 
         {/* Signature Diagram, Runtime Execution Control Plane Architecture */}
         <div id="control-plane" className="mb-14">
-          <div className="w-full rounded-lg border border-white/10 bg-navy-deep/60 overflow-hidden mb-6">
+          <div className="w-full rounded-lg border border-copper-500/25 bg-[#0B1533] p-3 sm:p-4 ring-1 ring-inset ring-copper-300/15 overflow-hidden mb-6">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-wider text-slate-400">
+              <span>Plate I // Control Plane</span>
+              <span>SVG Schematic</span>
+            </div>
             <img
               src="/assets/runtime-governance/diagrams/control-plane-architecture/runtime-governance-control-plane-architecture-v1.svg"
               alt="Runtime Execution Control Plane Architecture, a conceptual diagram: Authority Gate, Immutable Receipts, Drift Guard, Gated Substrate"
               width="2784"
               height="1536"
-              className="w-full h-auto"
+              className="w-full h-auto rounded-xs brightness-[0.94] contrast-[1.03]"
               loading="eager"
+              decoding="async"
             />
           </div>
-          <div className="max-w-4xl">
+          <div className="max-w-[62ch]">
             <p className="text-base text-slate-300 leading-relaxed">
               The design places governance at four boundaries. Authority. Attestation. Behavioral Constraint. Physical Isolation.
             </p>
@@ -1299,60 +1416,6 @@ const ResourcesPage = () => {
           />
         </div>
 
-        {/* Interactive 4-Layer Architecture Explorer */}
-        <div className="mb-16 rounded-lg border border-white/10 bg-navy-deep/65 p-5 md:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <span className="font-mono text-xs text-copper-400">Interactive Architecture Explorer · Select a layer</span>
-            <span className="font-mono text-xs text-slate-400">Boundary L{selectedLayer} active</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3" role="tablist" aria-label="Architecture layers">
-            {layers.map(layer => {
-              const active = selectedLayer === layer;
-              return (
-                <button
-                  key={layer}
-                  type="button"
-                  role="tab"
-                  onClick={() => setSelectedLayer(layer)}
-                  aria-selected={active}
-                  className={`rounded-lg p-4 text-left border transition-all ${
-                    active
-                      ? 'border-copper-500 bg-slate-950/90 shadow-lg'
-                      : 'border-white/10 bg-slate-950/40 hover:border-copper-500/40'
-                  }`}
-                >
-                  <span className="text-xs font-mono uppercase tracking-widest text-copper-400 block mb-1">L{layer}</span>
-                  <span className="text-sm font-semibold text-white block mb-1">{LAYER_NAMES[layer]}</span>
-                  <span className="text-xs text-slate-400 leading-tight block">{LAYER_INVARIANTS[layer]}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 rounded-sm border border-copper-500/20 bg-slate-950/60 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <p className="font-mono text-xs text-copper-400 mb-1">
-                L{selectedLayer} · {LAYER_NAMES[selectedLayer]} · {activeDetail.boundary}
-              </p>
-              <p className="text-sm text-slate-300 leading-relaxed">{activeDetail.detail}</p>
-            </div>
-            {activeDetail.href.startsWith('/works/') ? (
-              <a
-                href={activeDetail.href}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm border border-copper-500/40 text-xs font-mono text-copper-400 hover:bg-copper-500/10 whitespace-nowrap shrink-0"
-              >
-                Inspect {activeDetail.artifact} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </a>
-            ) : (
-              <Link
-                to={activeDetail.href}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm border border-copper-500/40 text-xs font-mono text-copper-400 hover:bg-copper-500/10 whitespace-nowrap shrink-0"
-              >
-                Inspect {activeDetail.artifact} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </Link>
-            )}
-          </div>
-        </div>
-
         {/* Diagram, Gated Execution Pipeline (between L1 and L2) */}
         <div id="gate-cascade" className="mb-16">
           <div className="border-l-2 border-copper-500 pl-6 mb-8">
@@ -1360,14 +1423,19 @@ const ResourcesPage = () => {
             <p className="text-sm text-slate-400"><span className="text-copper-400">Conceptual.</span> PLAN &rarr; EXECUTE &rarr; REVIEW &rarr; APPROVE: the design checks each boundary.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">In this design, each state mutation passes three gates.</p>
-          <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
+          <div className="w-full rounded-lg border border-copper-500/25 bg-[#0B1533] p-3 sm:p-4 ring-1 ring-inset ring-copper-300/15 overflow-hidden mb-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-wider text-slate-400">
+              <span>Plate II // Execution Pipeline</span>
+              <span>SVG Schematic</span>
+            </div>
             <img
               src="/assets/runtime-governance/diagrams/gated-execution-pipeline/runtime-governance-gated-execution-pipeline-v1.svg"
               alt="Gated Execution Pipeline, a conceptual diagram: PLAN, EXECUTE, REVIEW, APPROVE with enforcement points at each boundary"
               width="2752"
               height="1536"
-              className="w-full h-auto"
-              loading="lazy"
+              className="w-full h-auto rounded-xs brightness-[0.94] contrast-[1.03]"
+              loading="eager"
+              decoding="async"
             />
           </div>
           <p className="text-sm font-mono text-slate-400 mb-4 tracking-wide">
@@ -1386,14 +1454,19 @@ const ResourcesPage = () => {
             <p className="text-sm text-slate-400"><span className="text-copper-400">Economics (conceptual).</span> Cost per successful task. Escalation rate. Cycle-time compression. Audit defensibility.</p>
           </div>
           <p className="text-base text-slate-300 mb-6">The framework describes how governance could turn operational risk into predictable unit economics.</p>
-          <div className="w-full rounded-lg border border-white/10 bg-slate-900/40 overflow-hidden mb-4">
+          <div className="w-full rounded-lg border border-copper-500/25 bg-[#0B1533] p-3 sm:p-4 ring-1 ring-inset ring-copper-300/15 overflow-hidden mb-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-wider text-slate-400">
+              <span>Plate III // Unit Economics</span>
+              <span>SVG Schematic</span>
+            </div>
             <img
               src="/assets/runtime-governance/diagrams/governance-economics-scorecard/runtime-governance-governance-economics-scorecard-v1.svg"
               alt="Conceptual economics framework: cost per successful task, escalation rate reduction, cycle-time compression, audit defensibility metrics"
               width="2752"
               height="1536"
-              className="w-full h-auto"
-              loading="lazy"
+              className="w-full h-auto rounded-xs brightness-[0.94] contrast-[1.03]"
+              loading="eager"
+              decoding="async"
             />
           </div>
           <DiagramDownloads
@@ -1414,7 +1487,7 @@ const ResourcesPage = () => {
                 <Link
                   key={i}
                   to={`/case-studies/${study.slug}`}
-                  className="border border-white/5 bg-slate-900/20 rounded-lg p-6 hover:border-copper-500/30 transition-all group block"
+                  className="meridian-plate rounded-lg p-6 hover:border-copper-500/45 transition-all group block"
                 >
                   <div className="flex items-center gap-2 mb-3">
                     {study.enforcementLayers.map(l => (
@@ -1427,14 +1500,16 @@ const ResourcesPage = () => {
                   <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-copper-400 transition-colors">
                     {study.title}
                   </h3>
-                  <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${study.metrics?.length ? 'mb-4' : ''}`}>
-                    {(study.metrics ?? []).map((m, mi) => (
-                      <div key={mi} className="text-center p-3 rounded-sm bg-slate-800/60 border border-copper-500/15">
-                        <span className="text-xl font-bold text-copper-400 block tabular-nums">{m.value}</span>
-                        <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">{m.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {study.metrics && study.metrics.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      {study.metrics.map((m, mi) => (
+                        <div key={mi} className="text-center p-3 rounded-sm bg-navy-midnight/80 border border-copper-500/25">
+                          <span className="text-xl font-bold text-copper-400 block tabular-nums">{m.value}</span>
+                          <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">{m.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-sm text-slate-400 leading-relaxed mb-4">{study.description}</p>
                   <span className="inline-flex items-center gap-1 text-sm text-copper-500 group-hover:text-copper-400 font-mono transition-colors">
                     View Enforcement Detail <ArrowRight className="w-4 h-4" />
@@ -1443,9 +1518,16 @@ const ResourcesPage = () => {
               ))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              {RESOURCES.filter((r) => proofGroupFor(r) === 'resources').map((resource) => (
-                <DownloadCard key={resource.fileName} resource={resource} />
-              ))}
+              {(() => {
+                const items = RESOURCES.filter((r) => proofGroupFor(r) === 'resources');
+                return items.map((resource, idx) => (
+                  <DownloadCard
+                    key={resource.fileName}
+                    resource={resource}
+                    className={items.length % 2 === 1 && idx === items.length - 1 ? 'md:col-span-2' : ''}
+                  />
+                ));
+              })()}
             </div>
           </div>
         )}
@@ -1499,26 +1581,27 @@ const CaseStudyPage = () => {
         </Link>
 
         <article className="mt-6">
-          <header className="grid overflow-hidden rounded-lg border border-white/10 bg-navy-deep/80 lg:grid-cols-2">
+          <div className="meridian-plate-accent grid overflow-hidden rounded-lg lg:grid-cols-2">
             <div className="p-6 md:p-9">
-              <h1 className="max-w-xl text-3xl font-bold leading-tight text-white md:text-5xl">{study.title}</h1>
+              <h1 className="max-w-xl text-3xl font-medium leading-tight text-white md:text-5xl">{study.title}</h1>
+              <p className="folio-index text-copper-400 mt-2">REFERENCE ARCHITECTURE</p>
               <p className="mt-4 font-mono text-xs leading-relaxed text-copper-300">{REFERENCE_ARCHITECTURE_NOTICE}</p>
               <p className="mt-5 max-w-2xl leading-relaxed text-slate-300">{study.description}</p>
               <a href={study.filePath} download={study.fileName}
-                className="mt-6 inline-flex items-center gap-2 rounded-sm bg-copper-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-copper-400">
+                className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-sm bg-copper-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-copper-400">
                 <Download size={16} aria-hidden="true" />
                 Download reference architecture (DOCX)
               </a>
             </div>
             {diagram && (
               <Link to={`/diagrams/${diagram.slug}`} className="group flex flex-col justify-center border-t border-white/10 bg-navy-midnight p-5 hover:bg-navy-deep lg:border-t-0 lg:border-l lg:p-8">
-                <img src={diagram.src} alt={diagram.alt} className="aspect-video w-full rounded-sm object-contain" />
-                <span className="mt-4 flex items-center justify-between gap-3 text-sm font-medium text-copper-400 group-hover:text-copper-300">
+                <img src={diagram.src} alt={diagram.alt} width="1200" height="675" className="aspect-video w-full rounded-sm object-contain" />
+                <span className="mt-4 inline-flex min-h-[44px] items-center justify-between gap-3 text-sm font-medium text-copper-300 group-hover:text-copper-400">
                   View diagram · {diagram.title} <ArrowRight size={16} aria-hidden="true" />
                 </span>
               </Link>
             )}
-          </header>
+          </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
             <section className="rounded-lg border border-white/10 bg-navy-deep/65 p-6 md:p-8">
@@ -1594,43 +1677,47 @@ const WorksPage = () => {
   return (
     <div className="pt-20">
       <Section>
-        <div className="rounded-lg border border-white/10 bg-navy-deep/70 p-6 md:p-10 mb-12 relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 bg-architectural-grid opacity-25" aria-hidden="true" />
+        <div className="meridian-plate-accent p-6 md:p-10 mb-12 relative overflow-hidden rounded-lg">
+          <img
+            src="/brand/dm-blueprint-pattern.svg"
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+          />
           <div className="relative z-10">
-            <SectionHeader as="h1" title="Works" subtitle="Build · Selected Essays · Signal" />
-            <p className="text-slate-300 text-lg max-w-3xl -mt-10 mb-8 leading-relaxed">
-              Open-source tooling and field-tested patterns from shipping governed agentic systems in production. The Orion tools are part of <a href="https://www.cosmocrat.ai/" {...linkTargetProps('https://www.cosmocrat.ai/')} className="text-copper-400 underline underline-offset-4 hover:text-copper-300">Cosmocrat OS</a>, with independent releases, installation identifiers and support boundaries.
+            <SectionHeader as="h1" folio="CATALOG // SYSTEMS & BUILD INDEX" title="Works" subtitle="Build · Selected Essays · Signal" />
+            <p className="text-slate-200 text-lg max-w-[62ch] -mt-8 mb-8 leading-relaxed">
+              Open-source tooling and field-tested patterns from shipping governed agentic systems in production. The Orion tools are part of <a href="https://www.cosmocrat.ai/" {...linkTargetProps('https://www.cosmocrat.ai/')} className="text-copper-300 underline underline-offset-4 hover:text-copper-400">Cosmocrat OS</a>, with independent releases, installation identifiers and support boundaries.
             </p>
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-t border-white/10 pt-6">
               <dl className="grid grid-cols-3 gap-6 max-w-md">
                 <div>
                   <dt className="font-mono text-xs text-slate-400">Open Source</dt>
-                  <dd className="text-2xl font-bold text-white mt-1 tabular-nums">{openSourceWorks.length}</dd>
+                  <dd className="text-2xl font-semibold text-white mt-1 tabular-nums">{openSourceWorks.length}</dd>
                 </div>
                 <div>
                   <dt className="font-mono text-xs text-slate-400">Agent Systems</dt>
-                  <dd className="text-2xl font-bold text-white mt-1 tabular-nums">{agentProjectWorks.length}</dd>
+                  <dd className="text-2xl font-semibold text-white mt-1 tabular-nums">{agentProjectWorks.length}</dd>
                 </div>
                 <div>
                   <dt className="font-mono text-xs text-slate-400">Flagship</dt>
-                  <dd className="text-sm font-mono text-copper-400 mt-2">failclosed / Proctor</dd>
+                  <dd className="text-sm font-mono text-copper-300 mt-2">failclosed / Proctor</dd>
                 </div>
               </dl>
-              <div className="flex flex-wrap items-center gap-3">
-                <a href="#open-source" className="px-3 py-1.5 rounded-sm border border-white/10 bg-slate-950/60 text-xs font-mono text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors">
+              <div className="flex flex-wrap items-center gap-2">
+                <a href="#open-source" className="inline-flex min-h-[44px] items-center px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/80 text-xs font-mono text-slate-200 hover:border-copper-500/50 hover:text-white transition-colors">
                   Open source
                 </a>
-                <a href="#agent-projects" className="px-3 py-1.5 rounded-sm border border-white/10 bg-slate-950/60 text-xs font-mono text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors">
+                <a href="#agent-projects" className="inline-flex min-h-[44px] items-center px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/80 text-xs font-mono text-slate-200 hover:border-copper-500/50 hover:text-white transition-colors">
                   Agent projects
                 </a>
-                <a href="#reference-architectures" className="px-3 py-1.5 rounded-sm border border-white/10 bg-slate-950/60 text-xs font-mono text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors">
+                <a href="#reference-architectures" className="inline-flex min-h-[44px] items-center px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/80 text-xs font-mono text-slate-200 hover:border-copper-500/50 hover:text-white transition-colors">
                   Reference architectures
                 </a>
-                <a href="#selected-essays" className="px-3 py-1.5 rounded-sm border border-white/10 bg-slate-950/60 text-xs font-mono text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors">
-                  Selected essays
-                </a>
-                <a href="#signal" className="px-3 py-1.5 rounded-sm border border-white/10 bg-slate-950/60 text-xs font-mono text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors">
-                  Signal
+                <a href="#selected-essays" className="inline-flex min-h-[44px] items-center px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/80 text-xs font-mono text-slate-200 hover:border-copper-500/50 hover:text-white transition-colors">
+                  Essays &amp; Signal
                 </a>
               </div>
             </div>
@@ -1638,29 +1725,36 @@ const WorksPage = () => {
         </div>
 
         <section id="reference-architectures" aria-labelledby="works-architecture-heading" className="mb-12 scroll-mt-24">
-          <h2 id="works-architecture-heading" className="text-2xl font-semibold text-white">Reference architectures</h2>
-          <p className="mt-2 mb-5 text-sm text-slate-400">Two illustrative designs for agent workflows in regulated industries.</p>
+          <h2 id="works-architecture-heading" className="text-2xl font-medium text-white">Reference architectures</h2>
+          <p className="mt-2 mb-5 text-sm text-slate-300">Two illustrative designs for agent workflows in regulated industries.</p>
           <div className="grid gap-4 md:grid-cols-2">
             {CASE_STUDIES.map((study) => (
               <Link key={study.slug} to={`/case-studies/${study.slug}`}
-                className="group flex items-center justify-between gap-5 rounded-lg border border-white/10 border-l-2 border-l-copper-500 bg-navy-deep/70 p-5 transition-colors hover:border-copper-500/50 hover:bg-navy-deep">
+                className="group meridian-plate-accent flex min-h-[88px] items-center justify-between gap-5 rounded-lg p-5 transition-colors hover:border-copper-500/55">
                 <div>
-                  <h3 className="text-xl font-semibold text-white group-hover:text-copper-300">{study.title}</h3>
+                  <h3 className="text-xl font-medium text-white group-hover:text-copper-300">{study.title}</h3>
                   <p className="mt-2 text-sm text-slate-300">{study.layerNames.join(' · ')}</p>
                 </div>
-                <ArrowRight size={18} className="shrink-0 text-copper-400" aria-hidden="true" />
+                <ArrowRight size={18} className="shrink-0 text-copper-300" aria-hidden="true" />
               </Link>
             ))}
           </div>
         </section>
 
         {/* Curated pointers to existing project pages and the knowledge-graph essay. */}
-        <h2 className="text-xl font-semibold text-white mb-6">Start here</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-14">
-          {WORKS_START_HERE.map((item) => (
-            <a key={item.href} href={item.href} {...linkTargetProps(item.href)} className="group rounded-lg border border-white/10 bg-navy-deep/60 p-6 hover:bg-navy-deep hover:border-copper-500/40 transition-all">
-              <h3 className="text-white font-semibold mb-3 group-hover:text-copper-300 transition-colors">{item.title}</h3>
-              {item.description && <p className="text-slate-400 text-sm leading-relaxed">{item.description}</p>}
+        <h2 className="text-xl font-medium text-white mb-6">Start here</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
+          {WORKS_START_HERE.map((item, idx) => (
+            <a
+              key={item.href}
+              href={item.href}
+              {...linkTargetProps(item.href)}
+              className={`group rounded-lg p-6 hover:border-copper-500/45 transition-colors ${
+                idx === 0 ? 'md:col-span-2 meridian-plate-accent' : 'meridian-plate'
+              }`}
+            >
+              <h3 className="text-lg text-white font-semibold mb-2 group-hover:text-copper-300 transition-colors">{item.title}</h3>
+              {item.description && <p className="text-slate-300 text-sm leading-relaxed max-w-[65ch]">{item.description}</p>}
             </a>
           ))}
         </div>
@@ -1674,26 +1768,26 @@ const WorksPage = () => {
                 type="button"
                 onClick={() => setCategoryFilter(cat)}
                 aria-current={categoryFilter === cat ? 'true' : undefined}
-                className={`rounded-full border px-4 py-1.5 font-mono text-xs transition-colors ${
+                className={`min-h-[44px] inline-flex items-center rounded-full border px-4 py-2 font-mono text-xs transition-colors ${
                   categoryFilter === cat
-                    ? 'border-copper-500 bg-copper-500 text-slate-950 font-semibold'
-                    : 'border-white/15 text-slate-300 hover:border-copper-500/50 hover:text-white'
+                    ? 'border-copper-300 bg-copper-300 text-slate-950 font-semibold'
+                    : 'border-white/15 text-slate-200 hover:border-copper-500/50 hover:text-white'
                 }`}
               >
                 {cat === 'all' ? 'All builds' : cat === 'Open Source' ? 'Open Source' : 'Agent Projects'}
               </button>
             ))}
           </div>
-          <div className="flex h-10 items-center gap-2.5 rounded-sm border border-white/15 bg-navy-deep/50 px-3 focus-within:border-copper-500 sm:w-72">
+          <div className="flex h-11 items-center gap-2.5 rounded-sm border border-white/15 bg-navy-deep/70 px-3 focus-within:border-copper-300 sm:w-72">
             <label htmlFor="works-filter-input" className="sr-only">Filter tools and projects</label>
-            <Search size={15} className="text-copper-400 shrink-0" aria-hidden="true" />
+            <Search size={15} className="text-copper-300 shrink-0" aria-hidden="true" />
             <input
               id="works-filter-input"
               type="search"
               value={workQuery}
               onChange={(e) => setWorkQuery(e.target.value)}
               placeholder="Filter tools and projects"
-              className="min-w-0 flex-1 bg-transparent text-xs text-white outline-hidden placeholder:text-slate-400"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -1701,10 +1795,15 @@ const WorksPage = () => {
         {/* Build, open source & tooling */}
         {categoryFilter !== 'Agent Project' && (
           <div id="open-source">
-            <h2 className="text-xl font-semibold text-white mb-6">Build: Open Source &amp; Tooling</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleOpenSource.map((work: Work) => (
-                <WorkCard key={work.slug} work={work} />
+            <h2 className="text-2xl font-medium text-white mb-6">Build: Open Source &amp; Tooling</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {visibleOpenSource.map((work: Work, idx: number) => (
+                <WorkCard
+                  key={work.slug}
+                  work={work}
+                  index={idx}
+                  className={visibleOpenSource.length % 2 === 1 && idx === visibleOpenSource.length - 1 ? 'md:col-span-2' : ''}
+                />
               ))}
             </div>
           </div>
@@ -1713,10 +1812,15 @@ const WorksPage = () => {
         {/* Build, applied agent projects */}
         {categoryFilter !== 'Open Source' && (
           <div id="agent-projects">
-            <h2 className="text-xl font-semibold text-white mb-6 mt-16">Build: Applied Agent Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleAgentProjects.map((work: Work) => (
-                <WorkCard key={work.slug} work={work} />
+            <h2 className="text-2xl font-medium text-white mb-6 mt-16">Build: Applied Agent Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {visibleAgentProjects.map((work: Work, idx: number) => (
+                <WorkCard
+                  key={work.slug}
+                  work={work}
+                  index={idx}
+                  className={visibleAgentProjects.length % 2 === 1 && idx === visibleAgentProjects.length - 1 ? 'md:col-span-2' : ''}
+                />
               ))}
             </div>
           </div>
@@ -1728,7 +1832,7 @@ const WorksPage = () => {
             <button
               type="button"
               onClick={() => { setWorkQuery(''); setCategoryFilter('all'); }}
-              className="font-mono text-xs text-copper-400 hover:text-copper-300"
+              className="inline-flex min-h-[44px] items-center font-mono text-xs text-copper-300 hover:text-copper-400"
             >
               Reset filters
             </button>
@@ -1736,23 +1840,23 @@ const WorksPage = () => {
         )}
 
         {/* Selected essays, a CAPPED pointer into /thoughts (no bodies, no filter) */}
-        <div id="selected-essays" className="mt-20 rounded-lg border border-white/10 bg-navy-deep/55 p-6 md:p-8 max-w-4xl">
-          <h2 className="text-xl font-semibold text-white mb-6">Selected Essays</h2>
-          <ul className="space-y-3">
+        <div id="selected-essays" className="mt-20 meridian-plate rounded-lg p-6 md:p-8 max-w-4xl">
+          <h2 className="text-xl font-medium text-white mb-5">Selected Essays</h2>
+          <ul className="divide-y divide-white/10">
             {featured.map((essay) => (
               <li key={essay.slug}>
                 <Link
                   to={`/thoughts/${essay.slug}`}
-                  className="group inline-flex items-baseline gap-2.5 text-slate-200 hover:text-copper-300 transition-colors"
+                  className="group flex min-h-[44px] items-center gap-2.5 py-2 text-slate-200 hover:text-copper-300 transition-colors"
                 >
-                  <span className="text-copper-400 font-mono text-xs" aria-hidden="true">→</span>
-                  <span className="border-b border-transparent group-hover:border-copper-400/40">{essay.title}</span>
+                  <span className="text-copper-400 font-mono text-xs" aria-hidden="true">-&gt;</span>
+                  <span className="border-b border-transparent group-hover:border-copper-300/40">{essay.title}</span>
                 </Link>
               </li>
             ))}
           </ul>
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <Link to="/thoughts" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
+          <div className="mt-4 pt-3 border-t border-white/10">
+            <Link to="/thoughts" className="inline-flex min-h-[44px] items-center text-sm font-medium text-copper-300 hover:text-copper-400">
               Full archive <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
             </Link>
           </div>
@@ -1760,19 +1864,19 @@ const WorksPage = () => {
 
         {/* Signal, outbound rail */}
         <div id="signal">
-          <h2 className="text-xl font-semibold text-white mt-16 mb-6">Signal</h2>
-          <div className="flex flex-wrap gap-6 max-w-3xl">
-            <a href={WORKS_HUB.signalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
+          <h2 className="text-xl font-medium text-white mt-14 mb-4">Signal</h2>
+          <div className="flex flex-wrap gap-4 max-w-3xl">
+            <a href={WORKS_HUB.signalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center px-3 rounded-sm border border-white/10 bg-navy-deep/60 text-sm font-medium text-copper-300 hover:border-copper-500/45 hover:text-copper-400">
               Live signal log <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
             </a>
-            <a href={WORKS_HUB.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-copper-400 hover:text-copper-300">
+            <a href={WORKS_HUB.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center px-3 rounded-sm border border-white/10 bg-navy-deep/60 text-sm font-medium text-copper-300 hover:border-copper-500/45 hover:text-copper-400">
               GitHub <ExternalLink className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
             </a>
           </div>
         </div>
 
-        {/* CTA, one action: availability → connect */}
-        <div className="mt-16 rounded-lg border border-copper-500/25 bg-navy-deep/80 p-8 max-w-3xl">
+        {/* CTA, one action: availability -> connect */}
+        <div className="mt-14 meridian-plate-accent rounded-lg p-7 sm:p-8 max-w-3xl">
           <p className="text-xl text-white font-semibold mb-3">{WORKS_HUB.availability}</p>
           <p className="text-base text-slate-300 mb-6 leading-relaxed">{WORKS_HUB.pilot}</p>
           <div className="flex flex-wrap items-center gap-4">
@@ -1822,8 +1926,8 @@ const ThoughtsPage = () => {
         <span className={META_ACCENT}>{thought.category}</span>
         <span className={META}>{thought.date}</span>
       </div>
-      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-300 transition-colors">{thought.title}</h3>
-      <p className="text-slate-400 text-sm leading-relaxed grow">{thought.preview}</p>
+      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-300 transition-colors max-w-[54ch]">{thought.title}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed grow max-w-[54ch]">{thought.preview}</p>
       <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between font-mono text-xs">
         <span className="text-slate-400">{estimateReadingMinutes(thought.body)} min read</span>
         <span className="text-copper-400 group-hover:text-copper-300">Read &rarr;</span>
@@ -1869,19 +1973,22 @@ const ThoughtsPage = () => {
         {isLaneGroupedView && latestThoughts.length > 0 && (
           <section aria-labelledby="latest-releases-heading" className="mb-12">
             <h2 id="latest-releases-heading" className="text-2xl font-bold text-white mb-6">Latest releases</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestThoughts.map(renderCard)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {latestThoughts.map((t: Thought, idx: number) => (
+                <div key={t.slug} className={idx === 0 && latestThoughts.length % 2 === 1 ? 'md:col-span-2' : ''}>
+                  {renderCard(t, idx)}
+                </div>
+              ))}
             </div>
           </section>
         )}
 
-        {/* Start here: curated entry into the strongest practical material */}
-        <div className="border border-copper-500/25 bg-navy-deep/75 rounded-lg p-6 md:p-8 mb-12">
+        <div className="meridian-plate-accent p-6 md:p-8 mb-12 rounded-lg">
           <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6 pb-4 border-b border-white/10">
-            <h2 className="text-xl font-bold text-white">Start here</h2>
+            <h2 className="text-xl font-medium text-white">Start here</h2>
             <div className="flex flex-wrap gap-4">
-              <a href={NEWSLETTER.href} {...linkTargetProps(NEWSLETTER.href)} className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Subscribe to {NEWSLETTER.name}</a>
-              <a href="/feed.xml" className="text-xs font-mono uppercase tracking-widest text-copper-400 hover:text-copper-300">Follow via RSS</a>
+              <a href={NEWSLETTER.href} {...linkTargetProps(NEWSLETTER.href)} className="inline-flex min-h-[44px] items-center text-xs font-mono uppercase tracking-wider text-copper-300 hover:text-copper-400">Subscribe to {NEWSLETTER.name}</a>
+              <a href="/feed.xml" className="inline-flex min-h-[44px] items-center text-xs font-mono uppercase tracking-wider text-copper-300 hover:text-copper-400">Follow via RSS</a>
             </div>
           </div>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1891,11 +1998,11 @@ const ThoughtsPage = () => {
                 : THOUGHTS.find((th) => th.slug === item.slug)?.title;
               const to = item.kind === 'guide' ? `/guides/${item.slug}` : `/thoughts/${item.slug}`;
               return (
-                <li key={item.slug} className="rounded-sm border border-white/10 bg-slate-950/50 p-4 hover:border-copper-500/40 transition-colors">
+                <li key={item.slug} className="rounded-sm border border-white/10 bg-navy-midnight/75 p-4 hover:border-copper-500/45 transition-colors">
                   <Link to={to} className="group block">
-                    <span className="text-xs font-mono uppercase tracking-widest text-copper-400 mr-2">{item.kind === 'guide' ? 'Guide' : 'Essay'}</span>
+                    <span className="text-xs font-mono uppercase tracking-wider text-copper-400 mr-2">{item.kind === 'guide' ? 'Guide' : 'Essay'}</span>
                     <span className="text-white font-semibold group-hover:text-copper-300 transition-colors">{title}</span>
-                    <span className="block text-sm text-slate-400 mt-1.5 leading-relaxed">{item.why}</span>
+                    <span className="block text-sm text-slate-300 mt-1.5 leading-relaxed">{item.why}</span>
                   </Link>
                 </li>
               );
@@ -1913,7 +2020,7 @@ const ThoughtsPage = () => {
                 type="button"
                 aria-pressed={activeCategory === cat}
                 className={
-                  'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' +
+                  'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors min-h-[44px] inline-flex items-center ' +
                   (activeCategory === cat
                     ? 'border-copper-500 bg-copper-500 text-slate-950'
                     : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')
@@ -1934,12 +2041,12 @@ const ThoughtsPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-0.5 font-mono text-xs text-slate-300">/</kbd>
           </label>
         </div>
 
         <p
-          className={`font-mono text-[10px] uppercase tracking-widest text-slate-400 ${isLaneGroupedView ? '' : 'mb-6'}`}
+          className={`font-mono text-xs uppercase tracking-wider text-slate-400 ${isLaneGroupedView ? '' : 'mb-6'}`}
           aria-live="polite"
         >
           {isLaneGroupedView
@@ -1959,15 +2066,20 @@ const ThoughtsPage = () => {
                 <div key={lane.name}>
                   <div className="mb-6 border-l-2 border-copper-500/50 pl-4 flex flex-wrap items-baseline justify-between gap-2">
                     <div>
-                      <span className="font-mono text-xs text-copper-400 block mb-1">{String(laneIdx + 1).padStart(2, '0')} · Lane</span>
                       <h2 className="text-2xl font-bold text-white">{lane.name}</h2>
                       <p className="text-slate-400 text-sm mt-1">{lane.blurb}</p>
                     </div>
-                    <span className="font-mono text-xs text-slate-400">{essays.length} {essays.length === 1 ? 'essay' : 'essays'}</span>
+                    <span className="font-mono text-xs text-slate-400 tabular-nums">
+                      Lane {String(laneIdx + 1).padStart(2, '0')} · {essays.length} {essays.length === 1 ? 'essay' : 'essays'}
+                    </span>
                   </div>
                   {essays.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {essays.map((thought: Thought, idx: number) => renderCard(thought, idx))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {essays.map((thought: Thought, idx: number) => (
+                        <div key={thought.slug} className={essays.length % 2 === 1 && idx === 0 ? 'md:col-span-2' : ''}>
+                          {renderCard(thought, idx)}
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <p className="text-slate-400 text-sm italic">
@@ -2113,31 +2225,32 @@ const GuidesPage = () => {
   return (
     <div className="pt-20">
       <Section className="pb-12 md:pb-16">
-        <div className="relative overflow-hidden border border-white/10 bg-navy-deep/60 px-6 py-12 md:px-12 md:py-16">
+        <div className="relative overflow-hidden rounded-lg border border-white/10 bg-navy-deep/65 px-6 py-10 md:px-12 md:py-14">
           <div
-            className="pointer-events-none absolute inset-0 opacity-40"
+            className="pointer-events-none absolute inset-0"
             aria-hidden="true"
             style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px)',
-              backgroundSize: '72px 72px',
-              maskImage: 'linear-gradient(to right, black, transparent 88%)',
+              backgroundImage: 'radial-gradient(circle at 18% 22%, rgba(230, 130, 73, 0.14), transparent 60%)',
             }}
           />
           <div className="relative z-10 max-w-5xl">
-            <h1 className="max-w-5xl text-4xl font-normal leading-[1.02] tracking-[-0.045em] text-white md:text-6xl/none md:font-light lg:text-7xl/none">
-              Build agents that can act{' '}
-              <span className="sm:block">and prove what happened.</span>
-            </h1>
-            <div className="mt-9 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
+            <div className="border-l-2 border-copper-500 pl-5 sm:pl-6">
+              <h1 className="max-w-5xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.04] tracking-[-0.03em] text-white">
+                Build agents that can act{' '}
+                <span className="sm:block">and prove what happened.</span>
+              </h1>
+              <p className="folio-index text-copper-400 mt-2">TECHNICAL FIELD GUIDES // PRODUCTION VERIFICATION</p>
+            </div>
+            <div className="mt-8 grid gap-8 border-t border-white/10 pt-7 md:grid-cols-[1.5fr_1fr] md:items-end">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg/7">
                 <span className="text-copper-400">Field notes on governed AI.</span>{' '}
                 Long-form technical guides for AI systems that remain legible under pressure:
                 authority, evidence, observability, and fail-closed execution.
               </p>
               <dl className="grid grid-cols-[1fr_1fr_auto] gap-4 text-right">
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 whitespace-nowrap text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
+                <div><dt className="font-mono text-xs uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
+                <div><dt className="font-mono text-xs uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
+                <div><dt className="font-mono text-xs uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 whitespace-nowrap text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
           </div>
@@ -2151,22 +2264,26 @@ const GuidesPage = () => {
           </div>
           <p className="text-sm leading-relaxed text-slate-400">Start with agent regression testing, Claude Code cache usage, or a webhook bridge you can inspect.</p>
         </div>
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {FEATURED_GUIDES.map((guide: Guide, index: number) => (
             <Link
               key={guide.slug}
               to={`/guides/${guide.slug}`}
-              className="group flex min-h-[19rem] flex-col border border-white/10 bg-navy-deep/60 transition-all duration-300 hover:-translate-y-1 hover:border-copper-500/40"
+              className={`group flex min-h-[17rem] flex-col rounded-lg border transition-all duration-300 hover:-translate-y-0.5 hover:border-copper-500/45 ${
+                index === 0 ? 'md:col-span-2 meridian-plate-accent' : 'meridian-plate'
+              }`}
             >
-              <div className={'relative h-20 overflow-hidden border-b border-white/10 ' + (index === 1 ? 'bg-copper-600/70' : index === 2 ? 'bg-navy-deep' : 'bg-navy-midnight')}>
-                <span className="absolute left-6 top-5 font-mono text-xs text-slate-300">{String(index + 1).padStart(2, '0')}</span>
-                <Layers size={32} className="absolute bottom-4 right-6 text-white/15" aria-hidden="true" />
+              <div className="relative h-14 overflow-hidden border-b border-white/10 bg-navy-midnight/85 flex items-center justify-between px-6">
+                <span className="font-mono text-xs tabular-nums text-copper-300">
+                  PLATE {String(index + 1).padStart(2, '0')} // FEATURED FIELD NOTE
+                </span>
+                <Layers size={20} className="text-copper-500/45" aria-hidden="true" />
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
                 <p className={`${META} mt-2`}>{guide.category} · {guide.date}</p>
-                <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
-                <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
+                <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-300 max-w-[54ch]">{guide.lead}</p>
+                <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-xs uppercase tracking-widest text-copper-300">
                   Read field note <ArrowRight size={14} aria-hidden="true" />
                 </span>
               </div>
@@ -2191,7 +2308,7 @@ const GuidesPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-xs text-slate-300">/</kbd>
           </label>
         </div>
 
@@ -2202,13 +2319,13 @@ const GuidesPage = () => {
               type="button"
               onClick={() => setActiveLens(lens.id)}
               aria-pressed={activeLens === lens.id}
-              className={'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' + (activeLens === lens.id ? 'border-copper-500 bg-copper-500 text-slate-950' : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')}
+              className={'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors min-h-[44px] inline-flex items-center ' + (activeLens === lens.id ? 'border-copper-500 bg-copper-500 text-slate-950' : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')}
             >
               {lens.label}
             </button>
           ))}
         </div>
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-slate-400" aria-live="polite">
+        <p className="mb-4 font-mono text-xs uppercase tracking-wider text-slate-400" aria-live="polite">
           {visibleGuides.length} {visibleGuides.length === 1 ? 'guide' : 'guides'}
         </p>
         <div className="border-t border-white/15">
@@ -2218,15 +2335,15 @@ const GuidesPage = () => {
               to={`/guides/${guide.slug}`}
               className="group grid min-h-28 grid-cols-[2.25rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
             >
-              <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
-              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-400 md:block">{guide.category}</span>
-              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">
+              <span className="font-mono text-xs text-copper-400 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+              <span className="hidden font-mono text-xs uppercase tracking-wider text-slate-400 md:block">{guide.category}</span>
+              <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-300 md:text-2xl/8">
                 {guide.title}
                 <span className={`${META} mt-1 block md:hidden`}>{guide.category} · {guide.date}</span>
                 <GuideMetadata guide={guide} />
               </span>
-              <span className="hidden text-right font-mono text-[10px] text-slate-400 md:block">{guide.date}</span>
-              <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              <span className="hidden text-right font-mono text-xs text-slate-400 tabular-nums md:block">{guide.date}</span>
+              <ChevronRight size={18} className="text-copper-300 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           ))}
           {visibleGuides.length === 0 && (
@@ -2246,8 +2363,8 @@ const GuidesPage = () => {
             <h2 className="text-3xl font-normal tracking-tight text-white md:text-4xl md:font-light">The same hard questions, from different angles.</h2>
             <p className="mt-5 text-sm leading-relaxed text-slate-400">The formats change. The doctrine does not. Use a theme as a lens into the corpus.</p>
           </div>
-          <div className="grid gap-px bg-white/10 md:grid-cols-3">
-            {GUIDE_LENSES.filter((lens) => lens.id !== 'all').map((lens, index) => (
+          <div className="grid gap-px bg-white/10 md:grid-cols-2">
+            {GUIDE_LENSES.filter((lens) => lens.id !== 'all').map((lens, index, arr) => (
               <button
                 key={lens.id}
                 type="button"
@@ -2257,12 +2374,14 @@ const GuidesPage = () => {
                   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                   document.getElementById('guide-library')?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
                 }}
-                className="group bg-navy-midnight p-6 text-left hover:bg-navy-deep"
+                className={`group bg-navy-midnight p-6 text-left hover:bg-navy-deep ${
+                  arr.length % 2 === 1 && index === 0 ? 'md:col-span-2' : ''
+                }`}
               >
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
-                <span className="mt-8 block font-serif text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
-                <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                <span className="mt-6 block font-serif text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
+                <span className="mt-3 block text-sm leading-relaxed text-slate-400">{lens.description}</span>
+                <span className="mt-6 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-slate-400">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
                 </span>
               </button>
@@ -2374,32 +2493,48 @@ const DiagramsPage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {visibleDiagrams.map((diagram: Diagram) => (
-            <div
-              key={diagram.slug}
-              className="flex flex-col border border-white/10 bg-navy-deep/60 rounded-lg overflow-hidden hover:border-copper-500/40 transition-all group"
-            >
-              <Link to={`/diagrams/${diagram.slug}`} className="block bg-slate-900/50 border-b border-white/10">
-                <img
-                  src={diagram.src}
-                  alt={diagram.alt}
-                  className="w-full h-auto"
-                  loading="lazy"
-                />
-              </Link>
+          {visibleDiagrams.map((diagram: Diagram, idx: number) => {
+            const isPaperSpecimen = diagram.src.endsWith('.jpg');
+            return (
+              <div
+                key={diagram.slug}
+                className="meridian-plate flex flex-col rounded-lg overflow-hidden hover:border-copper-500/45 transition-colors group"
+              >
+                <Link
+                  to={`/diagrams/${diagram.slug}`}
+                  className={`block border-b border-white/10 p-3.5 ${
+                    isPaperSpecimen ? 'bg-[#0B1533] ring-1 ring-inset ring-copper-300/15' : 'bg-navy-midnight/85'
+                  }`}
+                >
+                  {isPaperSpecimen && (
+                    <div className="mb-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-wider text-slate-400">
+                      <span>Archival Specimen</span>
+                      <span className="text-copper-300/80">Plate {String(idx + 1).padStart(2, '0')}</span>
+                    </div>
+                  )}
+                  <img
+                    src={diagram.src}
+                    alt={diagram.alt}
+                    width="1200"
+                    height="675"
+                    className={`w-full h-auto rounded-xs ${isPaperSpecimen ? 'brightness-[0.88] contrast-[1.05] saturate-[0.92] border border-copper-300/20' : ''}`}
+                    loading="eager"
+                    decoding="sync"
+                  />
+                </Link>
               <div className="p-6 flex flex-col grow">
                 <div className="flex items-center justify-between gap-3 mb-2">
-                  <span className={META_ACCENT}>Diagram</span>
-                  <span className={META}>{diagram.date}</span>
+                  <span className={META_ACCENT}>PLATE {String(idx + 1).padStart(2, '0')} // DIAGRAM</span>
+                  <span className={`${META} tabular-nums`}>{diagram.date}</span>
                 </div>
-                <Link to={`/diagrams/${diagram.slug}`}>
-                  <h2 className="text-lg font-semibold text-white mb-2 group-hover:text-copper-300 transition-colors">{diagram.title}</h2>
+                <Link to={`/diagrams/${diagram.slug}`} className="inline-flex min-h-[44px] items-center">
+                  <h2 className="text-xl font-medium text-white group-hover:text-copper-300 transition-colors">{diagram.title}</h2>
                 </Link>
-                <p className="text-slate-400 text-sm leading-relaxed grow mb-5">{diagram.caption}</p>
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                <p className="text-slate-300 text-sm leading-relaxed grow mb-5 mt-1">{diagram.caption}</p>
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
                   <Link
                     to={`/diagrams/${diagram.slug}`}
-                    className="inline-flex items-center gap-1.5 font-mono text-xs text-copper-400 hover:text-copper-300"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 font-mono text-xs text-copper-300 hover:text-copper-400"
                   >
                     Open diagram note <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </Link>
@@ -2408,15 +2543,16 @@ const DiagramsPage = () => {
                     onClick={() => setLightboxDiagram(diagram)}
                     aria-haspopup="dialog"
                     aria-label={`Inspect ${diagram.title} fullscreen`}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-white/15 bg-slate-950/60 font-mono text-xs text-slate-300 hover:border-copper-500/40 hover:text-white transition-colors"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/80 font-mono text-xs text-slate-200 hover:border-copper-500/45 hover:text-white transition-colors"
                   >
-                    <Maximize2 className="w-3 h-3" aria-hidden="true" />
+                    <Maximize2 className="w-3.5 h-3.5" aria-hidden="true" />
                     Inspect
                   </button>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {visibleDiagrams.length === 0 && (
@@ -2470,10 +2606,12 @@ const DiagramDetailPage = () => {
               <span className={META}>{diagram.date}</span>
             </div>
             <figure>
-              <div className="w-full rounded-lg border border-white/10 bg-navy-deep/60 overflow-hidden">
+              <div className="w-full rounded-lg border border-white/10 bg-navy-deep/70 overflow-hidden p-3">
                 <img
                   src={diagram.src}
                   alt={diagram.alt}
+                  width="1200"
+                  height="675"
                   className="w-full h-auto"
                   loading="eager"
                 />
@@ -2507,7 +2645,7 @@ const ConnectPage = () => {
   return (
   <div className="pt-20">
     <Section>
-      <SectionHeader as="h1" title="Contact Dan" subtitle="Email and LinkedIn" />
+      <SectionHeader as="h1" folio="DISPATCH // DIRECT CHANNELS" title="Contact Dan" subtitle="Email and LinkedIn" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         <div className="lg:col-span-5 space-y-6">
@@ -2515,14 +2653,14 @@ const ConnectPage = () => {
             Email reaches me directly. Pick the reason that fits and the subject line fills in.
           </p>
 
-          <div className="rounded-lg border border-white/10 bg-navy-deep/70 p-5 space-y-4">
-            <div className="flex items-center justify-between gap-3">
+          <div className="meridian-plate-accent rounded-lg p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span className="block font-mono text-xs text-slate-400">Direct email</span>
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
                   onClick={() => trackEvent(window, 'generate_lead', { method: 'email' })}
-                  className="text-base font-mono text-copper-400 hover:text-copper-300 break-all"
+                  className="inline-flex min-h-[44px] items-center text-base font-mono text-copper-300 hover:text-copper-400"
                 >
                   {CONTACT_EMAIL}
                 </a>
@@ -2530,16 +2668,16 @@ const ConnectPage = () => {
               <button
                 type="button"
                 onClick={handleCopyEmail}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-white/15 bg-slate-950/70 font-mono text-xs text-slate-300 hover:border-copper-500/50 hover:text-white transition-colors shrink-0"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-sm border border-white/15 bg-navy-midnight/85 font-mono text-xs text-slate-200 hover:border-copper-500/50 hover:text-white transition-colors shrink-0"
               >
                 {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                 {copiedEmail ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <p className="text-xs text-slate-400">
-              Previewing route: <span className="text-copper-400 font-mono">{selectedIntent?.label}</span>
+            <p className="text-xs text-slate-300">
+              Previewing route: <span className="text-copper-300 font-mono">{selectedIntent?.label}</span>
               {'subject' in selectedIntent && selectedIntent.subject ? (
-                <span className="block font-mono text-slate-300 mt-1">Subject: {selectedIntent.subject}</span>
+                <span className="block font-mono text-slate-200 mt-1">Subject: {selectedIntent.subject}</span>
               ) : null}
             </p>
           </div>
@@ -2549,15 +2687,15 @@ const ConnectPage = () => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent(window, 'connect_click', { method: 'linkedin' })}
-            className="flex items-center group p-4 rounded-lg border border-white/15 hover:border-copper-500/60 transition-colors bg-navy-deep/55"
+            className="meridian-plate flex min-h-[64px] items-center group p-4 rounded-lg hover:border-copper-500/60 transition-colors"
           >
-            <Linkedin className="w-6 h-6 text-slate-400 group-hover:text-copper-400 mr-4 shrink-0" aria-hidden="true" />
+            <Linkedin className="w-6 h-6 text-slate-300 group-hover:text-copper-300 mr-4 shrink-0" aria-hidden="true" />
             <div>
               <span className="block text-xs text-slate-400 uppercase tracking-wider font-mono">LinkedIn</span>
               <span className="text-white group-hover:text-copper-300 transition-colors">linkedin.com/in/danmercede</span>
             </div>
           </a>
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             {CONTACT_INTENTS.map((intent) => {
               const external = Boolean(intent.href);
               const href = contactHref(intent);
@@ -2569,24 +2707,25 @@ const ConnectPage = () => {
                   {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   onMouseEnter={() => setSelectedIntentId(intent.id)}
                   onFocus={() => setSelectedIntentId(intent.id)}
+                  onTouchStart={() => setSelectedIntentId(intent.id)}
                   onClick={external ? undefined : () => trackEvent(window, 'generate_lead', { method: 'email', intent: intent.id })}
-                  className={`flex items-start group p-5 rounded-lg border transition-all ${
+                  className={`flex min-h-[72px] items-start group p-5 rounded-lg border transition-colors ${
                     isSelected
-                      ? 'border-copper-500/50 bg-navy-deep/85'
-                      : 'border-white/10 bg-navy-deep/55 hover:border-copper-500/40'
+                      ? 'border-copper-300/60 bg-navy-deep/90'
+                      : 'border-white/10 bg-navy-deep/60 hover:border-copper-500/45'
                   }`}
                 >
                   {external ? (
-                    <ExternalLink className="w-5 h-5 text-copper-400 mr-4 mt-1 shrink-0" aria-hidden="true" />
+                    <ExternalLink className="w-5 h-5 text-copper-300 mr-4 mt-1 shrink-0" aria-hidden="true" />
                   ) : (
-                    <Mail className="w-5 h-5 text-copper-400 mr-4 mt-1 shrink-0" aria-hidden="true" />
+                    <Mail className="w-5 h-5 text-copper-300 mr-4 mt-1 shrink-0" aria-hidden="true" />
                   )}
                   <div className="grow">
                     <div className="flex items-center justify-between gap-2">
                       <span className="block text-white font-semibold group-hover:text-copper-300 transition-colors">{intent.label}</span>
-                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-copper-400 transition-transform group-hover:translate-x-1 shrink-0" aria-hidden="true" />
+                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-copper-300 transition-transform group-hover:translate-x-1 shrink-0" aria-hidden="true" />
                     </div>
-                    <span className="block text-sm text-slate-400 mt-1 leading-relaxed">{intent.detail}</span>
+                    <span className="block text-sm text-slate-300 mt-1 leading-relaxed">{intent.detail}</span>
                   </div>
                 </a>
               );

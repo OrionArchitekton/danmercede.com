@@ -11,6 +11,54 @@
 @source "./constants.ts";
 @source "./components";
 
+/* Self-hosted variable typography (@fontsource-variable, OFL-1.1). Mapped to exact
+   theme families ('Newsreader', 'IBM Plex Sans', 'JetBrains Mono') with zero external
+   render-blocking CDN requests. */
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("@fontsource-variable/newsreader/files/newsreader-latin-opsz-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* Retain the existing palette while the build compiler moves to v4. */
 @theme {
   --color-amber-500: #f59e0b;
@@ -25,6 +73,20 @@
   --color-slate-900: #0f172a;
   /* The page background class keeps its name; it resolves to the logo pack Midnight Navy. */
   --color-slate-950: #020B29;
+}
+
+:root {
+  --orion-bg: #020B29;
+  --orion-surface: #07143A;
+  --orion-surface-elevated: #0E1F4F;
+  --orion-fg: #F8FAFC;
+  --orion-fg-muted: #94A3B8;
+  --orion-accent: #E68249;
+  --orion-accent-hover: #F0975A;
+  --orion-accent-light: #FFC08B;
+  --orion-accent-fg: #020B29;
+  --orion-border: rgba(255, 255, 255, 0.1);
+  --orion-focus-ring: #FFC08B;
 }
 
 /* Metric-adjusted local fallbacks to minimize CLS while web fonts swap in. */
@@ -55,31 +117,42 @@
   line-gap-override: 0%;
 }
 
-/* Base styles moved out of the inline index.html <style> when Tailwind was
-   bundled (W2). The CDN JIT compiler is gone; these are emitted into the
-   bundled stylesheet so the served page renders identically. */
 @layer base {
-  /* Preserve v3 border, placeholder and button defaults through the migration. */
   *, ::before, ::after, ::backdrop, ::file-selector-button {
     border-color: #e5e7eb;
   }
-  input::placeholder, textarea::placeholder { color: #9ca3af; }
+  input::placeholder, textarea::placeholder { color: #94a3b8; }
   button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
 
   body {
     background-color: #020B29;
     color: #e2e8f0;
     font-family: "IBM Plex Sans", "IBM Plex Sans Fallback", system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
   }
 
   nav a[aria-label="Dan Mercede, home"] {
     min-height: 44px;
   }
 
-  /* Headings are set in the serif face. A heading that carries font-mono or
-     font-sans keeps that face, because utilities outrank the base layer. */
+  /* Headings take Newsreader with optical-size tuning and zero faux-bold synthesis. */
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid #FFC08B;
+    outline-offset: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -95,9 +168,71 @@
 }
 
 .bg-architectural-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 64px 64px;
+  background-image: radial-gradient(rgba(230, 130, 73, 0.16) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
+@keyframes meridianFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .meridian-enter {
+    animation: meridianFadeIn 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Meridian Monograph craft layers */
+.meridian-plate {
+  background: linear-gradient(165deg, rgba(14, 31, 79, 0.42) 0%, rgba(7, 20, 58, 0.92) 55%, rgba(2, 11, 41, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.meridian-plate-accent {
+  background: linear-gradient(165deg, rgba(14, 31, 79, 0.52) 0%, rgba(7, 20, 58, 0.95) 60%, rgba(2, 11, 41, 1) 100%);
+  border: 1px solid rgba(230, 130, 73, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 192, 139, 0.22);
+}
+
+.folio-index {
+  font-family: "JetBrains Mono", "JetBrains Mono Fallback", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* Progressive scroll-driven progress rule (GPU composited, zero main-thread work) */
+.meridian-scroll-progress {
+  display: none;
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+@keyframes meridianScrollGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .meridian-scroll-progress {
+    display: block;
+    animation: meridianScrollGrow linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+/* Progressive native View Transitions */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 210ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}

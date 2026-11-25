@@ -60,7 +60,7 @@ function ArticleContents({ headings }: { headings: ArticleHeading[] }) {
                 drawer.current.open = false;
               }
             }}
-            className={`-ml-px block border-l-2 py-1.5 pr-2 text-sm leading-snug hover:text-white ${level === 3 ? 'pl-6' : 'pl-3'} ${active === id ? 'border-copper-500 text-copper-300' : 'border-transparent text-slate-400'}`}
+            className={`-ml-px flex min-h-[44px] items-center border-l-2 py-2 pr-2 text-sm leading-snug hover:text-white ${level === 3 ? 'pl-6' : 'pl-3'} ${active === id ? 'border-copper-500 text-copper-300' : 'border-transparent text-slate-400'}`}
           >
             {label}
           </a>
