@@ -256,9 +256,9 @@ test('typefaces: Newsreader headings, IBM Plex Sans body, JetBrains Mono labels'
   assert.equal(fonts.mono?.[0], 'JetBrains Mono');
   // Everything after the web font must be a local or generic family: a second
   // web font there would never load and the stack would have no real fallback.
-  assert.deepEqual(fonts.serif, ['Newsreader', 'Georgia', 'serif']);
-  assert.deepEqual(fonts.sans, ['IBM Plex Sans', 'system-ui', 'sans-serif']);
-  assert.deepEqual(fonts.mono, ['JetBrains Mono', 'monospace']);
+  assert.deepEqual(fonts.serif, ['Newsreader', 'Newsreader Fallback', 'Georgia', 'serif']);
+  assert.deepEqual(fonts.sans, ['IBM Plex Sans', 'IBM Plex Sans Fallback', 'system-ui', 'sans-serif']);
+  assert.deepEqual(fonts.mono, ['JetBrains Mono', 'JetBrains Mono Fallback', 'monospace']);
 });
 
 // The [start, end) span of every `@layer <name> { ... }` block, by brace matching.
