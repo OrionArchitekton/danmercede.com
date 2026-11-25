@@ -389,7 +389,7 @@ export const GateSimulator: React.FC = () => {
 
           <div>
             <p className="font-mono text-xs text-slate-400 mb-2">{active.inputLabel}</p>
-            <pre tabIndex={0} aria-label={active.inputLabel} className="rounded-sm border border-white/10 bg-slate-950/90 p-4 overflow-x-auto text-xs font-mono text-slate-200 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
+            <pre tabIndex={0} role="group" aria-label={active.inputLabel} className="rounded-sm border border-white/10 bg-slate-950/90 p-4 overflow-x-auto text-xs font-mono text-slate-200 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
               <code>{active.inputLines.join('\n')}</code>
             </pre>
           </div>
@@ -436,7 +436,7 @@ export const GateSimulator: React.FC = () => {
             </p>
 
             <p className="font-mono text-xs text-slate-400 mb-2">Emitted decision receipt</p>
-            <pre tabIndex={0} aria-label="Emitted decision receipt" className="rounded-sm border border-white/10 bg-slate-950 p-4 overflow-x-auto text-xs font-mono text-copper-300 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
+            <pre tabIndex={0} role="group" aria-label="Emitted decision receipt" className="rounded-sm border border-white/10 bg-slate-950 p-4 overflow-x-auto text-xs font-mono text-copper-300 leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
               <code>{JSON.stringify(active.receipt, null, 2)}</code>
             </pre>
           </div>

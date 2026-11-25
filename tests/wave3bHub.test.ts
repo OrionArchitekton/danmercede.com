@@ -28,6 +28,7 @@ test('parseRouteJsonLdGraph validates schema-dts Graph payloads across routes', 
     assert.ok(Array.isArray(graph['@graph']) && graph['@graph'].length > 0, route);
   }
   assert.throws(() => parseRouteJsonLdGraph('{"@context":"https://example.com"}'), /Invalid route JSON-LD Graph/);
+  assert.throws(() => parseRouteJsonLdGraph('{"@context":"https://schema.org","@graph":[]}'), /Invalid route JSON-LD Graph/);
 });
 
 test('index.html emits conservative same-origin speculationrules excluding /api/*', () => {

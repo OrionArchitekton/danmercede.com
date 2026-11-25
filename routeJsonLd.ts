@@ -7,7 +7,11 @@ export type RouteJsonLdGraph = Graph;
 // with a schema.org @context and non-empty @graph array.
 export function parseRouteJsonLdGraph(json: string): RouteJsonLdGraph {
   const parsed = JSON.parse(json) as Partial<RouteJsonLdGraph>;
-  if (parsed['@context'] !== 'https://schema.org' || !Array.isArray(parsed['@graph'])) {
+  if (
+    parsed['@context'] !== 'https://schema.org' ||
+    !Array.isArray(parsed['@graph']) ||
+    parsed['@graph'].length === 0
+  ) {
     throw new Error('Invalid route JSON-LD Graph payload');
   }
   return parsed as RouteJsonLdGraph;
