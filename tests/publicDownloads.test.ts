@@ -46,9 +46,9 @@ const REVIEWED_UNSCANNED: Record<string, { sha256: string; review: string; rende
     review: '2026-09-29: blank template. Field labels only (e.g. ROI Scorecard, Baseline KPI) with no figures, percentages, or currency. The case-study scanner is not applied because it bans those labels as claim shapes.',
   },
   'Speaking_One_Sheet.pdf': {
-    sha256: '278cf57814e461ca47a3aa2da741d76ffe72dce8c032af5233551c4f79cc705b',
+    sha256: '341f52bb38d5117dc902b3c7f656df19454f9ef08b526864bfc21a5760338c2d',
     review: '2026-11-12: re-rendered after NODES 2026 was delivered. Upcoming is OpsWorld 2027 (February 9, 2027, 50-minute hands-on workshop in Santa Clara, co-located with DeveloperWeek 2027); NODES 2026 moved to Past speaking with its speaker page. Bio unchanged (Apple via Mosaic Sales Solutions), UiPath finalist, four talk topics, direct speaking email. No outcome figures.',
-    renderedFrom: { path: 'docs/one-sheets/speaking-one-sheet.html', sha256: 'eda3ff636cf27b1af28b581e1363a8371cc0e27a3dcab84b4a91edebdbe32de5' },
+    renderedFrom: { path: 'docs/one-sheets/speaking-one-sheet.html', sha256: 'b455c148414e83449653218d82e77fd023615b86562a6cabd8d86c1f660ca63a' },
   },
 };
 

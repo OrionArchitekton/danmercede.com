@@ -150,7 +150,7 @@ const Navigation: React.FC<{ onOpenSearch: () => void }> = ({ onOpenSearch }) =>
               <Search className="w-3.5 h-3.5 text-copper-400" aria-hidden="true" />
               <span>Search</span>
               <span className="sr-only"> site</span>
-              <kbd aria-hidden="true" className="text-[10px] text-slate-400 border border-white/10 px-1 rounded-xs">Ctrl K</kbd>
+              <kbd aria-hidden="true" className="text-[11px] text-slate-400 border border-white/10 px-1 rounded-xs">Ctrl K</kbd>
             </button>
           </div>
 
@@ -608,7 +608,7 @@ const EcosystemPage = () => {
                         className="h-9 w-auto object-contain opacity-100"
                       />
                     </div>
-                    <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isCosmocrat
+                    <span className={`text-[11px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isCosmocrat
                       ? 'bg-copper-500/20 text-copper-400 font-bold border border-copper-500/30'
                       : 'bg-emerald-500/10 text-emerald-500'
                       }`}>
@@ -711,7 +711,7 @@ const EcosystemPage = () => {
                           className="h-7 w-auto object-contain opacity-70 group-hover:opacity-90 transition-all"
                         />
                       </div>
-                      <span className={`text-[10px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isLive
+                      <span className={`text-[11px] font-mono px-2 py-1 rounded-xs uppercase tracking-widest ${isLive
                         ? 'bg-emerald-500/10 text-emerald-500'
                         : 'bg-amber-500/10 text-amber-500'
                         }`}>
@@ -1913,7 +1913,7 @@ const ThoughtsPage = () => {
                 type="button"
                 aria-pressed={activeCategory === cat}
                 className={
-                  'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' +
+                  'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors ' +
                   (activeCategory === cat
                     ? 'border-copper-500 bg-copper-500 text-slate-950'
                     : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')
@@ -1934,12 +1934,12 @@ const ThoughtsPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[11px] text-slate-400">/</kbd>
           </label>
         </div>
 
         <p
-          className={`font-mono text-[10px] uppercase tracking-widest text-slate-400 ${isLaneGroupedView ? '' : 'mb-6'}`}
+          className={`font-mono text-[11px] uppercase tracking-widest text-slate-400 ${isLaneGroupedView ? '' : 'mb-6'}`}
           aria-live="polite"
         >
           {isLaneGroupedView
@@ -2135,9 +2135,9 @@ const GuidesPage = () => {
                 authority, evidence, observability, and fail-closed execution.
               </p>
               <dl className="grid grid-cols-[1fr_1fr_auto] gap-4 text-right">
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
-                <div><dt className="font-mono text-[10px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 whitespace-nowrap text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
+                <div><dt className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Guides</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDES.length}</dd></div>
+                <div><dt className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Themes</dt><dd className="mt-1 text-2xl font-semibold text-white">{GUIDE_THEME_COUNT}</dd></div>
+                <div><dt className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Latest</dt><dd className="mt-1 whitespace-nowrap text-sm font-semibold text-white">{GUIDES[0]?.date ?? 'n/a'}</dd></div>
               </dl>
             </div>
           </div>
@@ -2166,7 +2166,7 @@ const GuidesPage = () => {
                 <h3 className="text-xl font-semibold leading-snug text-white group-hover:text-copper-400">{guide.title}</h3>
                 <p className={`${META} mt-2`}>{guide.category} · {guide.date}</p>
                 <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{guide.lead}</p>
-                <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-widest text-copper-400">
+                <span className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 font-mono text-[11px] uppercase tracking-widest text-copper-400">
                   Read field note <ArrowRight size={14} aria-hidden="true" />
                 </span>
               </div>
@@ -2191,7 +2191,7 @@ const GuidesPage = () => {
               placeholder="Search title, category, or idea"
               className="min-w-0 flex-1 bg-transparent text-sm text-white outline-hidden placeholder:text-slate-400"
             />
-            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[10px] text-slate-400">/</kbd>
+            <kbd aria-hidden="true" className="rounded-sm border border-white/15 px-2 py-1 font-mono text-[11px] text-slate-400">/</kbd>
           </label>
         </div>
 
@@ -2202,13 +2202,13 @@ const GuidesPage = () => {
               type="button"
               onClick={() => setActiveLens(lens.id)}
               aria-pressed={activeLens === lens.id}
-              className={'rounded-full border px-4 py-2 font-mono text-[10px] uppercase tracking-widest transition-colors ' + (activeLens === lens.id ? 'border-copper-500 bg-copper-500 text-slate-950' : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')}
+              className={'rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors ' + (activeLens === lens.id ? 'border-copper-500 bg-copper-500 text-slate-950' : 'border-white/15 text-slate-400 hover:border-copper-500/50 hover:text-white')}
             >
               {lens.label}
             </button>
           ))}
         </div>
-        <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-slate-400" aria-live="polite">
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-widest text-slate-400" aria-live="polite">
           {visibleGuides.length} {visibleGuides.length === 1 ? 'guide' : 'guides'}
         </p>
         <div className="border-t border-white/15">
@@ -2219,13 +2219,13 @@ const GuidesPage = () => {
               className="group grid min-h-28 grid-cols-[2.25rem_1fr_auto] items-center gap-4 border-b border-white/10 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[4rem_9rem_1fr_7rem_2rem] md:px-3"
             >
               <span className="font-mono text-xs text-copper-400">{String(index + 1).padStart(2, '0')}</span>
-              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-slate-400 md:block">{guide.category}</span>
+              <span className="hidden font-mono text-[11px] uppercase tracking-widest text-slate-400 md:block">{guide.category}</span>
               <span className="text-lg font-medium leading-snug text-white group-hover:text-copper-400 md:text-2xl/8">
                 {guide.title}
                 <span className={`${META} mt-1 block md:hidden`}>{guide.category} · {guide.date}</span>
                 <GuideMetadata guide={guide} />
               </span>
-              <span className="hidden text-right font-mono text-[10px] text-slate-400 md:block">{guide.date}</span>
+              <span className="hidden text-right font-mono text-[11px] text-slate-400 md:block">{guide.date}</span>
               <ChevronRight size={18} className="text-copper-500 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           ))}
@@ -2262,7 +2262,7 @@ const GuidesPage = () => {
                 <span className="font-mono text-xs text-copper-400">0{index + 1}</span>
                 <span className="mt-8 block font-serif text-xl font-semibold text-white group-hover:text-copper-400">{lens.label}</span>
                 <p className="mt-3 text-sm leading-relaxed text-slate-400">{lens.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-slate-400">
                   {GUIDES.filter((guide: Guide) => guideMatchesLens(guide, lens.id)).length} guides <ChevronRight size={13} aria-hidden="true" />
                 </span>
               </button>

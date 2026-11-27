@@ -70,12 +70,12 @@ function ArticleContents({ headings }: { headings: ArticleHeading[] }) {
   );
 
   return (
-    <aside className="mb-6 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:mb-0 lg:self-start">
+    <aside aria-label="Article table of contents" className="mb-6 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:mb-0 lg:self-start">
       <details ref={drawer} className="group rounded-lg border border-white/15 bg-navy-deep lg:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-white [&::-webkit-details-marker]:hidden">
           On this page <ChevronDown size={16} aria-hidden="true" className="text-copper-400 group-open:rotate-180" />
         </summary>
-        <nav aria-label="On this page" className="max-h-[55vh] overflow-y-auto px-4 pb-3">{links}</nav>
+        <nav aria-label="On this page (mobile)" className="max-h-[55vh] overflow-y-auto px-4 pb-3">{links}</nav>
       </details>
       <div className="hidden border-t border-copper-500/50 pt-4 lg:block">
         <p className="mb-3 font-semibold text-white">On this page</p>

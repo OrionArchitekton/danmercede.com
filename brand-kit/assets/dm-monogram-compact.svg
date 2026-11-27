@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Dan Mercede compact monogram">
+  <polygon points="32,5 56,18.5 56,45.5 32,59 8,45.5 8,18.5" fill="#020B29" stroke="#E68249" stroke-width="3" stroke-linejoin="round" />
+  <path d="M19 22 H26.5 C31.5 22 34 25.8 34 32 C34 38.2 31.5 42 26.5 42 H19 Z" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round" />
+  <path d="M37 42 V22 L42.5 34 L48 22 V42" stroke="#FFC08B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="32" cy="5" r="2.2" fill="#FFC08B" />
+  <circle cx="32" cy="59" r="2.2" fill="#FFC08B" />
+</svg>

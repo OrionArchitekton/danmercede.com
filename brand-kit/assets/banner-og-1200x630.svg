@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title-banner_og desc-banner_og" font-family="'IBM Plex Sans', system-ui, sans-serif">
+  <title id="title-banner_og">Dan Mercede (banner_og)</title>
+  <desc id="desc-banner_og">Safe-zone verified banner_og vector preset for Dan Mercede (1200x630).</desc>
+  <rect width="1200" height="630" fill="#020B29"/>
+  <rect data-role="safe-box" x="64" y="48" width="1072" height="534" rx="16" fill="#07143A" stroke="#E68249" stroke-width="2" stroke-opacity="0.5"/>
+  <rect data-role="kicker-pill" x="104" y="120" width="270" height="36" rx="5" fill="#E68249"/>
+  <text data-role="kicker-text" x="239.0" y="143" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="700" fill="#020B29" letter-spacing="0.9">OPERATOR // SYSTEMS</text>
+  <text data-role="headline" x="104" y="252" font-family="'Newsreader', Georgia, serif" font-size="48" font-weight="700" fill="#F8FAFC">Dan Mercede</text>
+  <text data-role="subline" x="104" y="312" font-size="21" fill="#94A3B8">
+    <tspan x="104" dy="0">Fail-closed AI workflows, verification gates,</tspan>
+    <tspan x="104" dy="30">and owned production systems.</tspan>
+  </text>
+  <g data-role="emblem"><polygon points="992.0,223.5 1071.3,269.2 1071.3,360.8 992.0,406.5 912.7,360.8 912.7,269.2" fill="#020B29" stroke="#E68249" stroke-width="6.2" stroke-linejoin="round"/><circle cx="992.0" cy="315.0" r="43.7" fill="none" stroke="#F8FAFC" stroke-width="5.2"/><circle cx="992.0" cy="315.0" r="14.6" fill="#E68249"/></g>
+</svg>

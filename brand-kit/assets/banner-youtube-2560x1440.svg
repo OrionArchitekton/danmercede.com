@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440" role="img" aria-labelledby="title-banner_youtube desc-banner_youtube" font-family="'IBM Plex Sans', system-ui, sans-serif">
+  <title id="title-banner_youtube">Dan Mercede (banner_youtube)</title>
+  <desc id="desc-banner_youtube">Safe-zone verified banner_youtube vector preset for Dan Mercede (2560x1440).</desc>
+  <rect width="2560" height="1440" fill="#020B29"/>
+  <rect data-role="safe-box" x="507" y="508" width="1546" height="423" rx="16" fill="#07143A" stroke="#E68249" stroke-width="2" stroke-opacity="0.5"/>
+  <g data-role="emblem"><polygon points="680.0,625.0 762.3,672.5 762.3,767.5 680.0,815.0 597.7,767.5 597.7,672.5" fill="#020B29" stroke="#E68249" stroke-width="6.5" stroke-linejoin="round"/><circle cx="680.0" cy="720.0" r="45.4" fill="none" stroke="#F8FAFC" stroke-width="5.4"/><circle cx="680.0" cy="720.0" r="15.1" fill="#E68249"/></g>
+  <rect data-role="kicker-pill" x="848" y="576" width="340" height="40" rx="6" fill="#E68249"/>
+  <text data-role="kicker-text" x="1018.0" y="602" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18" font-weight="700" fill="#020B29" letter-spacing="1.1">OPERATOR // SYSTEMS</text>
+  <text data-role="headline" x="848" y="692" font-family="'Newsreader', Georgia, serif" font-size="60" font-weight="700" fill="#F8FAFC">Dan Mercede</text>
+  <text data-role="subline" x="848" y="754" font-size="26" fill="#94A3B8">
+    <tspan x="848" dy="0">Fail-closed AI workflows, verification gates, and owned</tspan>
+    <tspan x="848" dy="36">production systems.</tspan>
+  </text>
+</svg>

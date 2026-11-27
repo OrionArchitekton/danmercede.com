@@ -1,0 +1,19 @@
+schema_version: BrandClaimsAllowlist.v1
+brand_id: danmercede-com
+allowed_claims:
+- id: estate-scale
+  claim: Operates a 4-node self-managed multi-agent estate across 148+ canonical repositories.
+  source: orion-estate-audit/estate_home_registry.yaml
+- id: uipath-finalist
+  claim: Finalist, UiPath AgentHack 2026 (Track 3, UiPath Test Cloud) for Proctor.
+  source: danmercede-com/constants.ts
+- id: nodes-2026
+  claim: Speaker at NODES 2026 by Neo4j (November 12, 2026) on branched conversation knowledge graphs.
+  source: https://neo4j.com/nodes/speakers/dan-mercede/
+- id: opsworld-2027
+  claim: Accepted 50-minute workshop speaker at OpsWorld 2027 (February 9, 2027, DeveloperWeek).
+  source: https://www.developerweek.com/opsworld/#sessions
+prohibited_claims:
+- Unsourced enterprise ROI percentages or fabricated client logos
+- Third-party statistical AI-authorship detector scores
+- 'White foreground ink on solid Copper fills (#E68249, #F0975A, #FFC08B)'

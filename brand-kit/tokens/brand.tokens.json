@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.orion.brand": {
+      "id": "danmercede-com",
+      "name": "Dan Mercede",
+      "polarity": "dark",
+      "domain": "danmercede.com"
+    },
+    "com.orion.contrastPairs": [
+      { "name": "body-on-bg", "fg": "color.fg", "bg": "color.bg", "level": "normal" },
+      { "name": "body-on-surface", "fg": "color.fg", "bg": "color.surface", "level": "normal" },
+      { "name": "body-on-elevated", "fg": "color.fg", "bg": "color.surfaceElevated", "level": "normal" },
+      { "name": "muted-on-bg", "fg": "color.fgMuted", "bg": "color.bg", "level": "normal" },
+      { "name": "muted-on-surface", "fg": "color.fgMuted", "bg": "color.surface", "level": "normal" },
+      { "name": "cta-label-on-accent", "fg": "color.accentFg", "bg": "color.accent", "level": "normal" },
+      { "name": "cta-label-on-hover", "fg": "color.accentFg", "bg": "color.accentHover", "level": "normal" },
+      { "name": "accent-link-on-bg", "fg": "color.accent", "bg": "color.bg", "level": "normal" },
+      { "name": "border-on-bg", "fg": "color.border", "bg": "color.bg", "level": "ui" },
+      { "name": "ok-badge", "fg": "color.statusOkFg", "bg": "color.statusOk", "level": "normal" },
+      { "name": "warn-badge", "fg": "color.statusWarnFg", "bg": "color.statusWarn", "level": "normal" },
+      { "name": "danger-badge", "fg": "color.statusDangerFg", "bg": "color.statusDanger", "level": "normal" }
+    ]
+  },
+  "color": {
+    "bg": { "$type": "color", "$value": "#020B29", "$description": "Midnight Navy ground" },
+    "surface": { "$type": "color", "$value": "#07143A", "$description": "Deep Navy raised surface" },
+    "surfaceElevated": { "$type": "color", "$value": "#0E1F4F", "$description": "Elevated panel surface" },
+    "border": { "$type": "color", "$value": "#64748B", "$description": "Visible structural border (>=3:1)" },
+    "fg": { "$type": "color", "$value": "#F8FAFC", "$description": "Primary archival ink" },
+    "fgMuted": { "$type": "color", "$value": "#94A3B8", "$description": "Metadata slate (7.57:1 on ground)" },
+    "accent": { "$type": "color", "$value": "#E68249", "$description": "Copper Mid primary accent" },
+    "accentHover": { "$type": "color", "$value": "#F0975A", "$description": "Copper 400 hover state" },
+    "accentFg": { "$type": "color", "$value": "#020B29", "$description": "Midnight Navy label on solid copper" },
+    "focusRing": { "$type": "color", "$value": "#FFC08B", "$description": "Copper Light focus indicator" },
+    "statusOk": { "$type": "color", "$value": "#4ADE80", "$description": "Emerald pass indicator" },
+    "statusOkFg": { "$type": "color", "$value": "#020B29", "$description": "Dark label on pass indicator" },
+    "statusWarn": { "$type": "color", "$value": "#FBBF24", "$description": "Amber caution indicator" },
+    "statusWarnFg": { "$type": "color", "$value": "#020B29", "$description": "Dark label on caution indicator" },
+    "statusDanger": { "$type": "color", "$value": "#F87171", "$description": "Coral failure indicator" },
+    "statusDangerFg": { "$type": "color", "$value": "#020B29", "$description": "Dark label on failure indicator" }
+  },
+  "font": {
+    "display": { "$type": "fontFamily", "$value": "'Newsreader Variable', 'Newsreader', Georgia, serif" },
+    "sans": { "$type": "fontFamily", "$value": "'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, sans-serif" },
+    "mono": { "$type": "fontFamily", "$value": "'JetBrains Mono Variable', 'JetBrains Mono', monospace" }
+  },
+  "radius": {
+    "sm": { "$type": "dimension", "$value": "2px" },
+    "md": { "$type": "dimension", "$value": "4px" },
+    "lg": { "$type": "dimension", "$value": "8px" }
+  }
+}
