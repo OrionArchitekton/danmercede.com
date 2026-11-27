@@ -38,7 +38,6 @@ typography:
     fontSize: "12px"
     fontWeight: 400
   scale:
-    label-sm: "10px"
     label: "11px"
     xs: "12px"
     sm: "14px"
@@ -119,7 +118,7 @@ Ratios below are computed from the hex values by `tests/brandContrast.test.ts` (
 - The logo pack defines no typeface. The owner chose this pairing on 2026-11-10 from three rendered options.
 - `tailwind.config.js` names each web font first with local fallbacks after it, and the one Google Fonts link in
   `index.html` loads exactly those families (`tests/headHygiene.test.ts` fails when they drift apart).
-- The scale lists the sizes the pages use, from the 10px and 11px mono labels to the 72px hero heading.
+- The scale lists the sizes the pages use, from the 11px mono labels to the 72px hero heading.
 
 ## Shape
 
@@ -133,6 +132,5 @@ Tailwind v4 shifted these names: its `rounded-xs` is v3's `rounded-sm`, and its 
 2. `copper-400` `#F0975A` has no logo pack value but carries most accent text. Keep it as a site-only step, or map it?
 3. Resolved: use Deep Navy for raised surfaces over the Midnight Navy ground.
 4. The legacy slate, amber and emerald values have no logo pack counterparts. Keep, or fold into a navy-based scale?
-5. The 10px mono labels sit under the 11px floor that the Impeccable detector uses for functional text.
-6. `docs/one-sheets/speaking-one-sheet.html` (the printable one-sheet, outside the site build) still uses the old
-   copper `#c2632c`.
+5. Resolved 2026-11-26: raised all functional monospace labels to a minimum of `11px` (`JetBrains Mono`) to satisfy the legibility floor.
+6. Resolved 2026-11-26: aligned `docs/one-sheets/speaking-one-sheet.html` and `public/assets/Speaking_One_Sheet.pdf` to Copper Mid `#E68249` with Midnight Navy `#020B29` ink lock and the `Newsreader` / `IBM Plex Sans` / `JetBrains Mono` pairing.

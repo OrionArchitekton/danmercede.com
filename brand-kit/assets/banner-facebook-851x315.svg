@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="851" height="315" viewBox="0 0 851 315" role="img" aria-labelledby="title-banner_facebook desc-banner_facebook" font-family="'IBM Plex Sans', system-ui, sans-serif">
+  <title id="title-banner_facebook">Dan Mercede (banner_facebook)</title>
+  <desc id="desc-banner_facebook">Safe-zone verified banner_facebook vector preset for Dan Mercede (851x315).</desc>
+  <rect width="851" height="315" fill="#020B29"/>
+  <rect data-role="safe-box" x="240" y="36" width="575" height="243" rx="10" fill="#07143A" stroke="#E68249" stroke-width="1.6" stroke-opacity="0.45"/>
+  <rect data-role="kicker-pill" x="262" y="66" width="210" height="26" rx="4" fill="#E68249"/>
+  <text data-role="kicker-text" x="367.0" y="83" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11.5" font-weight="700" fill="#020B29" letter-spacing="0.5">OPERATOR // SYSTEMS</text>
+  <text data-role="headline" x="262" y="144" font-family="'Newsreader', Georgia, serif" font-size="28" font-weight="700" fill="#F8FAFC">Dan Mercede</text>
+  <text data-role="subline" x="262" y="184" font-size="14" fill="#94A3B8">
+    <tspan x="262" dy="0">Fail-closed AI workflows, verification gates,</tspan>
+    <tspan x="262" dy="20">and owned production systems.</tspan>
+  </text>
+</svg>

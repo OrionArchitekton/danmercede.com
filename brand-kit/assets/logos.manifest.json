@@ -1,0 +1,195 @@
+{
+  "schema_version": "BrandLogosManifest.v1",
+  "brand_id": "danmercede-com",
+  "registry_token_id": "danmercede-com",
+  "voice_profile_sha256": "c7740e52bea9c9469b3eba9337e486d28211c7dd83b3b56f72eb6d96068fc235",
+  "dtcg_pack_sha256": "0020b164c86fb3abacfcb811bf26b6d5eeae49af2cd61a6904edda420c59e48c",
+  "vault_stage_target": "atlas-01:/data/raid/library/web-assets/brands/danmercede-com/",
+  "vault_sync_gate": "HUMAN_REQUIRED (Checkpoint G1)",
+  "assets": [
+    {
+      "path": "dm-mark.svg",
+      "role": "mark_primary",
+      "format": "svg",
+      "width": 1000,
+      "height": 1000,
+      "safe_zone": {
+        "x": 100,
+        "y": 100,
+        "width": 800,
+        "height": 800
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "36a77c1777aee0130f1c04e0f50318a9ecd9090d5a770b31051d20aaf23c6099"
+    },
+    {
+      "path": "dan-mercede-lockup-dark.svg",
+      "role": "lockup_horizontal_dark",
+      "format": "svg",
+      "width": 2000,
+      "height": 500,
+      "safe_zone": {
+        "x": 80,
+        "y": 48,
+        "width": 1840,
+        "height": 404
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "35795bc201be708d76cb2d710c68c3a10b2d0384da94993074e17942efb5b2f0"
+    },
+    {
+      "path": "dm-monogram-compact.svg",
+      "role": "mark_compact",
+      "format": "svg",
+      "width": 64,
+      "height": 64,
+      "safe_zone": {
+        "x": 8,
+        "y": 8,
+        "width": 48,
+        "height": 48
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "920ec8c6014ac1866408481b969dd2027803c19c77b19e3003392e1758bbf5cd"
+    },
+    {
+      "path": "dm-seal-architectural.svg",
+      "role": "mark_seal_architectural",
+      "format": "svg",
+      "width": 256,
+      "height": 256,
+      "safe_zone": {
+        "x": 24,
+        "y": 24,
+        "width": 208,
+        "height": 208
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "8b541103b5c6e15d8deab988cb7c87f4391bbc5f9f5c022dd38ef5cc5019f0f6"
+    },
+    {
+      "path": "dm-colophon-signature.svg",
+      "role": "colophon_signature",
+      "format": "svg",
+      "width": 320,
+      "height": 48,
+      "safe_zone": {
+        "x": 8,
+        "y": 4,
+        "width": 304,
+        "height": 40
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "f7b073b1841fd30387cbd92d4d5d8986b1406509584f99afb5feb8feb2114986"
+    },
+    {
+      "path": "avatar-800x800.svg",
+      "role": "avatar_square",
+      "format": "svg",
+      "width": 800,
+      "height": 800,
+      "safe_zone": {
+        "x": 96,
+        "y": 96,
+        "width": 608,
+        "height": 608,
+        "circle_safe_radius": 352
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "e9c5df7115b581bb20c416bf89da1f936ade642f8db4b504cbae311232840f83"
+    },
+    {
+      "path": "banner-youtube-2560x1440.svg",
+      "role": "banner_youtube",
+      "format": "svg",
+      "width": 2560,
+      "height": 1440,
+      "safe_zone": {
+        "x": 507,
+        "y": 508,
+        "width": 1546,
+        "height": 423
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "8ee32e1a0c1a9c791bcda0d3956b774662734c54d0aa3cdf8961a4bd8c5e2020"
+    },
+    {
+      "path": "banner-linkedin-1584x396.svg",
+      "role": "banner_linkedin",
+      "format": "svg",
+      "width": 1584,
+      "height": 396,
+      "safe_zone": {
+        "x": 340,
+        "y": 48,
+        "width": 1180,
+        "height": 300,
+        "avatar_occlusion": {
+          "x": 0,
+          "y": 196,
+          "width": 320,
+          "height": 200
+        }
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "55cb7ec0297ccc141709fad7cfad13c6b422b6629c97c5b5e65956b95eb14f9c"
+    },
+    {
+      "path": "banner-x-1500x500.svg",
+      "role": "banner_x",
+      "format": "svg",
+      "width": 1500,
+      "height": 500,
+      "safe_zone": {
+        "x": 440,
+        "y": 60,
+        "width": 1000,
+        "height": 360,
+        "avatar_occlusion": {
+          "x": 0,
+          "y": 260,
+          "width": 420,
+          "height": 240
+        }
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "d12c661e719d963b570babe8f0300a1cc6f1a3054fb3440e19d371cbf809e36d"
+    },
+    {
+      "path": "banner-facebook-851x315.svg",
+      "role": "banner_facebook",
+      "format": "svg",
+      "width": 851,
+      "height": 315,
+      "safe_zone": {
+        "x": 240,
+        "y": 36,
+        "width": 575,
+        "height": 243,
+        "avatar_occlusion": {
+          "x": 0,
+          "y": 155,
+          "width": 220,
+          "height": 160
+        }
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "d36833394adc41f0bb32424970c80c632cf15cc1cecc54e2de3c8115fb1be171"
+    },
+    {
+      "path": "banner-og-1200x630.svg",
+      "role": "banner_og",
+      "format": "svg",
+      "width": 1200,
+      "height": 630,
+      "safe_zone": {
+        "x": 64,
+        "y": 48,
+        "width": 1072,
+        "height": 534
+      },
+      "spdx_license": "LicenseRef-Orion-FirstParty-Commercial",
+      "sha256": "996e73c15cc90d16026186e9ab71d843ef233eac0bc4c0acbd2ebbe32862f10d"
+    }
+  ]
+}

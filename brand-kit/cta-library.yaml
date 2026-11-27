@@ -1,0 +1,16 @@
+schema_version: BrandCtaLibrary.v1
+brand_id: danmercede-com
+x_link_placement: reply_only_never_main_body
+ctas:
+- id: read-guides
+  label: Read the implementation guides
+  url: https://www.danmercede.com/guides
+  utm_template: utm_source={platform}&utm_medium=social&utm_campaign=guides
+- id: fail-closed-notes
+  label: Read Fail-Closed Notes
+  url: https://www.danmercede.com/thoughts
+  utm_template: utm_source={platform}&utm_medium=social&utm_campaign=fail_closed_notes
+- id: speaking-inquiry
+  label: Direct speaking inquiry
+  url: mailto:contact@danmercede.com?subject=Speaking%20inquiry
+  utm_template: none

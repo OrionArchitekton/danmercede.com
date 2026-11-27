@@ -60,7 +60,7 @@ export const WorkCard = ({ work }: { work: Work }) => {
           <a
             href={work.repo}
             {...linkTargetProps(work.repo)}
-            aria-label={`Source repository for ${work.title}`}
+            aria-label={`Repo: ${work.title}`}
             className="inline-flex items-center text-xs font-mono text-slate-400 hover:text-white transition-colors"
           >
             Repo <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
@@ -81,7 +81,7 @@ export const WorkCard = ({ work }: { work: Work }) => {
           <a
             href={work.video}
             {...linkTargetProps(work.video)}
-            aria-label={`Demo video for ${work.title}`}
+            aria-label={`Watch demo: ${work.title}`}
             className="inline-flex items-center text-xs font-mono text-slate-400 hover:text-copper-400 transition-colors"
           >
             <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" />

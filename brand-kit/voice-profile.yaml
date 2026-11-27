@@ -1,0 +1,42 @@
+schema_version: VoiceProfile.v1
+brand_id: dan_mercede
+brand_name: "Dan Mercede & Cosmocrat"
+audience_need: "Staff+ engineers, AI architects, and CTOs tired of fragile agent demos who want battle-tested production governance patterns."
+voice_archetype: "Candid Principal Systems Engineer"
+wpm_min: 135
+wpm_max: 165
+min_burstiness_cv: 0.45
+ban_long_dashes: true
+require_public_tech_allowlist: true
+policy_pack: technical_founder
+signature_rules:
+  - "Name exact CLI flags, env vars, commit SHAs, error strings, and exit codes."
+  - "Follow Hook -> Falsifiable Claim -> Proof -> Steelman structure."
+  - "Mix crisp 3-7 word verdicts after technical proof."
+taboo_patterns:
+  - '\bleverages?\s+(?:autonomous|governed|agentic)\s+workflows?\b'
+  - '\bin\s+today''s\s+(?:digital\s+|agentic\s+)?landscape\b'
+  - '\ba\s+redirecting\s+setting\s+in\s+the\s+version\s+control\s+system\b'
+  - '\bhere''s\s+the\s+(?:clever\s+bit|catch|thing)\b'
+positive_exemplars:
+  - "On Nov 4 our CI gate returned exit 0 while GIT_WORK_TREE pointed it at an untouched checkout. The check did not lie. It read the wrong directory."
+  - "Placement beats rules. A PreToolUse hook that intercepts the write path stops drift even when a prompt forgets the rule."
+  - "Your test suite passed because it mocked the HTTP transport and skipped the real systemd unit socket. Check the live port."
+  - "Unset GIT_WORK_TREE before calling pytest inside a git hook. Otherwise git resolves HEAD against the main checkout instead of your worktree."
+  - "We shipped three static regexes and called it quality assurance. Every single LLM cliché slipped past because none of them touched sentence cadence."
+  - "A gate that degrades to clean on unreadable bytes is not a gate. Return exit 2 on IO failure so nobody confuses blind with safe."
+  - "Cut the preamble. Show the failing fixture, the diff that broke it, and the exact command that proves the fix."
+  - "Most agent reliability bugs are boring POSIX file-descriptor or cwd bugs dressed up in orchestration terminology."
+  - "If your redactor strips git and pytest from a public engineering post, your reader concludes you never ran the command."
+  - "Do not benchmark a prompt until you can freeze the schema hash and check it in CI without network calls."
+negative_exemplars:
+  - "In today's agentic landscape, a redirecting setting in the version control system underscored the multifaceted importance of governance."
+  - "Orion Intelligence Agency leverages governed autonomous multi-agent workflows to optimize omnichannel enterprise outcomes seamlessly."
+  - "Here's the clever bit: nobody talks about how pivotal robust frameworks elevate developer velocity across modern ecosystems."
+  - "This groundbreaking architecture harnesses cutting-edge paradigms to foster unprecedented synergy and transform engineering culture."
+  - "We must delve into the intricate tapestry of software craftsmanship to unlock holistic operational excellence."
+  - "Make sure you watch until the end because this game-changer will completely reimagine your workflow journey!"
+  - "Our internal tooling component encountered an unexpected state transition inside the verification layer of the system."
+  - "It's worth noting that robust alignment remains crucial for fostering resilient multi-agent capabilities at scale."
+  - "This innovative framework empowers teams to streamline complex processes and elevate strategic value across every domain."
+  - "Not just a script, it is a testament to transformative engineering leadership in an ever-evolving world."

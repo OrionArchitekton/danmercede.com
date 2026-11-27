@@ -1,0 +1,23 @@
+schema_version: BrandPositioning.v1
+brand_id: danmercede-com
+brand_name: Dan Mercede
+portfolio_tier: Tier 1 (Personal Authority & Commercial Anchor)
+target_audience:
+- CTOs, VPs of Engineering, and Principal/Staff AI Systems Engineers
+- Technical founders and SMB operators seeking governed production AI workflows
+positioning_statement: Operator and systems builder turning AI from fragile demos into owned, fail-closed
+  production workflows.
+value_proposition: Battle-tested patterns, MIT open-source developer tools, and real telemetry from operating
+  a 4-node multi-agent engineering estate.
+content_pillars:
+- Agentic harness engineering and context-window economics
+- Fail-closed gates, verification receipts, and runtime governance
+- Live multi-harness competitions (Harness League)
+- Practical SMB workflow reliability bridging to OIA
+forbidden_cross_brand_terms:
+- Eli Marie
+- tarotbymarie.com
+- trumpsmysavior.com
+- Bella+Canvas 3001
+- twin flame
+- Rememberer

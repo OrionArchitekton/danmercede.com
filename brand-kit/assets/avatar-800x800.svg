@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-labelledby="title-avatar_square desc-avatar_square" font-family="'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, sans-serif">
+  <title id="title-avatar_square">Dan Mercede (avatar_square)</title>
+  <desc id="desc-avatar_square">Safe-zone verified avatar_square vector preset for Dan Mercede (800x800).</desc>
+  <rect width="800" height="800" fill="#020B29"/>
+  <circle cx="400" cy="400" r="352" fill="#07143A" stroke="#E68249" stroke-width="4" stroke-opacity="0.45"/>
+  <g><polygon points="400.0,160.0 607.8,280.0 607.8,520.0 400.0,640.0 192.2,520.0 192.2,280.0" fill="#07143A" stroke="#E68249" stroke-width="12.0"/><circle cx="400.0" cy="160.0" r="16.8" fill="#E68249"/><circle cx="607.8" cy="280.0" r="16.8" fill="#E68249"/><circle cx="607.8" cy="520.0" r="16.8" fill="#E68249"/><circle cx="400.0" cy="640.0" r="16.8" fill="#E68249"/><circle cx="192.2" cy="520.0" r="16.8" fill="#E68249"/><circle cx="192.2" cy="280.0" r="16.8" fill="#E68249"/><text x="400.0" y="438.4" text-anchor="middle" font-family="'JetBrains Mono Variable', 'JetBrains Mono', monospace" font-size="115.2" font-weight="700" fill="#F8FAFC">DM</text></g>
+</svg>

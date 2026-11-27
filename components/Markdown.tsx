@@ -240,7 +240,7 @@ const CodeBlock: React.FC<{ lang: string; code: string }> = ({ lang, code }) => 
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+      <pre tabIndex={0} className="overflow-x-auto p-4 text-sm leading-relaxed focus:outline-hidden focus-visible:ring-2 focus-visible:ring-copper-500">
         <code className={`font-mono text-slate-300${lang ? ` language-${lang}` : ''}`}>{code}</code>
       </pre>
     </div>

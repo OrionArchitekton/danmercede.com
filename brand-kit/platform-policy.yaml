@@ -1,0 +1,31 @@
+schema_version: BrandPlatformPolicy.v1
+brand_id: danmercede-com
+browser_isolation:
+  profile_id: dan
+  expected_handle: '@danmercede'
+  forbid_shared_profile_with:
+  - tms
+  - tbm
+  - oia
+  - oa
+platforms:
+  linkedin:
+    status: active
+    handle: in/danmercede
+  youtube:
+    status: active
+    handle: '@danmercede'
+    consolidated_show_home: true
+  x:
+    status: active
+    handle: '@danmercede'
+    daily_cap: 3
+  bluesky:
+    status: active
+    handle: '@danmercede.com'
+  devto:
+    status: active_selective_guides_only
+  hashnode:
+    status: paused_pro_gated
+  youtube_danmercedeai:
+    status: parked_defensive_reservation
