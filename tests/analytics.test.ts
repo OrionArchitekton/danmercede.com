@@ -193,3 +193,106 @@ test('resolveGaDebugMode detects test/preview/webdriver traffic and leaves prod 
   );
   assert.deepEqual(calls, [['event', 'gate_simulator_run', { scenario: 'proctor', outcome_mode: 'clean', debug_mode: true }]]);
 });
+
+// ---------------------------------------------------------------------------
+// Cloudflare Web Analytics beacon: OFF unless VITE_CF_BEACON_TOKEN is a 32-hex
+// token, then loaded once, on production hosts only, never for debug traffic.
+// ---------------------------------------------------------------------------
+
+// A synthetic token built at runtime (32 hex chars); not a real beacon token.
+const SYNTHETIC_BEACON_ID = '0123456789abcdef'.repeat(2);
+
+function fakeBeaconWindow(hostname: string, opts: { webdriver?: boolean } = {}) {
+  const appended: { defer: boolean; src: string; attrs: Record<string, string> }[] = [];
+  const document = {
+    head: { appendChild: (node: unknown) => { appended.push(node as (typeof appended)[number]); return node; } },
+    createElement: (_tag: 'script') => {
+      const el = { defer: false, src: '', attrs: {} as Record<string, string>, setAttribute(n: string, v: string) { el.attrs[n] = v; } };
+      return el;
+    },
+    querySelector: (sel: string) => appended.find((el) => sel === `script[src="${el.src}"]`) ?? null,
+  };
+  return { appended, win: { document, location: { hostname, search: '' }, navigator: { webdriver: opts.webdriver ?? false } } };
+}
+
+test('resolveCfBeaconToken: unset, blank and malformed tokens resolve to null (no-op)', async () => {
+  const { resolveCfBeaconToken } = await import('../analytics/cfBeacon');
+  for (const bad of [
+    undefined, null, '', '   ', 'abc', 'G-ABC1234XYZ',
+    'a'.repeat(31), // too short
+    `${SYNTHETIC_BEACON_ID}0`, // 33 chars
+    `${SYNTHETIC_BEACON_ID.slice(0, 31)}g`, // non-hex
+    JSON.stringify({ token: SYNTHETIC_BEACON_ID }),
+  ]) {
+    assert.equal(resolveCfBeaconToken(bad as string | undefined | null), null, `must no-op for: ${String(bad)}`);
+  }
+  assert.equal(resolveCfBeaconToken(`  ${SYNTHETIC_BEACON_ID.toUpperCase()}  `), SYNTHETIC_BEACON_ID, 'valid token is trimmed and lowercased');
+});
+
+test('ensureCfBeacon: unset or malformed token injects nothing, even on production', async () => {
+  const { ensureCfBeacon, resolveCfBeaconToken } = await import('../analytics/cfBeacon');
+  for (const raw of [undefined, '', 'not-a-token']) {
+    const { appended, win } = fakeBeaconWindow('www.danmercede.com');
+    assert.equal(ensureCfBeacon(win, resolveCfBeaconToken(raw)), false);
+    assert.equal(appended.length, 0);
+  }
+});
+
+test('ensureCfBeacon: valid token on a production host loads the beacon exactly once with spa:true', async () => {
+  const { ensureCfBeacon, CF_BEACON_SRC } = await import('../analytics/cfBeacon');
+  for (const host of ['www.danmercede.com', 'danmercede.com', 'WWW.DANMERCEDE.COM.']) {
+    const { appended, win } = fakeBeaconWindow(host);
+    assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), true, `loads on ${host}`);
+    assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), false, 'a second call does not inject again');
+    assert.equal(appended.length, 1, `exactly one beacon script on ${host}`);
+    assert.equal(appended[0].src, CF_BEACON_SRC);
+    assert.equal(CF_BEACON_SRC, 'https://static.cloudflareinsights.com/beacon.min.js');
+    assert.equal(appended[0].defer, true);
+    assert.deepEqual(JSON.parse(appended[0].attrs['data-cf-beacon']), { token: SYNTHETIC_BEACON_ID, spa: true });
+  }
+});
+
+test('ensureCfBeacon: preview, localhost, unknown hosts and WebDriver load nothing', async () => {
+  const { ensureCfBeacon } = await import('../analytics/cfBeacon');
+  for (const host of [
+    'localhost', '127.0.0.1', '[::1]', 'dev.local',
+    'danmercede-com-git-feat-dan-mercedes-projects.vercel.app',
+    'danmercede-preview.vercel.app',
+    'someone-fork.vercel.app', // unlisted .vercel.app: GA treats it as prod, the beacon must not
+    // Production hosts outside the token's registered apex: Cloudflare would reject
+    // their hits (postfix hostname match), so the beacon stays off there.
+    'danmercede-com.vercel.app', 'www.danmercede.online', 'danmercede.online',
+    'notdanmercede.com', 'danmercede.com.evil.test',
+    'staging.example.test', '',
+  ]) {
+    const { appended, win } = fakeBeaconWindow(host);
+    assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), false, `must not load on "${host}"`);
+    assert.equal(appended.length, 0);
+  }
+  const { appended, win } = fakeBeaconWindow('www.danmercede.com', { webdriver: true });
+  assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), false, 'WebDriver sessions on production load nothing');
+  assert.equal(appended.length, 0);
+  assert.equal(ensureCfBeacon(null, SYNTHETIC_BEACON_ID), false, 'no window (build-time render) is a no-op');
+});
+
+test('Analytics.tsx gates the beacon on VITE_CF_BEACON_TOKEN and loads it from an effect, not during render', () => {
+  const src = read('components/Analytics.tsx');
+  assert.match(src, /resolveCfBeaconToken\(import\.meta\.env\.VITE_CF_BEACON_TOKEN\)/);
+  assert.match(src, /useEffect\(\(\) => \{\s*ensureCfBeacon\(window, cfBeaconToken\);\s*\}, \[\]\)/);
+  assert.match(src, /cfBeaconToken \? <CloudflareWebAnalytics \/> : null/);
+  assert.doesNotMatch(src, /cloudflareinsights/, 'the beacon URL lives only in analytics/cfBeacon.ts');
+});
+
+// No site-wide CSP exists today. If one is added for pages, it must allow the
+// beacon script and its reporting endpoint, or the beacon silently stops.
+test('any page CSP in vercel.json allows the Cloudflare beacon script and endpoint', () => {
+  const cfg = JSON.parse(read('vercel.json')) as { headers?: { source: string; headers: { key: string; value: string }[] }[] };
+  for (const rule of cfg.headers ?? []) {
+    if (rule.source.startsWith('/assets/')) continue; // sandboxed asset responses, not pages
+    for (const h of rule.headers) {
+      if (h.key.toLowerCase() !== 'content-security-policy') continue;
+      assert.match(h.value, /script-src[^;]*static\.cloudflareinsights\.com/, `${rule.source}: script-src`);
+      assert.match(h.value, /connect-src[^;]*cloudflareinsights\.com/, `${rule.source}: connect-src`);
+    }
+  }
+});

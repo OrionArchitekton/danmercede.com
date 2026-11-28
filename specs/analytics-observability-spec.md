@@ -49,9 +49,11 @@ GA enable/no-op decision cannot drift from what is tested.
    `page_view` fires on **initial load and on each in-app route change** (no double-count).
 3. `resolveGaConfig` returns `null` for undefined/empty/whitespace/malformed ids and a correct
    config object only for a well-formed GA4 id (`G-` + alphanumerics).
-4. ALL instrumentation (GA4 + Vercel Web Analytics + Speed Insights) is gated on
-   `VITE_GA_MEASUREMENT_ID`: dev and preview deploys mount nothing and emit nothing (no preview
-   telemetry); production mounts all three once.
+4. GA4, Vercel Web Analytics and Speed Insights are gated on `VITE_GA_MEASUREMENT_ID`: dev and
+   preview deploys mount nothing and emit nothing (no preview telemetry); production mounts all
+   three once. The Cloudflare Web Analytics beacon has its own, independent gate,
+   `VITE_CF_BEACON_TOKEN`: it stays off unless that value is a 32-hex token, and it does not
+   depend on the GA id in either direction.
 5. `public/llms.txt` exists, begins with `# Dan Mercede`, advertises the canonical origin, and
    points at the `/thoughts`, `/guides`, and `/works` surfaces.
 6. The daily synthetic monitor fails if any monitored URL serves a self-canonical that does not
@@ -74,4 +76,5 @@ GA enable/no-op decision cannot drift from what is tested.
 - **Verify (outcome):** GA4 reports route-level page_views; GSC shows the sitemap read + impressions
   accruing; Speed Insights shows Core Web Vitals.
 - **Rollback:** unset `VITE_GA_MEASUREMENT_ID` in Vercel (instant no-op) and/or revert the PR. No data
-  migration, no routing change to undo.
+  migration, no routing change to undo. This does NOT stop the Cloudflare beacon: to stop it, also
+  unset `VITE_CF_BEACON_TOKEN` in Production and redeploy (see the runbook's beacon rollback).

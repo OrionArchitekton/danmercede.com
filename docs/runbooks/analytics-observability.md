@@ -1,11 +1,12 @@
 ---
-verified: 2026-11-23
+verified: 2026-11-27
 review_after: 2027-02-21
-topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, key-events, danmercede.com]
+topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, cloudflare-web-analytics, key-events, danmercede.com]
 references:
   - components/Analytics.tsx
   - components/GateSimulator.tsx
   - analytics/gaConfig.ts
+  - analytics/cfBeacon.ts
   - App.tsx
   - .env.example
   - public/llms.txt
@@ -19,8 +20,9 @@ Instrument the site with Google Analytics 4, Vercel Web Analytics + Speed
 Insights, Google Search Console, and a synthetic self-canonical monitor. Spec:
 [`specs/analytics-observability-spec.md`](../../specs/analytics-observability-spec.md).
 
-The **code** ships env-gated and inert: nothing tracks until the operator sets
-`VITE_GA_MEASUREMENT_ID` in Vercel and enables the Vercel widgets. The steps
+The **code** ships env-gated and inert: GA4 and the Vercel widgets track nothing until the
+operator sets `VITE_GA_MEASUREMENT_ID` in Vercel and enables the widgets, and the Cloudflare
+beacon tracks nothing until `VITE_CF_BEACON_TOKEN` is set (its own gate, see below). The steps
 below are the **operator-only** actions (Google-account- and Vercel-bound) that
 turn it on. DNS for both danmercede domains is on **Cloudflare**.
 
@@ -97,6 +99,58 @@ the site's GA connection is read-only):
    WebDriver checks emit `debug_mode: true` (`resolveGaDebugMode`), and activating this
    filter excludes those hits from standard production reports while keeping them visible
    in DebugView.
+
+## Step 5 - Cloudflare Web Analytics beacon (operator, Cloudflare + Vercel)
+
+The beacon code (`analytics/cfBeacon.ts`, mounted in `components/Analytics.tsx`) is
+off until `VITE_CF_BEACON_TOKEN` holds a 32-hex beacon token. Even then it loads only
+on danmercede.com and its subdomains (`isCfBeaconHost`), never on `.vercel.app` hosts,
+danmercede.online, localhost, `.local`, Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
+counts react-router navigations itself. No CSP change is needed: `vercel.json` sets no
+page CSP (a test fails if one is added without `static.cloudflareinsights.com` in
+`script-src` and `cloudflareinsights.com` in `connect-src`).
+
+Coverage: Cloudflare accepts a site token only from hostnames under the apex it was
+registered for (postfix match), so the danmercede.com token covers `danmercede.com` and
+`www.danmercede.com` (the apex redirects to `www`). The `danmercede-com.vercel.app`
+alias and danmercede.online are not measured by this beacon: it does not load there,
+since Cloudflare would reject those hits. Measuring them would need their own sites and
+tokens, which this code does not support.
+
+0. In Cloudflare -> **Web Analytics** -> **danmercede.com** -> **Manage site**, check the
+   automatic setup. If the hostname is proxied and automatic setup is on, Cloudflare
+   injects its own beacon whatever `VITE_CF_BEACON_TOKEN` says, and the rollback below
+   would not stop it. Set it to **Enable with JS Snippet installation** so only this
+   snippet loads. (The site has recorded 0 page loads, so automatic injection is not
+   active today; confirm before relying on rollback.)
+1. Cloudflare dashboard -> **Web Analytics** -> **danmercede.com** -> **Manage site** ->
+   **JS snippet**. Copy the `token` value from `data-cf-beacon` (32 hex characters).
+   It is not the site tag shown in the site list.
+2. Vercel -> project **`danmercede-com`** -> Settings -> Environment Variables -> add
+   `VITE_CF_BEACON_TOKEN = <token>` for **Production** only.
+3. **Redeploy Production** (Vite inlines the value at build time).
+
+Validation (on Production, DevTools Network with **Preserve log** on):
+- One `beacon.min.js` request and a `cloudflareinsights.com/cdn-cgi/rum` POST on load.
+- SPA routing: follow an internal link without reloading, then switch to another tab
+  (Cloudflare sends the last route's report when the tab is hidden). Confirm RUM POSTs
+  for both routes, not just the landing page.
+- Cloudflare Web Analytics for danmercede.com shows page loads (allow a few minutes).
+- A Preview deploy shows no beacon request.
+
+URL privacy check (do once, before relying on it): the beacon has no URL filter like
+GA's `redactUrlForAnalytics`, and the privacy policy says Cloudflare receives the page
+address and referrer as the browser reports them. Land on
+`/?probe=test%40example.com&utm_source=probe`, follow an internal link, hide the tab,
+and inspect the RUM request bodies. If the query values appear in the page or referrer
+fields and that is not acceptable, unset the token (rollback below); the code cannot
+filter what Cloudflare's hosted script sends.
+
+Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy. New page loads then
+load no beacon (with automatic setup set as in step 0). Tabs opened before the redeploy
+keep the old bundle and can still report until they are closed or reloaded. To stop
+ingestion immediately, also disable or delete the danmercede.com site in Cloudflare Web
+Analytics. Verify with a fresh page (no beacon request).
 
 ---
 

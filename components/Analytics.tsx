@@ -10,6 +10,7 @@ import {
   type GaRuntimeConfig,
 } from '../analytics/gaConfig';
 import { guideNextStep } from '../analytics/guideJourney';
+import { resolveCfBeaconToken, ensureCfBeacon } from '../analytics/cfBeacon';
 
 const VercelAnalytics = (_props: { beforeSend?: typeof redactEventUrl }) => null;
 const SpeedInsights = (_props: { beforeSend?: typeof redactEventUrl }) => null;
@@ -17,6 +18,10 @@ const SpeedInsights = (_props: { beforeSend?: typeof redactEventUrl }) => null;
 // Resolved once from the build-time env. Null => GA is a no-op everywhere (dev,
 // preview, or any deploy without VITE_GA_MEASUREMENT_ID). See analytics/gaConfig.
 const gaConfig = resolveGaConfig(import.meta.env.VITE_GA_MEASUREMENT_ID);
+
+// Cloudflare Web Analytics beacon token. Null => no beacon anywhere. Independent
+// of GA: either can be switched on or off by its own Production env var.
+const cfBeaconToken = resolveCfBeaconToken(import.meta.env.VITE_CF_BEACON_TOKEN);
 
 declare global {
   interface Window {
@@ -98,19 +103,32 @@ const GoogleAnalytics = () => {
   return null;
 };
 
-// Single mount point for all site instrumentation. ALL of it — GA4 and the Vercel
-// widgets — is gated on the production-only VITE_GA_MEASUREMENT_ID switch (via
-// gaConfig), so dev and preview deploys mount nothing and emit nothing. The
-// Vercel widgets are otherwise cookieless and per-environment.
-const Analytics = () => {
-  if (!gaConfig) return null;
-  return (
-    <>
-      <GoogleAnalytics />
-      <VercelAnalytics beforeSend={redactEventUrl} />
-      <SpeedInsights beforeSend={redactEventUrl} />
-    </>
-  );
+// Single mount point for all site instrumentation. GA4 and the Vercel widgets are
+// gated on the production-only VITE_GA_MEASUREMENT_ID switch (via gaConfig); the
+// Cloudflare beacon is gated on VITE_CF_BEACON_TOKEN plus a production-host
+// check (via cfBeacon). Dev and preview deploys mount or load nothing.
+// Loads the Cloudflare beacon once, after hydration (an effect, so the baked HTML
+// and the first client render stay identical). The host and debug checks run in
+// the browser, so a prerendered page served on a preview host never loads it.
+// spa:true lets the beacon count react-router navigations by itself.
+const CloudflareWebAnalytics = () => {
+  useEffect(() => {
+    ensureCfBeacon(window, cfBeaconToken);
+  }, []);
+  return null;
 };
+
+const Analytics = () => (
+  <>
+    {cfBeaconToken ? <CloudflareWebAnalytics /> : null}
+    {gaConfig ? (
+      <>
+        <GoogleAnalytics />
+        <VercelAnalytics beforeSend={redactEventUrl} />
+        <SpeedInsights beforeSend={redactEventUrl} />
+      </>
+    ) : null}
+  </>
+);
 
 export default Analytics;
