@@ -20,8 +20,9 @@ Instrument the site with Google Analytics 4, Vercel Web Analytics + Speed
 Insights, Google Search Console, and a synthetic self-canonical monitor. Spec:
 [`specs/analytics-observability-spec.md`](../../specs/analytics-observability-spec.md).
 
-The **code** ships env-gated and inert: nothing tracks until the operator sets
-`VITE_GA_MEASUREMENT_ID` in Vercel and enables the Vercel widgets. The steps
+The **code** ships env-gated and inert: GA4 and the Vercel widgets track nothing until the
+operator sets `VITE_GA_MEASUREMENT_ID` in Vercel and enables the widgets, and the Cloudflare
+beacon tracks nothing until `VITE_CF_BEACON_TOKEN` is set (its own gate, see below). The steps
 below are the **operator-only** actions (Google-account- and Vercel-bound) that
 turn it on. DNS for both danmercede domains is on **Cloudflare**.
 
