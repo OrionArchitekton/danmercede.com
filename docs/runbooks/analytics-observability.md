@@ -1,11 +1,12 @@
 ---
-verified: 2026-11-23
+verified: 2026-11-27
 review_after: 2027-02-21
-topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, key-events, danmercede.com]
+topics: [analytics, observability, ga4, google-analytics, search-console, gsc, vercel, speed-insights, web-vitals, llms-txt, seo, aeo, consent-mode, conversions, cloudflare-web-analytics, key-events, danmercede.com]
 references:
   - components/Analytics.tsx
   - components/GateSimulator.tsx
   - analytics/gaConfig.ts
+  - analytics/cfBeacon.ts
   - App.tsx
   - .env.example
   - public/llms.txt
@@ -97,6 +98,28 @@ the site's GA connection is read-only):
    WebDriver checks emit `debug_mode: true` (`resolveGaDebugMode`), and activating this
    filter excludes those hits from standard production reports while keeping them visible
    in DebugView.
+
+## Step 5 - Cloudflare Web Analytics beacon (operator, Cloudflare + Vercel)
+
+The beacon code (`analytics/cfBeacon.ts`, mounted in `components/Analytics.tsx`) is
+off until `VITE_CF_BEACON_TOKEN` holds a 32-hex beacon token. Even then it loads only
+on production hosts (the GA production-host rule) and never on localhost, `.local`,
+Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
+counts react-router navigations itself. No CSP change is needed: `vercel.json` sets no
+page CSP (a test fails if one is added without `static.cloudflareinsights.com` in
+`script-src` and `cloudflareinsights.com` in `connect-src`).
+
+1. Cloudflare dashboard -> **Web Analytics** -> **danmercede.com** -> **Manage site** ->
+   **JS snippet**. Copy the `token` value from `data-cf-beacon` (32 hex characters).
+   It is not the site tag shown in the site list.
+2. Vercel -> project **`danmercede-com`** -> Settings -> Environment Variables -> add
+   `VITE_CF_BEACON_TOKEN = <token>` for **Production** only.
+3. **Redeploy Production** (Vite inlines the value at build time).
+
+Validation: on Production, DevTools Network shows one `beacon.min.js` request and a
+`cloudflareinsights.com/cdn-cgi/rum` POST, and Cloudflare Web Analytics for
+danmercede.com shows page loads (allow a few minutes). A Preview deploy shows neither.
+Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy.
 
 ---
 

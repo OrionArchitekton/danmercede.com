@@ -64,14 +64,25 @@ function isProductionHost(host: string): boolean {
   return false;
 }
 
-export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
-  if (!target) return false;
-  if (target.navigator?.webdriver === true) return true;
-  const host = (target.location?.hostname ?? '')
+function normalizeHost(hostname: string | null | undefined): string {
+  return (hostname ?? '')
     .trim()
     .toLowerCase()
     .replace(/^\[|\]$/g, '')
     .replace(/\.$/, '');
+}
+
+// Shared production-host rule: the canonical domains, their subdomains, and the
+// primary .vercel.app alias are production; localhost, .local and Vercel preview
+// hosts are not. Other analytics (the Cloudflare beacon) reuse this exact rule.
+export function isAnalyticsProductionHost(hostname: string | null | undefined): boolean {
+  return isProductionHost(normalizeHost(hostname));
+}
+
+export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
+  if (!target) return false;
+  if (target.navigator?.webdriver === true) return true;
+  const host = normalizeHost(target.location?.hostname);
   if (
     host &&
     (DEBUG_HOSTS.has(host) || host.endsWith('.local') || isPreviewVercelHost(host))

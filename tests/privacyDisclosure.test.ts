@@ -133,6 +133,12 @@ test('the stated choices match which tools they actually stop', () => {
     assert.match(choices!.body, /do(es)? not stop Vercel/i, 'say that cookie controls leave the Vercel tools running');
     assert.match(choices!.body, /blocks analytics scripts/i, 'name a choice that stops every tool');
   }
+  // The Cloudflare beacon is cookieless: no cookie control or GA add-on stops it,
+  // so the choices must say so and name the choice that does.
+  if (/cfBeacon/.test(component)) {
+    assert.match(choices!.body, /Cloudflare Web Analytics uses no cookies/, 'say cookie controls do not stop the beacon');
+    assert.match(choices!.body, /blocks analytics scripts stops both Google Analytics and Cloudflare Web Analytics/);
+  }
   // 2026-09-29 final review: blocking or deleting cookies resets GA's identifiers, but
   // gtag still sends page views, so no sentence may say a cookie control stops GA.
   const sentences = choices!.body.split(/(?<=\.)\s+/);
@@ -159,4 +165,18 @@ test('the guide video player is disclosed, naming every YouTube host it contacts
   }
   assert.match(text, /until you press play/i, 'the policy says the player loads only on a press');
   assert.match(text, /preview image/i, 'the policy says what loads at rest');
+});
+
+// Cloudflare Web Analytics beacon (analytics/cfBeacon.ts). The disclosure follows
+// the integration: if the component can load the beacon, the policy names it, says
+// it is cookieless, and does not extend the GA query-string removal claim to it.
+test('the Cloudflare Web Analytics beacon is disclosed as cookieless when the site can load it', () => {
+  const component = read('components/Analytics.tsx');
+  const beacon = read('analytics/cfBeacon.ts');
+  const integrated = /ensureCfBeacon\(/.test(component) && /static\.cloudflareinsights\.com/.test(beacon);
+  assert.ok(integrated, 'expected Analytics.tsx to load the Cloudflare beacon (positive control)');
+  const text = policyText();
+  assert.match(text, /Cloudflare Web Analytics/);
+  assert.match(text, /sets no cookies/);
+  assert.match(text, /query-string removal described above applies to Google Analytics/);
 });
