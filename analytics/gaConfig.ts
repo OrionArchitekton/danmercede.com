@@ -72,11 +72,15 @@ function normalizeHost(hostname: string | null | undefined): string {
     .replace(/\.$/, '');
 }
 
-// Shared production-host rule: the canonical domains, their subdomains, and the
-// primary .vercel.app alias are production; localhost, .local and Vercel preview
-// hosts are not. Other analytics (the Cloudflare beacon) reuse this exact rule.
-export function isAnalyticsProductionHost(hostname: string | null | undefined): boolean {
-  return isProductionHost(normalizeHost(hostname));
+// Strict production-host rule for tools that report under the operator's own
+// site key (the Cloudflare beacon): only the listed production hosts and the
+// canonical domains' subdomains. Unlike isProductionHost it does NOT accept other
+// .vercel.app hosts, so a fork or alternate alias deploying this bundle cannot
+// report into the operator's analytics. GA's debug classification is unchanged.
+export function isCanonicalProductionHost(hostname: string | null | undefined): boolean {
+  const host = normalizeHost(hostname);
+  if (!host) return false;
+  return PRODUCTION_HOSTS.has(host) || host.endsWith('.danmercede.com') || host.endsWith('.danmercede.online');
 }
 
 export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {

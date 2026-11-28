@@ -103,12 +103,25 @@ the site's GA connection is read-only):
 
 The beacon code (`analytics/cfBeacon.ts`, mounted in `components/Analytics.tsx`) is
 off until `VITE_CF_BEACON_TOKEN` holds a 32-hex beacon token. Even then it loads only
-on production hosts (the GA production-host rule) and never on localhost, `.local`,
-Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
+on the listed production hosts (`PRODUCTION_HOSTS` in `analytics/gaConfig.ts`) and
+subdomains of danmercede.com / danmercede.online, never on other `.vercel.app` hosts,
+localhost, `.local`, Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
 counts react-router navigations itself. No CSP change is needed: `vercel.json` sets no
 page CSP (a test fails if one is added without `static.cloudflareinsights.com` in
 `script-src` and `cloudflareinsights.com` in `connect-src`).
 
+Coverage: one token covers every host the beacon loads on. The apex redirects to
+`www.danmercede.com`, so normal traffic reports as `www`. Visits on
+`danmercede-com.vercel.app` (and on danmercede.online, if this bundle is ever served
+there) report into the same danmercede.com site; filter by host in the dashboard. A
+separate site per domain would need a per-host token, which this code does not do.
+
+0. In Cloudflare -> **Web Analytics** -> **danmercede.com** -> **Manage site**, check the
+   automatic setup. If the hostname is proxied and automatic setup is on, Cloudflare
+   injects its own beacon whatever `VITE_CF_BEACON_TOKEN` says, and the rollback below
+   would not stop it. Set it to **Enable with JS Snippet installation** so only this
+   snippet loads. (The site has recorded 0 page loads, so automatic injection is not
+   active today; confirm before relying on rollback.)
 1. Cloudflare dashboard -> **Web Analytics** -> **danmercede.com** -> **Manage site** ->
    **JS snippet**. Copy the `token` value from `data-cf-beacon` (32 hex characters).
    It is not the site tag shown in the site list.
@@ -119,7 +132,8 @@ page CSP (a test fails if one is added without `static.cloudflareinsights.com` i
 Validation: on Production, DevTools Network shows one `beacon.min.js` request and a
 `cloudflareinsights.com/cdn-cgi/rum` POST, and Cloudflare Web Analytics for
 danmercede.com shows page loads (allow a few minutes). A Preview deploy shows neither.
-Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy.
+Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy (with automatic setup
+set as in step 0, this stops all collection).
 
 ---
 

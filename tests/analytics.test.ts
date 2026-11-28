@@ -258,6 +258,7 @@ test('ensureCfBeacon: preview, localhost, unknown hosts and WebDriver load nothi
     'localhost', '127.0.0.1', '[::1]', 'dev.local',
     'danmercede-com-git-feat-dan-mercedes-projects.vercel.app',
     'danmercede-preview.vercel.app',
+    'someone-fork.vercel.app', // unlisted .vercel.app: GA treats it as prod, the beacon must not
     'staging.example.test', '',
   ]) {
     const { appended, win } = fakeBeaconWindow(host);

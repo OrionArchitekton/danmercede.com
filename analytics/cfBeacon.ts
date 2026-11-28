@@ -3,13 +3,15 @@
 // Fail-safe by construction, like gaConfig: only a well-formed beacon token
 // (32 hex characters, from Cloudflare dashboard > Web Analytics > site > JS
 // snippet) enables it. Unset, blank, or malformed => null => no-op. Even with a
-// valid token the beacon loads only on a production host (the same rule GA uses)
-// and never for debug traffic (localhost, .local, Vercel previews, WebDriver).
+// valid token the beacon loads only on a listed production host or a canonical
+// subdomain (isCanonicalProductionHost: GA's production list, minus GA's
+// any-other-.vercel.app allowance) and never for debug traffic (GA's
+// resolveGaDebugMode: localhost, .local, Vercel previews, WebDriver).
 //
 // The beacon is cookieless. `spa: true` makes it follow History API navigations
 // itself, so it is injected once per page load and never per route change.
 
-import { isAnalyticsProductionHost, resolveGaDebugMode, type GaDebugTarget } from './gaConfig';
+import { isCanonicalProductionHost, resolveGaDebugMode, type GaDebugTarget } from './gaConfig';
 
 export const CF_BEACON_SRC = 'https://static.cloudflareinsights.com/beacon.min.js';
 
@@ -22,7 +24,7 @@ export function resolveCfBeaconToken(raw: string | undefined | null): string | n
 
 export function shouldLoadCfBeacon(token: string | null, target?: GaDebugTarget | null): boolean {
   if (!token || !target) return false;
-  if (!isAnalyticsProductionHost(target.location?.hostname)) return false;
+  if (!isCanonicalProductionHost(target.location?.hostname)) return false;
   return !resolveGaDebugMode(target);
 }
 
