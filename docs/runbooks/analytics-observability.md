@@ -129,11 +129,27 @@ tokens, which this code does not support.
    `VITE_CF_BEACON_TOKEN = <token>` for **Production** only.
 3. **Redeploy Production** (Vite inlines the value at build time).
 
-Validation: on Production, DevTools Network shows one `beacon.min.js` request and a
-`cloudflareinsights.com/cdn-cgi/rum` POST, and Cloudflare Web Analytics for
-danmercede.com shows page loads (allow a few minutes). A Preview deploy shows neither.
-Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy (with automatic setup
-set as in step 0, this stops all collection).
+Validation (on Production, DevTools Network with **Preserve log** on):
+- One `beacon.min.js` request and a `cloudflareinsights.com/cdn-cgi/rum` POST on load.
+- SPA routing: follow an internal link without reloading, then switch to another tab
+  (Cloudflare sends the last route's report when the tab is hidden). Confirm RUM POSTs
+  for both routes, not just the landing page.
+- Cloudflare Web Analytics for danmercede.com shows page loads (allow a few minutes).
+- A Preview deploy shows no beacon request.
+
+URL privacy check (do once, before relying on it): the beacon has no URL filter like
+GA's `redactUrlForAnalytics`, and the privacy policy says Cloudflare receives the page
+address and referrer as the browser reports them. Land on
+`/?probe=test%40example.com&utm_source=probe`, follow an internal link, hide the tab,
+and inspect the RUM request bodies. If the query values appear in the page or referrer
+fields and that is not acceptable, unset the token (rollback below); the code cannot
+filter what Cloudflare's hosted script sends.
+
+Rollback: unset `VITE_CF_BEACON_TOKEN` in Production and redeploy. New page loads then
+load no beacon (with automatic setup set as in step 0). Tabs opened before the redeploy
+keep the old bundle and can still report until they are closed or reloaded. To stop
+ingestion immediately, also disable or delete the danmercede.com site in Cloudflare Web
+Analytics. Verify with a fresh page (no beacon request).
 
 ---
 
