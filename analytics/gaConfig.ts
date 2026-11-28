@@ -64,29 +64,14 @@ function isProductionHost(host: string): boolean {
   return false;
 }
 
-function normalizeHost(hostname: string | null | undefined): string {
-  return (hostname ?? '')
+export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
+  if (!target) return false;
+  if (target.navigator?.webdriver === true) return true;
+  const host = (target.location?.hostname ?? '')
     .trim()
     .toLowerCase()
     .replace(/^\[|\]$/g, '')
     .replace(/\.$/, '');
-}
-
-// Strict production-host rule for tools that report under the operator's own
-// site key (the Cloudflare beacon): only the listed production hosts and the
-// canonical domains' subdomains. Unlike isProductionHost it does NOT accept other
-// .vercel.app hosts, so a fork or alternate alias deploying this bundle cannot
-// report into the operator's analytics. GA's debug classification is unchanged.
-export function isCanonicalProductionHost(hostname: string | null | undefined): boolean {
-  const host = normalizeHost(hostname);
-  if (!host) return false;
-  return PRODUCTION_HOSTS.has(host) || host.endsWith('.danmercede.com') || host.endsWith('.danmercede.online');
-}
-
-export function resolveGaDebugMode(target?: GaDebugTarget | null): boolean {
-  if (!target) return false;
-  if (target.navigator?.webdriver === true) return true;
-  const host = normalizeHost(target.location?.hostname);
   if (
     host &&
     (DEBUG_HOSTS.has(host) || host.endsWith('.local') || isPreviewVercelHost(host))

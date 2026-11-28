@@ -240,7 +240,7 @@ test('ensureCfBeacon: unset or malformed token injects nothing, even on producti
 
 test('ensureCfBeacon: valid token on a production host loads the beacon exactly once with spa:true', async () => {
   const { ensureCfBeacon, CF_BEACON_SRC } = await import('../analytics/cfBeacon');
-  for (const host of ['www.danmercede.com', 'danmercede.com', 'danmercede-com.vercel.app']) {
+  for (const host of ['www.danmercede.com', 'danmercede.com', 'WWW.DANMERCEDE.COM.']) {
     const { appended, win } = fakeBeaconWindow(host);
     assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), true, `loads on ${host}`);
     assert.equal(ensureCfBeacon(win, SYNTHETIC_BEACON_ID), false, 'a second call does not inject again');
@@ -259,6 +259,10 @@ test('ensureCfBeacon: preview, localhost, unknown hosts and WebDriver load nothi
     'danmercede-com-git-feat-dan-mercedes-projects.vercel.app',
     'danmercede-preview.vercel.app',
     'someone-fork.vercel.app', // unlisted .vercel.app: GA treats it as prod, the beacon must not
+    // Production hosts outside the token's registered apex: Cloudflare would reject
+    // their hits (postfix hostname match), so the beacon stays off there.
+    'danmercede-com.vercel.app', 'www.danmercede.online', 'danmercede.online',
+    'notdanmercede.com', 'danmercede.com.evil.test',
     'staging.example.test', '',
   ]) {
     const { appended, win } = fakeBeaconWindow(host);

@@ -103,18 +103,18 @@ the site's GA connection is read-only):
 
 The beacon code (`analytics/cfBeacon.ts`, mounted in `components/Analytics.tsx`) is
 off until `VITE_CF_BEACON_TOKEN` holds a 32-hex beacon token. Even then it loads only
-on the listed production hosts (`PRODUCTION_HOSTS` in `analytics/gaConfig.ts`) and
-subdomains of danmercede.com / danmercede.online, never on other `.vercel.app` hosts,
-localhost, `.local`, Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
+on danmercede.com and its subdomains (`isCfBeaconHost`), never on `.vercel.app` hosts,
+danmercede.online, localhost, `.local`, Vercel previews, or WebDriver sessions. It is cookieless and uses `spa: true`, so it
 counts react-router navigations itself. No CSP change is needed: `vercel.json` sets no
 page CSP (a test fails if one is added without `static.cloudflareinsights.com` in
 `script-src` and `cloudflareinsights.com` in `connect-src`).
 
-Coverage: one token covers every host the beacon loads on. The apex redirects to
-`www.danmercede.com`, so normal traffic reports as `www`. Visits on
-`danmercede-com.vercel.app` (and on danmercede.online, if this bundle is ever served
-there) report into the same danmercede.com site; filter by host in the dashboard. A
-separate site per domain would need a per-host token, which this code does not do.
+Coverage: Cloudflare accepts a site token only from hostnames under the apex it was
+registered for (postfix match), so the danmercede.com token covers `danmercede.com` and
+`www.danmercede.com` (the apex redirects to `www`). The `danmercede-com.vercel.app`
+alias and danmercede.online are not measured by this beacon: it does not load there,
+since Cloudflare would reject those hits. Measuring them would need their own sites and
+tokens, which this code does not support.
 
 0. In Cloudflare -> **Web Analytics** -> **danmercede.com** -> **Manage site**, check the
    automatic setup. If the hostname is proxied and automatic setup is on, Cloudflare

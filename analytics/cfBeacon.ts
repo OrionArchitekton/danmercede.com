@@ -3,15 +3,25 @@
 // Fail-safe by construction, like gaConfig: only a well-formed beacon token
 // (32 hex characters, from Cloudflare dashboard > Web Analytics > site > JS
 // snippet) enables it. Unset, blank, or malformed => null => no-op. Even with a
-// valid token the beacon loads only on a listed production host or a canonical
-// subdomain (isCanonicalProductionHost: GA's production list, minus GA's
-// any-other-.vercel.app allowance) and never for debug traffic (GA's
-// resolveGaDebugMode: localhost, .local, Vercel previews, WebDriver).
+// valid token the beacon loads only on danmercede.com or one of its subdomains
+// and never for debug traffic (GA's resolveGaDebugMode: localhost, .local, Vercel
+// previews, WebDriver). Cloudflare accepts a site token only from hostnames that
+// share the registered apex (postfix match), so the .vercel.app alias and
+// danmercede.online would be rejected; they load nothing rather than send hits
+// Cloudflare drops.
 //
 // The beacon is cookieless. `spa: true` makes it follow History API navigations
 // itself, so it is injected once per page load and never per route change.
 
-import { isCanonicalProductionHost, resolveGaDebugMode, type GaDebugTarget } from './gaConfig';
+import { resolveGaDebugMode, type GaDebugTarget } from './gaConfig';
+
+// The apex the Cloudflare Web Analytics site (and so the token) is registered for.
+export const CF_BEACON_APEX = 'danmercede.com';
+
+export function isCfBeaconHost(hostname: string | null | undefined): boolean {
+  const host = (hostname ?? '').trim().toLowerCase().replace(/\.$/, '');
+  return host === CF_BEACON_APEX || host.endsWith(`.${CF_BEACON_APEX}`);
+}
 
 export const CF_BEACON_SRC = 'https://static.cloudflareinsights.com/beacon.min.js';
 
@@ -24,7 +34,7 @@ export function resolveCfBeaconToken(raw: string | undefined | null): string | n
 
 export function shouldLoadCfBeacon(token: string | null, target?: GaDebugTarget | null): boolean {
   if (!token || !target) return false;
-  if (!isCanonicalProductionHost(target.location?.hostname)) return false;
+  if (!isCfBeaconHost(target.location?.hostname)) return false;
   return !resolveGaDebugMode(target);
 }
 

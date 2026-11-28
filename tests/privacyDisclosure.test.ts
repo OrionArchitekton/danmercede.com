@@ -179,4 +179,6 @@ test('the Cloudflare Web Analytics beacon is disclosed as cookieless when the si
   assert.match(text, /Cloudflare Web Analytics/);
   assert.match(text, /sets no cookies/);
   assert.match(text, /query-string removal described above applies to Google Analytics/);
+  // The beacon sends a referrer (document.referrer, or the previous route under spa:true).
+  assert.match(text, /Cloudflare Web Analytics receives the page address[^.]*address of the page you came from/);
 });
